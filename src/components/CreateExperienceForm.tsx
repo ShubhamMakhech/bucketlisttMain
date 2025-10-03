@@ -453,20 +453,105 @@ export function CreateExperienceForm({
       }
 
       // Update time slots for existing activity
-      // First delete existing time slots
-      const { error: deleteTimeSlotsError } = await supabase
-        .from("time_slots")
-        .delete()
-        .eq("activity_id", activity.id);
+      // First, get all existing time slots for this activity
+      const { data: existingTimeSlots, error: fetchTimeSlotsError } =
+        await supabase
+          .from("time_slots")
+          .select("id, start_time, end_time, capacity")
+          .eq("activity_id", activity.id);
 
-      if (deleteTimeSlotsError) {
-        console.error("Error deleting time slots:", deleteTimeSlotsError);
-        throw deleteTimeSlotsError;
+      if (fetchTimeSlotsError) {
+        console.error(
+          "Error fetching existing time slots:",
+          fetchTimeSlotsError
+        );
+        throw fetchTimeSlotsError;
       }
 
-      // Create new time slots
-      if (activity.timeSlots.length > 0) {
-        const timeSlotData = activity.timeSlots.map((slot) => ({
+      // Check which time slots have bookings
+      const timeSlotIds = existingTimeSlots?.map((ts) => ts.id) || [];
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from("bookings")
+        .select("time_slot_id")
+        .in("time_slot_id", timeSlotIds);
+
+      if (bookingsError) {
+        console.error("Error fetching bookings:", bookingsError);
+        throw bookingsError;
+      }
+
+      // Get time slot IDs that have bookings
+      const bookedTimeSlotIds = new Set(
+        bookingsData?.map((b) => b.time_slot_id) || []
+      );
+
+      // Separate time slots with bookings from those without
+      const timeSlotsWithBookings =
+        existingTimeSlots?.filter((ts) => bookedTimeSlotIds.has(ts.id)) || [];
+      const timeSlotsWithoutBookings =
+        existingTimeSlots?.filter((ts) => !bookedTimeSlotIds.has(ts.id)) || [];
+
+      // Delete only time slots that don't have bookings
+      if (timeSlotsWithoutBookings.length > 0) {
+        const timeSlotIdsToDelete = timeSlotsWithoutBookings.map((ts) => ts.id);
+        const { error: deleteTimeSlotsError } = await supabase
+          .from("time_slots")
+          .delete()
+          .in("id", timeSlotIdsToDelete);
+
+        if (deleteTimeSlotsError) {
+          console.error(
+            "Error deleting unused time slots:",
+            deleteTimeSlotsError
+          );
+          throw deleteTimeSlotsError;
+        }
+      }
+
+      // Update existing time slots that have bookings (if they match new slots)
+      for (const existingSlot of timeSlotsWithBookings) {
+        const matchingNewSlot = activity.timeSlots.find(
+          (newSlot) =>
+            newSlot.start_time === existingSlot.start_time &&
+            newSlot.end_time === existingSlot.end_time
+        );
+
+        if (matchingNewSlot) {
+          // Update the existing slot with new capacity
+          const { error: updateSlotError } = await supabase
+            .from("time_slots")
+            .update({ capacity: matchingNewSlot.capacity })
+            .eq("id", existingSlot.id);
+
+          if (updateSlotError) {
+            console.error("Error updating time slot:", updateSlotError);
+            throw updateSlotError;
+          }
+        } else {
+          // Time slot exists with bookings but doesn't match new slots
+          // We can't delete it, so we'll keep it and log a warning
+          console.warn(
+            `Time slot ${existingSlot.start_time}-${existingSlot.end_time} has existing bookings and cannot be removed`
+          );
+        }
+      }
+
+      // Create new time slots that don't match ANY existing ones (with or without bookings)
+      const allExistingTimeSlots = [
+        ...timeSlotsWithBookings,
+        ...timeSlotsWithoutBookings,
+      ];
+      const newTimeSlotsToCreate = activity.timeSlots.filter(
+        (newSlot) =>
+          !allExistingTimeSlots.some(
+            (existingSlot) =>
+              existingSlot.start_time === newSlot.start_time &&
+              existingSlot.end_time === newSlot.end_time
+          )
+      );
+
+      if (newTimeSlotsToCreate.length > 0) {
+        const timeSlotData = newTimeSlotsToCreate.map((slot) => ({
           experience_id: experienceId,
           activity_id: activity.id,
           start_time: slot.start_time,
@@ -479,7 +564,7 @@ export function CreateExperienceForm({
           .insert(timeSlotData);
 
         if (createTimeSlotsError) {
-          console.error("Error creating time slots:", createTimeSlotsError);
+          console.error("Error creating new time slots:", createTimeSlotsError);
           throw createTimeSlotsError;
         }
       }
@@ -662,9 +747,10 @@ export function CreateExperienceForm({
       (activity) =>
         !activity.name.trim() ||
         activity.price <= 0 ||
-        activity.discount_percentage <= 0 ||
+        activity.discount_percentage < 0 ||
         activity.discount_percentage > 100
     );
+    console.log("invalidActivities", invalidActivities);
     if (invalidActivities.length > 0) {
       toast({
         title: "Invalid activity data",
@@ -778,7 +864,6 @@ export function CreateExperienceForm({
           .from("experiences")
           .insert([{ ...experienceData, image_url: "" }])
           .select()
-          .eq("is_active", true)
           .single();
 
         if (experienceError) throw experienceError;
