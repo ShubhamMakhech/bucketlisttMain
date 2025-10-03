@@ -45,11 +45,49 @@ export const UserBookings = () => {
     queryKey: ["user-bookings", user?.id],
     queryFn: async () => {
       if (!user) return [];
+      if (user.user_metadata.role === "vendor") {
+        const { data, error } = await supabase
+          .from("bookings")
+          .select(
+            `
+          *,
+          experiences (
+            id,
+            title,
+            location,
+            price,
+            currency,
+            vendor_id
+          ),
+          time_slots (
+            id,
+            start_time,
+            end_time,
+            activity_id,
+            activities (
+              id,
+              name,
+              price,
+              currency
+            )
+          ),
+          booking_participants (
+            name,
+            email,
+            phone_number
+          )
+        `
+          )
+          .eq("experiences.vendor_id", user.id)
+          .order("created_at", { ascending: false });
 
-      const { data, error } = await supabase
-        .from("bookings")
-        .select(
-          `
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from("bookings")
+          .select(
+            `
           *,
           experiences (
             id,
@@ -76,12 +114,13 @@ export const UserBookings = () => {
             phone_number
           )
         `
-        )
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+          )
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        return data;
+      }
     },
     enabled: !!user,
   });
@@ -143,10 +182,11 @@ export const UserBookings = () => {
             isSorted === "asc" ? "↑" : isSorted === "desc" ? "↓" : "↓";
 
           return (
-            <div className="cursor-pointer"
+            <div
+              className="cursor-pointer"
               onClick={() => column.toggleSorting(isSorted === "asc")}
             >
-               Activity Date {sortIcon}
+              Activity Date {sortIcon}
             </div>
           );
         },
@@ -175,29 +215,31 @@ export const UserBookings = () => {
       {
         accessorKey: "booking_participants",
         header: "Participants",
-        cell: ({ row }) => row.original.booking_participants[0]?.name || "N/A",
+        cell: ({ row }) =>
+          row.original?.booking_participants?.[0]?.name || "N/A",
       },
       {
         accessorKey: "booking_participants_number",
         header: "Contact Number",
         cell: ({ row }) =>
-          row.original.booking_participants[0]?.phone_number || "N/A",
+          row.original?.booking_participants?.[0]?.phone_number || "N/A",
       },
       {
         accessorKey: "total_participants",
         header: "No. of Participants",
-        cell: ({ row }) => row.original.booking_participants?.length || "N/A",
+        cell: ({ row }) => row.original?.total_participants || "N/A",
       },
       {
         accessorKey: "price",
         header: "Total Amount",
         cell: ({ row }) => {
           const activity = row.original.time_slots?.activities;
-          const price = activity?.price || row.original.experiences?.price || 0;
+          const price =
+            activity?.price || row.original?.experiences?.price || 0;
           const currency =
-            activity?.currency || row.original.experiences?.currency || "INR";
-          const totalAmount = price * row.original.total_participants;
-          const dueAmount = row.original.due_amount || 0;
+            activity?.currency || row.original?.experiences?.currency || "INR";
+          const totalAmount = price * row.original?.total_participants;
+          const dueAmount = row.original?.due_amount || 0;
           const paidAmount = totalAmount - dueAmount;
 
           return (
@@ -206,7 +248,7 @@ export const UserBookings = () => {
                 {currency} {totalAmount}
               </div>
               <div className="text-sm text-muted-foreground">
-                {row.original.total_participants} × {currency} {price}
+                {row.original?.total_participants} × {currency} {price}
               </div>
             </div>
           );
@@ -217,7 +259,8 @@ export const UserBookings = () => {
         header: "Pending Payment",
         cell: ({ row }) => {
           const activity = row.original.time_slots?.activities;
-          const price = activity?.price || row.original.experiences?.price || 0;
+          const price =
+            activity?.price || row.original?.experiences?.price || 0;
           const currency =
             activity?.currency || row.original.experiences?.currency || "INR";
           const totalAmount = price * row.original.total_participants;
@@ -304,7 +347,7 @@ export const UserBookings = () => {
         <Table className="border">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} >
+              <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id} className="border px-4 py-2">
                     {flexRender(
@@ -322,7 +365,10 @@ export const UserBookings = () => {
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="border px-4 py-2 text-start">
+                    <TableCell
+                      key={cell.id}
+                      className="border px-4 py-2 text-start"
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
