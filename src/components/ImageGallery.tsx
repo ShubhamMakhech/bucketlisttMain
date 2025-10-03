@@ -14,9 +14,11 @@ interface ImageGalleryProps {
   images: Array<{
     id: string
     image_url: string
+    video_url?: string
     alt_text?: string
     display_order: number
     is_primary?: boolean
+    media_type?: 'image' | 'video'
   }>
   experienceTitle: string
 }
@@ -24,6 +26,18 @@ interface ImageGalleryProps {
 export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Helper function to determine if media is video
+  const isVideo = (media: any) => {
+    // Check if media_type is explicitly set to 'video'
+    if (media.media_type === 'video') return true
+    // Check if video_url exists
+    if (media.video_url) return true
+    // Check file extension for common video formats
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv']
+    const url = media.video_url || media.image_url
+    return videoExtensions.some(ext => url.toLowerCase().includes(ext))
+  }
 
   // Sort images by display_order, with primary image first
   const sortedImages = [...images].sort((a, b) => {
@@ -95,19 +109,30 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
     <>
       {/* Desktop Layout */}
       <div className="image-gallery-grid hidden md:grid" >
-        {/* Main Image */}
+        {/* Main Image/Video */}
         <div className="image-gallery-main" onClick={() => openModal(0)}>
-          <img
-            src={mainImage.image_url}
-            alt={mainImage.alt_text || `${experienceTitle} main image`}
-          />
+          {isVideo(mainImage) ? (
+            <video
+              src={mainImage.video_url || mainImage.image_url}
+              poster={mainImage.image_url}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <img
+              src={mainImage.image_url}
+              alt={mainImage.alt_text || `${experienceTitle} main image`}
+            />
+          )}
           <div className="image-gallery-main-overlay"></div>
-          <div className="image-gallery-play-btn" onClick={(e) => {
-            e.stopPropagation()
-            handlePlayButtonClick()
-          }}>
-            <div className="image-gallery-play-icon"></div>
-          </div>
+          {/* Show play button only for videos */}
+          {isVideo(mainImage) && (
+            <div className="image-gallery-play-btn" onClick={(e) => {
+              e.stopPropagation()
+              handlePlayButtonClick()
+            }}>
+              <div className="image-gallery-play-icon"></div>
+            </div>
+          )}
         </div>
 
         {/* Side Images Grid */}
@@ -124,11 +149,28 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
               >
                 {image ? (
                   <>
-                    <img
-                      src={image.image_url}
-                      alt={image.alt_text || `${experienceTitle} ${imageIndex + 1}`}
-                    />
+                    {isVideo(image) ? (
+                      <video
+                        src={image.video_url || image.image_url}
+                        poster={image.image_url}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={image.image_url}
+                        alt={image.alt_text || `${experienceTitle} ${imageIndex + 1}`}
+                      />
+                    )}
                     <div className="image-gallery-side-overlay"></div>
+                    {/* Show play button only for videos */}
+                    {isVideo(image) && (
+                      <div className="image-gallery-play-btn" onClick={(e) => {
+                        e.stopPropagation()
+                        handlePlayButtonClick()
+                      }}>
+                        <div className="image-gallery-play-icon"></div>
+                      </div>
+                    )}
                     {/* Show "View all images" button on the 4th image if there are more than 5 total images */}
                     {index === 3 && sortedImages.length > 5 && (
                       <div
@@ -178,17 +220,28 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
                   className="image-gallery-mobile-slide"
                   onClick={() => openModal(index)}
                 >
-                  <img
-                    src={image.image_url}
-                    alt={image.alt_text || `${experienceTitle} ${index + 1}`}
-                  />
+                  {isVideo(image) ? (
+                    <video
+                      src={image.video_url || image.image_url}
+                      poster={image.image_url}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={image.image_url}
+                      alt={image.alt_text || `${experienceTitle} ${index + 1}`}
+                    />
+                  )}
                   <div className="image-gallery-main-overlay"></div>
-                  <div className="image-gallery-play-btn" onClick={(e) => {
-                    e.stopPropagation()
-                    handlePlayButtonClick()
-                  }}>
-                    <div className="image-gallery-play-icon"></div>
-                  </div>
+                  {/* Show play button only for videos */}
+                  {isVideo(image) && (
+                    <div className="image-gallery-play-btn" onClick={(e) => {
+                      e.stopPropagation()
+                      handlePlayButtonClick()
+                    }}>
+                      <div className="image-gallery-play-icon"></div>
+                    </div>
+                  )}
                 </div>
               </SwiperSlide>
             ))}
@@ -232,13 +285,23 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
               </>
             )}
 
-            {/* Main Image */}
+            {/* Main Image/Video */}
             <div className="max-w-4xl max-h-full">
-              <img
-                src={sortedImages[selectedImageIndex].image_url}
-                alt={sortedImages[selectedImageIndex].alt_text || experienceTitle}
-                className="max-w-full max-h-full object-contain"
-              />
+              {isVideo(sortedImages[selectedImageIndex]) ? (
+                <video
+                  src={sortedImages[selectedImageIndex].video_url || sortedImages[selectedImageIndex].image_url}
+                  poster={sortedImages[selectedImageIndex].image_url}
+                  className="max-w-full max-h-full object-contain"
+                  controls
+                  autoPlay
+                />
+              ) : (
+                <img
+                  src={sortedImages[selectedImageIndex].image_url}
+                  alt={sortedImages[selectedImageIndex].alt_text || experienceTitle}
+                  className="max-w-full max-h-full object-contain"
+                />
+              )}
             </div>
 
             {/* Image Counter */}
