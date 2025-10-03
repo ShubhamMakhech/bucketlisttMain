@@ -1,0 +1,131 @@
+#HeroVideoContainer {
+    height: 700px !important;
+    overflow: hidden !important;
+    position: relative;
+}
+
+/* #HeroVideoContainer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 555;
+} */
+
+/* Side gradient overlays for better focus */
+/* #HeroVideoContainer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            rgba(0, 0, 0, 0.4) 0%,
+            rgba(0, 0, 0, 0.1) 20%,
+            rgba(0, 0, 0, 0.05) 40%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.05) 60%,
+            rgba(0, 0, 0, 0.1) 80%,
+            rgba(0, 0, 0, 0.4) 100%);
+    z-index: 10;
+    pointer-events: none;
+} */
+
+/* Enhanced Parallax Video Styles */
+#HeroVideoContainer video {
+    will-change: transform;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    position: relative;
+    /* iOS specific styles to prevent popup */
+    -webkit-playsinline: true;
+    -webkit-media-controls: none;
+    -webkit-media-controls-start-playback-button: none;
+    -webkit-media-controls-play-button: none;
+    -webkit-media-controls-volume-slider: none;
+    -webkit-media-controls-mute-button: none;
+    -webkit-media-controls-timeline: none;
+    -webkit-media-controls-current-time-display: none;
+    -webkit-media-controls-time-remaining-display: none;
+    -webkit-media-controls-fullscreen-button: none;
+}
+
+/* Smooth parallax transitions */
+.parallax-video {
+    transition: transform 0.1s ease-out;
+    will-change: transform;
+}
+
+/* Performance optimization for parallax */
+.parallax-container {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* Max video width for better content focus */
+.MaxVideoWidth {
+    width: 100%;
+    max-width: 600px;
+    /* margin: 0 auto; */
+    position: relative;
+    z-index: 30;
+}
+
+#MobileChangeAlignment {
+    display: flex !important;
+    align-items: start !important;
+    justify-content: end;
+    height: 100% !important;
+    padding-bottom: 50px;
+}
+
+.MobileChangeAlignmentContainer {
+    max-width: 600px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#MobileTextFontSize {
+    text-align: start;
+}
+
+@media (max-width:900px) {
+
+    #HeroVideoContainer {
+        height: 450px !important;
+    }
+
+    #MobileTextFontSize {
+        font-size: 20px !important;
+        line-height: 30px !important;
+        margin-bottom: 0px !important;
+        font-weight: 700 !important;
+        width: 80%;
+    }
+
+    #MobileChangeAlignment {
+        justify-content: end;
+        padding-bottom: 20px;
+        height: 100% !important;
+    }
+
+    /* Adjust side overlays for mobile */
+    #HeroVideoContainer::after {
+        background: linear-gradient(90deg,
+                rgba(0, 0, 0, 0.3) 0%,
+                rgba(0, 0, 0, 0.05) 30%,
+                transparent 50%,
+                rgba(0, 0, 0, 0.05) 70%,
+                rgba(0, 0, 0, 0.3) 100%);
+    }
+
+    .MaxVideoWidth {
+        max-width: 90%;
+        /* padding: 0 20px; */
+    }
+}

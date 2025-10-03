@@ -1,0 +1,49 @@
+# BucketListt - Adventure Tourism Platform
+# https://www.bucketlistt.com
+
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: *
+Allow: /
+Crawl-delay: 2
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /_next/
+Disallow: /node_modules/
+Disallow: /dist/
+Disallow: /.git/
+Disallow: /.env
+Disallow: /package.json
+Disallow: /package-lock.json
+
+# Allow important pages
+Allow: /experiences
+Allow: /destinations
+Allow: /search
+Allow: /contact
+Allow: /our-story
+Allow: /terms
+
+# Sitemap location
+Sitemap: https://www.bucketlistt.com/sitemap.xml
