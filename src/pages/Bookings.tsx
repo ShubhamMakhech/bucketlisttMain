@@ -257,7 +257,7 @@ const Bookings = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Calendar className="h-6 w-6 text-brand-primary" />
-              <h1 className="text-3xl font-bold">My Bookingssdfsdfsf</h1>
+              <h1 className="text-3xl font-bold">My Bookings</h1>
             </div>
             {user?.user_metadata?.role === "vendor" && (
               <Button
