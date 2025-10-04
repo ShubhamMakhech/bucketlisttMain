@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -136,6 +136,55 @@ export const BookingDialog = ({
     },
   });
 
+  useEffect(() => {
+    const bookingModalData = localStorage.getItem("bookingModalData");
+    if (bookingModalData) {
+      const data = JSON.parse(bookingModalData);
+
+      // Set form values individually
+      form.setValue("participant.name", data.data.participant.name);
+      form.setValue("participant.email", data.data.participant.email);
+      form.setValue(
+        "participant.phone_number",
+        data.data.participant.phone_number
+      );
+      form.setValue("participant_count", data.data.participant_count);
+      form.setValue("note_for_guide", data.data.note_for_guide || "");
+      form.setValue("terms_accepted", data.data.terms_accepted);
+      form.setValue("referral_code", data.data.referral_code || "");
+      form.setValue("coupon_code", data.data.coupon_code || "");
+      form.setValue("booking_date", new Date(data.selectedDate));
+      form.setValue("time_slot_id", data.selectedSlotId);
+
+      // Set other state values
+      setSelectedDate(new Date(data.selectedDate));
+      setSelectedSlotId(data.selectedSlotId);
+      setSelectedActivityId(data.selectedActivityId);
+      setCurrentStep(3);
+
+      // Clear localStorage
+      localStorage.removeItem("bookingModalData");
+    }
+  }, [form]);
+
+  // useEffect(() => {
+  //   const bookingModalData = localStorage.getItem('bookingModalData');
+  //   if (bookingModalData) {
+  //     const data = JSON.parse(bookingModalData);
+  //     form.reset(data.data);
+
+  //     console.log("data", data);
+  //     console.log("data.data", data.selectedDate);
+
+  //     // set selected date from local storagedata
+  //     setSelectedDate(new Date(data.selectedDate));
+  //     setSelectedSlotId(data.selectedSlotId);
+  //     setSelectedActivityId(data.selectedActivityId);
+
+  //     setCurrentStep(3)
+  //   }
+  // }, []);
+
   const participantCount = form.watch("participant_count");
 
   // Helper function to get activity price (discounted if available)
@@ -169,7 +218,6 @@ export const BookingDialog = ({
     return parseFloat((currentPrice * participantCount).toFixed(2));
   };
 
-  console.log("experience", experience);
   const handleDateChange = (date: Date | undefined) => {
     setSelectedDate(date);
     setSelectedSlotId(undefined);
@@ -406,14 +454,14 @@ export const BookingDialog = ({
       const calculatedBookingAmount = parseFloat(finalPrice.toFixed(2));
 
       // console.log("Direct booking amount calculation:", {
-          // selectedActivity,
-          // activityPrice: selectedActivity
-          //   ? getActivityPrice(selectedActivity)
-          //   : null,
-          // experiencePrice: experience.price,
-          // participantCount: data.participant_count,
-          // calculatedBookingAmount,
-          // finalPrice,
+      // selectedActivity,
+      // activityPrice: selectedActivity
+      //   ? getActivityPrice(selectedActivity)
+      //   : null,
+      // experiencePrice: experience.price,
+      // participantCount: data.participant_count,
+      // calculatedBookingAmount,
+      // finalPrice,
       // });
 
       // Create the booking
@@ -498,14 +546,14 @@ export const BookingDialog = ({
       const calculatedBookingAmount = parseFloat(finalPrice.toFixed(2));
 
       // console.log("Payment booking amount calculation:", {
-        // selectedActivity,
-        // activityPrice: selectedActivity
-        //   ? getActivityPrice(selectedActivity)
-        //   : null,
-        // experiencePrice: experience.price,
-        // participantCount: data.participant_count,
-        // calculatedBookingAmount,
-        // finalPrice,
+      // selectedActivity,
+      // activityPrice: selectedActivity
+      //   ? getActivityPrice(selectedActivity)
+      //   : null,
+      // experiencePrice: experience.price,
+      // participantCount: data.participant_count,
+      // calculatedBookingAmount,
+      // finalPrice,
       // });
 
       // Create the booking
@@ -583,7 +631,21 @@ export const BookingDialog = ({
     // console.log("Upfront amount (what user pays now):", upfrontAmount);
     // console.log("Due amount (what user pays on-site):", dueAmount);
     if (!user) {
+      // saving data in local storage
+
+      const bookingModalData = {
+        data: data,
+        selectedDate: selectedDate,
+        selectedSlotId: selectedSlotId,
+        selectedActivityId: selectedActivityId,
+      };
+
+      localStorage.setItem(
+        "bookingModalData",
+        JSON.stringify(bookingModalData)
+      );
       setIsAuthModalOpen(true);
+
       return;
     }
 
@@ -597,6 +659,8 @@ export const BookingDialog = ({
     }
 
     setIsSubmitting(true);
+
+    // console.log("We are here");
 
     // If bypass payment is enabled, create booking directly
     if (bypassPayment) {
