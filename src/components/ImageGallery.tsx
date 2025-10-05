@@ -216,7 +216,7 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
           >
             {sortedImages.map((image, index) => (
               <SwiperSlide key={image.id}>
-                <div 
+                <div
                   className="image-gallery-mobile-slide"
                   onClick={() => openModal(index)}
                 >

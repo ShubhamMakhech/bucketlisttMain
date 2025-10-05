@@ -205,9 +205,8 @@ const Bookings = () => {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Bookings Data");
 
       // Generate filename
-      const fileName = `bookings_export_${
-        new Date().toISOString().split("T")[0]
-      }.xlsx`;
+      const fileName = `bookings_export_${new Date().toISOString().split("T")[0]
+        }.xlsx`;
 
       // Generate and download file
       XLSX.writeFile(workbook, fileName);

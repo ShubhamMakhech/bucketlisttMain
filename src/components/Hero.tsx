@@ -189,7 +189,7 @@ export function Hero() {
           }}
         >
           <video
-            src="https://prepseed.s3.ap-south-1.amazonaws.com/Hero+page+video+-+draft+(5)+(1).mp4"
+            src="https://prepseed.s3.ap-south-1.amazonaws.com/Hero+page+video+-+draft.mp4"
             autoPlay
             muted
             loop
