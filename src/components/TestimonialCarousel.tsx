@@ -77,11 +77,80 @@ const testimonials: Testimonial[] = [
     name: "Kavya Reddy",
     location: "Hyderabad, India",
     rating: 5,
-    image: "https://rishikeshcamp.in/img/act/bungee2.jpg",
+    image: "-",
     review:
       "Flying fox was an adrenaline rush like no other! Soaring over the Ganges at high speed was both scary and exciting. The team at Rishikesh made sure everything was perfect. Unforgettable experience!",
     experience: "Rishikesh Flying Fox",
     initial: "K",
+  },
+  {
+    id: "7",
+    name: "Megha Joshi",
+    location: "Pune, India",
+    rating: 4,
+    image:
+      "https://www.tourmyindia.com/blog//wp-content/uploads/2018/04/Camping-in-Rishikesh.jpg",
+    review:
+      "Camping by the riverside in Rishikesh was a peaceful escape from city life. The tents were clean and comfortable, and the bonfire nights were a highlight. Food could have been better, but overall a memorable experience.",
+    experience: "Rishikesh Riverside Camping",
+    initial: "M",
+  },
+  {
+    id: "8",
+    name: "Siddharth Menon",
+    location: "Kochi, India",
+    rating: 5,
+    image:
+      "https://www.adventurenation.com/blog/wp-content/uploads/2015/09/rafting-in-rishikesh.jpg",
+    review:
+      "I was a bit nervous about rafting, but the safety measures and the friendly guides put me at ease. The thrill of conquering the rapids with my friends is something I’ll never forget. Highly recommended for first-timers!",
+    experience: "White Water Rafting",
+    initial: "S",
+  },
+  {
+    id: "9",
+    name: "Neha Saini",
+    location: "Lucknow, India",
+    rating: 3,
+    image:
+      "https://www.holidify.com/images/cmsuploads/compressed/Neergarh-Waterfall_20180322163913.jpg",
+    review:
+      "The trek to Neergarh Waterfall was beautiful, but the trail was a bit crowded and littered in some places. The waterfall itself was stunning and worth the effort. Go early in the morning for a quieter experience.",
+    experience: "Neergarh Waterfall Trek",
+    initial: "N",
+  },
+  {
+    id: "10",
+    name: "Amitabh Verma",
+    location: "Gurgaon, India",
+    rating: 5,
+    image: "https://www.rishikeshtourism.in/images/rafting-in-rishikesh.jpg",
+    review:
+      "Tried the adventure package with my family. The organizers were punctual and everything was well-coordinated. My kids loved the zipline and the food at the camp was delicious. Will definitely come back next year!",
+    experience: "Adventure Family Package",
+    initial: "A",
+  },
+  {
+    id: "11",
+    name: "Tanvi Desai",
+    location: "Ahmedabad, India",
+    rating: 4,
+    image: "https://www.rishikeshadventure.com/images/rock-climbing.jpg",
+    review:
+      "Rock climbing was tougher than I expected but the instructors were patient and encouraging. I felt a real sense of achievement reaching the top. Would love to try more activities next time.",
+    experience: "Rock Climbing",
+    initial: "T",
+  },
+  {
+    id: "12",
+    name: "Rahul Chatterjee",
+    location: "Kolkata, India",
+    rating: 5,
+    image: "-",
+    review:
+      "The adventure team was very professional and safety was their top priority. I did bungee jumping and it was a once-in-a-lifetime experience. The view from the top was breathtaking!",
+    experience: "Bungee Jumping",
+    initial: "R",
   },
 ];
 
@@ -92,7 +161,7 @@ export function TestimonialCarousel() {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({
         left: -320,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };
@@ -101,7 +170,7 @@ export function TestimonialCarousel() {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({
         left: 320,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };
@@ -110,18 +179,25 @@ export function TestimonialCarousel() {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`h-3 w-3 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-400"
-          }`}
+        className={`h-3 w-3 ${
+          i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-400"
+        }`}
       />
     ));
   };
 
   return (
-    <section className="py-5 md:py-24 px-4 " style={{ background: "rgb(39 28 55)" }}>
+    <section
+      className="py-5 md:py-24 px-4 "
+      style={{ background: "rgb(39 28 55)" }}
+    >
       <div className=" max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row  items-start justify-between gap-8">
           {/* Left Side - Title and Navigation */}
-          <div className="flex-shrink-0 lg:w-80 w-full text-center lg:text-left" id="GapAddedForTestimonial">
+          <div
+            className="flex-shrink-0 lg:w-80 w-full text-center lg:text-left"
+            id="GapAddedForTestimonial"
+          >
             <h1 className="text-white CommonH1 leading-tight">
               {/* <br /> */}
               People love completing bucketlistt&nbsp;
@@ -156,8 +232,8 @@ export function TestimonialCarousel() {
               ref={scrollContainerRef}
               className="flex gap-6  scrollbar-hide pb-4"
               style={{
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
               }}
             >
               {testimonials.map((testimonial) => (
@@ -166,7 +242,10 @@ export function TestimonialCarousel() {
                   className="bg-gray-800 rounded-2xl  flex flex-col flex-shrink-0 w-80 "
                 >
                   {/* Image */}
-                  <div className="h-40 w-full bg-gradient-to-br from-blue-500 to-purple-600 relative " id="TestimonialImage">
+                  <div
+                    className="h-40 w-full bg-gradient-to-br from-blue-500 to-purple-600 relative "
+                    id="TestimonialImage"
+                  >
                     <img
                       src={testimonial.image}
                       alt={`${testimonial.experience} - ${testimonial.name}`}
@@ -186,10 +265,16 @@ export function TestimonialCarousel() {
                   </div>
 
                   {/* Content */}
-                  <div className="p-6 flex-1 flex flex-col" style={{ background: "rgb(28 21 37)" }}>
+                  <div
+                    className="p-6 flex-1 flex flex-col"
+                    style={{ background: "rgb(28 21 37)" }}
+                  >
                     {/* Header with Avatar and Info */}
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-base" style={{ background: "rgb(39, 28, 55)" }}>
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-base"
+                        style={{ background: "rgb(39, 28, 55)" }}
+                      >
                         {testimonial.initial}
                       </div>
                       <div className="flex-1">
@@ -209,7 +294,10 @@ export function TestimonialCarousel() {
 
                     {/* Review Text */}
                     <div className="flex-1 mb-4">
-                      <p className="text-gray-300 text-sm leading-relaxed" style={{ textAlign: "start" }}>
+                      <p
+                        className="text-gray-300 text-sm leading-relaxed"
+                        style={{ textAlign: "start" }}
+                      >
                         {testimonial.review}
                       </p>
                     </div>
