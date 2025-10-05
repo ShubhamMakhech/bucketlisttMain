@@ -361,7 +361,7 @@ export const BookingDialog = ({
   ) => {
     try {
       // console.log("Sending booking confirmation email...");
-      console.log("data",data)
+      // console.log("data",data)
       // Get time slot details for email
       const { data: timeSlot } = await supabase
         .from("time_slots")
@@ -456,7 +456,7 @@ export const BookingDialog = ({
           },
         ],
       };
-      console.log("vendorWhatsappBody", vendorWhatsappBody);
+      // console.log("vendorWhatsappBody", vendorWhatsappBody);
       const vendorWhatsappResponse = await SendWhatsappMessage(
         vendorWhatsappBody
       );

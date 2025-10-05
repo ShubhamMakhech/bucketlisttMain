@@ -99,10 +99,10 @@ export function SignInForm({
               onClick={() => {
                 // TODO: Implement Google sign-in
                 handleGoogleLogin();
-                toast({
-                  title: "Google Sign-in",
-                  description: "Google authentication coming soon!",
-                });
+                // toast({
+                //   title: "Google Sign-in",
+                //   description: "Google authentication coming soon!",
+                // });
               }}
             >
               <img
