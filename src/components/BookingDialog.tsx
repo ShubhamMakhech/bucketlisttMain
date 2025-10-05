@@ -47,8 +47,28 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { AuthModal } from "@/components/AuthModal";
 const participantSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Valid email is required"),
-  phone_number: z.string().min(1, "Phone number is required"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address")
+    .refine((val) => {
+      // Additional email validation
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return emailRegex.test(val);
+    }, "Please enter a valid email address")
+    .refine((val) => {
+      // Check for common email mistakes
+      if (val.includes("..")) return false;
+      if (val.startsWith(".") || val.endsWith(".")) return false;
+      if (val.includes("@.") || val.includes(".@")) return false;
+      return true;
+    }, "Please enter a valid email address"),
+  phone_number: z
+    .string()
+    .min(1, "Phone number is required")
+    .regex(/^[0-9]+$/, "Phone number must contain only numbers")
+    .length(10, "Phone number must be exactly 10 digits")
+    .refine((val) => !val.includes(" "), "Phone number cannot contain spaces"),
 });
 
 const bookingSchema = z.object({
@@ -1292,8 +1312,18 @@ export const BookingDialog = ({
                               <FormLabel>Email</FormLabel>
                               <FormControl>
                                 <Input
+                                  type="email"
                                   placeholder="email@example.com"
                                   {...field}
+                                  onChange={(e) => {
+                                    const value = e.target.value.trim();
+                                    field.onChange(value);
+                                  }}
+                                  onBlur={(e) => {
+                                    // Trigger validation on blur
+                                    field.onBlur();
+                                    form.trigger("participant.email");
+                                  }}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1308,7 +1338,21 @@ export const BookingDialog = ({
                             <FormItem>
                               <FormLabel>Phone</FormLabel>
                               <FormControl>
-                                <Input placeholder="Phone number" {...field} />
+                                <Input 
+                                  placeholder="Phone number (10 digits)" 
+                                  {...field}
+                                  onChange={(e) => {
+                                    // Remove all non-numeric characters and spaces
+                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                    field.onChange(value);
+                                  }}
+                                  onBlur={(e) => {
+                                    // Trigger validation on blur
+                                    field.onBlur();
+                                    form.trigger("participant.phone_number");
+                                  }}
+                                  maxLength={10}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

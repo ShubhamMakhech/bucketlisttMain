@@ -242,7 +242,7 @@ const Index = () => {
                     freeMode={true}
                     slidesPerView={4}
                     spaceBetween={16}
-                    loop={true}
+                    // loop={true}
                     speed={800}
                     // autoplay={{
                     //   delay: 2500,
@@ -366,7 +366,7 @@ const Index = () => {
                     {experiences?.map((experience) => (
                       <SwiperSlide key={experience.id}>
                         {/* console.log(experience.currency) */}
-                        <div className="card-hover">
+                        <div className="card-hover" style={{height:"100%"}}>
                           <ExperienceCard
                             id={experience.id}
                             image={getExperienceImage(experience)}
@@ -586,12 +586,14 @@ const Index = () => {
                       </div>
                     </div>
                     <br />
+                    <div className="IndianFlagStyles">
                     <img
                       src="/indian_flag.gif"
                       alt="Indian Flag"
                       className="mx-auto w-32 md:w-48 h-auto rounded-lg"
                       id="IndianFlagStyles"
                     />
+                    </div>
                   </BidirectionalAnimatedSection>
                 </div>
               </div>

@@ -482,34 +482,41 @@ const ExperienceDetail = () => {
                 )}
               </div> */}
               <br />
-              <div className="StikyBadgesContainer">
-                <Row gutter={[20, 20]}>
-                  <Col lg={6} md={12} xs={12}>
-                    <div>
-                      <img src="/Images/ATOAICertified.svg" alt="" />
+              <div className="features-badges-container">
+                <div className="features-badges-grid">
+                  <div className="feature-badge">
+                    <div className="feature-badge-icon">
+                      <img src="/Images/ATOAICertified.svg" alt="ATOAI Certified" />
+                    </div>
+                    <div className="feature-badge-content">
                       <p>ATOAI Certified</p>
                     </div>
-                  </Col>
-                  <Col lg={6} md={12} xs={12}>
-                    <div >
-                      <img src="/Images/BookPayLater.svg" alt="" />
-                      <p style={{ marginTop: "-6px" }}>Book Now, Pay Later</p>
+                  </div>
+                  <div className="feature-badge">
+                    <div className="feature-badge-icon">
+                      <img src="/Images/BookPayLater.svg" alt="Book Now Pay Later" />
                     </div>
-                  </Col>
-                  <Col lg={6} md={12} xs={12}>
-                    <div style={{ marginLeft: "7px" }}>
-                      <IoCheckmarkDoneCircle style={{ fontSize: "22px" }} />
+                    <div className="feature-badge-content">
+                      <p>Book Now, Pay Later</p>
+                    </div>
+                  </div>
+                  <div className="feature-badge">
+                    <div className="feature-badge-icon">
+                      <IoCheckmarkDoneCircle />
+                    </div>
+                    <div className="feature-badge-content">
                       <p>Free Cancellation</p>
                     </div>
-                  </Col>
-                  <Col lg={6} md={12} xs={12}>
-                    <div>
-                      <img src="/Images/MobileUpatedIcon.svg" alt="" />
-                      <p style={{ marginTop: "-6px" }}>Instant Tickets to your mobile
-                      </p>
+                  </div>
+                  <div className="feature-badge">
+                    <div className="feature-badge-icon">
+                      <img src="/Images/MobileUpatedIcon.svg" alt="Mobile Tickets" />
                     </div>
-                  </Col>
-                </Row>
+                    <div className="feature-badge-content">
+                      <p>Instant Tickets to your mobile</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
 
