@@ -201,9 +201,9 @@ export function ExperienceCard({
                       key={cat.id || index}
                       className="flex items-center gap-1"
                     >
-                      {/* {cat.icon && <span>{cat.icon}</span>}
+                      {/* {cat.icon && <span>{cat.icon}</span>} */}
                       <div id="FlexContainerRowBetween">
-                        <span className="fontSizeSm">{cat.name}</span>
+                        {/* <span className="fontSizeSm">{cat.name}</span> */}
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 fontSizeSm" />
@@ -215,7 +215,7 @@ export function ExperienceCard({
                             ({reviews})
                           </span>
                         </div>
-                      </div> */}
+                      </div>
 
                       {index < Math.min(displayCategories.length, 2) - 1 && (
                         <span>•</span>
