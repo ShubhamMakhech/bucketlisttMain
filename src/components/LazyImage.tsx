@@ -63,25 +63,17 @@ export function LazyImage({
 
   return (
     <div 
-      className={cn(aspectRatio, "overflow-hidden bg-muted", className)}
+      className={cn(aspectRatio, "overflow-hidden", className)}
       onClick={onClick}
     >
       <img
         ref={imgRef}
         src={currentSrc}
         alt={alt}
-        className={cn(
-          "w-full h-full object-cover transition-all duration-300 ease-out",
-          !isLoaded && "blur-sm scale-110",
-          isLoaded && "blur-0 scale-100"
-        )}
-        style={{
-          filter: !isLoaded ? 'blur(8px)' : 'blur(0px)',
-          transform: !isLoaded ? 'scale(1.1)' : 'scale(1)',
-        }}
+        className='ActiviteImage'
       />
       {!isLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
+        <div className="absolute from-gray-200 to-gray-300 animate-pulse" />
       )}
     </div>
   )

@@ -149,8 +149,8 @@ export function SignInForm({
         </div>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <div className="space-y-2" style={{textAlign:"start"}}>
+              <Label htmlFor="email" style={{textAlign:"start"}}>Email</Label>
               <Input
                 id="email"
                 type="email"

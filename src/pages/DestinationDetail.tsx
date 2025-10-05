@@ -7,6 +7,48 @@ import { Badge } from "@/components/ui/badge";
 import { ExperienceCard } from "@/components/ExperienceCard";
 import { LazyImage } from "@/components/LazyImage";
 import { DetailedItinerary } from "@/components/DetailedItinerary";
+
+// Static destination images mapping - now supports multiple images per destination
+const staticDestinationImages: Record<string, string[]> = {
+  "Darjeeling": [
+    "https://images.unsplash.com/photo-1637737118663-f1a53ee1d5a7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1544894062-f500cf4fbd2c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1661970131022-714b905f7031?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  ],
+  "Goa": [
+    "https://images.unsplash.com/photo-1496566084516-c5b96fcbd5c8?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1580741186862-c5d0bf2aff33?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1682743710558-b338ba285925?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  ],
+  "Jaipur": [
+    "https://prepseed.s3.ap-south-1.amazonaws.com/Jaipur.svg",
+    "https://images.unsplash.com/photo-1539650116574-75c0c6d73c0e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+    "https://images.unsplash.com/photo-1578662996442-48f60103fc96?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+  ],
+  "Kerala": [
+    "https://prepseed.s3.ap-south-1.amazonaws.com/Kerela.svg",
+    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+    "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+  ],
+  "Rishikesh": [
+    "https://images.unsplash.com/photo-1720819029162-8500607ae232?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1650341278999-d1b5142cfe30?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    // "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+    // "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3",
+  ],
+  "Mysore": [
+    "https://plus.unsplash.com/premium_photo-1697730494992-7d5a0c46ea52?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1698688513674-d38bea6a34c2?q=80&w=3133&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  ],
+  "Matheran": [
+    "https://images.unsplash.com/photo-1663070549709-8b524a0560e7?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1590812854696-65cefa66f181?q=80&w=2108&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  ],
+  "Saputara": [
+    "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage1.jpg",
+    "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage2.jpg",
+  ],
+};
 import {
   ArrowLeft,
   Star,
@@ -64,6 +106,34 @@ const DestinationDetail = () => {
     },
     enabled: !!id,
   });
+
+  // Get multiple images for swiper - combines database image with static images
+  const getMultipleImages = () => {
+    const images = [];
+
+    // Add main destination image first
+    if (destination?.image_url) {
+      images.push({
+        src: destination.image_url,
+        alt: destination.title,
+        id: 'main',
+      });
+    }
+
+    // Add all static images for this destination
+    const staticImages = staticDestinationImages[destination?.title || ''];
+    if (staticImages && staticImages.length > 0) {
+      staticImages.forEach((imageUrl, index) => {
+        images.push({
+          src: imageUrl,
+          alt: `${destination?.title} - View ${index + 1}`,
+          id: `static-${index}`,
+        });
+      });
+    }
+
+    return images;
+  };
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -197,6 +267,13 @@ const DestinationDetail = () => {
 
   const weatherInfo = destination.weather_info as any;
 
+  // Get the image source - use static image if title matches, otherwise use database image
+  const getImageSource = () => {
+    const staticImages = staticDestinationImages[destination.title];
+    return staticImages?.[0] || destination.image_url;
+  };
+
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -208,79 +285,37 @@ const DestinationDetail = () => {
       >
         <Swiper
           modules={[Autoplay, Navigation, Pagination]}
-          // slidesPerView={1}
           spaceBetween={20}
           autoplay={{
             delay: 4000,
             disableOnInteraction: false,
           }}
-          // navigation={{
-          //   nextEl: '.destination-swiper-button-next',
-          //   prevEl: '.destination-swiper-button-prev',
-          // }}
           pagination={{
             clickable: true,
             bulletClass: "swiper-pagination-bullet",
             bulletActiveClass: "swiper-pagination-bullet-active",
           }}
-          loop={true}
+          loop={getMultipleImages().length > 1}
           className="h-full w-full"
         >
-          <SwiperSlide>
-            <div className="relative h-full w-full SwiperSlideBorderRadius">
-              <LazyImage
-                src={destination.image_url || ""}
-                alt={destination.title}
-                aspectRatio="aspect-auto"
-                className="h-full w-full object-cover"
-              />
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-black/40"></div>
-              {/* Back Button */}
-              <div className="absolute top-4 left-4 z-10">
-                {/* <Button
-                  variant="ghost"
-                  onClick={() => navigate('/')}
-                  className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Home
-                </Button> */}
+          {getMultipleImages().map((image, index) => (
+            <SwiperSlide key={image.id}>
+              <div className="relative h-full w-full SwiperSlideBorderRadius">
+                <LazyImage
+                  src={image.src}
+                  alt={image.alt}
+                  aspectRatio="aspect-auto"
+                  className="h-full w-full object-cover"
+                />
+                {/* Overlay */}
+                {/* <div className="absolute inset-0 bg-black/20"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
+                  <h2 className="CommonH2 text-white">{destination.title}</h2>
+                  <p className="text-white">{destination.subtitle}</p>
+                </div> */}
               </div>
-              {/* Title Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
-                <h2 className="CommonH2 text-white">{destination.title}</h2>
-                <p className="text-white">{destination.subtitle}</p>
-              </div>
-            </div>
-          </SwiperSlide>
-
-          {/* Additional slides can be added here if you have multiple images */}
-          <SwiperSlide>
-            <div className="relative h-full w-full SwiperSlideBorderRadius">
-              <LazyImage
-                src={destination.image_url || ""}
-                alt={destination.title}
-                aspectRatio="aspect-auto"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40"></div>
-              {/* <div className="absolute top-4 left-4 z-10">
-                <Button
-                  variant="ghost"
-                  onClick={() => navigate('/')}
-                  className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Home
-                </Button>
-              </div> */}
-              <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
-                <h2 className="CommonH2 text-white">{destination.title}</h2>
-                <p className="text-white">{destination.subtitle}</p>
-              </div>
-            </div>
-          </SwiperSlide>
+            </SwiperSlide>
+          ))}
         </Swiper>
 
         {/* Custom Navigation Buttons */}
@@ -332,52 +367,58 @@ const DestinationDetail = () => {
           </div>
         </div>
       </section>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-0 container">
-        {destination.best_time_to_visit && (
-          <div className="flex items-center gap-3  bg-white dark:bg-gray-800 rounded-lg shadow-sm CardStyles">
-            <Calendar className="h-6 w-6 text-brand-primary flex-shrink-0 text-orange-500" />
-            <div>
-              <p className="text-sm text-muted-foreground textStart md:textsm">
-                Best time to visit
-              </p>
-              <p className="font-medium textStart adjustFontSize">{destination.best_time_to_visit}</p>
+      <div className="features-badges-container container">
+        <div className="features-badges-grid">
+          {destination.best_time_to_visit && (
+            <div className="feature-badge">
+              <div className="feature-badge-icon">
+                <Calendar className="h-5 w-5" />
+              </div>
+              <div className="feature-badge-content">
+                <p>Best time to visit</p>
+                <p className="feature-badge-value">{destination.best_time_to_visit}</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {destination.recommended_duration && (
-          <div className="flex items-center gap-3  bg-white dark:bg-gray-800 rounded-lg shadow-sm CardStyles">
-            <Clock className="h-6 w-6 text-brand-primary flex-shrink-0 text-orange-500" />
-            <div>
-              <p className="text-sm text-muted-foreground textStart">
-                Recommended duration
-              </p>
-              <p className="font-medium textStart adjustFontSize">{destination.recommended_duration}</p>
+          {destination.recommended_duration && (
+            <div className="feature-badge">
+              <div className="feature-badge-icon">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div className="feature-badge-content">
+                <p>Recommended duration</p>
+                <p className="feature-badge-value">{destination.recommended_duration}</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {destination.timezone && (
-          <div className="flex items-center gap-3  bg-white dark:bg-gray-800 rounded-lg shadow-sm CardStyles">
-            <MapPin className="h-6 w-6 text-brand-primary flex-shrink-0 text-orange-500" />
-            <div>
-              <p className="text-sm text-muted-foreground textStart">Timezone</p>
-              <p className="font-medium textStart adjustFontSize">{destination.timezone}</p>
+          {destination.timezone && (
+            <div className="feature-badge">
+              <div className="feature-badge-icon">
+                <MapPin className="h-5 w-5" />
+              </div>
+              <div className="feature-badge-content">
+                <p>Timezone</p>
+                <p className="feature-badge-value">{destination.timezone}</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {weatherInfo && (
-          <div className="flex items-center gap-3  bg-white dark:bg-gray-800 rounded-lg shadow-sm CardStyles">
-            <Thermometer className="h-6 w-6 text-brand-primary flex-shrink-0 text-orange-500" />
-            <div>
-              <p className="text-sm text-muted-foreground textStart">Weather</p>
-              <p className="font-medium textStart adjustFontSize">
-                {weatherInfo.nov_apr?.temp} (Cool season)
-              </p>
+          {weatherInfo && (
+            <div className="feature-badge">
+              <div className="feature-badge-icon">
+                <Thermometer className="h-5 w-5" />
+              </div>
+              <div className="feature-badge-content">
+                <p>Weather</p>
+                <p className="feature-badge-value">
+                  {weatherInfo.nov_apr?.temp} (Cool season)
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <section
         className="section-wrapper section-bg-primary"

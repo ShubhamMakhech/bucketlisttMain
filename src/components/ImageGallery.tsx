@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Navigation, Pagination } from 'swiper/modules'
+import { Image } from 'antd'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
@@ -26,6 +27,7 @@ interface ImageGalleryProps {
 export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [previewVisible, setPreviewVisible] = useState(false)
 
   // Helper function to determine if media is video
   const isVideo = (media: any) => {
@@ -66,6 +68,12 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
       prev === sortedImages.length - 1 ? 0 : prev + 1
     )
   }
+
+  // Prepare images for Ant Design Image.PreviewGroup
+  const imageList = sortedImages.map((image) => ({
+    src: image.image_url,
+    alt: image.alt_text || experienceTitle,
+  }))
 
   const handlePlayButtonClick = () => {
     // Handle play button click - could open video modal or navigate to video
@@ -110,7 +118,7 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
       {/* Desktop Layout */}
       <div className="image-gallery-grid hidden md:grid" >
         {/* Main Image/Video */}
-        <div className="image-gallery-main" onClick={() => openModal(0)}>
+        <div className="image-gallery-main">
           {isVideo(mainImage) ? (
             <video
               src={mainImage.video_url || mainImage.image_url}
@@ -118,10 +126,14 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
               className="w-full h-full object-cover"
             />
           ) : (
-            <img
-              src={mainImage.image_url}
-              alt={mainImage.alt_text || `${experienceTitle} main image`}
-            />
+            <Image.PreviewGroup items={imageList}>
+              <Image
+                src={mainImage.image_url}
+                alt={mainImage.alt_text || `${experienceTitle} main image`}
+                className="w-full h-full object-cover"
+                style={{ display: 'block' }}
+              />
+            </Image.PreviewGroup>
           )}
           <div className="image-gallery-main-overlay"></div>
           {/* Show play button only for videos */}

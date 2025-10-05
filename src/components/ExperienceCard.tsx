@@ -166,7 +166,7 @@ export function ExperienceCard({
       className={`group cursor-pointer overflow-hidden border-0 transition-all duration-300 transform hover:-translate-y-2 zoom-click-animation ${isClicked ? "zoom-in-click" : ""
         } ExperienceCardMobileLayout`}
       onClick={handleClick}
-      style={{ boxShadow: "none", borderRadius: "5px" }}
+      style={{ boxShadow: "none", borderRadius: "5px", }}
     >
       <CardContent className="p-0">
         {/* Desktop Layout */}
@@ -201,7 +201,7 @@ export function ExperienceCard({
                       key={cat.id || index}
                       className="flex items-center gap-1"
                     >
-                      {/* {cat.icon && <span>{cat.icon}</span>}
+                      {cat.icon && <span>{cat.icon}</span>}
                       <div id="FlexContainerRowBetween">
                         <span className="fontSizeSm">{cat.name}</span>
                         <div className="flex items-center gap-2">
@@ -215,7 +215,7 @@ export function ExperienceCard({
                             ({reviews})
                           </span>
                         </div>
-                      </div> */}
+                      </div>
 
                       {index < Math.min(displayCategories.length, 2) - 1 && (
                         <span>•</span>
