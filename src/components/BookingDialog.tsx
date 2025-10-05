@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -136,6 +136,55 @@ export const BookingDialog = ({
     },
   });
 
+  useEffect(() => {
+    const bookingModalData = localStorage.getItem("bookingModalData");
+    if (bookingModalData) {
+      const data = JSON.parse(bookingModalData);
+
+      // Set form values individually
+      form.setValue("participant.name", data.data.participant.name);
+      form.setValue("participant.email", data.data.participant.email);
+      form.setValue(
+        "participant.phone_number",
+        data.data.participant.phone_number
+      );
+      form.setValue("participant_count", data.data.participant_count);
+      form.setValue("note_for_guide", data.data.note_for_guide || "");
+      form.setValue("terms_accepted", data.data.terms_accepted);
+      form.setValue("referral_code", data.data.referral_code || "");
+      form.setValue("coupon_code", data.data.coupon_code || "");
+      form.setValue("booking_date", new Date(data.selectedDate));
+      form.setValue("time_slot_id", data.selectedSlotId);
+
+      // Set other state values
+      setSelectedDate(new Date(data.selectedDate));
+      setSelectedSlotId(data.selectedSlotId);
+      setSelectedActivityId(data.selectedActivityId);
+      setCurrentStep(3);
+
+      // Clear localStorage
+      localStorage.removeItem("bookingModalData");
+    }
+  }, [form]);
+
+  // useEffect(() => {
+  //   const bookingModalData = localStorage.getItem('bookingModalData');
+  //   if (bookingModalData) {
+  //     const data = JSON.parse(bookingModalData);
+  //     form.reset(data.data);
+
+  //     console.log("data", data);
+  //     console.log("data.data", data.selectedDate);
+
+  //     // set selected date from local storagedata
+  //     setSelectedDate(new Date(data.selectedDate));
+  //     setSelectedSlotId(data.selectedSlotId);
+  //     setSelectedActivityId(data.selectedActivityId);
+
+  //     setCurrentStep(3)
+  //   }
+  // }, []);
+
   const participantCount = form.watch("participant_count");
 
   // Helper function to get activity price (discounted if available)
@@ -156,16 +205,19 @@ export const BookingDialog = ({
 
     if (activeCoupon && activeCoupon.discount_calculation) {
       // The discount_calculation.final_amount is per person, so multiply by participant count
-      return activeCoupon.discount_calculation.final_amount * participantCount;
+      return parseFloat(
+        (
+          activeCoupon.discount_calculation.final_amount * participantCount
+        ).toFixed(2)
+      );
     }
     // Use selected activity price (discounted if available), otherwise use experience price
     const currentPrice = selectedActivity
       ? getActivityPrice(selectedActivity)
       : experience.price;
-    return currentPrice * participantCount;
+    return parseFloat((currentPrice * participantCount).toFixed(2));
   };
 
-  console.log("experience", experience);
   const handleDateChange = (date: Date | undefined) => {
     setSelectedDate(date);
     setSelectedSlotId(undefined);
@@ -308,15 +360,51 @@ export const BookingDialog = ({
     paymentId?: string
   ) => {
     try {
-      console.log("Sending booking confirmation email...");
-
+      // console.log("Sending booking confirmation email...");
+      // console.log("data",data)
       // Get time slot details for email
       const { data: timeSlot } = await supabase
         .from("time_slots")
-        .select("start_time, end_time")
+        .select(
+          "start_time, end_time,experiences(title,vendor_id,location),activities(name)"
+        )
         .eq("id", selectedSlotId)
         .single();
-      console.log(data);
+      const { data: vendor, error: vendorError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", timeSlot?.experiences.vendor_id)
+        .single();
+      // console.log(vendor);
+      // console.log(data);
+      // console.log(vendor);
+      
+      // const whatsappBody = {
+      //   version: "2.0",
+      //   country_code: "91",
+      //   wid: "16703",
+      //   type: "text",
+      //   data: [
+      //     {
+      //       mobile: data.participant.phone_number,
+      //       bodyValues: {
+      //         "1": data.participant.name,
+      //         "2": timeSlot?.activities.name,
+      //         "3": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
+      //           timeSlot?.start_time,
+      //           "HH:mm"
+      //         ).format("hh:mm A")} - ${moment(
+      //           timeSlot?.end_time,
+      //           "HH:mm"
+      //         ).format("hh:mm A")}`,
+      //         "4": timeSlot?.experiences?.location,
+      //         "5": data?.participant_count?.toString() || "0",
+      //         "6": finalPrice.toFixed(2).toString(),
+      //         "7":"-" //TODO: add due amount
+      //       },
+      //     },
+      //   ],
+      // };
       const whatsappBody = {
         version: "2.0",
         country_code: "91",
@@ -342,7 +430,38 @@ export const BookingDialog = ({
       };
 
       const whatsappResponse = await SendWhatsappMessage(whatsappBody);
-      console.log(whatsappResponse);
+      const vendorWhatsappBody = {
+        version: "2.0",
+        country_code: "91",
+        wid: "16710",
+        type: "text",
+        data: [
+          {
+            mobile: vendor?.phone_number,
+            bodyValues: {
+              "1": data.participant.name,
+              "2": data.participant.phone_number,
+              "3": experience.title,
+              "4": timeSlot?.activities.name,
+              "5": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
+                timeSlot?.start_time,
+                "HH:mm"
+              ).format("hh:mm A")} - ${moment(
+                timeSlot?.end_time,
+                "HH:mm"
+              ).format("hh:mm A")}`,
+              "6": data?.participant_count?.toString() || "0",
+              "7": finalPrice.toFixed(2).toString(),
+            },
+          },
+        ],
+      };
+      // console.log("vendorWhatsappBody", vendorWhatsappBody);
+      const vendorWhatsappResponse = await SendWhatsappMessage(
+        vendorWhatsappBody
+      );
+      // console.log(whatsappResponse);
+
       // console.log(experience);
       // console.log(data)
 
@@ -378,7 +497,7 @@ export const BookingDialog = ({
         console.error("Email sending error:", emailResponse.error);
         throw emailResponse.error;
       } else {
-        console.log("Email sent successfully:", emailResponse.data);
+        // console.log("Email sent successfully:", emailResponse.data);
       }
     } catch (emailError) {
       console.error("Email sending failed:", emailError);
@@ -398,6 +517,20 @@ export const BookingDialog = ({
     try {
       // console.log("Creating direct booking (bypassing payment)...");
 
+      // Calculate the correct booking amount (total amount after discounts, not partial payment amount)
+      const calculatedBookingAmount = parseFloat(finalPrice.toFixed(2));
+
+      // console.log("Direct booking amount calculation:", {
+      // selectedActivity,
+      // activityPrice: selectedActivity
+      //   ? getActivityPrice(selectedActivity)
+      //   : null,
+      // experiencePrice: experience.price,
+      // participantCount: data.participant_count,
+      // calculatedBookingAmount,
+      // finalPrice,
+      // });
+
       // Create the booking
       const { data: booking, error: bookingError } = await supabase
         .from("bookings")
@@ -411,6 +544,7 @@ export const BookingDialog = ({
           terms_accepted: data.terms_accepted,
           referral_code: data?.referral_code,
           due_amount: partialPayment ? dueAmount : 0,
+          booking_amount: calculatedBookingAmount,
         })
         .select()
         .single();
@@ -420,7 +554,7 @@ export const BookingDialog = ({
         throw bookingError;
       }
 
-      console.log("Booking created successfully:", booking.id);
+      // console.log("Booking created successfully:", booking.id);
 
       // Create participants - duplicate the primary participant data for each participant
       const participantsData = Array.from(
@@ -442,7 +576,7 @@ export const BookingDialog = ({
         throw participantsError;
       }
 
-      console.log("Participants created successfully");
+      // console.log("Participants created successfully");
 
       // Send confirmation email
       await sendBookingConfirmationEmail(data, booking.id);
@@ -473,7 +607,21 @@ export const BookingDialog = ({
     if (!user || !selectedDate || !selectedSlotId) return;
 
     try {
-      console.log("Creating booking after successful payment...");
+      // console.log("Creating booking after successful payment...");
+
+      // Calculate the correct booking amount (total amount after discounts, not partial payment amount)
+      const calculatedBookingAmount = parseFloat(finalPrice.toFixed(2));
+
+      // console.log("Payment booking amount calculation:", {
+      // selectedActivity,
+      // activityPrice: selectedActivity
+      //   ? getActivityPrice(selectedActivity)
+      //   : null,
+      // experiencePrice: experience.price,
+      // participantCount: data.participant_count,
+      // calculatedBookingAmount,
+      // finalPrice,
+      // });
 
       // Create the booking
       const { data: booking, error: bookingError } = await supabase
@@ -488,6 +636,7 @@ export const BookingDialog = ({
           terms_accepted: data.terms_accepted,
           referral_code: data?.referral_code,
           due_amount: partialPayment ? dueAmount : 0,
+          booking_amount: calculatedBookingAmount,
         })
         .select()
         .single();
@@ -497,7 +646,7 @@ export const BookingDialog = ({
         throw bookingError;
       }
 
-      console.log("Booking created successfully:", booking.id);
+      // console.log("Booking created successfully:", booking.id);
 
       // Create participants - duplicate the primary participant data for each participant
       const participantsData = Array.from(
@@ -519,7 +668,7 @@ export const BookingDialog = ({
         throw participantsError;
       }
 
-      console.log("Participants created successfully");
+      // console.log("Participants created successfully");
 
       // Send confirmation email
       await sendBookingConfirmationEmail(data, booking.id, paymentId);
@@ -543,10 +692,27 @@ export const BookingDialog = ({
       });
     }
   };
-  console.log("experiencessssss", experience);
+  // console.log("experiencessssss", experience);
   const onSubmit = async (data: BookingFormData) => {
+    // console.log("Final price (total amount after discounts):", finalPrice);
+    // console.log("Upfront amount (what user pays now):", upfrontAmount);
+    // console.log("Due amount (what user pays on-site):", dueAmount);
     if (!user) {
+      // saving data in local storage
+
+      const bookingModalData = {
+        data: data,
+        selectedDate: selectedDate,
+        selectedSlotId: selectedSlotId,
+        selectedActivityId: selectedActivityId,
+      };
+
+      localStorage.setItem(
+        "bookingModalData",
+        JSON.stringify(bookingModalData)
+      );
       setIsAuthModalOpen(true);
+
       return;
     }
 
@@ -561,6 +727,8 @@ export const BookingDialog = ({
 
     setIsSubmitting(true);
 
+    // console.log("We are here");
+
     // If bypass payment is enabled, create booking directly
     if (bypassPayment) {
       await createDirectBooking(data);
@@ -570,10 +738,10 @@ export const BookingDialog = ({
       await createDirectBooking(data);
       return;
     }
-    console.log("Starting booking process...");
+    // console.log("Starting booking process...");
     // console.log("data", upfrontAmount);
     try {
-      console.log("Creating Razorpay order...");
+      // console.log("Creating Razorpay order...");
       const orderPayload = {
         amount: upfrontAmount,
         currency: selectedActivity?.currency || experience.currency,
@@ -589,16 +757,17 @@ export const BookingDialog = ({
           coupon_code: data?.coupon_code,
           partial_payment: partialPayment,
           due_amount: partialPayment ? dueAmount : 0,
+          booking_amount: finalPrice,
         },
       };
-      console.log("Order payload:", orderPayload);
+      // console.log("Order payload:", orderPayload);
 
       const { data: orderData, error: orderError } =
         await supabase.functions.invoke("create-razorpay-order", {
           body: orderPayload,
         });
 
-      console.log("Supabase function response:", { orderData, orderError });
+      // console.log("Supabase function response:", { orderData, orderError });
 
       if (orderError) {
         console.error("Supabase function error:", orderError);
@@ -611,7 +780,7 @@ export const BookingDialog = ({
       }
 
       const { order } = orderData;
-      console.log("Razorpay order created successfully:", order);
+      // console.log("Razorpay order created successfully:", order);
 
       // Open Razorpay payment with the live key
       await openRazorpay({
@@ -622,7 +791,7 @@ export const BookingDialog = ({
         description: `Book ${experience.title}`,
         order_id: order.id,
         handler: async (response: any) => {
-          console.log("Payment successful:", response);
+          // console.log("Payment successful:", response);
           await createBookingAfterPayment(data, response.razorpay_payment_id);
         },
         prefill: {
@@ -635,7 +804,7 @@ export const BookingDialog = ({
         },
         modal: {
           ondismiss: () => {
-            console.log("Payment modal dismissed by user");
+            // console.log("Payment modal dismissed by user");
             setIsSubmitting(false);
             toast({
               title: "Payment cancelled",
@@ -682,9 +851,11 @@ export const BookingDialog = ({
 
   // Calculate payment amounts for partial payment
   const upfrontAmount = partialPayment
-    ? Math.round(finalPrice * 0.1)
+    ? parseFloat((finalPrice * 0.1).toFixed(2))
     : finalPrice;
-  const dueAmount = partialPayment ? finalPrice - upfrontAmount : 0;
+  const dueAmount = partialPayment
+    ? parseFloat((finalPrice - upfrontAmount).toFixed(2))
+    : 0;
 
   // Get time slots for summary display
   const { data: timeSlots } = useQuery({
@@ -720,7 +891,9 @@ export const BookingDialog = ({
   };
 
   const totalActivityPrice = selectedActivity
-    ? getActivityPrice(selectedActivity) * participantCount
+    ? parseFloat(
+        (getActivityPrice(selectedActivity) * participantCount).toFixed(2)
+      )
     : 0;
 
   return (

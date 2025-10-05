@@ -45,6 +45,7 @@ export const UserBookings = () => {
     queryKey: ["user-bookings", user?.id],
     queryFn: async () => {
       if (!user) return [];
+      // console.log("user", user);
       if (user.user_metadata.role === "vendor") {
         const { data, error } = await supabase
           .from("bookings")
@@ -124,6 +125,80 @@ export const UserBookings = () => {
     },
     enabled: !!user,
   });
+
+  // Fetch profiles for all unique user_ids from bookings
+  const uniqueUserIds = React.useMemo(() => {
+    const userIds = bookings.map((booking) => booking.user_id).filter(Boolean);
+    // console.log("All bookings:", bookings);
+    // console.log(
+      // "All user_ids from bookings:",
+      // bookings.map((b) => b.user_id)
+    // );
+    // console.log("Filtered user_ids:", userIds);
+    // console.log("Unique user_ids:", [...new Set(userIds)]);
+
+    // TEMPORARY: Add your own user ID for testing if no bookings exist
+    const uniqueIds = [...new Set(userIds)];
+    if (uniqueIds.length === 0 && user?.id) {
+      // console.log(
+        // "No user IDs from bookings, adding current user ID for testing:",
+        // user.id
+      // );
+      return [user.id];
+    }
+
+    return uniqueIds;
+  }, [bookings, user]);
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["user-profiles", uniqueUserIds],
+    queryFn: async () => {
+      // console.log("Profile query triggered with uniqueUserIds:", uniqueUserIds);
+      if (uniqueUserIds.length === 0) {
+        // console.log("No unique user IDs, returning empty array");
+        return [];
+      }
+      // console.log("uniqueUserIds", uniqueUserIds);
+      // console.log("Current user:", user);
+      // console.log("User role:", user?.user_metadata?.role);
+
+      // Try to fetch profiles one by one to debug RLS issues
+      const profilePromises = uniqueUserIds.map(async (userId) => {
+        try {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", userId);
+
+          if (error) {
+            // console.log(`Error fetching profile for user ${userId}:`, error);
+            return null;
+          }
+
+          // Return the first profile if found, otherwise null
+          return data && data.length > 0 ? data[0] : null;
+        } catch (err) {
+          // console.log(`Exception fetching profile for user ${userId}:`, err);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(profilePromises);
+      const validProfiles = results.filter(Boolean);
+
+      // console.log("Fetched profiles:", validProfiles);
+      return validProfiles;
+    },
+    enabled: uniqueUserIds.length > 0,
+  });
+
+  // Create a map of user_id to profile for easy lookup
+  const profileMap = React.useMemo(() => {
+    return profiles.reduce((acc, profile) => {
+      acc[profile.id] = profile;
+      return acc;
+    }, {} as Record<string, any>);
+  }, [profiles]);
 
   // Filter today's bookings
   const filteredBookings = React.useMemo(() => {
@@ -213,17 +288,65 @@ export const UserBookings = () => {
         ),
       },
       {
-        accessorKey: "booking_participants",
-        header: "Participants",
-        cell: ({ row }) =>
-          row.original?.booking_participants?.[0]?.name || "N/A",
+        accessorKey: "profiles.first_name",
+        header: "Customer Name",
+        cell: ({ row }) => {
+          const profile = profileMap[row.original.user_id];
+          if (profile) {
+            return `${profile.first_name} ${profile.last_name}`.trim();
+          }
+          return row.original?.booking_participants?.[0]?.name || "N/A";
+        },
       },
       {
-        accessorKey: "booking_participants_number",
-        header: "Contact Number",
-        cell: ({ row }) =>
-          row.original?.booking_participants?.[0]?.phone_number || "N/A",
+        accessorKey: "profiles.email",
+        header: "Customer Email",
+        cell: ({ row }) => {
+          const profile = profileMap[row.original.user_id];
+          return (
+            profile?.email ||
+            row.original?.booking_participants?.[0]?.email ||
+            "N/A"
+          );
+        },
       },
+      {
+        accessorKey: "profiles.phone_number",
+        header: "Contact Number",
+        cell: ({ row }) => {
+          const profile = profileMap[row.original.user_id];
+          return (
+            profile?.phone_number ||
+            row.original?.booking_participants?.[0]?.phone_number ||
+            "N/A"
+          );
+        },
+      },
+      // {
+      //   accessorKey: "profiles.profile_picture_url",
+      //   header: "Profile Picture",
+      //   cell: ({ row }) => {
+      //     const profile = profileMap[row.original.user_id];
+      //     if (profile?.profile_picture_url) {
+      //       return (
+      //         <img
+      //           src={profile.profile_picture_url}
+      //           alt={`${profile.first_name} ${profile.last_name}`}
+      //           className="w-8 h-8 rounded-full object-cover"
+      //         />
+      //       );
+      //     }
+      //     return (
+      //       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+      //         {profile
+      //           ? `${profile.first_name?.[0] || ""}${
+      //               profile.last_name?.[0] || ""
+      //             }`
+      //           : "N/A"}
+      //       </div>
+      //     );
+      //   },
+      // },
       {
         accessorKey: "total_participants",
         header: "No. of Participants",
@@ -233,6 +356,7 @@ export const UserBookings = () => {
         accessorKey: "price",
         header: "Total Amount",
         cell: ({ row }) => {
+          //  console.log("row.original", row.original);
           const activity = row.original.time_slots?.activities;
           const price =
             activity?.price || row.original?.experiences?.price || 0;
@@ -241,15 +365,23 @@ export const UserBookings = () => {
           const totalAmount = price * row.original?.total_participants;
           const dueAmount = row.original?.due_amount || 0;
           const paidAmount = totalAmount - dueAmount;
+          const bookingAmount = row.original?.booking_amount || "N/A";
 
           return (
             <div>
               <div className="text-lg font-bold text-orange-500 mb-1">
-                {currency} {totalAmount}
+                {bookingAmount == "N/A"
+                  ? "N/A"
+                  : currency + " " + bookingAmount}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {row.original?.total_participants} × {currency} {price}
-              </div>
+              {bookingAmount != "N/A" && (
+                <div className="text-sm text-muted-foreground">
+                  {row.original?.total_participants} × {currency}{" "}
+                  {bookingAmount == "N/A"
+                    ? 0
+                    : bookingAmount / row.original?.total_participants}
+                </div>
+              )}
             </div>
           );
         },
@@ -301,7 +433,7 @@ export const UserBookings = () => {
         cell: ({ row }) => row.original.note_for_guide || "N/A",
       },
     ],
-    [navigate]
+    [navigate, profileMap]
   );
 
   const table = useReactTable({

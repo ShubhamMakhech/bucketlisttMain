@@ -1,65 +1,69 @@
-import React from 'react'
-import { Toaster } from "@/components/ui/toaster"
-import { Toaster as Sonner } from "@/components/ui/sonner"
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query"
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
-import { supabase } from "@/integrations/supabase/client"
-import { AuthProvider } from "@/contexts/AuthContext"
-import { ThemeProvider } from "@/components/ThemeProvider"
-import { PageTransition } from "@/components/PageTransition"
-import { AIChatbot } from "@/components/AIChatbot"
-import { Layout } from "@/components/Layout"
-import Index from "./pages/Index"
-import Auth from "./pages/Auth"
-import EmailConfirmation from "./pages/EmailConfirmation"
-import Experiences from "./pages/Experiences"
-import ExperienceDetail from "./pages/ExperienceDetail"
-import Destinations from "./pages/Destinations"
-import DestinationDetail from "./pages/DestinationDetail"
-import SearchResults from "./pages/SearchResults"
-import Favorites from "./pages/Favorites"
-import Profile from "./pages/Profile"
-import Bookings from "./pages/Bookings"
-import CreateExperience from "./pages/CreateExperience"
-import EditExperience from "./pages/EditExperience"
-import ContactUs from "./pages/ContactUs"
-import OurStory from "./pages/OurStory"
-import TermsAndConditions from "./pages/TermsAndConditions"
-import NotFound from "./pages/NotFound"
-import ComingSoon from "./pages/ComingSoon"
-import Partner from "./pages/Partner"
-import VendorExperiences from "./pages/VendorExperiences"
-import "./App.css"
-import { MobileFloatingButton } from './components/MobileFloatingButton'
-import Blogs from './pages/Blogs'
-import BlogDetail from './pages/BlogDetail'
+import React, { useEffect } from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { PageTransition } from "@/components/PageTransition";
+import { AIChatbot } from "@/components/AIChatbot";
+import { Layout } from "@/components/Layout";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import EmailConfirmation from "./pages/EmailConfirmation";
+import Experiences from "./pages/Experiences";
+import ExperienceDetail from "./pages/ExperienceDetail";
+import Destinations from "./pages/Destinations";
+import DestinationDetail from "./pages/DestinationDetail";
+import SearchResults from "./pages/SearchResults";
+import Favorites from "./pages/Favorites";
+import Profile from "./pages/Profile";
+import Bookings from "./pages/Bookings";
+import CreateExperience from "./pages/CreateExperience";
+import EditExperience from "./pages/EditExperience";
+import ContactUs from "./pages/ContactUs";
+import OurStory from "./pages/OurStory";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import NotFound from "./pages/NotFound";
+import ComingSoon from "./pages/ComingSoon";
+import Partner from "./pages/Partner";
+import VendorExperiences from "./pages/VendorExperiences";
+import "./App.css";
+import { MobileFloatingButton } from "./components/MobileFloatingButton";
+import Blogs from "./pages/Blogs";
+import BlogDetail from "./pages/BlogDetail";
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 // Component to conditionally render AIChatbot only on homepage
 const ConditionalAIChatbot = () => {
-  const location = useLocation()
-  const isHomepage = location.pathname === '/'
+  const location = useLocation();
+  const isHomepage = location.pathname === "/";
 
   if (!isHomepage) {
-    return null
+    return null;
   }
 
-  return <AIChatbot />
-}
+  return <AIChatbot />;
+};
 
 // Component to conditionally render MobileFloatingButton based on route
 const ConditionalMobileButton = () => {
-  const location = useLocation()
-  const isExperienceDetailRoute = location.pathname.startsWith('/experience/')
+  const location = useLocation();
+  const isExperienceDetailRoute = location.pathname.startsWith("/experience/");
 
   if (!isExperienceDetailRoute) {
-    return null
+    return null;
   }
 
   // Extract experience ID from URL
-  const experienceId = location.pathname.split('/experience/')[1]
-  
+  const experienceId = location.pathname.split("/experience/")[1];
+
   // Get experience data using React Query
   const { data: experience } = useQuery({
     queryKey: ["experience", experienceId],
@@ -99,7 +103,7 @@ const ConditionalMobileButton = () => {
 
   // Don't render if no experience data
   if (!experience) {
-    return null
+    return null;
   }
 
   return (
@@ -111,13 +115,34 @@ const ConditionalMobileButton = () => {
       discountedPrice={discountedPrice}
       onBookingClick={() => {
         // Dispatch custom event to open booking dialog
-        window.dispatchEvent(new CustomEvent('openBookingDialog'))
+        window.dispatchEvent(new CustomEvent("openBookingDialog"));
       }}
     />
-  )
-}
+  );
+};
 
 const App: React.FC = () => {
+  // Function to check if the user is loggedin via google whenever LOGIN MODAL OEPENS WE ARE STORING A KEY LIKE LOGGED IN SO AT THAT TIME WE GET TO KNOW FROM WHICH PAGE WE ARE LOGGED IN BECAUSE WHEN WE USE GOOGLE REDIRECT IT WILL MAKE US REDIRECT TO STATIC ANY PATH AFTER THAT WE NEED TO REDIRECT TO THE PAGE FROM WHERE WE ARE LOGGED IN
+
+  const checkLoggedInPathVsCurerntPath = () => {
+    console.log("checking logged in path vs current path");
+    console.log("loggedInPath", localStorage.getItem("loggedInPath"));
+    console.log("currentPath", window.location.pathname);
+
+    const loggedInPath = localStorage.getItem("loggedInPath");
+    const currentPath = window.location.pathname;
+    if (loggedInPath && currentPath !== loggedInPath) {
+      window.location.href = loggedInPath;
+      localStorage.removeItem("loggedInPath");
+    } else {
+      localStorage.removeItem("loggedInPath");
+    }
+  };
+
+  useEffect(() => {
+    checkLoggedInPathVsCurerntPath();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="bucketlistt-ui-theme-v2">
@@ -132,23 +157,41 @@ const App: React.FC = () => {
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/blogs" element={<Blogs />} />
                   <Route path="/blogs/:id" element={<BlogDetail />} />
-                  <Route path="/email-confirmation" element={<EmailConfirmation />} />
+                  <Route
+                    path="/email-confirmation"
+                    element={<EmailConfirmation />}
+                  />
                   <Route path="/experiences" element={<Experiences />} />
                   <Route path="/destinations" element={<Destinations />} />
                   <Route path="/favorites" element={<Favorites />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/bookings" element={<Bookings />} />
-                  <Route path="/create-experience" element={<CreateExperience />} />
-                  <Route path="/edit-experience/:id" element={<EditExperience />} />
+                  <Route
+                    path="/create-experience"
+                    element={<CreateExperience />}
+                  />
+                  <Route
+                    path="/edit-experience/:id"
+                    element={<EditExperience />}
+                  />
                   <Route path="/contact" element={<ContactUs />} />
                   <Route path="/our-story" element={<OurStory />} />
                   <Route path="/terms" element={<TermsAndConditions />} />
                   <Route path="/search" element={<SearchResults />} />
                   <Route path="/coming-soon" element={<ComingSoon />} />
                   <Route path="/partner" element={<Partner />} />
-                  <Route path="/vendor/experiences" element={<VendorExperiences />} />
-                  <Route path="/experience/:id" element={<ExperienceDetail />} />
-                  <Route path="/destination/:id" element={<DestinationDetail />} />
+                  <Route
+                    path="/vendor/experiences"
+                    element={<VendorExperiences />}
+                  />
+                  <Route
+                    path="/experience/:id"
+                    element={<ExperienceDetail />}
+                  />
+                  <Route
+                    path="/destination/:id"
+                    element={<DestinationDetail />}
+                  />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </PageTransition>
@@ -162,7 +205,7 @@ const App: React.FC = () => {
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
-  )
-}
+  );
+};
 
-export default App
+export default App;

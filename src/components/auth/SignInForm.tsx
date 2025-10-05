@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,7 @@ export function SignInForm({
     }
   };
   const handleGoogleLogin = async () => {
+    localStorage.setItem("loggedInPath", window.location.pathname);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -98,10 +99,10 @@ export function SignInForm({
               onClick={() => {
                 // TODO: Implement Google sign-in
                 handleGoogleLogin();
-                toast({
-                  title: "Google Sign-in",
-                  description: "Google authentication coming soon!",
-                });
+                // toast({
+                //   title: "Google Sign-in",
+                //   description: "Google authentication coming soon!",
+                // });
               }}
             >
               <img

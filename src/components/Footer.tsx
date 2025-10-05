@@ -173,7 +173,7 @@ export function Footer() {
                 <Button
                   variant="link"
                   className="p-0 h-auto text-sm text-muted-foreground hover:text-orange-500"
-                  onClick={() => navigate("/coming-soon")}
+                  onClick={() => navigate("/blogs")}
                 >
                   Travel blog
                 </Button>
