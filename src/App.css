@@ -1651,6 +1651,10 @@ h6 {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+
+  #ExperienceCardStyles .ExperienceCardMobileImage{
+    width: 100%;
+  }
   .features-badges-grid {
     grid-template-columns: 1fr 1fr;
     gap: 10px;

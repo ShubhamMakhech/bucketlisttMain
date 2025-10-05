@@ -366,7 +366,7 @@ const Index = () => {
                     {experiences?.map((experience) => (
                       <SwiperSlide key={experience.id}>
                         {/* console.log(experience.currency) */}
-                        <div className="card-hover" style={{height:"100%"}}>
+                        <div className="card-hover" id="ExperienceCardStyles" style={{height:"100%"}}>
                           <ExperienceCard
                             id={experience.id}
                             image={getExperienceImage(experience)}
