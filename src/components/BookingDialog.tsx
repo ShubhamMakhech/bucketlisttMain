@@ -361,14 +361,50 @@ export const BookingDialog = ({
   ) => {
     try {
       // console.log("Sending booking confirmation email...");
-
+      console.log("data",data)
       // Get time slot details for email
       const { data: timeSlot } = await supabase
         .from("time_slots")
-        .select("start_time, end_time")
+        .select(
+          "start_time, end_time,experiences(title,vendor_id,location),activities(name)"
+        )
         .eq("id", selectedSlotId)
         .single();
+      const { data: vendor, error: vendorError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", timeSlot?.experiences.vendor_id)
+        .single();
+      // console.log(vendor);
       // console.log(data);
+      // console.log(vendor);
+      
+      // const whatsappBody = {
+      //   version: "2.0",
+      //   country_code: "91",
+      //   wid: "16703",
+      //   type: "text",
+      //   data: [
+      //     {
+      //       mobile: data.participant.phone_number,
+      //       bodyValues: {
+      //         "1": data.participant.name,
+      //         "2": timeSlot?.activities.name,
+      //         "3": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
+      //           timeSlot?.start_time,
+      //           "HH:mm"
+      //         ).format("hh:mm A")} - ${moment(
+      //           timeSlot?.end_time,
+      //           "HH:mm"
+      //         ).format("hh:mm A")}`,
+      //         "4": timeSlot?.experiences?.location,
+      //         "5": data?.participant_count?.toString() || "0",
+      //         "6": finalPrice.toFixed(2).toString(),
+      //         "7":"-" //TODO: add due amount
+      //       },
+      //     },
+      //   ],
+      // };
       const whatsappBody = {
         version: "2.0",
         country_code: "91",
@@ -394,7 +430,38 @@ export const BookingDialog = ({
       };
 
       const whatsappResponse = await SendWhatsappMessage(whatsappBody);
+      const vendorWhatsappBody = {
+        version: "2.0",
+        country_code: "91",
+        wid: "16710",
+        type: "text",
+        data: [
+          {
+            mobile: vendor?.phone_number,
+            bodyValues: {
+              "1": data.participant.name,
+              "2": data.participant.phone_number,
+              "3": experience.title,
+              "4": timeSlot?.activities.name,
+              "5": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
+                timeSlot?.start_time,
+                "HH:mm"
+              ).format("hh:mm A")} - ${moment(
+                timeSlot?.end_time,
+                "HH:mm"
+              ).format("hh:mm A")}`,
+              "6": data?.participant_count?.toString() || "0",
+              "7": finalPrice.toFixed(2).toString(),
+            },
+          },
+        ],
+      };
+      console.log("vendorWhatsappBody", vendorWhatsappBody);
+      const vendorWhatsappResponse = await SendWhatsappMessage(
+        vendorWhatsappBody
+      );
       // console.log(whatsappResponse);
+
       // console.log(experience);
       // console.log(data)
 
