@@ -31,6 +31,7 @@ const staticDestinationImages: Record<string, string[]> = {
     "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
   ],
   "Rishikesh": [
+    "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/RishikeshVideo.mp4",
     "https://images.unsplash.com/photo-1720819029162-8500607ae232?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1650341278999-d1b5142cfe30?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     // "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
@@ -107,32 +108,40 @@ const DestinationDetail = () => {
     enabled: !!id,
   });
 
-  // Get multiple images for swiper - combines database image with static images
+  // Get multiple images/videos for swiper - combines database image with static media
   const getMultipleImages = () => {
-    const images = [];
+    const media = [];
 
     // Add main destination image first
     if (destination?.image_url) {
-      images.push({
+      media.push({
         src: destination.image_url,
         alt: destination.title,
         id: 'main',
+        type: 'image',
       });
     }
 
-    // Add all static images for this destination
-    const staticImages = staticDestinationImages[destination?.title || ''];
-    if (staticImages && staticImages.length > 0) {
-      staticImages.forEach((imageUrl, index) => {
-        images.push({
-          src: imageUrl,
-          alt: `${destination?.title} - View ${index + 1}`,
+    // Add all static images/videos for this destination
+    const staticMedia = staticDestinationImages[destination?.title || ''];
+    if (staticMedia && staticMedia.length > 0) {
+      staticMedia.forEach((mediaUrl, index) => {
+        const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.ogg') || mediaUrl.includes('.avi') || mediaUrl.includes('.mov');
+        media.push({
+          src: mediaUrl,
+          alt: `${destination?.title} - ${isVideo ? 'Video' : 'View'} ${index + 1}`,
           id: `static-${index}`,
+          type: isVideo ? 'video' : 'image',
         });
       });
     }
 
-    return images;
+    return media;
+  };
+
+  // Helper function to check if media is video
+  const isVideo = (media: any) => {
+    return media.type === 'video';
   };
 
   const { data: categories } = useQuery({
@@ -287,7 +296,7 @@ const DestinationDetail = () => {
           modules={[Autoplay, Navigation, Pagination]}
           spaceBetween={20}
           autoplay={{
-            delay: 4000,
+            delay: 2000,
             disableOnInteraction: false,
           }}
           pagination={{
@@ -297,16 +306,59 @@ const DestinationDetail = () => {
           }}
           loop={getMultipleImages().length > 1}
           className="h-full w-full"
+          onSlideChange={(swiper) => {
+            // Reset all videos to beginning
+            const allVideos = swiper.el.querySelectorAll('video');
+            allVideos.forEach((video: HTMLVideoElement) => {
+              video.currentTime = 0;
+              video.pause();
+            });
+
+            // Check if current slide has a video
+            const currentSlide = swiper.slides[swiper.activeIndex];
+            const video = currentSlide?.querySelector('video') as HTMLVideoElement;
+            if (video) {
+              // Stop autoplay and play video
+              swiper.autoplay.stop();
+              video.currentTime = 0;
+              video.play().catch(console.error);
+            } else {
+              // Resume autoplay for images
+              swiper.autoplay.start();
+            }
+          }}
         >
-          {getMultipleImages().map((image, index) => (
-            <SwiperSlide key={image.id}>
+          {getMultipleImages().map((media, index) => (
+            <SwiperSlide key={media.id}>
               <div className="relative h-full w-full SwiperSlideBorderRadius">
-                <LazyImage
-                  src={image.src}
-                  alt={image.alt}
-                  aspectRatio="aspect-auto"
-                  className="h-full w-full object-cover"
-                />
+                {isVideo(media) ? (
+                  <video
+                    src={media.src}
+                    className="h-full w-full object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                    onEnded={(e) => {
+                      // Move to next slide when video ends
+                      const swiperElement = e.currentTarget.closest('.swiper') as any;
+                      const swiper = swiperElement?.swiper;
+                      if (swiper) {
+                        swiper.slideNext();
+                        // Resume autoplay after video ends
+                        setTimeout(() => {
+                          swiper.autoplay.start();
+                        }, 100);
+                      }
+                    }}
+                  />
+                ) : (
+                  <LazyImage
+                    src={media.src}
+                    alt={media.alt}
+                    aspectRatio="aspect-auto"
+                    className="h-full w-full object-cover"
+                  />
+                )}
                 {/* Overlay */}
                 {/* <div className="absolute inset-0 bg-black/20"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
