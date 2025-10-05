@@ -65,7 +65,7 @@ export function SignInForm({
         redirectTo: "https://bucketlistt.vercel.app/",
       },
     });
-    console.log(data);
+    console.log("data", data);
     if (error) console.error(error.message);
   };
   return (

@@ -132,9 +132,11 @@ const App: React.FC = () => {
     const loggedInPath = localStorage.getItem("loggedInPath");
     const currentPath = window.location.pathname;
     if (loggedInPath && currentPath !== loggedInPath) {
+      console.log("redirecting to logged in path");
       window.location.href = loggedInPath;
       localStorage.removeItem("loggedInPath");
     } else {
+      console.log("removing logged in path");
       localStorage.removeItem("loggedInPath");
     }
   };
