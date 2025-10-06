@@ -59,10 +59,11 @@ export function SignInForm({
   };
   const handleGoogleLogin = async () => {
     localStorage.setItem("loggedInPath", window.location.pathname);
+    const redirectTo = `${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash}`;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "https://bucketlistt.vercel.app/",
+        redirectTo,
       },
     });
     console.log("data", data);
