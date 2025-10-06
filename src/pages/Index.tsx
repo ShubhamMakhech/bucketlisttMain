@@ -121,7 +121,7 @@ const Index = () => {
       },
     ],
   };
-
+  const hideDestinations = ["Matheran", "Matheran", "Saputara", "Mysore"];
   return (
     <div className="min-h-screen bg-background">
       <SEO
@@ -265,21 +265,27 @@ const Index = () => {
                     }}
                     className="mySwiper"
                   >
-                    {destinations?.slice(0, 8).map((destination) => (
-                      <SwiperSlide key={destination.id}>
-                        <div
-                          className="card-hover"
-                          id="DestinationsSwiperCardStyles"
-                        >
-                          <DestinationCard
-                            id={destination.id}
-                            image={destination.image_url || ""}
-                            title={destination.title}
-                            subtitle={destination.subtitle || ""}
-                          />
-                        </div>
-                      </SwiperSlide>
-                    ))}
+                    {destinations
+                      ?.slice(0, 8)
+                      .filter(
+                        (destination) =>
+                          !hideDestinations.includes(destination.title)
+                      )
+                      .map((destination) => (
+                        <SwiperSlide key={destination.id}>
+                          <div
+                            className="card-hover"
+                            id="DestinationsSwiperCardStyles"
+                          >
+                            <DestinationCard
+                              id={destination.id}
+                              image={destination.image_url || ""}
+                              title={destination.title}
+                              subtitle={destination.subtitle || ""}
+                            />
+                          </div>
+                        </SwiperSlide>
+                      ))}
                   </Swiper>
                 </div>
 
@@ -366,7 +372,11 @@ const Index = () => {
                     {experiences?.map((experience) => (
                       <SwiperSlide key={experience.id}>
                         {/* console.log(experience.currency) */}
-                        <div className="card-hover" id="ExperienceCardStyles" style={{height:"100%"}}>
+                        <div
+                          className="card-hover"
+                          id="ExperienceCardStyles"
+                          style={{ height: "100%" }}
+                        >
                           <ExperienceCard
                             id={experience.id}
                             image={getExperienceImage(experience)}
@@ -587,12 +597,12 @@ const Index = () => {
                     </div>
                     <br />
                     <div className="IndianFlagStyles">
-                    <img
-                      src="/indian_flag.gif"
-                      alt="Indian Flag"
-                      className="mx-auto w-32 md:w-48 h-auto rounded-lg"
-                      id="IndianFlagStyles"
-                    />
+                      <img
+                        src="/indian_flag.gif"
+                        alt="Indian Flag"
+                        className="mx-auto w-32 md:w-48 h-auto rounded-lg"
+                        id="IndianFlagStyles"
+                      />
                     </div>
                   </BidirectionalAnimatedSection>
                 </div>
