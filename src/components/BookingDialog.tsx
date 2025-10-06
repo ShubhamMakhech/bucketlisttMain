@@ -1591,11 +1591,12 @@ export const BookingDialog = ({
                               : appliedCoupon;
 
                           if (partialPayment) {
+                        
                             return (
                               <div>
                                 <div className="text-lg text-muted-foreground line-through">
                                   {selectedActivity?.currency}{" "}
-                                  {totalActivityPrice}
+                                  {selectedActivity.price * participantCount}
                                 </div>
                                 <div className="text-2xl font-bold text-green-600">
                                   {selectedActivity?.currency} {finalPrice}
@@ -1628,7 +1629,7 @@ export const BookingDialog = ({
                               <div>
                                 <div className="text-lg text-muted-foreground line-through">
                                   {selectedActivity?.currency}{" "}
-                                  {totalActivityPrice}
+                                  {selectedActivity.price * participantCount}
                                 </div>
                                 <div className="text-2xl font-bold text-green-600">
                                   {selectedActivity?.currency} {finalPrice}
