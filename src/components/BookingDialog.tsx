@@ -113,6 +113,7 @@ interface BookingDialogProps {
       savings_percentage: number;
     };
   } | null;
+  setIsBookingDialogOpen: (isOpen: boolean) => void;
 }
 
 export const BookingDialog = ({
@@ -121,6 +122,7 @@ export const BookingDialog = ({
   experience,
   onBookingSuccess,
   appliedCoupon,
+  setIsBookingDialogOpen,
 }: BookingDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -184,6 +186,7 @@ export const BookingDialog = ({
 
       // Clear localStorage
       localStorage.removeItem("bookingModalData");
+      setIsBookingDialogOpen(true);
     }
   }, [form]);
 

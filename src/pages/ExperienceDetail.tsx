@@ -816,6 +816,7 @@ const ExperienceDetail = () => {
           }}
           appliedCoupon={appliedCoupon}
           onBookingSuccess={handleBookingSuccess}
+          setIsBookingDialogOpen={setIsBookingDialogOpen}
         />
 
         {/* Success Animation */}
