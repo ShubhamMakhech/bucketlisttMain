@@ -37,6 +37,7 @@ import "./App.css";
 import { MobileFloatingButton } from "./components/MobileFloatingButton";
 import Blogs from "./pages/Blogs";
 import BlogDetail from "./pages/BlogDetail";
+import QRCodeRedirect from "./pages/QRCodeRedirect";
 
 const queryClient = new QueryClient();
 
@@ -159,6 +160,7 @@ const App: React.FC = () => {
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/blogs" element={<Blogs />} />
                   <Route path="/blogs/:id" element={<BlogDetail />} />
+                  <Route path="/qrcode" element={<QRCodeRedirect />} />
                   <Route
                     path="/email-confirmation"
                     element={<EmailConfirmation />}
