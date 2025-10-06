@@ -377,7 +377,7 @@ export const BookingDialog = ({
   const sendBookingConfirmationEmail = async (
     data: BookingFormData,
     bookingId: string,
-    paymentId?: string
+    dueAmount?: string
   ) => {
     try {
       // console.log("Sending booking confirmation email...");
@@ -395,47 +395,22 @@ export const BookingDialog = ({
         .select("*")
         .eq("id", timeSlot?.experiences.vendor_id)
         .single();
+
       // console.log(vendor);
       // console.log(data);
       // console.log(vendor);
-      
-      // const whatsappBody = {
-      //   version: "2.0",
-      //   country_code: "91",
-      //   wid: "16703",
-      //   type: "text",
-      //   data: [
-      //     {
-      //       mobile: data.participant.phone_number,
-      //       bodyValues: {
-      //         "1": data.participant.name,
-      //         "2": timeSlot?.activities.name,
-      //         "3": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
-      //           timeSlot?.start_time,
-      //           "HH:mm"
-      //         ).format("hh:mm A")} - ${moment(
-      //           timeSlot?.end_time,
-      //           "HH:mm"
-      //         ).format("hh:mm A")}`,
-      //         "4": timeSlot?.experiences?.location,
-      //         "5": data?.participant_count?.toString() || "0",
-      //         "6": finalPrice.toFixed(2).toString(),
-      //         "7":"-" //TODO: add due amount
-      //       },
-      //     },
-      //   ],
-      // };
+
       const whatsappBody = {
         version: "2.0",
         country_code: "91",
-        wid: "15520",
+        wid: "16703",
         type: "text",
         data: [
           {
             mobile: data.participant.phone_number,
             bodyValues: {
               "1": data.participant.name,
-              "2": experience.title,
+              "2": timeSlot?.activities.name,
               "3": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
                 timeSlot?.start_time,
                 "HH:mm"
@@ -443,11 +418,37 @@ export const BookingDialog = ({
                 timeSlot?.end_time,
                 "HH:mm"
               ).format("hh:mm A")}`,
-              "4": "Experience Location",
+              "4": timeSlot?.experiences?.location,
+              "5": data?.participant_count?.toString() || "0",
+              "6": finalPrice.toFixed(2).toString(),
+              "7": dueAmount || "0",
             },
           },
         ],
       };
+      // const whatsappBody = {
+      //   version: "2.0",
+      //   country_code: "91",
+      //   wid: "15520",
+      //   type: "text",
+      //   data: [
+      //     {
+      //       mobile: data.participant.phone_number,
+      //       bodyValues: {
+      //         "1": data.participant.name,
+      //         "2": experience.title,
+      //         "3": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
+      //           timeSlot?.start_time,
+      //           "HH:mm"
+      //         ).format("hh:mm A")} - ${moment(
+      //           timeSlot?.end_time,
+      //           "HH:mm"
+      //         ).format("hh:mm A")}`,
+      //         "4": "Experience Location",
+      //       },
+      //     },
+      //   ],
+      // };
 
       const whatsappResponse = await SendWhatsappMessage(whatsappBody);
       const vendorWhatsappBody = {
@@ -471,7 +472,7 @@ export const BookingDialog = ({
                 "HH:mm"
               ).format("hh:mm A")}`,
               "6": data?.participant_count?.toString() || "0",
-              "7": finalPrice.toFixed(2).toString(),
+              "7": dueAmount || "0",
             },
           },
         ],
@@ -480,6 +481,7 @@ export const BookingDialog = ({
       const vendorWhatsappResponse = await SendWhatsappMessage(
         vendorWhatsappBody
       );
+      console.log("vendorWhatsappResponse", vendorWhatsappResponse);
       // console.log(whatsappResponse);
 
       // console.log(experience);
@@ -508,7 +510,7 @@ export const BookingDialog = ({
             ),
             bookingId: bookingId,
             noteForGuide: data.note_for_guide,
-            paymentId: paymentId || "BYPASSED",
+            paymentId: "",
           },
         }
       );
@@ -599,7 +601,11 @@ export const BookingDialog = ({
       // console.log("Participants created successfully");
 
       // Send confirmation email
-      await sendBookingConfirmationEmail(data, booking.id);
+      await sendBookingConfirmationEmail(
+        data,
+        booking.id,
+        dueAmount ? dueAmount.toString() : "0"
+      );
 
       toast({
         title: "Booking confirmed!",
@@ -691,7 +697,11 @@ export const BookingDialog = ({
       // console.log("Participants created successfully");
 
       // Send confirmation email
-      await sendBookingConfirmationEmail(data, booking.id, paymentId);
+      await sendBookingConfirmationEmail(
+        data,
+        booking.id,
+        dueAmount ? dueAmount.toString() : "0"
+      );
 
       toast({
         title: "Booking confirmed!",
@@ -1338,12 +1348,15 @@ export const BookingDialog = ({
                             <FormItem>
                               <FormLabel>Phone</FormLabel>
                               <FormControl>
-                                <Input 
-                                  placeholder="Phone number (10 digits)" 
+                                <Input
+                                  placeholder="Phone number (10 digits)"
                                   {...field}
                                   onChange={(e) => {
                                     // Remove all non-numeric characters and spaces
-                                    const value = e.target.value.replace(/[^0-9]/g, '');
+                                    const value = e.target.value.replace(
+                                      /[^0-9]/g,
+                                      ""
+                                    );
                                     field.onChange(value);
                                   }}
                                   onBlur={(e) => {
