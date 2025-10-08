@@ -870,6 +870,7 @@ export const BookingDialog = ({
         .from("activities")
         .select("*")
         .eq("id", selectedActivityId)
+        .eq("is_active", true)
         .single();
 
       if (error) throw error;

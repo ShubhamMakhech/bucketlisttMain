@@ -1,8 +1,7 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CreateExperienceForm } from "@/components/CreateExperienceForm";
+import { EditExperienceForm } from "@/components/EditExperienceForm";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -19,22 +18,23 @@ const EditExperience = () => {
   useEffect(() => {
     if (!authLoading && !roleLoading) {
       if (!user) {
-        navigate('/auth');
+        navigate("/auth");
       } else if (!isVendor) {
-        navigate('/profile');
+        navigate("/profile");
       }
     }
   }, [user, isVendor, authLoading, roleLoading, navigate]);
 
   const { data: experience, isLoading } = useQuery({
-    queryKey: ['experience', id],
+    queryKey: ["experience", id],
     queryFn: async () => {
-      if (!id) throw new Error('Experience ID is required');
-      
+      if (!id) throw new Error("Experience ID is required");
+
       // Fetch experience with categories
       const { data: experienceData, error: experienceError } = await supabase
-        .from('experiences')
-        .select(`
+        .from("experiences")
+        .select(
+          `
           *,
           experience_categories (
             category_id
@@ -46,16 +46,18 @@ const EditExperience = () => {
       display_order,
       is_primary
             )
-        `)
-        .eq('id', id)
+        `
+        )
+        .eq("id", id)
         .single();
 
       if (experienceError) throw experienceError;
-      
+
       // Fetch activities for this experience
       const { data: activitiesData, error: activitiesError } = await supabase
-        .from('activities')
-        .select(`
+        .from("activities")
+        .select(
+          `
           *,
           time_slots (
             id,
@@ -63,55 +65,65 @@ const EditExperience = () => {
             end_time,
             capacity
           )
-        `)
-        .eq('experience_id', id)
-        .eq('is_active', true)
-        .order('display_order');
+        `
+        )
+        .eq("experience_id", id)
+        .eq("is_active", true)
+        .order("display_order");
 
       if (activitiesError) throw activitiesError;
-      
+
       // If no activities exist, fetch legacy time slots for backward compatibility
       let legacyTimeSlots: any[] = [];
       if (!activitiesData || activitiesData.length === 0) {
         const { data: timeSlotsData, error: timeSlotsError } = await supabase
-          .from('time_slots')
-          .select('id, start_time, end_time, capacity')
-          .eq('experience_id', id)
-          .order('start_time');
-        
+          .from("time_slots")
+          .select("id, start_time, end_time, capacity")
+          .eq("experience_id", id)
+          .order("start_time");
+
         if (timeSlotsError) throw timeSlotsError;
         legacyTimeSlots = timeSlotsData || [];
       }
-      
+
       // Transform the data to include category_ids array
-      const categoryIds = experienceData.experience_categories?.map(ec => ec.category_id) || [];
-      
+      const categoryIds =
+        experienceData.experience_categories?.map((ec) => ec.category_id) || [];
+
       // Transform activities data to match our Activity interface
-      const transformedActivities = activitiesData?.map(activity => ({
-        id: activity.id,
-        name: activity.name,
-        distance: activity.distance,
-        duration: activity.duration,
-        price: activity.price,
-        discount_percentage: activity.discount_percentage,
-        discounted_price: activity.discounted_price,  
-        currency: activity.currency,
-        timeSlots: activity.time_slots || []
-      })) || [];
-      
+      const transformedActivities =
+        activitiesData?.map((activity) => ({
+          id: activity.id,
+          name: activity.name,
+          distance: activity.distance,
+          duration: activity.duration,
+          price: activity.price,
+          discount_percentage: activity.discount_percentage || 0,
+          discounted_price: activity.discounted_price || activity.price,
+          currency: activity.currency,
+          timeSlots:
+            activity.time_slots?.map((slot) => ({
+              id: slot.id,
+              start_time: slot.start_time,
+              end_time: slot.end_time,
+              capacity: slot.capacity,
+            })) || [],
+        })) || [];
+
       return {
         ...experienceData,
         category_ids: categoryIds,
         activities: transformedActivities,
         legacyTimeSlots: legacyTimeSlots,
-        image_urls: experienceData.experience_images.map(image => image.image_url),
+        image_urls: experienceData.experience_images.map(
+          (image) => image.image_url
+        ),
       };
     },
-    enabled: !!id
+    enabled: !!id,
   });
 
-
-  console.log("experience", experience);  
+  console.log("experience", experience);
 
   if (authLoading || roleLoading) {
     return (
@@ -146,7 +158,7 @@ const EditExperience = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Experience Not Found</h1>
-            <Button onClick={() => navigate('/profile')}>
+            <Button onClick={() => navigate("/profile")}>
               Back to Profile
             </Button>
           </div>
@@ -162,7 +174,7 @@ const EditExperience = () => {
         <div className="mb-4">
           <Button
             variant="ghost"
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate("/profile")}
             className="mb-0"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -170,7 +182,7 @@ const EditExperience = () => {
           </Button>
         </div>
 
-        <CreateExperienceForm initialData={experience} isEditing={true} />
+        <EditExperienceForm initialData={experience} />
       </div>
     </div>
   );

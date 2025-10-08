@@ -260,9 +260,25 @@ export function CreateExperienceForm({
     value: string | number | TimeSlot[]
   ) => {
     setActivities((prev) =>
-      prev.map((activity) =>
-        activity.id === activityId ? { ...activity, [field]: value } : activity
-      )
+      prev.map((activity) => {
+        if (activity.id === activityId) {
+          const updated = { ...activity, [field]: value };
+          // Auto-calculate discounted price when discount percentage changes
+          if (field === "discount_percentage" || field === "price") {
+            const discount =
+              typeof value === "number" && field === "discount_percentage"
+                ? value
+                : activity.discount_percentage;
+            const price =
+              typeof value === "number" && field === "price"
+                ? value
+                : activity.price;
+            updated.discounted_price = price - (price * discount) / 100;
+          }
+          return updated;
+        }
+        return activity;
+      })
     );
   };
 
@@ -383,7 +399,8 @@ export function CreateExperienceForm({
     const { data: createdActivities, error: activitiesError } = await supabase
       .from("activities")
       .insert(activitiesData)
-      .select("*"); // Get back all fields including the generated id
+      .select("*");
+    // Get back all fields including the generated id
 
     if (activitiesError) {
       console.error("Error creating activities:", activitiesError);
@@ -629,6 +646,7 @@ export function CreateExperienceForm({
     const { data: allExistingActivities, error: fetchError } = await supabase
       .from("activities")
       .select("id")
+      .eq("is_active", true)
       .eq("experience_id", experienceId);
 
     if (fetchError) {

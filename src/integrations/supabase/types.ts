@@ -26,6 +26,8 @@ export type Database = {
           is_active: boolean;
           name: string;
           price: number;
+          discount_percentage: number;
+          discounted_price: number;
           updated_at: string;
         };
         Insert: {
@@ -39,6 +41,8 @@ export type Database = {
           is_active?: boolean;
           name: string;
           price: number;
+          discount_percentage?: number;
+          discounted_price?: number;
           updated_at?: string;
         };
         Update: {
@@ -52,6 +56,8 @@ export type Database = {
           is_active?: boolean;
           name?: string;
           price?: number;
+          discount_percentage?: number;
+          discounted_price?: number;
           updated_at?: string;
         };
         Relationships: [
