@@ -11,7 +11,7 @@ import {
   Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -186,28 +186,30 @@ export function Header() {
       >
         <div className="flex h-16 items-center justify-between px-4 max-w-7xl mx-auto relative">
           {/* Logo */}
-          <div
+          <Link
+            to="/"
             className="flex items-center cursor-pointer"
-            onClick={() => navigate("/")}
+            onClick={() => {
+              // Mark that user has navigated within the app
+              sessionStorage.setItem('hasNavigatedWithinApp', 'true');
+            }}
             id="LogoADjustContainer"
           >
             {/* First logo - shown by default */}
             <img
               src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt+(1).png"
               alt="bucketlistt Logo"
-              className={`h-20 w-auto transition-opacity duration-300 ${
-                isScrolled ? "opacity-0 absolute" : "opacity-100"
-              }`}
+              className={`h-20 w-auto transition-opacity duration-300 ${isScrolled ? "opacity-0 absolute" : "opacity-100"
+                }`}
             />
             {/* Second logo - shown after scroll */}
             <img
               src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt.png"
               alt="bucketlistt Logo"
-              className={`h-20 w-auto transition-opacity duration-300 ${
-                isScrolled ? "opacity-100" : "opacity-0 absolute"
-              }`}
+              className={`h-20 w-auto transition-opacity duration-300 ${isScrolled ? "opacity-100" : "opacity-0 absolute"
+                }`}
             />
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-2">

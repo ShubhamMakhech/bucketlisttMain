@@ -6,18 +6,50 @@ const HomepageModal: React.FC = () => {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        // Check if this is a page reload (not navigation)
-        const isPageReload = performance.navigation.type === 1 ||
-            performance.getEntriesByType('navigation')[0]?.type === 'reload' ||
-            window.performance.getEntriesByType('navigation')[0]?.type === 'reload';
+        // Debug and fix the modal logic
+        const shouldShowModal = () => {
+            // Check if this is a page reload using the most reliable method
+            const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+            const isReload = (navigationEntry?.type as string) === 'reload';
+            
+            // Check if user has navigated within the app
+            const hasNavigatedWithinApp = sessionStorage.getItem('hasNavigatedWithinApp') === 'true';
+            
+            // Debug logging
+            console.log('Modal Debug:', {
+                isReload,
+                hasNavigatedWithinApp,
+                referrer: document.referrer,
+                navigationType: navigationEntry?.type
+            });
+            
+            // Show modal ONLY if:
+            // 1. It's an actual reload AND user hasn't navigated within the app, OR
+            // 2. It's a fresh page load (no referrer) AND user hasn't navigated within the app
+            const isFreshPageLoad = !document.referrer;
+            
+            if (isReload && !hasNavigatedWithinApp) {
+                return true; // Show on reload if user hasn't navigated within app
+            }
+            
+            if (isFreshPageLoad && !hasNavigatedWithinApp) {
+                return true; // Show on fresh page load if user hasn't navigated within app
+            }
+            
+            return false; // Don't show in all other cases
+        };
 
-        // Only show modal on page reload, not on navigation
-        if (isPageReload) {
+        // Only show modal on actual page reload or fresh page load
+        if (shouldShowModal()) {
             const timer = setTimeout(() => {
                 setIsVisible(true);
-            }, 1000); // Show after 1 second
+            }, 1000);
 
             return () => clearTimeout(timer);
+        } else {
+            // If user has navigated within the app, don't show modal
+            // This prevents the modal from showing when navigating back to homepage
+            console.log('Modal not showing - user has navigated within app or not a reload');
         }
     }, []);
 

@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+
 import {
   QueryClient,
   QueryClientProvider,
@@ -145,6 +146,18 @@ const App: React.FC = () => {
   useEffect(() => {
     checkLoggedInPathVsCurerntPath();
   }, []);
+
+  // Reset navigation flag on actual page reload
+  useEffect(() => {
+    const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    if ((navigationEntry?.type as string) === 'reload') {
+      // Clear the navigation flag when page is actually reloaded
+      sessionStorage.removeItem('hasNavigatedWithinApp');
+      console.log('Page reloaded - cleared navigation flag');
+    }
+  }, []);
+
+
 
   return (
     <QueryClientProvider client={queryClient}>
