@@ -454,6 +454,7 @@ export const BookingDialog = ({
       // };
 
       const whatsappResponse = await SendWhatsappMessage(whatsappBody);
+      console.log("whatsappResponse", whatsappResponse);
       const vendorWhatsappBody = {
         version: "2.0",
         country_code: "91",
