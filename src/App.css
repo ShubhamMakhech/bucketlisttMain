@@ -632,6 +632,9 @@ h6 {
     font-size: 13px !important;
     text-align: start;
     color: #666 !important;
+    border-bottom: 1px solid rgba(148, 15, 219, 0.135) !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 7px !important;
   }
 
   .ExperienceCardMobileLayout {
@@ -1260,6 +1263,11 @@ h6 {
   background: var(--brand-color);
 }
 
+.ModalImageContainer{
+  width: 100%;
+  margin-top: 0px;
+}
+
 
 @media (max-width: 480px) {
   .DateSelectorContainer>div:first-child {
@@ -1322,11 +1330,13 @@ h6 {
   }
 }
 
+
+
 .DescriptionEditContainer h1 {
   font-size: 20px;
   color: black !important;
   text-align: left;
-  margin-top: 20px;
+  margin-top: -10px;
 }
 
 .DescriptionEditContainer p {
@@ -1652,9 +1662,10 @@ h6 {
 /* Mobile Responsive */
 @media (max-width: 768px) {
 
-  #ExperienceCardStyles .ExperienceCardMobileImage{
+  #ExperienceCardStyles .ExperienceCardMobileImage {
     width: 100%;
   }
+
   .features-badges-grid {
     grid-template-columns: 1fr 1fr;
     gap: 10px;

@@ -466,8 +466,8 @@ const ExperienceDetail = () => {
               experienceTitle={experience.title}
             />
           </div>
-          <br />
-          <h1 className="text-3xl font-bold mb-0 text-start">{experience.title}</h1>
+          {/* <br /> */}
+          <h1 className="text-3xl font-bold mb-0 text-start mt-2">{experience.title}</h1>
           {/* Details Section */}
           <div className="space-y-6 ">
             <div>
@@ -481,7 +481,7 @@ const ExperienceDetail = () => {
                   </>
                 )}
               </div> */}
-              <br />
+              {/* <br /> */}
               <div className="features-badges-container">
                 <div className="features-badges-grid">
                   <div className="feature-badge">

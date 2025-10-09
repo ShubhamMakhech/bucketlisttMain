@@ -5,6 +5,7 @@ import { ExperienceCard } from "@/components/ExperienceCard";
 import { TestimonialCarousel } from "@/components/TestimonialCarousel";
 import AppDownloadBanner from "@/components/AppDownloadBanner";
 import { SEO } from "@/components/SEO";
+import HomepageModal from "@/components/HomepageModal";
 
 import { LoadingGrid } from "@/components/LoadingSpinner";
 import { Button } from "@/components/ui/button";
@@ -131,6 +132,7 @@ const Index = () => {
         structuredData={homepageStructuredData}
       />
       <Header />
+      <HomepageModal />
 
       <BidirectionalAnimatedSection
         animation="fade-up"
@@ -387,22 +389,20 @@ const Index = () => {
                             reviews={
                               experience.reviews_count?.toString() || "0"
                             }
-                            price={`${
-                              experience.currency === "USD"
-                                ? "₹"
-                                : experience.currency == "INR"
+                            price={`${experience.currency === "USD"
+                              ? "₹"
+                              : experience.currency == "INR"
                                 ? "₹"
                                 : experience.currency
-                            } ${experience.price}`}
+                              } ${experience.price}`}
                             originalPrice={
                               experience.original_price
-                                ? `${
-                                    experience.currency === "USD"
-                                      ? "₹"
-                                      : experience.currency == "INR"
-                                      ? "₹"
-                                      : experience.currency
-                                  } ${experience.original_price}`
+                                ? `${experience.currency === "USD"
+                                  ? "₹"
+                                  : experience.currency == "INR"
+                                    ? "₹"
+                                    : experience.currency
+                                } ${experience.original_price}`
                                 : undefined
                             }
                             duration={experience.duration || undefined}
@@ -549,7 +549,7 @@ const Index = () => {
                     className="LogoATOAIStyles"
                     src="/ATOAI_logo.jpg"
                     alt="ATOAI Logo"
-                    // className="mx-auto w-32 md:w-48 h-auto rounded-lg"
+                  // className="mx-auto w-32 md:w-48 h-auto rounded-lg"
                   />
                 </BidirectionalAnimatedSection>
 
