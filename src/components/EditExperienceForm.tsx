@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2, Upload, X, Clock, Users, Settings } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
@@ -93,6 +94,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
@@ -925,6 +927,12 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
 
       // Update categories
       await updateExperienceCategories(initialData.id, formData.category_ids);
+
+      // Invalidate relevant queries to refresh cached data
+      queryClient.invalidateQueries({ queryKey: ["experience", initialData.id] });
+      queryClient.invalidateQueries({ queryKey: ["experiences"] });
+      queryClient.invalidateQueries({ queryKey: ["vendor-experiences"] });
+      queryClient.invalidateQueries({ queryKey: ["activities", initialData.id] });
 
       toast({
         title: "Experience updated successfully!",
