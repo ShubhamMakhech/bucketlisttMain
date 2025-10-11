@@ -108,19 +108,9 @@ const DestinationDetail = () => {
     enabled: !!id,
   });
 
-  // Get multiple images/videos for swiper - combines database image with static media
+  // Get multiple images/videos for swiper - only shows static media, skips database image
   const getMultipleImages = () => {
     const media = [];
-
-    // Add main destination image first
-    if (destination?.image_url) {
-      media.push({
-        src: destination.image_url,
-        alt: destination.title,
-        id: 'main',
-        type: 'image',
-      });
-    }
 
     // Add all static images/videos for this destination
     const staticMedia = staticDestinationImages[destination?.title || ''];
@@ -133,6 +123,14 @@ const DestinationDetail = () => {
           id: `static-${index}`,
           type: isVideo ? 'video' : 'image',
         });
+      });
+    } else if (destination?.image_url) {
+      // Fallback: Only show database image if no static media exists
+      media.push({
+        src: destination.image_url,
+        alt: destination.title,
+        id: 'main',
+        type: 'image',
       });
     }
 
