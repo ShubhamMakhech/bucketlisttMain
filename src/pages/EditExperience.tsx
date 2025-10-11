@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { EditExperienceForm } from "@/components/EditExperienceForm";
 import { Header } from "@/components/Header";
@@ -14,6 +14,7 @@ const EditExperience = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isVendor, loading: roleLoading } = useUserRole();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!authLoading && !roleLoading) {
@@ -24,6 +25,13 @@ const EditExperience = () => {
       }
     }
   }, [user, isVendor, authLoading, roleLoading, navigate]);
+
+  // Invalidate cache when component mounts to ensure fresh data
+  useEffect(() => {
+    if (id) {
+      queryClient.invalidateQueries({ queryKey: ["experience", id] });
+    }
+  }, [id, queryClient]);
 
   const { data: experience, isLoading } = useQuery({
     queryKey: ["experience", id],
@@ -74,7 +82,7 @@ const EditExperience = () => {
       if (activitiesError) throw activitiesError;
 
       // If no activities exist, fetch legacy time slots for backward compatibility
-      let legacyTimeSlots: any[] = [];
+      let legacyTimeSlots: { id: string; start_time: string; end_time: string; capacity: number }[] = [];
       if (!activitiesData || activitiesData.length === 0) {
         const { data: timeSlotsData, error: timeSlotsError } = await supabase
           .from("time_slots")
@@ -121,6 +129,9 @@ const EditExperience = () => {
       };
     },
     enabled: !!id,
+    staleTime: 0, // Always consider data stale
+    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 
   console.log("experience", experience);
