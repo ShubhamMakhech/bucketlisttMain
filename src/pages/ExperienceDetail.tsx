@@ -154,8 +154,9 @@ const ExperienceDetail = () => {
     return null;
   };
 
-  const handleBookingSuccess = () => {
+  const  handleBookingSuccess = () => {
     setShowSuccessAnimation(true);
+    navigate('/confirm-booking');
     refetchBookings();
   };
 
@@ -165,6 +166,7 @@ const ExperienceDetail = () => {
 
   const handleBulkPaymentSuccess = () => {
     setShowSuccessAnimation(true);
+    navigate('/confirm-booking');
     refetchBookings();
     setBulkBookingsData([]);
     setBulkParticipantsData([]);

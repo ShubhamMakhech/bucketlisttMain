@@ -39,6 +39,7 @@ import { MobileFloatingButton } from "./components/MobileFloatingButton";
 import Blogs from "./pages/Blogs";
 import BlogDetail from "./pages/BlogDetail";
 import QRCodeRedirect from "./pages/QRCodeRedirect";
+import ConfirmBooking from "./pages/ConfirmBooking";
 
 const queryClient = new QueryClient();
 
@@ -149,15 +150,15 @@ const App: React.FC = () => {
 
   // Reset navigation flag on actual page reload
   useEffect(() => {
-    const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-    if ((navigationEntry?.type as string) === 'reload') {
+    const navigationEntry = performance.getEntriesByType(
+      "navigation"
+    )[0] as PerformanceNavigationTiming;
+    if ((navigationEntry?.type as string) === "reload") {
       // Clear the navigation flag when page is actually reloaded
-      sessionStorage.removeItem('hasNavigatedWithinApp');
-      console.log('Page reloaded - cleared navigation flag');
+      sessionStorage.removeItem("hasNavigatedWithinApp");
+      console.log("Page reloaded - cleared navigation flag");
     }
   }, []);
-
-
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -183,6 +184,7 @@ const App: React.FC = () => {
                   <Route path="/favorites" element={<Favorites />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/bookings" element={<Bookings />} />
+                  <Route path="/confirm-booking" element={<ConfirmBooking />} />
                   <Route
                     path="/create-experience"
                     element={<CreateExperience />}
