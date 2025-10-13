@@ -9,14 +9,7 @@ export const ConfirmBookingPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  useEffect(() => {
-    // Redirect to home page after 5 seconds
-    const timer = setTimeout(() => {
-      navigate('/');
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [navigate]);
+ 
 
   const handleGoHome = () => {
     navigate('/');
@@ -114,14 +107,14 @@ export const ConfirmBookingPage: React.FC = () => {
         </div>
 
         {/* Auto-redirect notice */}
-        <div className="text-center mt-8">
+        {/* <div className="text-center mt-8">
           <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
             <Clock className="w-4 h-4 text-blue-600" />
             <p className="text-sm text-blue-600">
               Redirecting to home page in 5 seconds...
             </p>
           </div>
-        </div>
+        </div> */}
 
         {/* User info */}
         {user && (
