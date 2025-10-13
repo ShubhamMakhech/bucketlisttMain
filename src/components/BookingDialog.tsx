@@ -157,7 +157,6 @@ export const BookingDialog = ({
       coupon_code: "",
     },
   });
-
   useEffect(() => {
     const bookingModalData = localStorage.getItem("bookingModalData");
     if (bookingModalData) {
@@ -601,7 +600,39 @@ export const BookingDialog = ({
         console.error("Participants creation error:", participantsError);
         throw participantsError;
       }
+      // Check if the user is not a vendor, then update their profile with the phone number if needed
+      const { data: userRole, error: userRoleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
 
+      if (userRoleError) {
+        console.error("Error fetching user role:", userRoleError);
+      } else if (userRole?.role !== "vendor") {
+        const { data: userData, error: userDataError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        if (userDataError) {
+          console.error("Error fetching user profile:", userDataError);
+        } else if (
+          !userData?.phone_number ||
+          userData?.phone_number.trim() === ""
+        ) {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              phone_number: data.participant.phone_number,
+            })
+            .eq("id", user.id);
+
+          if (updateError) {
+            console.error("Error updating user phone number:", updateError);
+          }
+        }
+      }
       // console.log("Participants created successfully");
 
       // Send confirmation email
@@ -675,7 +706,38 @@ export const BookingDialog = ({
         console.error("Booking creation error:", bookingError);
         throw bookingError;
       }
+      const { data: userRole, error: userRoleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
 
+      if (userRoleError) {
+        console.error("Error fetching user role:", userRoleError);
+      } else if (userRole?.role !== "vendor") {
+        const { data: userData, error: userDataError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        if (userDataError) {
+          console.error("Error fetching user profile:", userDataError);
+        } else if (
+          !userData?.phone_number ||
+          userData?.phone_number.trim() === ""
+        ) {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              phone_number: data.participant.phone_number,
+            })
+            .eq("id", user.id);
+
+          if (updateError) {
+            console.error("Error updating user phone number:", updateError);
+          }
+        }
+      }
       // console.log("Booking created successfully:", booking.id);
 
       // Create participants - duplicate the primary participant data for each participant
@@ -1593,7 +1655,6 @@ export const BookingDialog = ({
                               : appliedCoupon;
 
                           if (partialPayment) {
-                        
                             return (
                               <div>
                                 <div className="text-lg text-muted-foreground line-through">
