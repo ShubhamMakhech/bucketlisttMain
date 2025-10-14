@@ -398,7 +398,7 @@ export const BookingDialog = ({
         .eq("id", timeSlot?.experiences.vendor_id)
         .single();
 
-      // console.log(vendor);
+      // console.log(vendor
       // console.log(data);
       // console.log(vendor);
 
@@ -453,7 +453,7 @@ export const BookingDialog = ({
       // };
 
       const whatsappResponse = await SendWhatsappMessage(whatsappBody);
-      console.log("whatsappResponse", whatsappResponse);
+      // console.log("whatsappResponse", whatsappResponse);
       const vendorWhatsappBody = {
         version: "2.0",
         country_code: "91",
@@ -484,7 +484,7 @@ export const BookingDialog = ({
       const vendorWhatsappResponse = await SendWhatsappMessage(
         vendorWhatsappBody
       );
-      console.log("vendorWhatsappResponse", vendorWhatsappResponse);
+      // console.log("vendorWhatsappResponse", vendorWhatsappResponse);
       // console.log(whatsappResponse);
 
       // console.log(experience);

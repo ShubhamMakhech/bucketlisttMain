@@ -97,25 +97,25 @@ const Profile = () => {
   const sidebarItems = [
     ...(isVendor
       ? [
-        {
-          id: "analytics",
-          icon: BarChart3,
-          title: "Analytics",
-          description: "View your business insights",
-        },
-        {
-          id: "my-experiences",
-          icon: Eye,
-          title: "My Experiences",
-          description: "Manage your experience listings",
-        },
-        // {
-        //   id: "create-experience",
-        //   icon: Plus,
-        //   title: "Create Experience",
-        //   description: "Add new experiences",
-        // },
-      ]
+          {
+            id: "analytics",
+            icon: BarChart3,
+            title: "Analytics",
+            description: "View your business insights",
+          },
+          {
+            id: "my-experiences",
+            icon: Eye,
+            title: "My Experiences",
+            description: "Manage your experience listings",
+          },
+          // {
+          //   id: "create-experience",
+          //   icon: Plus,
+          //   title: "Create Experience",
+          //   description: "Add new experiences",
+          // },
+        ]
       : []),
     {
       id: "bookings",
@@ -212,8 +212,9 @@ const Profile = () => {
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div
-          className={`grid gap-4 sm:gap-6 lg:gap-8 ${isMobile ? "grid-cols-1" : "lg:grid-cols-4"
-            }`}
+          className={`grid gap-4 sm:gap-6 lg:gap-8 ${
+            isMobile ? "grid-cols-1" : "lg:grid-cols-4"
+          }`}
         >
           {/* Left Sidebar - Profile + Navigation */}
           <div
@@ -223,14 +224,17 @@ const Profile = () => {
             <Card className="bg-white">
               <CardContent className={`${isMobile ? "p-4" : "p-6 pb-2"}`}>
                 <div
-                  className={`text-center ${isMobile ? "mb-2" : "mb-0"
-                    } flex items-center gap-5`}
+                  className={`text-center ${
+                    isMobile ? "mb-2" : "mb-0"
+                  } flex items-center gap-5`}
                 >
                   <div className="w-30">
                     <Avatar
-                      className={`${isMobile ? "h-16 w-16" : "h-20 w-20"
-                        } mx-auto ${isMobile ? "mb-3" : "mb-4"
-                        } border-4 border-[#940fdb]/30`}
+                      className={`${
+                        isMobile ? "h-16 w-16" : "h-20 w-20"
+                      } mx-auto ${
+                        isMobile ? "mb-3" : "mb-4"
+                      } border-4 border-[#940fdb]/30`}
                     >
                       <AvatarImage
                         src={
@@ -240,30 +244,35 @@ const Profile = () => {
                         alt={getDisplayName()}
                       />
                       <AvatarFallback
-                        className={`text-teal-600 ${isMobile ? "text-lg" : "text-xl"
-                          } font-bold`}
+                        className={`text-teal-600 ${
+                          isMobile ? "text-lg" : "text-xl"
+                        } font-bold`}
                       >
                         {userProfile?.first_name && userProfile?.last_name
                           ? getInitials(
-                            userProfile.first_name,
-                            userProfile.last_name
-                          )
+                              userProfile.first_name,
+                              userProfile.last_name
+                            )
                           : user.email?.substring(0, 2).toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </div>
                   <div>
                     <h2
-                      className={`${isMobile ? "text-lg" : "text-xl"
-                        } font-bold mb-1 text-[#6a0fb5]`}
+                      className={`${
+                        isMobile ? "text-lg" : "text-xl"
+                      } font-bold mb-1 text-[#6a0fb5]`}
                     >
                       {getDisplayName()}
                     </h2>
                     <Button
                       variant="ghost"
-                      className={`text-[#940fdb] hover:bg-[#940fdb]/10 ${isMobile ? "text-xs" : "text-sm"
-                        } ${isMobile ? "px-3 py-1" : ""}`}
-                      onClick={() => setShowEditProfile(true)}
+                      className={`text-[#940fdb] hover:bg-[#940fdb]/10 ${
+                        isMobile ? "text-xs" : "text-sm"
+                      } ${isMobile ? "px-3 py-1" : ""}`}
+                      onClick={() => {
+                        setShowEditProfile(true);
+                      }}
                     >
                       Edit profile →
                     </Button>
@@ -296,31 +305,35 @@ const Profile = () => {
                     <button
                       key={item.id}
                       onClick={() => handleSectionClick(item.id)}
-                      className={`w-full text-left p-3 hover:bg-muted/50 transition-colors flex items-center gap-3 ${activeSection === item.id
-                        ? "bg-[#f5e6ff] dark:bg-[#271c37] border-r-2 border-[#940fdb]"
-                        : ""
-                        }`}
+                      className={`w-full text-left p-3 hover:bg-muted/50 transition-colors flex items-center gap-3 ${
+                        activeSection === item.id
+                          ? "bg-[#f5e6ff] dark:bg-[#271c37] border-r-2 border-[#940fdb]"
+                          : ""
+                      }`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center ${activeSection === item.id
-                          ? "bg-[#e9d5ff] dark:bg-[#6a0fb5]/30"
-                          : "bg-gray-100 dark:bg-gray-800"
-                          }`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          activeSection === item.id
+                            ? "bg-[#e9d5ff] dark:bg-[#6a0fb5]/30"
+                            : "bg-gray-100 dark:bg-gray-800"
+                        }`}
                       >
                         <item.icon
-                          className={`h-4 w-4 ${activeSection === item.id
-                            ? "text-[#940fdb]"
-                            : "text-gray-600 dark:text-gray-300"
-                            }`}
+                          className={`h-4 w-4 ${
+                            activeSection === item.id
+                              ? "text-[#940fdb]"
+                              : "text-gray-600 dark:text-gray-300"
+                          }`}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h4
-                            className={`font-medium text-sm truncate ${activeSection === item.id
-                              ? "text-[#6a0fb5] dark:text-[#d1b3ff]"
-                              : ""
-                              }`}
+                            className={`font-medium text-sm truncate ${
+                              activeSection === item.id
+                                ? "text-[#6a0fb5] dark:text-[#d1b3ff]"
+                                : ""
+                            }`}
                           >
                             {item.title}
                           </h4>
