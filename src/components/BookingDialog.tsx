@@ -457,30 +457,49 @@ export const BookingDialog = ({
       const vendorWhatsappBody = {
         version: "2.0",
         country_code: "91",
-        wid: "16710",
+        wid: "16845",
         type: "text",
         data: [
           {
             mobile: vendor?.phone_number,
             bodyValues: {
               "1": data.participant.name,
-              "2": data.participant.phone_number,
-              "3": experience.title,
-              "4": timeSlot?.activities.name,
-              "5": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
+              "2": data?.participant_count?.toString() || "0",
+              "3": data.participant.phone_number,
+              "4": experience.title,
+              "5": timeSlot?.activities.name,
+              "6": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
                 timeSlot?.start_time,
                 "HH:mm"
               ).format("hh:mm A")} - ${moment(
                 timeSlot?.end_time,
                 "HH:mm"
               ).format("hh:mm A")}`,
-              "6": data?.participant_count?.toString() || "0",
               "7": dueAmount || "0",
+              "8":
+                data.referral_code ?? data.referral_code !== ""
+                  ? data.referral_code
+                  : "-",
             },
           },
         ],
       };
-      // console.log("vendorWhatsappBody", vendorWhatsappBody);
+      //   bodyValues: {
+      //         "1": data.participant.name,
+      //         "2": data.participant.phone_number,
+      //         "3": experience.title,
+      //         "4": timeSlot?.activities.name,
+      // "5": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
+      //   timeSlot?.start_time,
+      //   "HH:mm"
+      // ).format("hh:mm A")} - ${moment(
+      //   timeSlot?.end_time,
+      //   "HH:mm"
+      // ).format("hh:mm A")}`,
+      //         "6": data?.participant_count?.toString() || "0",
+      //         "7": dueAmount || "0",
+      //       },
+      // // console.log("vendorWhatsappBody", vendorWhatsappBody);
       const vendorWhatsappResponse = await SendWhatsappMessage(
         vendorWhatsappBody
       );
