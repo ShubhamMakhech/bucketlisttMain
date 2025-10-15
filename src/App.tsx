@@ -40,7 +40,7 @@ import Blogs from "./pages/Blogs";
 import BlogDetail from "./pages/BlogDetail";
 import QRCodeRedirect from "./pages/QRCodeRedirect";
 import ConfirmBooking from "./pages/ConfirmBooking";
-
+import WhatsAppButton from "./pages/whatsapp";
 const queryClient = new QueryClient();
 
 // Component to conditionally render AIChatbot only on homepage
@@ -52,7 +52,7 @@ const ConditionalAIChatbot = () => {
     return null;
   }
 
-  return <AIChatbot />;
+  return <WhatsAppButton />;
 };
 
 // Component to conditionally render MobileFloatingButton based on route
