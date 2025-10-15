@@ -3,8 +3,7 @@ import React from "react";
 
 const WhatsAppButton = ({
   phoneNumber = "918511838237",
-  message = `Hey ❤️ I just came across Bucketlistt.com — looks super exciting! 🤩 I'd love to know more about the adventure activities you offer 🪂
-https://bucketlistt.com`,
+  message = `Hey ❤️ I just came across Bucketlistt.com — looks super exciting! 🤩 I'd love to know more about the adventure activities you offer 🪂`,
   position = "bottom-right",
 }) => {
   const handleWhatsApp = () => {
