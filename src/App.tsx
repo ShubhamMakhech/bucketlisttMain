@@ -64,8 +64,8 @@ const ConditionalMobileButton = () => {
     return null;
   }
 
-  // Extract experience ID from URL
-  const experienceId = location.pathname.split("/experience/")[1];
+  // Get experience ID from state (passed during navigation)
+  const experienceId = location.state?.experienceData?.id;
 
   // Get experience data using React Query
   const { data: experience } = useQuery({
@@ -204,11 +204,11 @@ const App: React.FC = () => {
                     element={<VendorExperiences />}
                   />
                   <Route
-                    path="/experience/:id"
+                    path="/experience/:name"
                     element={<ExperienceDetail />}
                   />
                   <Route
-                    path="/destination/:id"
+                    path="/destination/:name"
                     element={<DestinationDetail />}
                   />
                   <Route path="*" element={<NotFound />} />

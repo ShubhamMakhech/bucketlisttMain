@@ -235,9 +235,21 @@ const VendorExperiences = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() =>
-                              navigate(`/experience/${experience.id}`)
-                            }
+                            onClick={() => {
+                              const experienceName = experience.title
+                                .toLowerCase()
+                                .replace(/[^a-z0-9\s-]/g, "")
+                                .replace(/\s+/g, "-")
+                                .replace(/-+/g, "-")
+                                .trim();
+                              navigate(`/experience/${experienceName}`, {
+                                state: {
+                                  experienceData: experience,
+                                  fromPage: "vendor-experiences",
+                                  timestamp: Date.now(),
+                                },
+                              });
+                            }}
                             title="View Experience"
                           >
                             <Eye className="h-4 w-4" />

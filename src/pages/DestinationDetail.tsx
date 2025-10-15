@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
@@ -10,42 +10,42 @@ import { DetailedItinerary } from "@/components/DetailedItinerary";
 
 // Static destination images mapping - now supports multiple images per destination
 const staticDestinationImages: Record<string, string[]> = {
-  "Darjeeling": [
+  Darjeeling: [
     "https://images.unsplash.com/photo-1637737118663-f1a53ee1d5a7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1544894062-f500cf4fbd2c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1661970131022-714b905f7031?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   ],
-  "Goa": [
+  Goa: [
     "https://images.unsplash.com/photo-1496566084516-c5b96fcbd5c8?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1580741186862-c5d0bf2aff33?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1682743710558-b338ba285925?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   ],
-  "Jaipur": [
+  Jaipur: [
     "https://prepseed.s3.ap-south-1.amazonaws.com/Jaipur.svg",
     "https://images.unsplash.com/photo-1539650116574-75c0c6d73c0e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
     "https://images.unsplash.com/photo-1578662996442-48f60103fc96?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
   ],
-  "Kerala": [
+  Kerala: [
     "https://prepseed.s3.ap-south-1.amazonaws.com/Kerela.svg",
     "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
     "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
   ],
-  "Rishikesh": [
+  Rishikesh: [
     "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/RishikeshVideo.mp4",
     "https://images.unsplash.com/photo-1720819029162-8500607ae232?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1650341278999-d1b5142cfe30?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     // "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
     // "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3",
   ],
-  "Mysore": [
+  Mysore: [
     "https://plus.unsplash.com/premium_photo-1697730494992-7d5a0c46ea52?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1698688513674-d38bea6a34c2?q=80&w=3133&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   ],
-  "Matheran": [
+  Matheran: [
     "https://images.unsplash.com/photo-1663070549709-8b524a0560e7?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1590812854696-65cefa66f181?q=80&w=2108&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    "https://images.unsplash.com/photo-1590812854696-65cefa66f181?q=80&w=2108&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   ],
-  "Saputara": [
+  Saputara: [
     "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage1.jpg",
     "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage2.jpg",
   ],
@@ -78,8 +78,16 @@ import {
 type SortOption = "rating" | "price_low" | "price_high" | "newest" | "name";
 
 const DestinationDetail = () => {
-  const { id } = useParams();
+  const { name } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get destination data from navigation state (if available)
+  const stateDestinationData = location.state?.destinationData;
+  const fromPage = location.state?.fromPage;
+
+  // Get ID from state, fallback to undefined if not available
+  const id = stateDestinationData?.id;
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("rating");
   const [isAnimated, setIsAnimated] = useState(false);
@@ -106,6 +114,10 @@ const DestinationDetail = () => {
       return data;
     },
     enabled: !!id,
+    // Use state data as initial data if available
+    initialData: stateDestinationData,
+    // Only fetch if we don't have state data or if the data is stale
+    staleTime: stateDestinationData ? 5 * 60 * 1000 : 0, // 5 minutes if we have state data
   });
 
   // Get multiple images/videos for swiper - only shows static media, skips database image
@@ -113,15 +125,22 @@ const DestinationDetail = () => {
     const media = [];
 
     // Add all static images/videos for this destination
-    const staticMedia = staticDestinationImages[destination?.title || ''];
+    const staticMedia = staticDestinationImages[destination?.title || ""];
     if (staticMedia && staticMedia.length > 0) {
       staticMedia.forEach((mediaUrl, index) => {
-        const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.ogg') || mediaUrl.includes('.avi') || mediaUrl.includes('.mov');
+        const isVideo =
+          mediaUrl.includes(".mp4") ||
+          mediaUrl.includes(".webm") ||
+          mediaUrl.includes(".ogg") ||
+          mediaUrl.includes(".avi") ||
+          mediaUrl.includes(".mov");
         media.push({
           src: mediaUrl,
-          alt: `${destination?.title} - ${isVideo ? 'Video' : 'View'} ${index + 1}`,
+          alt: `${destination?.title} - ${isVideo ? "Video" : "View"} ${
+            index + 1
+          }`,
           id: `static-${index}`,
-          type: isVideo ? 'video' : 'image',
+          type: isVideo ? "video" : "image",
         });
       });
     } else if (destination?.image_url) {
@@ -129,8 +148,8 @@ const DestinationDetail = () => {
       media.push({
         src: destination.image_url,
         alt: destination.title,
-        id: 'main',
-        type: 'image',
+        id: "main",
+        type: "image",
       });
     }
 
@@ -139,7 +158,7 @@ const DestinationDetail = () => {
 
   // Helper function to check if media is video
   const isVideo = (media: any) => {
-    return media.type === 'video';
+    return media.type === "video";
   };
 
   const { data: categories } = useQuery({
@@ -175,7 +194,7 @@ const DestinationDetail = () => {
         )
         .eq("destination_id", id)
         .eq("is_active", true)
-        .order('created_at', { ascending: true });
+        .order("created_at", { ascending: true });
 
       if (selectedCategory) {
         // Filter by category using the junction table
@@ -281,7 +300,6 @@ const DestinationDetail = () => {
     return staticImages?.[0] || destination.image_url;
   };
 
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -307,7 +325,7 @@ const DestinationDetail = () => {
           className="h-full w-full"
           onSlideChange={(swiper) => {
             // Reset all videos to beginning
-            const allVideos = swiper.el.querySelectorAll('video');
+            const allVideos = swiper.el.querySelectorAll("video");
             allVideos.forEach((video: HTMLVideoElement) => {
               video.currentTime = 0;
               video.pause();
@@ -315,7 +333,9 @@ const DestinationDetail = () => {
 
             // Check if current slide has a video
             const currentSlide = swiper.slides[swiper.activeIndex];
-            const video = currentSlide?.querySelector('video') as HTMLVideoElement;
+            const video = currentSlide?.querySelector(
+              "video"
+            ) as HTMLVideoElement;
             if (video) {
               // Stop autoplay and play video
               swiper.autoplay.stop();
@@ -339,7 +359,9 @@ const DestinationDetail = () => {
                     preload="metadata"
                     onEnded={(e) => {
                       // Move to next slide when video ends
-                      const swiperElement = e.currentTarget.closest('.swiper') as any;
+                      const swiperElement = e.currentTarget.closest(
+                        ".swiper"
+                      ) as any;
                       const swiper = swiperElement?.swiper;
                       if (swiper) {
                         swiper.slideNext();
@@ -427,7 +449,9 @@ const DestinationDetail = () => {
               </div>
               <div className="feature-badge-content">
                 <p>Best time to visit</p>
-                <p className="feature-badge-value">{destination.best_time_to_visit}</p>
+                <p className="feature-badge-value">
+                  {destination.best_time_to_visit}
+                </p>
               </div>
             </div>
           )}
@@ -439,7 +463,9 @@ const DestinationDetail = () => {
               </div>
               <div className="feature-badge-content">
                 <p>Recommended duration</p>
-                <p className="feature-badge-value">{destination.recommended_duration}</p>
+                <p className="feature-badge-value">
+                  {destination.recommended_duration}
+                </p>
               </div>
             </div>
           )}
@@ -572,10 +598,10 @@ const DestinationDetail = () => {
                     {experiences.map((experience, index) => (
                       <SwiperSlide key={experience.id}>
                         <div
-                          className={`scroll-scale-in ${isAnimated ? "animate" : ""
-                            }`}
+                          className={`scroll-scale-in ${
+                            isAnimated ? "animate" : ""
+                          }`}
                           style={{ animationDelay: `${0.6 + index * 0.05}s` }}
-
                         >
                           <ExperienceCard
                             id={experience.id}
@@ -590,18 +616,20 @@ const DestinationDetail = () => {
                             reviews={
                               experience.reviews_count?.toString() || "0"
                             }
-                            price={`${experience.currency === "USD"
-                              ? "₹"
-                              : experience.currency == "INR"
+                            price={`${
+                              experience.currency === "USD"
+                                ? "₹"
+                                : experience.currency == "INR"
                                 ? "₹"
                                 : experience.currency
-                              } ${experience.price}`}
+                            } ${experience.price}`}
                             originalPrice={
                               experience.original_price
-                                ? `${experience.currency === "USD"
-                                  ? "₹"
-                                  : experience.currency
-                                } ${experience.original_price}`
+                                ? `${
+                                    experience.currency === "USD"
+                                      ? "₹"
+                                      : experience.currency
+                                  } ${experience.original_price}`
                                 : undefined
                             }
                             duration={experience.duration || undefined}
@@ -659,8 +687,9 @@ const DestinationDetail = () => {
                   {experiences.map((experience, index) => (
                     <div
                       key={experience.id}
-                      className={`scroll-scale-in ${isAnimated ? "animate" : ""
-                        }`}
+                      className={`scroll-scale-in ${
+                        isAnimated ? "animate" : ""
+                      }`}
                       style={{ animationDelay: `${0.6 + index * 0.05}s` }}
                       id="ExperienceCardContainerSpecificDestinationDetail"
                     >
@@ -675,20 +704,22 @@ const DestinationDetail = () => {
                         }
                         rating={Number(experience.rating)}
                         reviews={experience.reviews_count?.toString() || "0"}
-                        price={`${experience.currency === "USD"
-                          ? "₹"
-                          : experience.currency == "INR"
+                        price={`${
+                          experience.currency === "USD"
+                            ? "₹"
+                            : experience.currency == "INR"
                             ? "₹"
                             : experience.currency
-                          } ${experience.price}`}
+                        } ${experience.price}`}
                         originalPrice={
                           experience.original_price
-                            ? `${experience.currency === "USD"
-                              ? "₹"
-                              : experience.currency == "INR"
-                                ? "₹"
-                                : experience.currency
-                            } ${experience.original_price}`
+                            ? `${
+                                experience.currency === "USD"
+                                  ? "₹"
+                                  : experience.currency == "INR"
+                                  ? "₹"
+                                  : experience.currency
+                              } ${experience.original_price}`
                             : undefined
                         }
                         duration={experience.duration || undefined}
@@ -766,7 +797,6 @@ const DestinationDetail = () => {
                   </p>
                 </div>
               </div>
-
             </div>
           </div>
         </div>

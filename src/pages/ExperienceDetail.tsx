@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
@@ -35,9 +35,17 @@ import { CouponValidationResult } from "@/hooks/useDiscountCoupon";
 import "../Styles/ExperienceDetail.css";
 import { Row, Col } from "antd";
 const ExperienceDetail = () => {
-  const { id } = useParams();
+  const { name } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+
+  // Get experience data from navigation state (if available)
+  const stateExperienceData = location.state?.experienceData;
+  const fromPage = location.state?.fromPage;
+
+  // Get ID from state, fallback to undefined if not available
+  const id = stateExperienceData?.id;
   const { isVendor, loading: roleLoading } = useUserRole();
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
@@ -65,6 +73,10 @@ const ExperienceDetail = () => {
       return data;
     },
     enabled: !!id,
+    // Use state data as initial data if available
+    initialData: stateExperienceData,
+    // Only fetch if we don't have state data or if the data is stale
+    staleTime: stateExperienceData ? 5 * 60 * 1000 : 0, // 5 minutes if we have state data
   });
 
   const { data: images } = useQuery({
@@ -154,9 +166,9 @@ const ExperienceDetail = () => {
     return null;
   };
 
-  const  handleBookingSuccess = () => {
+  const handleBookingSuccess = () => {
     setShowSuccessAnimation(true);
-    navigate('/confirm-booking');
+    navigate("/confirm-booking");
     refetchBookings();
   };
 
@@ -166,7 +178,7 @@ const ExperienceDetail = () => {
 
   const handleBulkPaymentSuccess = () => {
     setShowSuccessAnimation(true);
-    navigate('/confirm-booking');
+    navigate("/confirm-booking");
     refetchBookings();
     setBulkBookingsData([]);
     setBulkParticipantsData([]);
@@ -197,10 +209,10 @@ const ExperienceDetail = () => {
       setIsBookingDialogOpen(true);
     };
 
-    window.addEventListener('openBookingDialog', handleOpenBookingDialog);
+    window.addEventListener("openBookingDialog", handleOpenBookingDialog);
 
     return () => {
-      window.removeEventListener('openBookingDialog', handleOpenBookingDialog);
+      window.removeEventListener("openBookingDialog", handleOpenBookingDialog);
     };
   }, []);
 
@@ -209,7 +221,7 @@ const ExperienceDetail = () => {
     images && images.length > 0
       ? images
       : experience?.image_url
-        ? [
+      ? [
           {
             id: "main",
             image_url: experience.image_url,
@@ -218,7 +230,7 @@ const ExperienceDetail = () => {
             is_primary: true,
           },
         ]
-        : [];
+      : [];
 
   // Bulk Booking CSV Download
   const handleDownloadBulkBookingCSV = () => {
@@ -287,7 +299,8 @@ const ExperienceDetail = () => {
 
         if (!bookingDate || !participantName || !participantEmail) {
           errors.push(
-            `Row ${i + 2
+            `Row ${
+              i + 2
             }: Missing required fields (booking_date, participant_name, participant_email)`
           );
           continue;
@@ -323,7 +336,8 @@ const ExperienceDetail = () => {
 
         if (bookingsError) {
           errors.push(
-            `Row ${i + 2}: Error checking existing bookings - ${bookingsError.message
+            `Row ${i + 2}: Error checking existing bookings - ${
+              bookingsError.message
             }`
           );
           continue;
@@ -350,7 +364,8 @@ const ExperienceDetail = () => {
 
         if (!availableSlot) {
           errors.push(
-            `Row ${i + 2
+            `Row ${
+              i + 2
             }: No available time slots for ${participantName} on ${bookingDate}`
           );
           continue;
@@ -460,7 +475,6 @@ const ExperienceDetail = () => {
         </Button> */}
 
         <div className="container ExperienceDetailContainer">
-
           {/* Image Gallery Section */}
           <div className="GridImageGalleryContainer">
             <ImageGallery
@@ -469,7 +483,9 @@ const ExperienceDetail = () => {
             />
           </div>
           {/* <br /> */}
-          <h1 className="text-3xl font-bold mb-0 text-start mt-2">{experience.title}</h1>
+          <h1 className="text-3xl font-bold mb-0 text-start mt-2">
+            {experience.title}
+          </h1>
           {/* Details Section */}
           <div className="space-y-6 ">
             <div>
@@ -488,7 +504,10 @@ const ExperienceDetail = () => {
                 <div className="features-badges-grid">
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
-                      <img src="/Images/ATOAICertified.svg" alt="ATOAI Certified" />
+                      <img
+                        src="/Images/ATOAICertified.svg"
+                        alt="ATOAI Certified"
+                      />
                     </div>
                     <div className="feature-badge-content">
                       <p>ATOAI Certified</p>
@@ -496,7 +515,10 @@ const ExperienceDetail = () => {
                   </div>
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
-                      <img src="/Images/BookPayLater.svg" alt="Book Now Pay Later" />
+                      <img
+                        src="/Images/BookPayLater.svg"
+                        alt="Book Now Pay Later"
+                      />
                     </div>
                     <div className="feature-badge-content">
                       <p>Book Now, Pay Later</p>
@@ -512,7 +534,10 @@ const ExperienceDetail = () => {
                   </div>
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
-                      <img src="/Images/MobileUpatedIcon.svg" alt="Mobile Tickets" />
+                      <img
+                        src="/Images/MobileUpatedIcon.svg"
+                        alt="Mobile Tickets"
+                      />
                     </div>
                     <div className="feature-badge-content">
                       <p>Instant Tickets to your mobile</p>
@@ -520,8 +545,6 @@ const ExperienceDetail = () => {
                   </div>
                 </div>
               </div>
-
-
 
               {/* {experience.is_special_offer && (
                 <Badge className="mb-4 bg-orange-500 hover:bg-orange-600">
@@ -538,8 +561,6 @@ const ExperienceDetail = () => {
                   ({experience.reviews_count?.toLocaleString()} reviews)
                 </span>
               </div> */}
-
-
             </div>
 
             <div>
@@ -553,7 +574,9 @@ const ExperienceDetail = () => {
                       <div className="DescriptionEditContainer">
                         <div
                           className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
-                          dangerouslySetInnerHTML={{ __html: experience.description }}
+                          dangerouslySetInnerHTML={{
+                            __html: experience.description,
+                          }}
                         />
                       </div>
                     </div>
@@ -618,16 +641,21 @@ const ExperienceDetail = () => {
                               %
                             </Badge>
                           </>
-                        ) : discountedPrice && discountedPrice !== (firstActivity?.price || experience.price) ? (
+                        ) : discountedPrice &&
+                          discountedPrice !==
+                            (firstActivity?.price || experience.price) ? (
                           <>
                             <span className="text-lg text-muted-foreground line-through">
-                              {formatCurrency(firstActivity?.price || experience.price)}
+                              {formatCurrency(
+                                firstActivity?.price || experience.price
+                              )}
                             </span>
                             <span className="text-3xl font-bold text-green-600">
                               {formatCurrency(discountedPrice)}
                             </span>
                           </>
-                        ) : experience.original_price && experience.original_price !== experience.price ? (
+                        ) : experience.original_price &&
+                          experience.original_price !== experience.price ? (
                           <>
                             <span className="text-lg text-muted-foreground line-through">
                               {formatCurrency(experience.original_price)}
@@ -638,7 +666,9 @@ const ExperienceDetail = () => {
                           </>
                         ) : (
                           <span className="text-3xl font-bold text-orange-500">
-                            {formatCurrency(firstActivity?.price || experience.price)}
+                            {formatCurrency(
+                              firstActivity?.price || experience.price
+                            )}
                           </span>
                         )}
                       </div>
@@ -674,7 +704,8 @@ const ExperienceDetail = () => {
                                 <div className="flex items-center gap-2">
                                   <Tag className="h-4 w-4 text-green-600" />
                                   <span className="font-medium text-green-800">
-                                    Coupon Applied: {appliedCoupon.coupon?.coupon_code}
+                                    Coupon Applied:{" "}
+                                    {appliedCoupon.coupon?.coupon_code}
                                   </span>
                                 </div>
                                 <Button
@@ -699,13 +730,18 @@ const ExperienceDetail = () => {
                         {bookingButtonText} -{" "}
                         {appliedCoupon?.discount_calculation?.final_amount
                           ? formatCurrency(
-                            appliedCoupon.discount_calculation.final_amount
-                          )
-                          : discountedPrice && discountedPrice !== (firstActivity?.price || experience.price)
-                            ? formatCurrency(discountedPrice)
-                            : experience.original_price && experience.original_price !== experience.price
-                              ? formatCurrency(experience.price)
-                              : formatCurrency(firstActivity?.price || experience.price)}
+                              appliedCoupon.discount_calculation.final_amount
+                            )
+                          : discountedPrice &&
+                            discountedPrice !==
+                              (firstActivity?.price || experience.price)
+                          ? formatCurrency(discountedPrice)
+                          : experience.original_price &&
+                            experience.original_price !== experience.price
+                          ? formatCurrency(experience.price)
+                          : formatCurrency(
+                              firstActivity?.price || experience.price
+                            )}
                       </Button>
 
                       {/* Bulk Booking Buttons for Vendor */}
@@ -739,10 +775,21 @@ const ExperienceDetail = () => {
                       <h1>Why bucketlistt?</h1>
                       <br />
                       <ul>
-                        <li><span>✓</span> Certified Vendors with many years of experience</li>
-                        <li><span>✓</span> Get the lowest prices and last minute availability</li>
-                        <li><span>✓</span> Browse verified reviews</li>
-                        <li><span>✓</span> Have a question? Talk to our experts 24/7</li>
+                        <li>
+                          <span>✓</span> Certified Vendors with many years of
+                          experience
+                        </li>
+                        <li>
+                          <span>✓</span> Get the lowest prices and last minute
+                          availability
+                        </li>
+                        <li>
+                          <span>✓</span> Browse verified reviews
+                        </li>
+                        <li>
+                          <span>✓</span> Have a question? Talk to our experts
+                          24/7
+                        </li>
                       </ul>
                     </div>
                   </div>

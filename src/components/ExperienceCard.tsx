@@ -104,39 +104,73 @@ export function ExperienceCard({
       return {
         displayPrice: discountedPrice,
         originalPrice: price,
-        isDiscounted: true
+        isDiscounted: true,
       };
     }
-    
+
     // Check if activity has discounted price
     if (activityDiscountedPrice && firstActivity?.price) {
       const activityOriginalPrice = `₹${firstActivity.price}`;
       const activityDiscountedPriceFormatted = `₹${activityDiscountedPrice}`;
-      
+
       if (activityDiscountedPrice !== firstActivity.price) {
         return {
           displayPrice: activityDiscountedPriceFormatted,
           originalPrice: activityOriginalPrice,
-          isDiscounted: true
+          isDiscounted: true,
         };
       }
     }
-    
+
     return {
       displayPrice: price,
       originalPrice: originalPrice,
-      isDiscounted: false
+      isDiscounted: false,
     };
   };
 
-  const { displayPrice, originalPrice: displayOriginalPrice, isDiscounted } = getDisplayPrice();
+  const {
+    displayPrice,
+    originalPrice: displayOriginalPrice,
+    isDiscounted,
+  } = getDisplayPrice();
 
   const handleClick = () => {
     setIsClicked(true);
 
     // Add a small delay for the animation to be visible before navigation
     setTimeout(() => {
-      navigate(`/experience/${id}`);
+      const experienceName = title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .trim();
+      navigate(`/experience/${experienceName}`, {
+        state: {
+          experienceData: {
+            id,
+            title,
+            image,
+            category,
+            categories,
+            rating,
+            reviews,
+            price,
+            originalPrice,
+            discountedPrice,
+            duration,
+            groupSize,
+            distanceKm,
+            startPoint,
+            endPoint,
+            description,
+            isSpecialOffer,
+          },
+          fromPage: "experience-card",
+          timestamp: Date.now(),
+        },
+      });
     }, 200);
   };
 
@@ -145,8 +179,8 @@ export function ExperienceCard({
     categories && categories.length > 0
       ? categories
       : category
-        ? [{ id: "fallback", name: category }]
-        : [];
+      ? [{ id: "fallback", name: category }]
+      : [];
 
   const getDistanceDisplay = () => {
     if (distanceKm === 0) return "On spot";
@@ -163,10 +197,11 @@ export function ExperienceCard({
 
   return (
     <Card
-      className={`group cursor-pointer overflow-hidden border-0 transition-all duration-300 transform hover:-translate-y-2 zoom-click-animation ${isClicked ? "zoom-in-click" : ""
-        } ExperienceCardMobileLayout`}
+      className={`group cursor-pointer overflow-hidden border-0 transition-all duration-300 transform hover:-translate-y-2 zoom-click-animation ${
+        isClicked ? "zoom-in-click" : ""
+      } ExperienceCardMobileLayout`}
       onClick={handleClick}
-      style={{ boxShadow: "none", borderRadius: "5px", }}
+      style={{ boxShadow: "none", borderRadius: "5px" }}
     >
       <CardContent className="p-0">
         {/* Desktop Layout */}
@@ -178,11 +213,15 @@ export function ExperienceCard({
               </Badge>
             )}
             <div
-              className={`absolute z-10 ${index !== undefined ? "top-0 right-0" : "top-0 right-2"
-                }`}
+              className={`absolute z-10 ${
+                index !== undefined ? "top-0 right-0" : "top-0 right-2"
+              }`}
               style={{ marginTop: "-2px" }}
             >
-              <FavoriteButton experienceId={id} className="HeaderFavoriteButton" />
+              <FavoriteButton
+                experienceId={id}
+                className="HeaderFavoriteButton"
+              />
             </div>
             <LazyImage
               src={displayImage}
@@ -260,16 +299,17 @@ export function ExperienceCard({
             <div>
               <div id="PriceContainerOfferHomePageCards">
                 {isDiscounted ? (
-                  <div className="flex flex-col gap-0" style={{textAlign: "start"}}>
+                  <div
+                    className="flex flex-col gap-0"
+                    style={{ textAlign: "start" }}
+                  >
                     <div className="FlexAdjustContainer font-bold fontSizeMd">
-                    <span style={{ color: "grey" }}>From</span>&nbsp;
+                      <span style={{ color: "grey" }}>From</span>&nbsp;
                       <span className="text-muted-foreground line-through">
                         {displayOriginalPrice}
                       </span>
                     </div>
-                    <span
-                      className="font-bold fontSizeMd text-green-600"
-                    >
+                    <span className="font-bold fontSizeMd text-green-600">
                       {displayPrice}
                     </span>
                   </div>
@@ -278,7 +318,7 @@ export function ExperienceCard({
                     <span
                       className="text-lg font-bold fontSizeMd"
                       style={{ color: "var(--brand-color)" }}
-                    > 
+                    >
                       <span style={{ color: "grey" }}>From</span> {displayPrice}
                     </span>
                     {displayOriginalPrice && (
@@ -347,11 +387,15 @@ export function ExperienceCard({
                 )}
               </div>
               <div
-                className={`absolute z-10 ${index !== undefined ? "top-0 right-0" : "top-0 right-2"
-                  }`}
+                className={`absolute z-10 ${
+                  index !== undefined ? "top-0 right-0" : "top-0 right-2"
+                }`}
                 style={{ marginTop: "-2px" }}
               >
-                <FavoriteButton experienceId={id} className="HeaderFavoriteButton" />
+                <FavoriteButton
+                  experienceId={id}
+                  className="HeaderFavoriteButton"
+                />
               </div>
             </div>
 
@@ -360,15 +404,24 @@ export function ExperienceCard({
             <div
               className="DescriptionContainer"
               dangerouslySetInnerHTML={{
-                __html: description ?
-                  description.replace(/<[^>]*>/g, '').split(" ").slice(0, 10).join(" ") +
-                  (description.replace(/<[^>]*>/g, '').split(" ").length > 20 ? "..." : "")
-                  : ""
+                __html: description
+                  ? description
+                      .replace(/<[^>]*>/g, "")
+                      .split(" ")
+                      .slice(0, 10)
+                      .join(" ") +
+                    (description.replace(/<[^>]*>/g, "").split(" ").length > 20
+                      ? "..."
+                      : "")
+                  : "",
               }}
             />
             <div id="PriceContainerOfferHomePageCards">
               {isDiscounted ? (
-                <div className="flex flex-col gap-0" style={{textAlign: "start"}}>
+                <div
+                  className="flex flex-col gap-0"
+                  style={{ textAlign: "start" }}
+                >
                   <div className="FlexAdjustContainer">
                     <span className="FromText textSmall">from</span>
                     <span className="text-muted-foreground line-through textSmall">
@@ -376,9 +429,7 @@ export function ExperienceCard({
                     </span>
                   </div>
                   <div style={{ marginTop: "-5px" }}>
-                    <span
-                      className="text-lg font-bold fontSizeMd text-green-600"
-                    >
+                    <span className="text-lg font-bold fontSizeMd text-green-600">
                       {displayPrice}
                     </span>
                   </div>

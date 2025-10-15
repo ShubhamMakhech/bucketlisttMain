@@ -131,8 +131,8 @@ export const UserBookings = () => {
     const userIds = bookings.map((booking) => booking.user_id).filter(Boolean);
     // console.log("All bookings:", bookings);
     // console.log(
-      // "All user_ids from bookings:",
-      // bookings.map((b) => b.user_id)
+    // "All user_ids from bookings:",
+    // bookings.map((b) => b.user_id)
     // );
     // console.log("Filtered user_ids:", userIds);
     // console.log("Unique user_ids:", [...new Set(userIds)]);
@@ -141,8 +141,8 @@ export const UserBookings = () => {
     const uniqueIds = [...new Set(userIds)];
     if (uniqueIds.length === 0 && user?.id) {
       // console.log(
-        // "No user IDs from bookings, adding current user ID for testing:",
-        // user.id
+      // "No user IDs from bookings, adding current user ID for testing:",
+      // user.id
       // );
       return [user.id];
     }
@@ -236,9 +236,21 @@ export const UserBookings = () => {
         cell: ({ row }) => (
           <span
             className="cursor-pointer hover:text-brand-primary"
-            onClick={() =>
-              navigate(`/experience/${row.original.experiences?.id}`)
-            }
+            onClick={() => {
+              const experienceName = (row.original.experiences?.title || "")
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, "")
+                .replace(/\s+/g, "-")
+                .replace(/-+/g, "-")
+                .trim();
+              navigate(`/experience/${experienceName}`, {
+                state: {
+                  experienceData: row.original.experiences,
+                  fromPage: "user-bookings",
+                  timestamp: Date.now(),
+                },
+              });
+            }}
           >
             {row.original.experiences?.title}
           </span>

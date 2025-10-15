@@ -82,9 +82,15 @@ export function Footer() {
                   variant="link"
                   className="p-0 h-auto text-sm text-muted-foreground hover:text-orange-500"
                   onClick={() =>
-                    navigate(
-                      "/destination/5f19264e-4947-4cb6-a35b-e2e20881c355"
-                    )
+                    navigate("/destination/rishikesh", {
+                      state: {
+                        destinationData: {
+                          id: "5f19264e-4947-4cb6-a35b-e2e20881c355",
+                          title: "Rishikesh",
+                        },
+                        fromPage: "footer",
+                      },
+                    })
                   }
                 >
                   Rishikesh
@@ -95,9 +101,15 @@ export function Footer() {
                   variant="link"
                   className="p-0 h-auto text-sm text-muted-foreground hover:text-orange-500"
                   onClick={() =>
-                    navigate(
-                      "/destination/102c9601-2356-4d5b-a79c-d6bf0534eca4"
-                    )
+                    navigate("/destination/goa", {
+                      state: {
+                        destinationData: {
+                          id: "102c9601-2356-4d5b-a79c-d6bf0534eca4",
+                          title: "Goa",
+                        },
+                        fromPage: "footer",
+                      },
+                    })
                   }
                 >
                   Goa
@@ -108,9 +120,15 @@ export function Footer() {
                   variant="link"
                   className="p-0 h-auto text-sm text-muted-foreground hover:text-orange-500"
                   onClick={() =>
-                    navigate(
-                      "/destination/a4958a9b-afeb-4694-96dd-505fe2c23c51"
-                    )
+                    navigate("/destination/matheran", {
+                      state: {
+                        destinationData: {
+                          id: "a4958a9b-afeb-4694-96dd-505fe2c23c51",
+                          title: "Matheran",
+                        },
+                        fromPage: "footer",
+                      },
+                    })
                   }
                 >
                   Matheran
