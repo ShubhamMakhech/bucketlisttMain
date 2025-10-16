@@ -1778,8 +1778,8 @@ export const BookingDialog = ({
                       Pay 10% Now, Rest On-Site
                     </h4>
                     <p className="text-sm text-blue-600 dark:text-blue-300">
-                      Pay 10% upfront, remaining amount to be paid directly to
-                      vendor
+                      Book your adventure with 10% — pay the rest when you
+                      arrive at spot!
                     </p>
                   </div>
                   <Switch
