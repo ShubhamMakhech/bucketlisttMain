@@ -503,7 +503,7 @@ export const BookingDialog = ({
       const vendorWhatsappResponse = await SendWhatsappMessage(
         vendorWhatsappBody
       );
-      // console.log("vendorWhatsappResponse", vendorWhatsappResponse);
+      console.log("vendorWhatsappResponse", vendorWhatsappResponse);
       // console.log(whatsappResponse);
 
       // console.log(experience);
@@ -721,6 +721,7 @@ export const BookingDialog = ({
         .select()
         .single();
 
+        console.log("booking", booking);
       if (bookingError) {
         console.error("Booking creation error:", bookingError);
         throw bookingError;
