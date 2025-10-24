@@ -422,7 +422,7 @@ export const BookingDialog = ({
               ).format("hh:mm A")}`,
               "4": timeSlot?.experiences?.location,
               "5": data?.participant_count?.toString() || "0",
-              "6": finalPrice.toFixed(2).toString(),
+              "6": upfrontAmount.toFixed(2).toString(),
               "7": dueAmount || "0",
             },
           },
