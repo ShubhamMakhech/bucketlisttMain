@@ -260,6 +260,25 @@ export const UserBookings = () => {
         return "bg-gray-100 text-gray-700";
     }
   };
+
+  const formatTime12Hour = (timeString: string) => {
+    if (!timeString) return "N/A";
+    try {
+      // Handle both "HH:mm:ss" and "HH:mm" formats
+      const timeParts = timeString.split(":");
+      const hours = parseInt(timeParts[0]);
+      const minutes = timeParts[1];
+
+      if (isNaN(hours)) return timeString;
+
+      const period = hours >= 12 ? "PM" : "AM";
+      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+
+      return `${displayHours}:${minutes} ${period}`;
+    } catch (error) {
+      return timeString;
+    }
+  };
   const handleSort = (field: "booking_date" | "title" | "status") => {
     if (sortBy === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -332,13 +351,13 @@ export const UserBookings = () => {
             <div>
               <span className="text-muted-foreground">Start Time:</span>
               <p className="font-medium">
-                {booking.time_slots?.start_time || "N/A"}
+                {formatTime12Hour(booking.time_slots?.start_time || "")}
               </p>
             </div>
             <div>
               <span className="text-muted-foreground">End Time:</span>
               <p className="font-medium">
-                {booking.time_slots?.end_time || "N/A"}
+                {formatTime12Hour(booking.time_slots?.end_time || "")}
               </p>
             </div>
           </div>
