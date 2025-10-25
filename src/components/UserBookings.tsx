@@ -9,23 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  SortingState,
-  useReactTable,
-} from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface BookingWithDueAmount {
   due_amount?: number;
@@ -36,9 +20,10 @@ export const UserBookings = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "booking_date", desc: true }, // default sort
-  ]);
+  const [sortBy, setSortBy] = React.useState<
+    "booking_date" | "title" | "status"
+  >("booking_date");
+  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [showTodayOnly, setShowTodayOnly] = React.useState(false);
 
   const { data: bookings = [], isLoading } = useQuery({
@@ -200,15 +185,68 @@ export const UserBookings = () => {
     }, {} as Record<string, any>);
   }, [profiles]);
 
-  // Filter today's bookings
-  const filteredBookings = React.useMemo(() => {
+  // Filter and sort bookings
+  const filteredAndSortedBookings = React.useMemo(() => {
+    let filtered = bookings;
+
+    // Apply today filter
     if (showTodayOnly) {
-      return bookings.filter((booking) =>
+      filtered = filtered.filter((booking) =>
         isSameDay(new Date(booking.booking_date), new Date())
       );
     }
-    return bookings;
-  }, [bookings, showTodayOnly]);
+
+    // Apply search filter
+    if (globalFilter) {
+      filtered = filtered.filter((booking) => {
+        const searchTerm = globalFilter.toLowerCase();
+        return (
+          booking.experiences?.title?.toLowerCase().includes(searchTerm) ||
+          booking.time_slots?.activities?.name
+            ?.toLowerCase()
+            .includes(searchTerm) ||
+          booking.status?.toLowerCase().includes(searchTerm) ||
+          profileMap[booking.user_id]?.first_name
+            ?.toLowerCase()
+            .includes(searchTerm) ||
+          profileMap[booking.user_id]?.last_name
+            ?.toLowerCase()
+            .includes(searchTerm) ||
+          profileMap[booking.user_id]?.email?.toLowerCase().includes(searchTerm)
+        );
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortBy) {
+        case "booking_date":
+          aValue = new Date(a.booking_date).getTime();
+          bValue = new Date(b.booking_date).getTime();
+          break;
+        case "title":
+          aValue = a.experiences?.title || "";
+          bValue = b.experiences?.title || "";
+          break;
+        case "status":
+          aValue = a.status || "";
+          bValue = b.status || "";
+          break;
+        default:
+          return 0;
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [bookings, showTodayOnly, globalFilter, sortBy, sortOrder, profileMap]);
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -222,245 +260,176 @@ export const UserBookings = () => {
         return "bg-gray-100 text-gray-700";
     }
   };
+  const handleSort = (field: "booking_date" | "title" | "status") => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("desc");
+    }
+  };
 
-  const columns = React.useMemo<ColumnDef<BookingWithDueAmount>[]>(
-    () => [
-      {
-        accessorKey: "index",
-        header: "No.",
-        cell: ({ row }) => row.index + 1,
-      },
-      {
-        accessorKey: "experiences.title",
-        header: "Title",
-        cell: ({ row }) => (
-          <span
-            className="cursor-pointer hover:text-brand-primary"
-            onClick={() => {
-              const experienceName = (row.original.experiences?.title || "")
-                .toLowerCase()
-                .replace(/[^a-z0-9\s-]/g, "")
-                .replace(/\s+/g, "-")
-                .replace(/-+/g, "-")
-                .trim();
-              navigate(`/experience/${experienceName}`, {
-                state: {
-                  experienceData: row.original.experiences,
-                  fromPage: "user-bookings",
-                  timestamp: Date.now(),
-                },
-              });
-            }}
-          >
-            {row.original.experiences?.title}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "time_slots.activities.name",
-        header: "Activity",
-        cell: ({ row }) => row.original.time_slots?.activities?.name || "N/A",
-      },
-      {
-        accessorKey: "booking_date",
-        header: ({ column }) => {
-          const isSorted = column.getIsSorted();
-          const sortIcon =
-            isSorted === "asc" ? "↑" : isSorted === "desc" ? "↓" : "↓";
+  const BookingCard = ({
+    booking,
+    index,
+  }: {
+    booking: BookingWithDueAmount;
+    index: number;
+  }) => {
+    const profile = profileMap[booking.user_id];
+    const activity = booking.time_slots?.activities;
+    const price = activity?.price || booking?.experiences?.price || 0;
+    const currency =
+      activity?.currency || booking?.experiences?.currency || "INR";
+    const bookingAmount = booking?.booking_amount || "N/A";
+    const dueAmount = booking?.due_amount || 0;
 
-          return (
-            <div
-              className="cursor-pointer"
-              onClick={() => column.toggleSorting(isSorted === "asc")}
-            >
-              Activity Date {sortIcon}
-            </div>
-          );
-        },
-        cell: ({ row }) =>
-          format(new Date(row.original.booking_date), "MMM d, yyyy"),
-        sortingFn: (a, b) => {
-          const dateA = new Date(a.original.booking_date).getTime();
-          const dateB = new Date(b.original.booking_date).getTime();
-          return dateA - dateB;
-        },
-      },
-      {
-        accessorKey: "experiences.location",
-        header: "Location",
-        cell: ({ row }) => (
-          <a
-            href={row.original.experiences?.location}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-brand-primary"
-          >
-            {row.original.experiences?.location}
-          </a>
-        ),
-      },
-      {
-        accessorKey: "profiles.first_name",
-        header: "Customer Name",
-        cell: ({ row }) => {
-          const profile = profileMap[row.original.user_id];
-          if (profile) {
-            return `${profile.first_name} ${profile.last_name}`.trim();
-          }
-          return row.original?.booking_participants?.[0]?.name || "N/A";
-        },
-      },
-      {
-        accessorKey: "profiles.email",
-        header: "Customer Email",
-        cell: ({ row }) => {
-          const profile = profileMap[row.original.user_id];
-          return (
-            profile?.email ||
-            row.original?.booking_participants?.[0]?.email ||
-            "N/A"
-          );
-        },
-      },
-      {
-        accessorKey: "profiles.phone_number",
-        header: "Contact Number",
-        cell: ({ row }) => {
-          const profile = profileMap[row.original.user_id];
-          return (
-            profile?.phone_number ||
-            row.original?.booking_participants?.[0]?.phone_number ||
-            "N/A"
-          );
-        },
-      },
-      // {
-      //   accessorKey: "profiles.profile_picture_url",
-      //   header: "Profile Picture",
-      //   cell: ({ row }) => {
-      //     const profile = profileMap[row.original.user_id];
-      //     if (profile?.profile_picture_url) {
-      //       return (
-      //         <img
-      //           src={profile.profile_picture_url}
-      //           alt={`${profile.first_name} ${profile.last_name}`}
-      //           className="w-8 h-8 rounded-full object-cover"
-      //         />
-      //       );
-      //     }
-      //     return (
-      //       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
-      //         {profile
-      //           ? `${profile.first_name?.[0] || ""}${
-      //               profile.last_name?.[0] || ""
-      //             }`
-      //           : "N/A"}
-      //       </div>
-      //     );
-      //   },
-      // },
-      {
-        accessorKey: "total_participants",
-        header: "No. of Participants",
-        cell: ({ row }) => row.original?.total_participants || "N/A",
-      },
-      {
-        accessorKey: "price",
-        header: "Total Amount",
-        cell: ({ row }) => {
-          //  console.log("row.original", row.original);
-          const activity = row.original.time_slots?.activities;
-          const price =
-            activity?.price || row.original?.experiences?.price || 0;
-          const currency =
-            activity?.currency || row.original?.experiences?.currency || "INR";
-          const totalAmount = price * row.original?.total_participants;
-          const dueAmount = row.original?.due_amount || 0;
-          const paidAmount = totalAmount - dueAmount;
-          const bookingAmount = row.original?.booking_amount || "N/A";
-
-          return (
+    return (
+      <Card className="h-full">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
+            <CardTitle className="text-lg font-semibold line-clamp-2">
+              <span
+                className="cursor-pointer hover:text-brand-primary"
+                onClick={() => {
+                  const experienceName = (booking.experiences?.title || "")
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, "")
+                    .replace(/\s+/g, "-")
+                    .replace(/-+/g, "-")
+                    .trim();
+                  navigate(`/experience/${experienceName}`, {
+                    state: {
+                      experienceData: booking.experiences,
+                      fromPage: "user-bookings",
+                      timestamp: Date.now(),
+                    },
+                  });
+                }}
+              >
+                {booking.experiences?.title}
+              </span>
+            </CardTitle>
+            <Badge className={getStatusColor(booking.status)}>
+              {booking.status}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <div className="text-lg font-bold text-orange-500 mb-1">
-                {bookingAmount == "N/A"
-                  ? "N/A"
-                  : currency + " " + bookingAmount}
+              <span className="text-muted-foreground">Activity:</span>
+              <p className="font-medium">
+                {booking.time_slots?.activities?.name || "N/A"}
+              </p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Date:</span>
+              <p className="font-medium">
+                {format(new Date(booking.booking_date), "MMM d, yyyy")}
+              </p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Start Time:</span>
+              <p className="font-medium">
+                {booking.time_slots?.start_time || "N/A"}
+              </p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">End Time:</span>
+              <p className="font-medium">
+                {booking.time_slots?.end_time || "N/A"}
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t pt-3">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Customer:</span>
+                <p className="font-medium">
+                  {profile
+                    ? `${profile.first_name} ${profile.last_name}`.trim()
+                    : booking?.booking_participants?.[0]?.name || "N/A"}
+                </p>
               </div>
-              {bookingAmount != "N/A" && (
-                <div className="text-sm text-muted-foreground">
-                  {row.original?.total_participants} × {currency}{" "}
-                  {bookingAmount == "N/A"
-                    ? 0
-                    : bookingAmount / row.original?.total_participants}
+              <div>
+                <span className="text-muted-foreground">Participants:</span>
+                <p className="font-medium">
+                  {booking?.total_participants || "N/A"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-3">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Total Amount:</span>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-orange-500">
+                    {bookingAmount === "N/A"
+                      ? "N/A"
+                      : `${currency} ${bookingAmount}`}
+                  </div>
+                  {bookingAmount !== "N/A" && (
+                    <div className="text-xs text-muted-foreground">
+                      {booking?.total_participants} × {currency}{" "}
+                      {bookingAmount / booking?.total_participants}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {dueAmount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">
+                    Pending Payment:
+                  </span>
+                  <span className="text-sm font-medium">
+                    {currency} {dueAmount}
+                  </span>
                 </div>
               )}
             </div>
-          );
-        },
-      },
-      {
-        accessorKey: "due_payment",
-        header: "Pending Payment",
-        cell: ({ row }) => {
-          const activity = row.original.time_slots?.activities;
-          const price =
-            activity?.price || row.original?.experiences?.price || 0;
-          const currency =
-            activity?.currency || row.original.experiences?.currency || "INR";
-          const totalAmount = price * row.original.total_participants;
-          const dueAmount = row.original.due_amount || 0;
-          const paidAmount = totalAmount - dueAmount;
+          </div>
 
-          return (
-            <div>
-              <div className="text-sm text-muted-foreground">
-                {currency} {dueAmount}
+          {(profile?.email || booking?.booking_participants?.[0]?.email) && (
+            <div className="border-t pt-3">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Email:</span>
+                <p className="font-medium">
+                  {profile?.email ||
+                    booking?.booking_participants?.[0]?.email ||
+                    "N/A"}
+                </p>
               </div>
             </div>
-          );
-        },
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => (
-          <div className="space-x-2">
-            <Badge className={getStatusColor(row.original.status)}>
-              {row.original.status}
-            </Badge>
-            {/* {row.original.due_amount && row.original.due_amount > 0 && (
-              <Badge
-                variant="secondary"
-                className="bg-orange-100 text-orange-800"
-              >
-                Partial Payment
-              </Badge>
-            )} */}
-          </div>
-        ),
-      },
-      {
-        accessorKey: "note_for_guide",
-        header: "Notes for Guide",
-        cell: ({ row }) => row.original.note_for_guide || "N/A",
-      },
-    ],
-    [navigate, profileMap]
-  );
+          )}
 
-  const table = useReactTable({
-    data: filteredBookings,
-    columns,
-    state: {
-      globalFilter,
-      sorting,
-    },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-  });
+          {(profile?.phone_number ||
+            booking?.booking_participants?.[0]?.phone_number) && (
+            <div className="text-sm">
+              <span className="text-muted-foreground">Contact:</span>
+              <p className="font-medium">
+                {profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ||
+                  "N/A"}
+              </p>
+            </div>
+          )}
+
+          {booking.note_for_guide && (
+            <div className="border-t pt-3">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Notes for Guide:</span>
+                <p className="font-medium">{booking.note_for_guide}</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (isLoading) return <p className="text-center py-10">Loading...</p>;
   if (!bookings.length)
@@ -472,65 +441,58 @@ export const UserBookings = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center py-4 gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 gap-4">
         <Input
           placeholder="Search bookings..."
           value={globalFilter ?? ""}
           onChange={(e) => setGlobalFilter(e.target.value)}
           className="max-w-sm"
         />
-        <Button
-          variant={showTodayOnly ? "default" : "outline"}
-          onClick={() => setShowTodayOnly((prev) => !prev)}
-        >
-          {showTodayOnly ? "Show All" : "Today's bookings"}
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant={sortBy === "booking_date" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleSort("booking_date")}
+            >
+              Date{" "}
+              {sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
+            </Button>
+            <Button
+              variant={sortBy === "title" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleSort("title")}
+            >
+              Title {sortBy === "title" && (sortOrder === "asc" ? "↑" : "↓")}
+            </Button>
+            <Button
+              variant={sortBy === "status" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleSort("status")}
+            >
+              Status {sortBy === "status" && (sortOrder === "asc" ? "↑" : "↓")}
+            </Button>
+          </div>
+          <Button
+            variant={showTodayOnly ? "default" : "outline"}
+            onClick={() => setShowTodayOnly((prev) => !prev)}
+          >
+            {showTodayOnly ? "Show All" : "Today's bookings"}
+          </Button>
+        </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table className="border">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="border px-4 py-2">
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="border px-4 py-2 text-start"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="text-center">
-                  {showTodayOnly ? "No bookings for today." : "No results."}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {filteredAndSortedBookings.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredAndSortedBookings.map((booking, index) => (
+            <BookingCard key={booking.id} booking={booking} index={index} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-10 text-muted-foreground">
+          {showTodayOnly ? "No bookings for today." : "No bookings found."}
+        </div>
+      )}
     </div>
   );
 };
