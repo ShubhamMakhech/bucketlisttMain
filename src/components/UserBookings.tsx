@@ -477,26 +477,28 @@ export const UserBookings = () => {
               Date{" "}
               {sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
             </Button>
-            <Button
+            {/* <Button
               variant={sortBy === "title" ? "default" : "outline"}
               size="sm"
               onClick={() => handleSort("title")}
             >
               Title {sortBy === "title" && (sortOrder === "asc" ? "↑" : "↓")}
-            </Button>
-            <Button
+            </Button> */}
+            {/* <Button
               variant={sortBy === "status" ? "default" : "outline"}
               size="sm"
               onClick={() => handleSort("status")}
             >
               Status {sortBy === "status" && (sortOrder === "asc" ? "↑" : "↓")}
-            </Button>
+            </Button> */}
           </div>
           <Button
             variant={showTodayOnly ? "default" : "outline"}
             onClick={() => setShowTodayOnly((prev) => !prev)}
           >
-            {showTodayOnly ? "Show All" : "Today's bookings"}
+            {showTodayOnly
+              ? `Show All (${filteredAndSortedBookings.length} today)`
+              : "Today's bookings"}
           </Button>
         </div>
       </div>
