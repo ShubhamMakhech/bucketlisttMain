@@ -51,10 +51,7 @@ export const UserBookings = () => {
             end_time,
             activity_id,
             activities (
-              id,
-              name,
-              price,
-              currency
+            *
             )
           ),
           booking_participants (
@@ -445,18 +442,107 @@ export const UserBookings = () => {
               </div>
             </div>
           )}
+
+          {/* Vendor Money Calculation Section */}
+          {user?.user_metadata?.role === "vendor" &&
+            booking.time_slots?.activities?.b2bPrice &&
+            bookingAmount !=
+              "N/A" &&(
+                <div className="border-t pt-3 mt-3">
+                  <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3 space-y-2">
+                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                      Money Calculation
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {/* Space reserved for vendor money calculations */}
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">
+                          B2B Price:
+                        </span>
+                        <p className="font-medium">
+                          {currency}{" "}
+                          {booking.time_slots?.activities?.b2bPrice *
+                            booking.total_participants}
+                        </p>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">
+                          Original Price:
+                        </span>
+                        <p className="font-medium">
+                          {currency}{" "}
+                          {booking.time_slots?.activities?.price *
+                            booking.total_participants}
+                        </p>
+                      </div>
+                      {/* <div className="text-sm">
+                      <span className="text-muted-foreground">
+                        Website Price:
+                      </span>
+                      <p className="font-medium">
+                        {currency}{" "}
+                        {booking.time_slots?.activities?.discounted_price *
+                          booking.total_participants}
+                      </p>
+                    </div> */}
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">
+                          Commission:
+                        </span>
+                        <p className="font-medium">
+                          {currency}{" "}
+                          {(booking.time_slots?.activities?.price -
+                            booking.time_slots?.activities?.b2bPrice) *
+                            booking.total_participants}
+                        </p>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">
+                          Customer Cost:
+                        </span>
+                        <p className="font-medium">
+                          {currency} {bookingAmount}
+                        </p>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">
+                          Advance Paid:
+                        </span>
+                        <p className="font-medium">
+                          {currency} {bookingAmount - dueAmount}
+                        </p>
+                      </div>
+                      <div className="text-sm">
+                        {" "}
+                        <span className="text-muted-foreground">
+                          Amount to be paid:
+                        </span>
+                        <p className="font-medium">
+                          {currency}{" "}
+                          {bookingAmount - (bookingAmount - dueAmount)}
+                        </p>
+                      </div>
+                      <div className="text-sm">
+                        {" "}
+                        <span className="text-muted-foreground">
+                          Amount to be collected from vendor:
+                        </span>
+                        <p className="font-medium">
+                          {currency}{" "}
+                          {bookingAmount -
+                            booking.time_slots?.activities?.b2bPrice *
+                              booking.total_participants -
+                            (bookingAmount - dueAmount)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
         </CardContent>
       </Card>
     );
   };
-
-  if (isLoading) return <p className="text-center py-10">Loading...</p>;
-  if (!bookings.length)
-    return (
-      <div className="text-center py-10 text-muted-foreground">
-        No bookings yet!
-      </div>
-    );
 
   return (
     <div>
