@@ -243,25 +243,27 @@ const Bookings = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
+      <div className="container mx-auto px-4 py-4">
+        <div className="mb-0">
           <Button
             variant="ghost"
             onClick={() => navigate("/profile")}
             className="mb-4"
+            id="BookingsBackButtonStyles"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Profile
           </Button>
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <Calendar className="h-6 w-6 text-brand-primary" />
-              <h1 className="text-3xl font-bold">My Bookings</h1>
+              <Calendar className="w-6 text-brand-primary" />
+              <h1 className="text-1xl font-bold">My Bookings</h1>
             </div>
             {user?.user_metadata?.role === "vendor" && (
               <Button
                 onClick={exportToExcel}
                 disabled={isExporting}
+                id="BookingsExportButtonStyles"
                 className="bg-gradient-to-r from-brand-primary to-brand-secondary hover:from-brand-primary/90 hover:to-brand-secondary/90"
               >
                 <Download className="h-4 w-4 mr-2" />

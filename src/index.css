@@ -796,3 +796,44 @@ h6 {
 .BrandShadeCommon {
   background: #940fdb2b;
 }
+
+
+@media (max-width: 768px) {
+  #UserBookingsCardContentStyles>div{
+    display: flex;
+    gap: 5px;
+  }
+  #UserBookingsCardContentStyles3{
+    display: flex;
+    gap: 5px;
+    justify-content: space-between;
+  }
+  #UserBookingsCardContentStyles3>div{
+    display: flex;
+    gap: 5px;
+    overflow: hidden;
+  }
+  #UserBookingsCardContentStyles4{
+    display: flex;
+    gap: 5px;
+  }
+  #UserBookingsCardContentStyles5{
+    display: flex;
+    gap: 5px;
+  }
+  #UserBookingsCardContentStyles5>div{
+    display: flex;
+    gap: 5px;
+  }
+  #BookingsExportButtonStyles{
+    display: none;
+  }
+  #BookingsBackButtonStyles{
+    display: none;
+  }
+  #UserBookingsSortButtonStyles{
+    display: flex;
+    gap: 5px;
+    flex-direction: row;
+  }
+}

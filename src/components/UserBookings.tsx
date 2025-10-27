@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface BookingWithDueAmount {
   due_amount?: number;
@@ -19,12 +20,20 @@ interface BookingWithDueAmount {
 export const UserBookings = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sortBy, setSortBy] = React.useState<
     "booking_date" | "title" | "status"
   >("booking_date");
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [showTodayOnly, setShowTodayOnly] = React.useState(false);
+  const [selectedDate, setSelectedDate] = React.useState<string>("");
+  const [selectedEndDate, setSelectedEndDate] = React.useState<string>("");
+  const [showDateRangePicker, setShowDateRangePicker] = React.useState(false);
+  const [selectedActivityId, setSelectedActivityId] = React.useState<string | null>(null);
+  const [showActivityFilter, setShowActivityFilter] = React.useState(false);
+  const [selectedTimeslotId, setSelectedTimeslotId] = React.useState<string | null>(null);
+  const [showTimeslotFilter, setShowTimeslotFilter] = React.useState(false);
 
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ["user-bookings", user?.id],
@@ -43,7 +52,8 @@ export const UserBookings = () => {
             location,
             price,
             currency,
-            vendor_id
+            vendor_id,
+            is_active
           ),
           time_slots (
             id,
@@ -80,7 +90,8 @@ export const UserBookings = () => {
             title,
             location,
             price,
-            currency
+            currency,
+            is_active
           ),
           time_slots (
             id,
@@ -196,6 +207,35 @@ export const UserBookings = () => {
       );
     }
 
+    // Apply date filter (mobile only) - supports range
+    if (selectedDate && isMobile) {
+      filtered = filtered.filter((booking) => {
+        const bookingDate = format(new Date(booking.booking_date), "yyyy-MM-dd");
+        
+        if (selectedEndDate) {
+          // Date range filter
+          return bookingDate >= selectedDate && bookingDate <= selectedEndDate;
+        } else {
+          // Single date filter
+          return bookingDate === selectedDate;
+        }
+      });
+    }
+
+    // Apply timeslot filter
+    if (selectedTimeslotId) {
+      filtered = filtered.filter((booking) => {
+        return booking.time_slots?.id === selectedTimeslotId;
+      });
+    }
+
+    // Apply activity filter
+    if (selectedActivityId) {
+      filtered = filtered.filter((booking) => {
+        return booking.time_slots?.activities?.id === selectedActivityId;
+      });
+    }
+
     // Apply search filter
     if (globalFilter) {
       filtered = filtered.filter((booking) => {
@@ -246,20 +286,25 @@ export const UserBookings = () => {
     });
 
     return filtered;
-  }, [bookings, showTodayOnly, globalFilter, sortBy, sortOrder, profileMap]);
+  }, [bookings, showTodayOnly, selectedDate, selectedEndDate, selectedTimeslotId, selectedActivityId, globalFilter, sortBy, sortOrder, profileMap, isMobile]);
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "confirmed":
-        return "bg-green-100 text-green-700";
-      case "pending":
-        return "bg-yellow-100 text-yellow-700";
-      case "cancelled":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
+  // Get unique activities from bookings - only from active experiences
+  const uniqueActivities = React.useMemo(() => {
+    const activities = new Map();
+    bookings.forEach((booking) => {
+      // Only include activities from active experiences
+      if (booking.experiences?.is_active === true) {
+        const activity = booking.time_slots?.activities;
+        if (activity && activity.id && activity.name) {
+          activities.set(activity.id, {
+            id: activity.id,
+            name: activity.name,
+          });
+        }
+      }
+    });
+    return Array.from(activities.values());
+  }, [bookings]);
 
   const formatTime12Hour = (timeString: string) => {
     if (!timeString) return "N/A";
@@ -279,6 +324,20 @@ export const UserBookings = () => {
       return timeString;
     }
   };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "confirmed":
+        return "bg-green-100 text-green-700";
+      case "pending":
+        return "bg-yellow-100 text-yellow-700";
+      case "cancelled":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
   const handleSort = (field: "booking_date" | "title" | "status") => {
     if (sortBy === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -287,6 +346,41 @@ export const UserBookings = () => {
       setSortOrder("desc");
     }
   };
+
+  const handleClearDateFilter = () => {
+    setSelectedDate("");
+    setSelectedEndDate("");
+    setShowDateRangePicker(false);
+  };
+
+  const isDateRangeActive = selectedDate || selectedEndDate;
+
+  // Calculate count of today's bookings
+  const todayBookingsCount = React.useMemo(() => {
+    return bookings.filter((booking) =>
+      isSameDay(new Date(booking.booking_date), new Date())
+    ).length;
+  }, [bookings]);
+
+  // Get unique timeslots from bookings
+  const uniqueTimeslots = React.useMemo(() => {
+    const timeslots = new Map();
+    bookings.forEach((booking) => {
+      const timeslot = booking.time_slots;
+      if (timeslot && timeslot.id) {
+        const startTime = formatTime12Hour(timeslot.start_time || "");
+        const endTime = formatTime12Hour(timeslot.end_time || "");
+        const displayName = `${startTime} - ${endTime}`;
+        timeslots.set(timeslot.id, {
+          id: timeslot.id,
+          start_time: timeslot.start_time,
+          end_time: timeslot.end_time,
+          displayName: displayName,
+        });
+      }
+    });
+    return Array.from(timeslots.values());
+  }, [bookings]);
 
   const BookingCard = ({
     booking,
@@ -304,10 +398,10 @@ export const UserBookings = () => {
     const dueAmount = booking?.due_amount || 0;
 
     return (
-      <Card className="h-full">
-        <CardHeader className="pb-3">
+      <Card className="h-full" id="">
+        <CardHeader className="pb-0 p-0">
           <div className="flex justify-between items-start">
-            <CardTitle className="text-lg font-semibold line-clamp-2">
+            {/* <CardTitle className="text-base font-semibold line-clamp-2">
               <span
                 className="cursor-pointer hover:text-brand-primary"
                 onClick={() => {
@@ -328,14 +422,14 @@ export const UserBookings = () => {
               >
                 {booking.experiences?.title}
               </span>
-            </CardTitle>
-            <Badge className={getStatusColor(booking.status)}>
+            </CardTitle> */}
+            {/* <Badge className={getStatusColor(booking.status)}>
               {booking.status}
-            </Badge>
+            </Badge> */}
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-2 text-sm">
+        <CardContent className="space-y-1 p-3">
+          <div className="grid grid-cols-2 gap-1 text-sm" id="UserBookingsCardContentStyles">
             <div>
               <span className="text-muted-foreground">Activity:</span>
               <p className="font-medium">
@@ -355,15 +449,21 @@ export const UserBookings = () => {
               </p>
             </div>
             <div>
+              <span className="text-muted-foreground">Participants:</span>
+              <p className="font-medium">
+                {booking?.total_participants || "N/A"}
+              </p>
+            </div>
+            {/* <div>
               <span className="text-muted-foreground">End Time:</span>
               <p className="font-medium">
                 {formatTime12Hour(booking.time_slots?.end_time || "")}
               </p>
-            </div>
+            </div> */}
           </div>
 
-          <div className="border-t pt-3">
-            <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="" >
+            <div className="grid grid-cols-2 gap-2 text-sm" id="UserBookingsCardContentStyles3">
               <div>
                 <span className="text-muted-foreground">Customer:</span>
                 <p className="font-medium">
@@ -372,18 +472,21 @@ export const UserBookings = () => {
                     : booking?.booking_participants?.[0]?.name || "N/A"}
                 </p>
               </div>
-              <div>
-                <span className="text-muted-foreground">Participants:</span>
-                <p className="font-medium">
-                  {booking?.total_participants || "N/A"}
-                </p>
-              </div>
+
             </div>
           </div>
-
-          <div className="border-t pt-3">
+          {(profile?.phone_number ||
+            booking?.booking_participants?.[0]?.phone_number) && (
+              <div className="text-sm" id="UserBookingsCardContentStyles4">
+                <span className="text-muted-foreground">Contact:</span>
+                <p className="font-medium" style={{ color: "blue" }}>
+                  <a href={`tel:${profile?.phone_number || booking?.booking_participants?.[0]?.phone_number}`}>{profile?.phone_number || booking?.booking_participants?.[0]?.phone_number || "N/A"}</a>
+                </p>
+              </div>
+            )}
+          <div className="">
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
+              {/* <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Total Amount:</span>
                 <div className="text-right">
                   <div className="text-lg font-bold text-orange-500">
@@ -398,10 +501,10 @@ export const UserBookings = () => {
                     </div>
                   )}
                 </div>
-              </div>
+              </div> */}
               {dueAmount > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">
+                <div className="flex gap-1 items-center">
+                  <span className="text-sm text-muted-foreground">
                     Pending Payment:
                   </span>
                   <span className="text-sm font-medium">
@@ -412,7 +515,7 @@ export const UserBookings = () => {
             </div>
           </div>
 
-          {(profile?.email || booking?.booking_participants?.[0]?.email) && (
+          {/* {(profile?.email || booking?.booking_participants?.[0]?.email) && (
             <div className="border-t pt-3">
               <div className="text-sm">
                 <span className="text-muted-foreground">Email:</span>
@@ -423,22 +526,12 @@ export const UserBookings = () => {
                 </p>
               </div>
             </div>
-          )}
+          )} */}
 
-          {(profile?.phone_number ||
-            booking?.booking_participants?.[0]?.phone_number) && (
-            <div className="text-sm">
-              <span className="text-muted-foreground">Contact:</span>
-              <p className="font-medium">
-                {profile?.phone_number ||
-                  booking?.booking_participants?.[0]?.phone_number ||
-                  "N/A"}
-              </p>
-            </div>
-          )}
+
 
           {booking.note_for_guide && (
-            <div className="border-t pt-3">
+            <div className=" pt-1" id="UserBookingsCardContentStyles5">
               <div className="text-sm">
                 <span className="text-muted-foreground">Notes for Guide:</span>
                 <p className="font-medium">{booking.note_for_guide}</p>
@@ -460,49 +553,209 @@ export const UserBookings = () => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 gap-4">
-        <Input
-          placeholder="Search bookings..."
-          value={globalFilter ?? ""}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
-        />
-        <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-col gap-3">
+        {/* Mobile Layout: Search + Date Button on top row */}
+        {isMobile && (
           <div className="flex gap-2">
-            <Button
-              variant={sortBy === "booking_date" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleSort("booking_date")}
-            >
-              Date{" "}
-              {sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
-            </Button>
-            {/* <Button
-              variant={sortBy === "title" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleSort("title")}
-            >
-              Title {sortBy === "title" && (sortOrder === "asc" ? "↑" : "↓")}
-            </Button> */}
-            {/* <Button
-              variant={sortBy === "status" ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleSort("status")}
-            >
-              Status {sortBy === "status" && (sortOrder === "asc" ? "↑" : "↓")}
-            </Button> */}
+            <Input
+              placeholder="Search bookings..."
+              value={globalFilter ?? ""}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="flex-1 text-sm"
+            />
+            <div className="relative">
+              <Button
+                variant={isMobile && showDateRangePicker ? "default" : (sortBy === "booking_date" ? "default" : "outline")}
+                onClick={() => isMobile ? setShowDateRangePicker(!showDateRangePicker) : handleSort("booking_date")}
+                className="text-sm"
+              >
+                <span className="text-sm">
+                  {isMobile && isDateRangeActive
+                    ? (selectedDate && selectedEndDate
+                        ? `${selectedDate} to ${selectedEndDate}`
+                        : selectedDate)
+                    : "Date"}
+                </span>
+                {!isMobile && sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
+              </Button>
+              
+              {/* Mobile Date Range Picker - Opens below Date button */}
+              {showDateRangePicker && (
+                <div className="absolute z-10 left-0 mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-3 shadow-lg">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">
+                      Start Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full text-sm"
+                      max={selectedEndDate || undefined}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">
+                      End Date (Optional)
+                    </label>
+                    <Input
+                      type="date"
+                      value={selectedEndDate}
+                      onChange={(e) => setSelectedEndDate(e.target.value)}
+                      className="w-full text-sm"
+                      min={selectedDate || undefined}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setShowDateRangePicker(false)}
+                      className="flex-1 text-xs"
+                    >
+                      Apply Filter
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearDateFilter}
+                      className="text-xs"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <Button
-            variant={showTodayOnly ? "default" : "outline"}
-            onClick={() => setShowTodayOnly((prev) => !prev)}
-          >
-            {showTodayOnly
-              ? `Show All (${filteredAndSortedBookings.length} today)`
-              : "Today's bookings"}
-          </Button>
-        </div>
-      </div>
+        )}
 
+        {/* Filter Buttons Row - Shows on both mobile and desktop */}
+        <div className="relative flex flex-wrap gap-2" id="UserBookingsSortButtonStyles">
+            {/* Desktop: Date button sorts bookings */}
+            {!isMobile && (
+              <Button
+                variant={sortBy === "booking_date" ? "default" : "outline"}
+                onClick={() => handleSort("booking_date")}
+                className="text-sm"
+              >
+                <span className="text-sm">Date</span>
+                {sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
+              </Button>
+            )}
+            
+            <Button
+              variant={showTodayOnly ? "default" : "outline"}
+              className="text-sm"
+              onClick={() => setShowTodayOnly((prev) => !prev)}
+            >
+              {showTodayOnly
+                ? `Show All`
+                : `Today (${todayBookingsCount})`}
+            </Button>
+
+            {/* Timeslot Filter Button */}
+            <div className="relative">
+              <Button
+                variant={selectedTimeslotId ? "default" : "outline"}
+                onClick={() => setShowTimeslotFilter(!showTimeslotFilter)}
+                className="text-sm"
+              >
+                {selectedTimeslotId
+                  ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)?.displayName || "Timeslot"
+                  : "Timeslot"}
+              </Button>
+
+              {/* Timeslot Filter Dropdown */}
+              {showTimeslotFilter && (
+                <div className="absolute z-10 left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto">
+                <Button
+                  variant={selectedTimeslotId === null ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setSelectedTimeslotId(null);
+                    setShowTimeslotFilter(false);
+                  }}
+                  className="w-full justify-start text-xs"
+                >
+                  All Timeslots
+                </Button>
+                {uniqueTimeslots.map((timeslot) => (
+                  <Button
+                    key={timeslot.id}
+                    variant={selectedTimeslotId === timeslot.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedTimeslotId(timeslot.id);
+                      setShowTimeslotFilter(false);
+                    }}
+                    className="w-full justify-start text-xs"
+                  >
+                    {timeslot.displayName}
+                  </Button>
+                ))}
+                </div>
+              )}
+            </div>
+
+            {/* Activity Filter Button */}
+            <div className="relative">
+              <Button
+                variant={selectedActivityId ? "default" : "outline"}
+                onClick={() => setShowActivityFilter(!showActivityFilter)}
+                className="text-sm"
+              >
+                {selectedActivityId
+                  ? uniqueActivities.find((a) => a.id === selectedActivityId)?.name || "Activity"
+                  : "Activity"}
+              </Button>
+
+              {/* Activity Filter Dropdown */}
+              {showActivityFilter && (
+                <div className="absolute z-10 left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto">
+                <Button
+                  variant={selectedActivityId === null ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setSelectedActivityId(null);
+                    setShowActivityFilter(false);
+                  }}
+                  className="w-full justify-start text-xs"
+                >
+                  All Activities
+                </Button>
+                {uniqueActivities.map((activity) => (
+                  <Button
+                    key={activity.id}
+                    variant={selectedActivityId === activity.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedActivityId(activity.id);
+                      setShowActivityFilter(false);
+                    }}
+                    className="w-full justify-start text-xs"
+                  >
+                    {activity.name}
+                  </Button>
+                ))}
+                </div>
+              )}
+            </div>
+        </div>
+
+        {/* Desktop Search Bar - Hidden on mobile */}
+        {!isMobile && (
+          <div className="flex sm:flex-row justify-between items-start sm:items-center py-1 gap-2">
+            <Input
+              placeholder="Search bookings..."
+              value={globalFilter ?? ""}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="max-w-sm text-sm"
+            />
+          </div>
+        )}
+      </div>
+      <br />
       {filteredAndSortedBookings.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredAndSortedBookings.map((booking, index) => (
