@@ -945,4 +945,22 @@ h6 {
   #UserBookingsDesktopLayout th:last-child > div {
     display: none;
   }
+  
+  /* Column dragging styles */
+  #UserBookingsDesktopLayout th[draggable="true"] {
+    cursor: move;
+  }
+  
+  #UserBookingsDesktopLayout th[draggable="true"]:hover {
+    background-color: hsl(var(--muted) / 0.7);
+  }
+  
+  #UserBookingsDesktopLayout th[draggable="true"]:active {
+    cursor: grabbing;
+    opacity: 0.5;
+  }
+  
+  #UserBookingsDesktopLayout th[draggable="true"] svg {
+    transition: opacity 0.2s;
+  }
 }

@@ -48,6 +48,13 @@ export const UserBookings = () => {
 
   const [showColumnSelector, setShowColumnSelector] = React.useState(false);
   const columnSelectorRef = React.useRef<HTMLDivElement>(null);
+  
+  // Column order state for drag and drop
+  const [columnOrder, setColumnOrder] = React.useState<number[]>(
+    Array.from({ length: columnCount }, (_, i) => i)
+  );
+  const [draggedColumnIndex, setDraggedColumnIndex] = React.useState<number | null>(null);
+  const [dragOverColumnIndex, setDragOverColumnIndex] = React.useState<number | null>(null);
 
   // Column headers array
   const columnHeaders = [
@@ -71,6 +78,39 @@ export const UserBookings = () => {
   const formatCurrency = (currency: string, amount: number) => {
     const symbol = currency === "INR" ? "₹" : currency;
     return `${symbol} ${amount}`;
+  };
+  
+  // Column drag handlers
+  const handleColumnDragStart = (columnIndex: number) => {
+    setDraggedColumnIndex(columnIndex);
+  };
+  
+  const handleColumnDragOver = (e: React.DragEvent, columnIndex: number) => {
+    e.preventDefault();
+    setDragOverColumnIndex(columnIndex);
+  };
+  
+  const handleColumnDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedColumnIndex === null) return;
+    
+    const newOrder = [...columnOrder];
+    const draggedIndexInOrder = newOrder.indexOf(draggedColumnIndex);
+    const targetIndexInOrder = newOrder.indexOf(targetIndex);
+    
+    // Remove dragged item and insert at target position
+    newOrder.splice(draggedIndexInOrder, 1);
+    newOrder.splice(targetIndexInOrder, 0, draggedColumnIndex);
+    
+    setColumnOrder(newOrder);
+    setDraggedColumnIndex(null);
+    setDragOverColumnIndex(null);
+  };
+  
+  const handleColumnDragEnd = () => {
+    setDraggedColumnIndex(null);
+    setDragOverColumnIndex(null);
   };
 
   // Function to render cell content based on column index
@@ -894,7 +934,7 @@ export const UserBookings = () => {
 
             {/* Timeslot Filter Dropdown */}
             {showTimeslotFilter && (
-              <div className="absolute z-10 left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto" style={{ zIndex: 1000 }}>
                 <Button
                   variant={selectedTimeslotId === null ? "default" : "outline"}
                   size="sm"
@@ -938,7 +978,7 @@ export const UserBookings = () => {
 
             {/* Activity Filter Dropdown */}
             {showActivityFilter && (
-              <div className="absolute z-10 left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto" style={{ zIndex: 1000 }}>
                 <Button
                   variant={selectedActivityId === null ? "default" : "outline"}
                   size="sm"
@@ -1057,19 +1097,33 @@ export const UserBookings = () => {
               <table className="w-full" style={{ tableLayout: 'fixed' }}>
                 <thead>
                   <tr>
-                    {columnHeaders.map((header, index) =>
-                      columnVisibility[index] ? (
+                    {columnOrder.map((originalIndex) =>
+                      columnVisibility[originalIndex] && (
                         <th
-                          key={index}
-                          className="p-3 text-left font-semibold text-xs whitespace-nowrap relative"
-                          style={{ width: columnWidths[index] }}
+                          key={originalIndex}
+                          className={`p-3 text-left font-semibold text-xs whitespace-nowrap relative ${draggedColumnIndex === originalIndex ? 'opacity-50' : ''} ${dragOverColumnIndex === originalIndex ? 'border-2 border-blue-500' : ''}`}
+                          style={{ width: columnWidths[originalIndex] }}
+                          draggable={true}
+                          onDragStart={() => handleColumnDragStart(originalIndex)}
+                          onDragOver={(e) => handleColumnDragOver(e, originalIndex)}
+                          onDrop={(e) => handleColumnDrop(e, originalIndex)}
+                          onDragEnd={handleColumnDragEnd}
                         >
-                          {header}
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4 cursor-move opacity-50 hover:opacity-100" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                            {columnHeaders[originalIndex]}
+                          </span>
                           <div
-                            onMouseDown={(e) => handleMouseDown(e, index)}
+                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              handleMouseDown(e, originalIndex);
+                            }}
                           />
                         </th>
-                      ) : null
+                      )
                     )}
                   </tr>
                 </thead>
@@ -1105,15 +1159,15 @@ export const UserBookings = () => {
 
                     return (
                       <tr key={booking.id}>
-                        {columnHeaders.map((header, colIndex) =>
-                          columnVisibility[colIndex] && (
+                        {columnOrder.map((originalIndex) =>
+                          columnVisibility[originalIndex] && (
                             <td
-                              key={colIndex}
+                              key={originalIndex}
                               className="p-3 text-sm"
-                              title={colIndex === 0 ? experience?.title || "" : colIndex === 9 ? booking.note_for_guide || "" : ""}
+                              title={originalIndex === 0 ? experience?.title || "" : originalIndex === 9 ? booking.note_for_guide || "" : ""}
                             >
                               {renderCellContent(
-                                colIndex,
+                                originalIndex,
                                 booking,
                                 profile,
                                 activityData,
