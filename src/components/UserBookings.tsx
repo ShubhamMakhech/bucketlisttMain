@@ -35,6 +35,137 @@ export const UserBookings = () => {
   const [selectedTimeslotId, setSelectedTimeslotId] = React.useState<string | null>(null);
   const [showTimeslotFilter, setShowTimeslotFilter] = React.useState(false);
 
+  // Column width state for resizable columns
+  const columnCount = 20; // Total number of columns
+  const [columnWidths, setColumnWidths] = React.useState<number[]>(
+    Array(columnCount).fill(150) // Default width 150px for each column
+  );
+
+  // Column visibility state
+  const [columnVisibility, setColumnVisibility] = React.useState<boolean[]>(
+    Array(columnCount).fill(true) // All columns visible by default
+  );
+
+  const [showColumnSelector, setShowColumnSelector] = React.useState(false);
+  const columnSelectorRef = React.useRef<HTMLDivElement>(null);
+
+  // Column headers array
+  const columnHeaders = [
+    "Title", "Activity", "Contact Number", "Contact Name", "Email",
+    "Referred by", "Timeslot", "Date", "No. Of Participants",
+    "Notes for guides", "Official Price/ Original Price", "B2B Price",
+    "Commission as per vendor", "Website Price", "Discount Coupon",
+    "Ticket Price (customer cost)", "Advance paid to bucketlistt (10%)",
+    "Payment to be collected by vendor", "Actual Commission to bucketlistt (Net profit)",
+    "Amount to be collected from vendor/ '- to be paid'", "Advance + discount (vendor needs this)"
+  ];
+
+  // Function to toggle column visibility
+  const toggleColumnVisibility = (index: number) => {
+    const newVisibility = [...columnVisibility];
+    newVisibility[index] = !newVisibility[index];
+    setColumnVisibility(newVisibility);
+  };
+
+  // Helper function to format currency
+  const formatCurrency = (currency: string, amount: number) => {
+    const symbol = currency === "INR" ? "₹" : currency;
+    return `${symbol} ${amount}`;
+  };
+
+  // Function to render cell content based on column index
+  const renderCellContent = (columnIndex: number, booking: BookingWithDueAmount, profile: any, activityData: any, timeslot: any, experience: any, currency: string, officialPrice: number, b2bPriceTotal: number, commissionTotal: number, websitePrice: number, discountCoupon: number, ticketPrice: number, advancePaid10: number, paymentToCollectByVendor: number, actualCommissionNet: number, amountToCollectFromVendor: number, advancePlusDiscount: number) => {
+    const cells = [
+      () => experience?.title || "N/A",
+      () => activityData?.name || "N/A",
+      () => profile?.phone_number || booking?.booking_participants?.[0]?.phone_number ? (
+        <a href={`tel:${profile?.phone_number || booking?.booking_participants?.[0]?.phone_number}`} className="text-blue-600 hover:underline">
+          {profile?.phone_number || booking?.booking_participants?.[0]?.phone_number}
+        </a>
+      ) : "N/A",
+      () => profile ? `${profile.first_name} ${profile.last_name}`.trim() : booking?.booking_participants?.[0]?.name || "N/A",
+      () => profile?.email || booking?.booking_participants?.[0]?.email || "N/A",
+      () => (booking as any)?.referral_code || (booking as any)?.referred_by || "-",
+      () => timeslot?.start_time && timeslot?.end_time ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(timeslot.end_time)}` : "N/A",
+      () => format(new Date(booking.booking_date), "MMM d, yyyy"),
+      () => booking?.total_participants || "N/A",
+      () => booking.note_for_guide || "-",
+      () => formatCurrency(currency, officialPrice),
+      () => formatCurrency(currency, b2bPriceTotal),
+      () => formatCurrency(currency, commissionTotal),
+      () => formatCurrency(currency, websitePrice),
+      () => formatCurrency(currency, discountCoupon),
+      () => formatCurrency(currency, ticketPrice),
+      () => formatCurrency(currency, advancePaid10),
+      () => formatCurrency(currency, paymentToCollectByVendor),
+      () => formatCurrency(currency, actualCommissionNet),
+      () => formatCurrency(currency, amountToCollectFromVendor),
+      () => formatCurrency(currency, advancePlusDiscount),
+    ];
+
+    return cells[columnIndex] ? cells[columnIndex]() : "N/A";
+  };
+
+  // Resize handler for table columns
+  const [resizingColumn, setResizingColumn] = React.useState<number | null>(null);
+  const [startX, setStartX] = React.useState(0);
+  const [startWidth, setStartWidth] = React.useState(0);
+
+  const handleMouseDown = (e: React.MouseEvent, columnIndex: number) => {
+    e.preventDefault();
+    setResizingColumn(columnIndex);
+    setStartX(e.clientX);
+    setStartWidth(columnWidths[columnIndex]);
+  };
+
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (resizingColumn !== null) {
+        const diff = e.clientX - startX;
+        const newWidths = [...columnWidths];
+        newWidths[resizingColumn] = Math.max(50, startWidth + diff); // Minimum width 50px
+        setColumnWidths(newWidths);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setResizingColumn(null);
+    };
+
+    if (resizingColumn !== null) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [resizingColumn, startX, startWidth, columnWidths]);
+
+  // Click outside to close column selector
+  React.useEffect(() => {
+    if (!showColumnSelector) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (columnSelectorRef.current && !columnSelectorRef.current.contains(target)) {
+        console.log("Click outside detected, closing column selector");
+        setShowColumnSelector(false);
+      }
+    };
+
+    // Add a small delay to avoid catching the click that opened the dropdown
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showColumnSelector]);
+
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ["user-bookings", user?.id],
     queryFn: async () => {
@@ -61,7 +192,13 @@ export const UserBookings = () => {
             end_time,
             activity_id,
             activities (
-            *
+              id,
+              name,
+              price,
+              b2bPrice,
+              discounted_price,
+              discount_percentage,
+              currency
             )
           ),
           booking_participants (
@@ -99,6 +236,9 @@ export const UserBookings = () => {
               id,
               name,
               price,
+              b2bPrice,
+              discounted_price,
+              discount_percentage,
               currency
             )
           ),
@@ -208,7 +348,7 @@ export const UserBookings = () => {
     if (selectedDate && isMobile) {
       filtered = filtered.filter((booking) => {
         const bookingDate = format(new Date(booking.booking_date), "yyyy-MM-dd");
-        
+
         if (selectedEndDate) {
           // Date range filter
           return bookingDate >= selectedDate && bookingDate <= selectedEndDate;
@@ -229,7 +369,7 @@ export const UserBookings = () => {
     // Apply activity filter
     if (selectedActivityId) {
       filtered = filtered.filter((booking) => {
-        return booking.time_slots?.activities?.id === selectedActivityId;
+        return (booking.time_slots?.activities as any)?.id === selectedActivityId;
       });
     }
 
@@ -239,7 +379,7 @@ export const UserBookings = () => {
         const searchTerm = globalFilter.toLowerCase();
         return (
           booking.experiences?.title?.toLowerCase().includes(searchTerm) ||
-          booking.time_slots?.activities?.name
+          (booking.time_slots?.activities as any)?.name
             ?.toLowerCase()
             .includes(searchTerm) ||
           booking.status?.toLowerCase().includes(searchTerm) ||
@@ -291,7 +431,7 @@ export const UserBookings = () => {
     bookings.forEach((booking) => {
       // Only include activities from active experiences
       if (booking.experiences?.is_active === true) {
-        const activity = booking.time_slots?.activities;
+        const activity = booking.time_slots?.activities as any;
         if (activity && activity.id && activity.name) {
           activities.set(activity.id, {
             id: activity.id,
@@ -430,7 +570,7 @@ export const UserBookings = () => {
             <div>
               <span className="text-muted-foreground">Activity:</span>
               <p className="font-medium">
-                {booking.time_slots?.activities?.name || "N/A"}
+                {(booking.time_slots?.activities as any)?.name || "N/A"}
               </p>
             </div>
             <div>
@@ -540,35 +680,35 @@ export const UserBookings = () => {
           {user?.user_metadata?.role === "vendor" &&
             booking.time_slots?.activities?.b2bPrice &&
             bookingAmount !=
-              "N/A" &&(
-                <div className="border-t pt-3 mt-3">
-                  <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3 space-y-2">
-                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                      Money Calculation
+            "N/A" && (
+              <div className="border-t pt-3 mt-3">
+                <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3 space-y-2">
+                  <div className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                    Money Calculation
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {/* Space reserved for vendor money calculations */}
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">
+                        B2B Price:
+                      </span>
+                      <p className="font-medium">
+                        {currency}{" "}
+                        {booking.time_slots?.activities?.b2bPrice *
+                          booking.total_participants}
+                      </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      {/* Space reserved for vendor money calculations */}
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">
-                          B2B Price:
-                        </span>
-                        <p className="font-medium">
-                          {currency}{" "}
-                          {booking.time_slots?.activities?.b2bPrice *
-                            booking.total_participants}
-                        </p>
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">
-                          Original Price:
-                        </span>
-                        <p className="font-medium">
-                          {currency}{" "}
-                          {booking.time_slots?.activities?.price *
-                            booking.total_participants}
-                        </p>
-                      </div>
-                      {/* <div className="text-sm">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">
+                        Original Price:
+                      </span>
+                      <p className="font-medium">
+                        {currency}{" "}
+                        {booking.time_slots?.activities?.price *
+                          booking.total_participants}
+                      </p>
+                    </div>
+                    {/* <div className="text-sm">
                       <span className="text-muted-foreground">
                         Website Price:
                       </span>
@@ -578,60 +718,60 @@ export const UserBookings = () => {
                           booking.total_participants}
                       </p>
                     </div> */}
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">
-                          Commission:
-                        </span>
-                        <p className="font-medium">
-                          {currency}{" "}
-                          {(booking.time_slots?.activities?.price -
-                            booking.time_slots?.activities?.b2bPrice) *
-                            booking.total_participants}
-                        </p>
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">
-                          Customer Cost:
-                        </span>
-                        <p className="font-medium">
-                          {currency} {bookingAmount}
-                        </p>
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">
-                          Advance Paid:
-                        </span>
-                        <p className="font-medium">
-                          {currency} {bookingAmount - dueAmount}
-                        </p>
-                      </div>
-                      <div className="text-sm">
-                        {" "}
-                        <span className="text-muted-foreground">
-                          Amount to be paid:
-                        </span>
-                        <p className="font-medium">
-                          {currency}{" "}
-                          {bookingAmount - (bookingAmount - dueAmount)}
-                        </p>
-                      </div>
-                      <div className="text-sm">
-                        {" "}
-                        <span className="text-muted-foreground">
-                          Amount to be collected from vendor:
-                        </span>
-                        <p className="font-medium">
-                          {currency}{" "}
-                          {bookingAmount -
-                            booking.time_slots?.activities?.b2bPrice *
-                              booking.total_participants -
-                            (bookingAmount - dueAmount)}
-                        </p>
-                      </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">
+                        Commission:
+                      </span>
+                      <p className="font-medium">
+                        {currency}{" "}
+                        {(booking.time_slots?.activities?.price -
+                          booking.time_slots?.activities?.b2bPrice) *
+                          booking.total_participants}
+                      </p>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">
+                        Customer Cost:
+                      </span>
+                      <p className="font-medium">
+                        {currency} {bookingAmount}
+                      </p>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">
+                        Advance Paid:
+                      </span>
+                      <p className="font-medium">
+                        {currency} {bookingAmount - dueAmount}
+                      </p>
+                    </div>
+                    <div className="text-sm">
+                      {" "}
+                      <span className="text-muted-foreground">
+                        Amount to be paid:
+                      </span>
+                      <p className="font-medium">
+                        {currency}{" "}
+                        {bookingAmount - (bookingAmount - dueAmount)}
+                      </p>
+                    </div>
+                    <div className="text-sm">
+                      {" "}
+                      <span className="text-muted-foreground">
+                        Amount to be collected from vendor:
+                      </span>
+                      <p className="font-medium">
+                        {currency}{" "}
+                        {bookingAmount -
+                          booking.time_slots?.activities?.b2bPrice *
+                          booking.total_participants -
+                          (bookingAmount - dueAmount)}
+                      </p>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
         </CardContent>
       </Card>
     );
@@ -658,13 +798,13 @@ export const UserBookings = () => {
                 <span className="text-sm">
                   {isMobile && isDateRangeActive
                     ? (selectedDate && selectedEndDate
-                        ? `${selectedDate} to ${selectedEndDate}`
-                        : selectedDate)
+                      ? `${selectedDate} to ${selectedEndDate}`
+                      : selectedDate)
                     : "Date"}
                 </span>
                 {!isMobile && sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
               </Button>
-              
+
               {/* Mobile Date Range Picker - Opens below Date button */}
               {showDateRangePicker && (
                 <div className="absolute z-10 left-0 mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-3 shadow-lg">
@@ -718,43 +858,43 @@ export const UserBookings = () => {
 
         {/* Filter Buttons Row - Shows on both mobile and desktop */}
         <div className="relative flex flex-wrap gap-2" id="UserBookingsSortButtonStyles">
-            {/* Desktop: Date button sorts bookings */}
-            {!isMobile && (
-              <Button
-                variant={sortBy === "booking_date" ? "default" : "outline"}
-                onClick={() => handleSort("booking_date")}
-                className="text-sm"
-              >
-                <span className="text-sm">Date</span>
-                {sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
-              </Button>
-            )}
-            
+          {/* Desktop: Date button sorts bookings */}
+          {!isMobile && (
             <Button
-              variant={showTodayOnly ? "default" : "outline"}
+              variant={sortBy === "booking_date" ? "default" : "outline"}
+              onClick={() => handleSort("booking_date")}
               className="text-sm"
-              onClick={() => setShowTodayOnly((prev) => !prev)}
             >
-              {showTodayOnly
-                ? `Show All`
-                : `Today (${todayBookingsCount})`}
+              <span className="text-sm">Date</span>
+              {sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
+            </Button>
+          )}
+
+          <Button
+            variant={showTodayOnly ? "default" : "outline"}
+            className="text-sm"
+            onClick={() => setShowTodayOnly((prev) => !prev)}
+          >
+            {showTodayOnly
+              ? `Show All`
+              : `Today (${todayBookingsCount})`}
+          </Button>
+
+          {/* Timeslot Filter Button */}
+          <div className="relative">
+            <Button
+              variant={selectedTimeslotId ? "default" : "outline"}
+              onClick={() => setShowTimeslotFilter(!showTimeslotFilter)}
+              className="text-sm"
+            >
+              {selectedTimeslotId
+                ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)?.displayName || "Timeslot"
+                : "Timeslot"}
             </Button>
 
-            {/* Timeslot Filter Button */}
-            <div className="relative">
-              <Button
-                variant={selectedTimeslotId ? "default" : "outline"}
-                onClick={() => setShowTimeslotFilter(!showTimeslotFilter)}
-                className="text-sm"
-              >
-                {selectedTimeslotId
-                  ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)?.displayName || "Timeslot"
-                  : "Timeslot"}
-              </Button>
-
-              {/* Timeslot Filter Dropdown */}
-              {showTimeslotFilter && (
-                <div className="absolute z-10 left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto">
+            {/* Timeslot Filter Dropdown */}
+            {showTimeslotFilter && (
+              <div className="absolute z-10 left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto">
                 <Button
                   variant={selectedTimeslotId === null ? "default" : "outline"}
                   size="sm"
@@ -780,25 +920,25 @@ export const UserBookings = () => {
                     {timeslot.displayName}
                   </Button>
                 ))}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
 
-            {/* Activity Filter Button */}
-            <div className="relative">
-              <Button
-                variant={selectedActivityId ? "default" : "outline"}
-                onClick={() => setShowActivityFilter(!showActivityFilter)}
-                className="text-sm"
-              >
-                {selectedActivityId
-                  ? uniqueActivities.find((a) => a.id === selectedActivityId)?.name || "Activity"
-                  : "Activity"}
-              </Button>
+          {/* Activity Filter Button */}
+          <div className="relative">
+            <Button
+              variant={selectedActivityId ? "default" : "outline"}
+              onClick={() => setShowActivityFilter(!showActivityFilter)}
+              className="text-sm"
+            >
+              {selectedActivityId
+                ? uniqueActivities.find((a) => a.id === selectedActivityId)?.name || "Activity"
+                : "Activity"}
+            </Button>
 
-              {/* Activity Filter Dropdown */}
-              {showActivityFilter && (
-                <div className="absolute z-10 left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto">
+            {/* Activity Filter Dropdown */}
+            {showActivityFilter && (
+              <div className="absolute z-10 left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto">
                 <Button
                   variant={selectedActivityId === null ? "default" : "outline"}
                   size="sm"
@@ -824,9 +964,66 @@ export const UserBookings = () => {
                     {activity.name}
                   </Button>
                 ))}
+              </div>
+            )}
+          </div>
+          <div className="mb-2 flex justify-end" id="UserBookingsColumnSelectorStyles">
+            <div className="relative" ref={columnSelectorRef}>
+              <Button
+                variant="outline"
+                onClick={(e) => {
+                  console.log("Column button clicked");
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowColumnSelector(!showColumnSelector);
+                }}
+              // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+              >
+                Columns
+              </Button>
+
+              {/* Column Selector Dropdown */}
+              {showColumnSelector && (
+                <div
+                  className="absolute right-0 mt-2 w-[300px] p-4 border border-blue-500 rounded-lg bg-white shadow-lg max-h-96 overflow-y-auto z-50"
+                  style={{ minHeight: '200px' }}
+                >
+                  <div className="text-sm font-semibold mb-3 text-gray-900">Select Columns to Display</div>
+                  <div className="space-y-2">
+                    {columnHeaders.map((header, index) => (
+                      <label key={index} className="flex items-center gap-2 cursor-pointer hover:bg-muted/30 p-2 rounded">
+                        <input
+                          type="checkbox"
+                          checked={columnVisibility[index]}
+                          onChange={() => toggleColumnVisibility(index)}
+                          className="cursor-pointer"
+                        />
+                        <span className="text-sm">{header}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setColumnVisibility(Array(columnCount).fill(true))}
+                      className="text-xs flex-1"
+                    >
+                      Select All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setColumnVisibility(Array(columnCount).fill(false))}
+                      className="text-xs flex-1"
+                    >
+                      Deselect All
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
+          </div>
         </div>
 
         {/* Desktop Search Bar - Hidden on mobile */}
@@ -843,11 +1040,109 @@ export const UserBookings = () => {
       </div>
       <br />
       {filteredAndSortedBookings.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAndSortedBookings.map((booking, index) => (
-            <BookingCard key={booking.id} booking={booking} index={index} />
-          ))}
-        </div>
+        <>
+          {/* Mobile: Card Layout */}
+          <div id="UserBookingsMobileLayout" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredAndSortedBookings.map((booking, index) => (
+              <BookingCard key={booking.id} booking={booking} index={index} />
+            ))}
+          </div>
+
+          {/* Desktop: Table Layout */}
+          <div id="UserBookingsDesktopLayout" className="hidden">
+            {/* Column Selector Button */}
+
+
+            <div className="overflow-x-auto">
+              <table className="w-full" style={{ tableLayout: 'fixed' }}>
+                <thead>
+                  <tr>
+                    {columnHeaders.map((header, index) =>
+                      columnVisibility[index] ? (
+                        <th
+                          key={index}
+                          className="p-3 text-left font-semibold text-xs whitespace-nowrap relative"
+                          style={{ width: columnWidths[index] }}
+                        >
+                          {header}
+                          <div
+                            onMouseDown={(e) => handleMouseDown(e, index)}
+                          />
+                        </th>
+                      ) : null
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAndSortedBookings.map((booking: BookingWithDueAmount, index) => {
+                    const profile = profileMap[booking.user_id];
+                    const activity = booking.time_slots?.activities;
+                    const timeslot = booking.time_slots;
+                    const experience = booking.experiences;
+                    const bookingAmount = (booking as any)?.booking_amount || 0;
+                    const dueAmount = booking?.due_amount || 0;
+                    const currency = activity?.currency || booking?.experiences?.currency || "INR";
+
+                    // Calculate all money values from API data
+                    const activityData = activity as any;
+                    const originalPrice = activityData?.price || experience?.price || 0;
+                    const officialPrice = originalPrice * booking.total_participants;
+                    const b2bPrice = activityData?.b2bPrice || 0;
+                    const b2bPriceTotal = b2bPrice * booking.total_participants;
+                    const commissionPerVendor = originalPrice - b2bPrice;
+                    const commissionTotal = commissionPerVendor * booking.total_participants;
+                    const discountedPrice = activityData?.discounted_price || 0;
+                    const websitePrice = discountedPrice * booking.total_participants;
+                    // Calculate discount from booking_amount vs expected price
+                    const expectedFullPrice = officialPrice;
+                    const discountCoupon = expectedFullPrice - bookingAmount > 0 ? expectedFullPrice - bookingAmount : 0;
+                    const ticketPrice = websitePrice - discountCoupon; // Ticket Price = Website Price - Discount Coupon
+                    const advancePaid10 = Math.round(bookingAmount * 0.1);
+                    const paymentToCollectByVendor = ticketPrice - advancePaid10; // Payment to be collected by vendor = ticketPrice - Advance paid (10%)
+                    const actualCommissionNet = ticketPrice - b2bPriceTotal; // Actual Commission (Net profit) = Ticket Price - B2B Price
+                    const amountToCollectFromVendor = (bookingAmount - b2bPriceTotal - (bookingAmount - dueAmount));
+                    const advancePlusDiscount = advancePaid10 + discountCoupon;
+
+                    return (
+                      <tr key={booking.id}>
+                        {columnHeaders.map((header, colIndex) =>
+                          columnVisibility[colIndex] && (
+                            <td
+                              key={colIndex}
+                              className="p-3 text-sm"
+                              title={colIndex === 0 ? experience?.title || "" : colIndex === 9 ? booking.note_for_guide || "" : ""}
+                            >
+                              {renderCellContent(
+                                colIndex,
+                                booking,
+                                profile,
+                                activityData,
+                                timeslot,
+                                experience,
+                                currency,
+                                officialPrice,
+                                b2bPriceTotal,
+                                commissionTotal,
+                                websitePrice,
+                                discountCoupon,
+                                ticketPrice,
+                                advancePaid10,
+                                paymentToCollectByVendor,
+                                actualCommissionNet,
+                                amountToCollectFromVendor,
+                                advancePlusDiscount
+                              )}
+                            </td>
+                          )
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       ) : (
         <div className="text-center py-10 text-muted-foreground">
           {showTodayOnly ? "No bookings for today." : "No bookings found."}
