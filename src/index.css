@@ -823,10 +823,16 @@ h6 {
   #UserBookingsCardContentStyles5{
     display: flex;
     gap: 5px;
+    overflow: hidden;
   }
   #UserBookingsCardContentStyles5>div{
     display: flex;
     gap: 5px;
+    flex-direction: column;
+    align-items: start;
+  }
+  #UserBookingsCardContentStyles5>div p{
+    text-align: start;
   }
   #BookingsExportButtonStyles{
     display: none;
