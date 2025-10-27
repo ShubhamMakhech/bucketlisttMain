@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { createPortal } from "react-dom";
 import "../Styles/HeroHome.css";
+
 export function Hero() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -196,15 +197,20 @@ export function Hero() {
             webkit-playsinline="true"
             controls={false}
             disablePictureInPicture
+            preload="auto"
+            poster="data:image/gif,AAAA"
             className="absolute top-1/2 left-1/2 pointer-events-none transition-transform duration-75 ease-out parallax-video"
             style={{
               transform: `translate(-50%, calc(-50% + ${scrollTranslateY}px)) scale(${videoScale * scrollZoomScale})`,
               transformOrigin: "center center",
-              // width: isMobile ? "100vw" : "100%",
-              // height: isMobile ? "100vh" : "100%",
-              // minWidth: isMobile ? "100vw" : "100%",
-              // minHeight: isMobile ? "100vh" : "100%",
               objectFit: "cover"
+            }}
+            onLoadedData={() => {
+              // Force play on data loaded to prevent native controls
+              const video = document.querySelector('video.parallax-video') as HTMLVideoElement;
+              if (video) {
+                video.play().catch(() => {});
+              }
             }}
           />
           {/* <iframe

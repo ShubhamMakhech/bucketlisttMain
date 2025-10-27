@@ -562,9 +562,11 @@ export const UserBookings = () => {
   const BookingCard = ({
     booking,
     index,
+    isMobile,
   }: {
     booking: BookingWithDueAmount;
     index: number;
+    isMobile: boolean;
   }) => {
     const profile = profileMap[booking.user_id];
     const activity = booking.time_slots?.activities;
@@ -716,8 +718,9 @@ export const UserBookings = () => {
             </div>
           )}
 
-          {/* Vendor Money Calculation Section */}
-          {user?.user_metadata?.role === "vendor" &&
+          {/* Vendor Money Calculation Section - Hidden on mobile */}
+          {!isMobile &&
+            user?.user_metadata?.role === "vendor" &&
             booking.time_slots?.activities?.b2bPrice &&
             bookingAmount !=
             "N/A" && (
@@ -1084,7 +1087,7 @@ export const UserBookings = () => {
           {/* Mobile: Card Layout */}
           <div id="UserBookingsMobileLayout" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredAndSortedBookings.map((booking, index) => (
-              <BookingCard key={booking.id} booking={booking} index={index} />
+              <BookingCard key={booking.id} booking={booking} index={index} isMobile={isMobile} />
             ))}
           </div>
 

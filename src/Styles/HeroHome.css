@@ -53,6 +53,41 @@
     -webkit-media-controls-fullscreen-button: none;
 }
 
+/* Hide iOS Safari native play button overlay */
+#HeroVideoContainer video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+/* Hide all iOS native video controls completely */
+#HeroVideoContainer video::-webkit-media-controls-panel {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+    #HeroVideoContainer video {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    /* Force hide any overlay controls on iOS */
+    #HeroVideoContainer video::-webkit-media-controls {
+        display: none !important;
+    }
+    
+    /* Prevent any iOS native UI from appearing */
+    #HeroVideoContainer video::-webkit-media-controls-enclosure {
+        display: none !important;
+    }
+}
+
 /* Smooth parallax transitions */
 .parallax-video {
     transition: transform 0.1s ease-out;
