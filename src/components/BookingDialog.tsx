@@ -651,6 +651,19 @@ export const BookingDialog = ({
             console.error("Error updating user phone number:", updateError);
           }
         }
+
+        if(!userData?.first_name || userData?.first_name.trim() === "") {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              first_name: data.participant.name,
+            })
+            .eq("id", user.id);
+
+          if (updateError) {
+            console.error("Error updating user first name:", updateError);
+          }
+        }
       }
       // console.log("Participants created successfully");
 

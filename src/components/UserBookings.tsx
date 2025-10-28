@@ -1153,8 +1153,8 @@ export const UserBookings = () => {
                     // Calculate discount from booking_amount vs expected price
                     const expectedFullPrice = officialPrice;
                     const discountCoupon = expectedFullPrice - bookingAmount > 0 ? expectedFullPrice - bookingAmount : 0;
-                    const ticketPrice = websitePrice - discountCoupon; // Ticket Price = Website Price - Discount Coupon
-                    const advancePaid10 = Math.round(bookingAmount * 0.1);
+                    const ticketPrice = bookingAmount; // Ticket Price = Website Price - Discount Coupon
+                    const advancePaid10 = bookingAmount - dueAmount;
                     const paymentToCollectByVendor = ticketPrice - advancePaid10; // Payment to be collected by vendor = ticketPrice - Advance paid (10%)
                     const actualCommissionNet = ticketPrice - b2bPriceTotal; // Actual Commission (Net profit) = Ticket Price - B2B Price
                     const amountToCollectFromVendor = (bookingAmount - b2bPriceTotal - (bookingAmount - dueAmount));
