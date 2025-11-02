@@ -834,6 +834,7 @@ export const BookingDialog = ({
         selectedDate: selectedDate,
         selectedSlotId: selectedSlotId,
         selectedActivityId: selectedActivityId,
+        selectedExperienceId: experience.id,
       };
 
       localStorage.setItem(

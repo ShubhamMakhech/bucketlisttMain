@@ -44,8 +44,20 @@ const ExperienceDetail = () => {
   const stateExperienceData = location.state?.experienceData;
   const fromPage = location.state?.fromPage;
 
-  // Get ID from state, fallback to undefined if not available
-  const id = stateExperienceData?.id;
+  // Get ID from state, fallback to ID from parsed localStorage if available
+  let id = stateExperienceData?.id;
+  if (!id) {
+    try {
+      const localStorageData = localStorage.getItem("bookingModalData");
+      // localStorageData may be a JSON string, try to parse
+      if (localStorageData) {
+        const parsed = JSON.parse(localStorageData);
+        id = parsed?.selectedExperienceId;
+      }
+    } catch (e) {
+      // Fail silently; id will remain undefined if parsing fails
+    }
+  }
   const { isVendor, loading: roleLoading } = useUserRole();
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
