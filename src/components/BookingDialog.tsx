@@ -184,7 +184,7 @@ export const BookingDialog = ({
       setCurrentStep(3);
 
       // Clear localStorage
-      localStorage.removeItem("bookingModalData");
+      // localStorage.removeItem("bookingModalData");
       setIsBookingDialogOpen(true);
     }
   }, [form]);

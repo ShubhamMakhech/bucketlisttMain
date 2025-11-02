@@ -48,12 +48,15 @@ const ExperienceDetail = () => {
   let id = stateExperienceData?.id;
   if (!id) {
     try {
-      const localStorageData = localStorage.getItem("bookingModalData");
-      // localStorageData may be a JSON string, try to parse
-      if (localStorageData) {
-        const parsed = JSON.parse(localStorageData);
-        id = parsed?.selectedExperienceId;
-      }
+    
+      
+      const parsed = JSON.parse(
+        localStorage.getItem("bookingModalData") || "{}"
+      );
+
+      id = parsed?.selectedExperienceId;
+
+      // localStorage.removeItem("bookingModalData");
     } catch (e) {
       // Fail silently; id will remain undefined if parsing fails
     }
@@ -179,6 +182,7 @@ const ExperienceDetail = () => {
   };
 
   const handleBookingSuccess = () => {
+    localStorage.removeItem("bookingModalData");
     setShowSuccessAnimation(true);
     navigate("/confirm-booking");
     refetchBookings();
@@ -189,6 +193,7 @@ const ExperienceDetail = () => {
   };
 
   const handleBulkPaymentSuccess = () => {
+    localStorage.removeItem("bookingModalData");
     setShowSuccessAnimation(true);
     navigate("/confirm-booking");
     refetchBookings();
@@ -451,6 +456,7 @@ const ExperienceDetail = () => {
   }
 
   if (error || !experience) {
+    // console.log("experience not found", experience, id);
     return (
       <div className="min-h-screen bg-background">
         <Header />
