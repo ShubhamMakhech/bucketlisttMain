@@ -313,6 +313,7 @@ export const BookingDialog = ({
     setSelectedActivityId(undefined);
     setBypassPayment(false);
     setIsSubmitting(false);
+    localStorage.removeItem("bookingModalData");
     onClose();
   };
 
