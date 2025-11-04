@@ -653,7 +653,11 @@ export const BookingDialog = ({
           }
         }
 
-        if(!userData?.first_name || userData?.first_name.trim() === "") {
+        if (
+          !userData?.first_name ||
+          userData?.first_name.trim() === "" ||
+          userData?.first_name === null
+        ) {
           const { error: updateError } = await supabase
             .from("profiles")
             .update({
@@ -672,7 +676,7 @@ export const BookingDialog = ({
       await sendBookingConfirmationEmail(
         data,
         booking.id,
-        dueAmount ? dueAmount.toString() : "0"
+        "0" // dueAmount ? dueAmount.toString() : "0"
       );
 
       toast({
@@ -735,7 +739,7 @@ export const BookingDialog = ({
         .select()
         .single();
 
-        console.log("booking", booking);
+      console.log("booking", booking);
       if (bookingError) {
         console.error("Booking creation error:", bookingError);
         throw bookingError;
@@ -769,6 +773,22 @@ export const BookingDialog = ({
 
           if (updateError) {
             console.error("Error updating user phone number:", updateError);
+          }
+        }
+        if (
+          !userData?.first_name ||
+          userData?.first_name.trim() === "" ||
+          userData?.first_name === null
+        ) {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              first_name: data.participant.name,
+            })
+            .eq("id", user.id);
+
+          if (updateError) {
+            console.error("Error updating user first name:", updateError);
           }
         }
       }

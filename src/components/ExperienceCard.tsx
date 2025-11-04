@@ -85,8 +85,9 @@ export function ExperienceCard({
         .from("activities")
         .select("*")
         .eq("experience_id", id)
-        .eq("is_active", true);
-
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
+      // .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
