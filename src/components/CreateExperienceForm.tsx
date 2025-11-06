@@ -46,6 +46,8 @@ interface Activity {
   currency: string;
   timeSlots: TimeSlot[];
   discounted_price: number;
+  discount_type?: "flat" | "percentage"; // UI-only field, not saved to DB
+  discount_amount?: number; // For flat discount, UI-only field
 }
 
 interface ExperienceData {
@@ -175,8 +177,15 @@ export function CreateExperienceForm({
   useEffect(() => {
     if (isEditing && initialData) {
       if (initialData.activities && initialData.activities.length > 0) {
-        // Experience has activities - use them
-        setActivities(initialData.activities);
+        // Experience has activities - use them, ensure discount_type is set
+        const activitiesWithDefaults = initialData.activities.map(
+          (activity) => ({
+            ...activity,
+            discount_type: activity.discount_type || "percentage",
+            discount_amount: activity.discount_amount || 0,
+          })
+        );
+        setActivities(activitiesWithDefaults);
       } else {
         // Old experience without activities - create default activity from legacy data
         const defaultActivity: Activity = {
@@ -192,6 +201,8 @@ export function CreateExperienceForm({
           discounted_price: initialData.discounted_price || 0,
           currency: initialData.currency || "INR",
           timeSlots: initialData.legacyTimeSlots || [], // Use legacy time slots if available
+          discount_type: "percentage",
+          discount_amount: 0,
         };
         setActivities([defaultActivity]);
       }
@@ -244,6 +255,8 @@ export function CreateExperienceForm({
       currency: "INR",
       timeSlots: [],
       discounted_price: 0,
+      discount_type: "percentage",
+      discount_amount: 0,
     };
     setActivities((prev) => [...prev, newActivity]);
   };
@@ -263,17 +276,64 @@ export function CreateExperienceForm({
       prev.map((activity) => {
         if (activity.id === activityId) {
           const updated = { ...activity, [field]: value };
-          // Auto-calculate discounted price when discount percentage changes
-          if (field === "discount_percentage" || field === "price") {
-            const discount =
-              typeof value === "number" && field === "discount_percentage"
-                ? value
-                : activity.discount_percentage;
+          // Auto-calculate discounted price when discount changes
+          if (
+            field === "discount_percentage" ||
+            field === "price" ||
+            field === "discount_amount" ||
+            field === "discount_type"
+          ) {
+            const discountType =
+              field === "discount_type"
+                ? (value as "flat" | "percentage")
+                : activity.discount_type || "percentage";
             const price =
               typeof value === "number" && field === "price"
                 ? value
                 : activity.price;
-            updated.discounted_price = price - (price * discount) / 100;
+
+            if (discountType === "flat") {
+              let discountAmount: number;
+              if (field === "discount_amount" && typeof value === "number") {
+                discountAmount = value;
+              } else if (
+                field === "discount_type" &&
+                (activity.discount_amount === undefined ||
+                  activity.discount_amount === 0) &&
+                activity.discount_percentage
+              ) {
+                // Switching to flat: calculate amount from percentage
+                discountAmount = (price * activity.discount_percentage) / 100;
+                updated.discount_amount = discountAmount;
+              } else {
+                discountAmount = activity.discount_amount || 0;
+              }
+              updated.discounted_price = Math.max(0, price - discountAmount);
+              // Convert flat discount to percentage for storage
+              updated.discount_percentage =
+                price > 0 ? (discountAmount / price) * 100 : 0;
+            } else {
+              let discount: number;
+              if (
+                field === "discount_percentage" &&
+                typeof value === "number"
+              ) {
+                discount = value;
+              } else if (
+                field === "discount_type" &&
+                (!activity.discount_percentage ||
+                  activity.discount_percentage === 0) &&
+                activity.discount_amount
+              ) {
+                // Switching to percentage: calculate percentage from amount
+                discount =
+                  price > 0 ? (activity.discount_amount / price) * 100 : 0;
+                updated.discount_percentage = discount;
+              } else {
+                discount = activity.discount_percentage || 0;
+              }
+              updated.discounted_price = price - (price * discount) / 100;
+            }
           }
           return updated;
         }
@@ -1116,7 +1176,7 @@ export function CreateExperienceForm({
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   <div className="space-y-2 text-start">
                     <Label htmlFor={`activity-name-${activity.id}`}>
                       Activity Name *
@@ -1191,44 +1251,78 @@ export function CreateExperienceForm({
                   </div>
 
                   <div className="space-y-2 text-start">
-                    <Label
-                      htmlFor={`activity-discount-percentage-${activity.id}`}
-                    >
-                      Discount Percentage
+                    <Label htmlFor={`activity-discount-type-${activity.id}`}>
+                      Discount Type
                     </Label>
-                    <Input
-                      id={`activity-discount-percentage-${activity.id}`}
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={activity.discount_percentage}
-                      onChange={(e) => {
+                    <Select
+                      value={activity.discount_type || "percentage"}
+                      onValueChange={(value) =>
                         updateActivity(
                           activity.id,
-                          "discount_percentage",
-                          parseFloat(e.target.value) || 0
-                        );
-                        updateActivity(
-                          activity.id,
-                          "discounted_price",
-                          activity.price -
-                            (activity.price * parseFloat(e.target.value)) /
-                              100 || 0
-                        );
-                      }}
-                      placeholder="0.00"
-                    />
+                          "discount_type",
+                          value as "flat" | "percentage"
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">
+                          Percentage (%)
+                        </SelectItem>
+                        <SelectItem value="flat">Flat Amount</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2 text-start">
-                    <section>Discounted Price</section>
-                    <section>
-                      {" "}
-                      {activity.currency}{" "}
-                      {activity.price -
-                        (activity.price * activity.discount_percentage) / 100 ||
-                        0}
-                    </section>
+                    <Label htmlFor={`activity-discount-${activity.id}`}>
+                      {activity.discount_type === "flat"
+                        ? "Discount Amount"
+                        : "Discount Percentage"}
+                    </Label>
+                    {activity.discount_type === "flat" ? (
+                      <Input
+                        id={`activity-discount-${activity.id}`}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={activity.price}
+                        value={activity.discount_amount || 0}
+                        onChange={(e) => {
+                          updateActivity(
+                            activity.id,
+                            "discount_amount",
+                            parseFloat(e.target.value) || 0
+                          );
+                        }}
+                        placeholder="0.00"
+                      />
+                    ) : (
+                      <Input
+                        id={`activity-discount-${activity.id}`}
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={activity.discount_percentage || 0}
+                        onChange={(e) => {
+                          updateActivity(
+                            activity.id,
+                            "discount_percentage",
+                            parseFloat(e.target.value) || 0
+                          );
+                        }}
+                        placeholder="0.00"
+                      />
+                    )}
+                  </div>
+
+                  <div className="space-y-2 text-start">
+                    <Label>Final Price</Label>
+                    <div className="text-lg font-semibold">
+                      {activity.currency} {activity.discounted_price.toFixed(2)}
+                    </div>
                   </div>
                 </div>
 
