@@ -176,11 +176,6 @@ export function Hero() {
     suggestions &&
     (suggestions.destinations.length > 0 || suggestions.experiences.length > 0);
 
-  const backgroundVideoSrc =
-    "https://prepseed.s3.ap-south-1.amazonaws.com/Hero+page+video+-+draft.mp4";
-
-  const iframeSrcDoc = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0" /><style>html,body{margin:0;padding:0;overflow:hidden;background:black;}video{width:100vw;height:100vh;object-fit:cover;}</style></head><body><video src="${backgroundVideoSrc}" autoplay muted loop playsinline webkit-playsinline="true"></video></body></html>`;
-
   return (
     <section id="HeroVideoContainer" className="relative h-screen flex items-center justify-center overflow-hidden -mt-16 ">
       {/* Background - Video for Both Desktop and Mobile */}
@@ -193,21 +188,30 @@ export function Hero() {
             background: "linear-gradient(135deg, hsl(var(--gradient-secondary-start)) 0%, hsl(var(--gradient-secondary-end)) 100%)", // Fallback gradient
           }}
         >
-          <iframe
-            title="Hero background video"
-            srcDoc={iframeSrcDoc}
+          <video
+            src="https://prepseed.s3.ap-south-1.amazonaws.com/Hero+page+video+-+draft.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            webkit-playsinline="true"
+            controls={false}
+            disablePictureInPicture
+            preload="auto"
+            poster="data:image/gif,AAAA"
             className="absolute top-1/2 left-1/2 pointer-events-none transition-transform duration-75 ease-out parallax-video"
             style={{
               transform: `translate(-50%, calc(-50% + ${scrollTranslateY}px)) scale(${videoScale * scrollZoomScale})`,
               transformOrigin: "center center",
-              width: isMobile ? "100vw" : "100%",
-              height: isMobile ? "100vh" : "100%",
-              minWidth: isMobile ? "100vw" : "100%",
-              minHeight: isMobile ? "100vh" : "100%",
-              border: "none",
+              objectFit: "cover"
             }}
-            allow="autoplay; fullscreen"
-            aria-hidden="true"
+            onLoadedData={() => {
+              // Force play on data loaded to prevent native controls
+              const video = document.querySelector('video.parallax-video') as HTMLVideoElement;
+              if (video) {
+                video.play().catch(() => {});
+              }
+            }}
           />
           {/* <iframe
             src="https://prepseed.s3.ap-south-1.amazonaws.com/Hero+page+video+-+draft+(5)+(1).mp4"
