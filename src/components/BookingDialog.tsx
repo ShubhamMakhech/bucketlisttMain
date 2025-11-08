@@ -184,7 +184,7 @@ export const BookingDialog = ({
       setCurrentStep(3);
 
       // Clear localStorage
-      localStorage.removeItem("bookingModalData");
+      // localStorage.removeItem("bookingModalData");
       setIsBookingDialogOpen(true);
     }
   }, [form]);
@@ -313,6 +313,7 @@ export const BookingDialog = ({
     setSelectedActivityId(undefined);
     setBypassPayment(false);
     setIsSubmitting(false);
+    localStorage.removeItem("bookingModalData");
     onClose();
   };
 
@@ -422,7 +423,7 @@ export const BookingDialog = ({
               ).format("hh:mm A")}`,
               "4": timeSlot?.experiences?.location,
               "5": data?.participant_count?.toString() || "0",
-              "6": finalPrice.toFixed(2).toString(),
+              "6": upfrontAmount.toFixed(2).toString(),
               "7": dueAmount || "0",
             },
           },
@@ -503,7 +504,7 @@ export const BookingDialog = ({
       const vendorWhatsappResponse = await SendWhatsappMessage(
         vendorWhatsappBody
       );
-      // console.log("vendorWhatsappResponse", vendorWhatsappResponse);
+      console.log("vendorWhatsappResponse", vendorWhatsappResponse);
       // console.log(whatsappResponse);
 
       // console.log(experience);
@@ -651,6 +652,23 @@ export const BookingDialog = ({
             console.error("Error updating user phone number:", updateError);
           }
         }
+
+        if (
+          !userData?.first_name ||
+          userData?.first_name.trim() === "" ||
+          userData?.first_name === null
+        ) {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              first_name: data.participant.name,
+            })
+            .eq("id", user.id);
+
+          if (updateError) {
+            console.error("Error updating user first name:", updateError);
+          }
+        }
       }
       // console.log("Participants created successfully");
 
@@ -658,7 +676,7 @@ export const BookingDialog = ({
       await sendBookingConfirmationEmail(
         data,
         booking.id,
-        dueAmount ? dueAmount.toString() : "0"
+        "0" // dueAmount ? dueAmount.toString() : "0"
       );
 
       toast({
@@ -721,6 +739,7 @@ export const BookingDialog = ({
         .select()
         .single();
 
+      console.log("booking", booking);
       if (bookingError) {
         console.error("Booking creation error:", bookingError);
         throw bookingError;
@@ -754,6 +773,22 @@ export const BookingDialog = ({
 
           if (updateError) {
             console.error("Error updating user phone number:", updateError);
+          }
+        }
+        if (
+          !userData?.first_name ||
+          userData?.first_name.trim() === "" ||
+          userData?.first_name === null
+        ) {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              first_name: data.participant.name,
+            })
+            .eq("id", user.id);
+
+          if (updateError) {
+            console.error("Error updating user first name:", updateError);
           }
         }
       }
@@ -820,6 +855,7 @@ export const BookingDialog = ({
         selectedDate: selectedDate,
         selectedSlotId: selectedSlotId,
         selectedActivityId: selectedActivityId,
+        selectedExperienceId: experience.id,
       };
 
       localStorage.setItem(

@@ -132,7 +132,7 @@ const Index = () => {
         structuredData={homepageStructuredData}
       />
       <Header />
-      <HomepageModal />
+      {/* <HomepageModal /> */}
 
       <BidirectionalAnimatedSection
         animation="fade-up"

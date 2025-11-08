@@ -183,14 +183,20 @@
     /* --brand-accent: 340 100% 50%; */
     /* Pink #ff0066 */
     /* Brand Colors - Light Theme */
-/* Brand Colors - Light Theme */
---brand-primary: 276 85% 45%;       /* #940fdb */
---brand-primary-light: 276 100% 88.02%; /* lighter purple */
---brand-primary-dark: 276 85% 35%;  /* darker purple */
+    /* Brand Colors - Light Theme */
+    --brand-primary: 276 85% 45%;
+    /* #940fdb */
+    --brand-primary-light: 276 100% 88.02%;
+    /* lighter purple */
+    --brand-primary-dark: 276 85% 35%;
+    /* darker purple */
 
---brand-secondary: 288 65% 60%;      /* #b84dff (softer magenta purple) */
---brand-secondary-light: 288 65% 70%;/* #cc80ff (light pastel purple) */
---brand-secondary-dark: 288 65% 50%; /* #9900ff (deep magenta purple) */
+    --brand-secondary: 288 65% 60%;
+    /* #b84dff (softer magenta purple) */
+    --brand-secondary-light: 288 65% 70%;
+    /* #cc80ff (light pastel purple) */
+    --brand-secondary-dark: 288 65% 50%;
+    /* #9900ff (deep magenta purple) */
 
 
 
@@ -795,4 +801,222 @@ h6 {
 
 .BrandShadeCommon {
   background: #940fdb2b;
+}
+
+
+@media (max-width: 768px) {
+  #UserBookingsColumnSelectorStyles {
+    display: none !important;
+  }
+
+  #UserBookingsCardContentStyles>div {
+    display: flex;
+    gap: 5px;
+  }
+
+  #UserBookingsCardContentStyles3 {
+    display: flex;
+    gap: 5px;
+    justify-content: space-between;
+  }
+
+  #UserBookingsCardContentStyles3>div {
+    display: flex;
+    gap: 5px;
+    overflow: hidden;
+  }
+
+  #UserBookingsCardContentStyles4 {
+    display: flex;
+    gap: 5px;
+  }
+
+  #UserBookingsCardContentStyles5 {
+    display: flex;
+    gap: 5px;
+    overflow: hidden;
+  }
+
+  #UserBookingsCardContentStyles5>div {
+    display: flex;
+    gap: 5px;
+    flex-direction: column;
+    align-items: start;
+  }
+
+  #UserBookingsCardContentStyles5>div p {
+    text-align: start;
+  }
+
+  #BookingsExportButtonStyles {
+    display: none;
+  }
+
+  #BookingsBackButtonStyles {
+    display: none;
+  }
+
+  #UserBookingsSortButtonStyles {
+    display: flex;
+    gap: 5px;
+    flex-direction: row;
+  }
+
+  /* Show mobile layout, hide desktop layout on mobile */
+  #UserBookingsMobileLayout {
+    display: grid !important;
+  }
+
+  #UserBookingsDesktopLayout {
+    display: none !important;
+  }
+
+ 
+}
+
+@media (min-width: 769px) {
+
+  /* Show desktop layout, hide mobile layout on desktop */
+  #UserBookingsMobileLayout {
+    display: none !important;
+  }
+
+  #UserBookingsDesktopLayout {
+    display: block !important;
+  }
+
+  /* Professional table styling for desktop bookings */
+  #UserBookingsDesktopLayout table {
+    font-size: 0.875rem;
+    border-collapse: collapse;
+    border: 1px solid hsl(var(--border));
+    table-layout: fixed;
+  }
+
+  #UserBookingsDesktopLayout th {
+    background-color: hsl(var(--muted) / 0.5);
+    border: 1px solid hsl(var(--border));
+    border-bottom: 2px solid hsl(var(--border));
+    padding: 12px 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-clip: padding-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #UserBookingsDesktopLayout td {
+    padding: 12px 8px;
+    border: 1px solid hsl(var(--border));
+    vertical-align: top;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+  }
+
+  /* Title column (first column) - truncate with ellipsis, allow resizing */
+  #UserBookingsDesktopLayout th:first-child,
+  #UserBookingsDesktopLayout td:first-child {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-all;
+  }
+
+  /* Email column (5th column) - truncate with ellipsis */
+  #UserBookingsDesktopLayout th:nth-child(5),
+  #UserBookingsDesktopLayout td:nth-child(5) {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #UserBookingsDesktopLayout tbody tr:hover {
+    background-color: hsl(var(--muted) / 0.3);
+  }
+
+  #UserBookingsDesktopLayout tbody tr:last-child td {
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  /* Make the table horizontally scrollable */
+  #UserBookingsDesktopLayout>div {
+    max-width: 100%;
+    /* overflow-x: auto; */
+  }
+
+
+  /* Resize handle styling */
+  #UserBookingsDesktopLayout th>div {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 11;
+    transition: background-color 0.2s;
+  }
+
+  #UserBookingsDesktopLayout th>div:hover {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+
+  /* Hide resize handle on last column */
+  #UserBookingsDesktopLayout th:last-child>div {
+    display: none;
+  }
+
+  /* Column dragging styles */
+  #UserBookingsDesktopLayout th[draggable="true"] {
+    cursor: move;
+  }
+
+  #UserBookingsDesktopLayout th[draggable="true"]:hover {
+    background-color: hsl(var(--muted) / 0.7);
+  }
+
+  #UserBookingsDesktopLayout th[draggable="true"]:active {
+    cursor: grabbing;
+    opacity: 0.5;
+  }
+
+  #UserBookingsDesktopLayout th[draggable="true"] svg {
+    transition: opacity 0.2s;
+  }
+
+}
+
+
+
+*::-webkit-media-controls-panel {
+  display: none!important;
+  -webkit-appearance: none;
+}
+
+/* Old shadow dom for play button */
+
+*::-webkit-media-controls-play-button {
+  display: none!important;
+  -webkit-appearance: none;
+}
+
+/* New shadow dom for play button */
+
+/* This one works! */
+
+*::-webkit-media-controls-start-playback-button {
+  display: none!important;
+  -webkit-appearance: none;
+}
+
+video::-webkit-media-controls {
+  display: none !important;
 }

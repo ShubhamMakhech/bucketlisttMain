@@ -44,8 +44,23 @@ const ExperienceDetail = () => {
   const stateExperienceData = location.state?.experienceData;
   const fromPage = location.state?.fromPage;
 
-  // Get ID from state, fallback to undefined if not available
-  const id = stateExperienceData?.id;
+  // Get ID from state, fallback to ID from parsed localStorage if available
+  let id = stateExperienceData?.id;
+  if (!id) {
+    try {
+    
+      
+      const parsed = JSON.parse(
+        localStorage.getItem("bookingModalData") || "{}"
+      );
+
+      id = parsed?.selectedExperienceId;
+
+      // localStorage.removeItem("bookingModalData");
+    } catch (e) {
+      // Fail silently; id will remain undefined if parsing fails
+    }
+  }
   const { isVendor, loading: roleLoading } = useUserRole();
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
@@ -167,6 +182,7 @@ const ExperienceDetail = () => {
   };
 
   const handleBookingSuccess = () => {
+    localStorage.removeItem("bookingModalData");
     setShowSuccessAnimation(true);
     navigate("/confirm-booking");
     refetchBookings();
@@ -177,6 +193,7 @@ const ExperienceDetail = () => {
   };
 
   const handleBulkPaymentSuccess = () => {
+    localStorage.removeItem("bookingModalData");
     setShowSuccessAnimation(true);
     navigate("/confirm-booking");
     refetchBookings();
@@ -439,6 +456,7 @@ const ExperienceDetail = () => {
   }
 
   if (error || !experience) {
+    // console.log("experience not found", experience, id);
     return (
       <div className="min-h-screen bg-background">
         <Header />
