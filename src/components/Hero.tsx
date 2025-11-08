@@ -23,6 +23,7 @@ export function Hero() {
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
 
   const { data: suggestions, isLoading } = useQuery({
     queryKey: ["search-suggestions", searchQuery],
@@ -142,6 +143,46 @@ export function Hero() {
     };
   }, [showDropdown]);
 
+  useEffect(() => {
+    const video = heroVideoRef.current;
+    if (!video) return;
+
+    const isIOS =
+      typeof navigator !== "undefined" &&
+      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.userAgent.includes("Mac") &&
+          typeof window !== "undefined" &&
+          "ontouchstart" in window));
+
+    video.muted = true;
+    video.controls = false;
+    video.removeAttribute("controls");
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("muted", "true");
+    video.setAttribute("autoplay", "true");
+
+    if (isIOS) {
+      video.setAttribute("webkit-playsinline", "true");
+      video.setAttribute(
+        "poster",
+        "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+      );
+    }
+
+    const ensurePlayback = () => {
+      video.play().catch(() => {});
+    };
+
+    ensurePlayback();
+    video.addEventListener("loadeddata", ensurePlayback);
+    video.addEventListener("canplay", ensurePlayback);
+
+    return () => {
+      video.removeEventListener("loadeddata", ensurePlayback);
+      video.removeEventListener("canplay", ensurePlayback);
+    };
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -189,16 +230,17 @@ export function Hero() {
           }}
         >
           <video
+            ref={heroVideoRef}
             src="https://prepseed.s3.ap-south-1.amazonaws.com/Hero+page+video+-+draft.mp4"
             autoPlay
             muted
             loop
             playsInline
             webkit-playsinline="true"
-            // controls={false}
+            controls={false}
             disablePictureInPicture
             preload="auto"
-            // poster="data:image/gif,AAAA"
+            poster="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
             className="absolute top-1/2 left-1/2 pointer-events-none transition-transform duration-75 ease-out parallax-video"
             style={{
               transform: `translate(-50%, calc(-50% + ${scrollTranslateY}px)) scale(${videoScale * scrollZoomScale})`,
@@ -206,8 +248,7 @@ export function Hero() {
               objectFit: "cover"
             }}
             onLoadedData={() => {
-              // Force play on data loaded to prevent native controls
-              const video = document.querySelector('video.parallax-video') as HTMLVideoElement;
+              const video = heroVideoRef.current;
               if (video) {
                 video.play().catch(() => {});
               }
