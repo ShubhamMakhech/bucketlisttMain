@@ -195,10 +195,10 @@ export function Hero() {
             loop
             playsInline
             webkit-playsinline="true"
-            controls={false}
+            // controls={false}
             disablePictureInPicture
             preload="auto"
-            poster="data:image/gif,AAAA"
+            // poster="data:image/gif,AAAA"
             className="absolute top-1/2 left-1/2 pointer-events-none transition-transform duration-75 ease-out parallax-video"
             style={{
               transform: `translate(-50%, calc(-50% + ${scrollTranslateY}px)) scale(${videoScale * scrollZoomScale})`,
