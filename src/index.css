@@ -969,4 +969,7 @@ h6 {
   #UserBookingsDesktopLayout th[draggable="true"] svg {
     transition: opacity 0.2s;
   }
+  video::-webkit-media-controls {
+    display:none !important;
+}
 }
