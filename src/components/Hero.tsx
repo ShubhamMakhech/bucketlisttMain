@@ -23,7 +23,6 @@ export function Hero() {
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const heroVideoRef = useRef<HTMLVideoElement>(null);
 
   const { data: suggestions, isLoading } = useQuery({
     queryKey: ["search-suggestions", searchQuery],
@@ -143,46 +142,6 @@ export function Hero() {
     };
   }, [showDropdown]);
 
-  useEffect(() => {
-    const video = heroVideoRef.current;
-    if (!video) return;
-
-    const isIOS =
-      typeof navigator !== "undefined" &&
-      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.userAgent.includes("Mac") &&
-          typeof window !== "undefined" &&
-          "ontouchstart" in window));
-
-    video.muted = true;
-    video.controls = false;
-    video.removeAttribute("controls");
-    video.setAttribute("playsinline", "true");
-    video.setAttribute("muted", "true");
-    video.setAttribute("autoplay", "true");
-
-    if (isIOS) {
-      video.setAttribute("webkit-playsinline", "true");
-      video.setAttribute(
-        "poster",
-        "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
-      );
-    }
-
-    const ensurePlayback = () => {
-      video.play().catch(() => {});
-    };
-
-    ensurePlayback();
-    video.addEventListener("loadeddata", ensurePlayback);
-    video.addEventListener("canplay", ensurePlayback);
-
-    return () => {
-      video.removeEventListener("loadeddata", ensurePlayback);
-      video.removeEventListener("canplay", ensurePlayback);
-    };
-  }, []);
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -217,6 +176,11 @@ export function Hero() {
     suggestions &&
     (suggestions.destinations.length > 0 || suggestions.experiences.length > 0);
 
+  const backgroundVideoSrc =
+    "https://prepseed.s3.ap-south-1.amazonaws.com/Hero+page+video+-+draft.mp4";
+
+  const iframeSrcDoc = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0" /><style>html,body{margin:0;padding:0;overflow:hidden;background:black;}video{width:100vw;height:100vh;object-fit:cover;}</style></head><body><video src="${backgroundVideoSrc}" autoplay muted loop playsinline webkit-playsinline="true"></video></body></html>`;
+
   return (
     <section id="HeroVideoContainer" className="relative h-screen flex items-center justify-center overflow-hidden -mt-16 ">
       {/* Background - Video for Both Desktop and Mobile */}
@@ -229,30 +193,21 @@ export function Hero() {
             background: "linear-gradient(135deg, hsl(var(--gradient-secondary-start)) 0%, hsl(var(--gradient-secondary-end)) 100%)", // Fallback gradient
           }}
         >
-          <video
-            ref={heroVideoRef}
-            src="https://prepseed.s3.ap-south-1.amazonaws.com/Hero+page+video+-+draft.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            webkit-playsinline="true"
-            controls={false}
-            disablePictureInPicture
-            preload="auto"
-            poster="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+          <iframe
+            title="Hero background video"
+            srcDoc={iframeSrcDoc}
             className="absolute top-1/2 left-1/2 pointer-events-none transition-transform duration-75 ease-out parallax-video"
             style={{
               transform: `translate(-50%, calc(-50% + ${scrollTranslateY}px)) scale(${videoScale * scrollZoomScale})`,
               transformOrigin: "center center",
-              objectFit: "cover"
+              width: isMobile ? "100vw" : "100%",
+              height: isMobile ? "100vh" : "100%",
+              minWidth: isMobile ? "100vw" : "100%",
+              minHeight: isMobile ? "100vh" : "100%",
+              border: "none",
             }}
-            onLoadedData={() => {
-              const video = heroVideoRef.current;
-              if (video) {
-                video.play().catch(() => {});
-              }
-            }}
+            allow="autoplay; fullscreen"
+            aria-hidden="true"
           />
           {/* <iframe
             src="https://prepseed.s3.ap-south-1.amazonaws.com/Hero+page+video+-+draft+(5)+(1).mp4"
