@@ -11,10 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Eye, EyeOff, Loader2, Store } from "lucide-react";
+import { Eye, EyeOff, Loader2, Store, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface VendorSignUpFormProps {
   onToggleMode: () => void;
@@ -29,7 +30,7 @@ export function VendorSignUpForm({ onToggleMode }: VendorSignUpFormProps) {
     lastName: "",
     phoneNumber: "",
     companyName: "",
-    role: "vendor" as const,
+    role: "vendor" as "vendor" | "agent",
     termsAccepted: false,
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -117,7 +118,9 @@ export function VendorSignUpForm({ onToggleMode }: VendorSignUpFormProps) {
         }
       } else {
         toast({
-          title: "Vendor account created successfully!",
+          title: `${
+            formData.role === "agent" ? "Agent" : "Vendor"
+          } account created successfully!`,
           description: "Please check your email to confirm your account.",
           variant: "default",
         });
@@ -164,7 +167,48 @@ export function VendorSignUpForm({ onToggleMode }: VendorSignUpFormProps) {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
-          {/* Role Display - Fixed to Vendor */}
+          {/* Role Selection */}
+          <div className="space-y-3">
+            <Label>Account Type</Label>
+            <RadioGroup
+              value={formData.role}
+              onValueChange={(value) =>
+                handleInputChange("role", value as "vendor" | "agent")
+              }
+              className="grid grid-cols-2 gap-4"
+            >
+              <div className="flex items-center space-x-2 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+                <RadioGroupItem value="vendor" id="vendor" className="mt-0" />
+                <Label
+                  htmlFor="vendor"
+                  className="flex items-center gap-2 cursor-pointer font-normal flex-1"
+                >
+                  <Store className="h-4 w-4 text-orange-500" />
+                  <div>
+                    <div className="font-medium">Vendor</div>
+                    {/* <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Experience provider
+                    </div> */}
+                  </div>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+                <RadioGroupItem value="agent" id="agent" className="mt-0" />
+                <Label
+                  htmlFor="agent"
+                  className="flex items-center gap-2 cursor-pointer font-normal flex-1"
+                >
+                  <UserCheck className="h-4 w-4 text-orange-500" />
+                  <div>
+                    <div className="font-medium">Agent</div>
+                    {/* <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Travel agent
+                    </div> */}
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
 
           {/* Personal Information */}
           <div className="grid grid-cols-2 gap-4">
@@ -311,7 +355,7 @@ export function VendorSignUpForm({ onToggleMode }: VendorSignUpFormProps) {
             disabled={loading}
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create Vendor Account
+            Create {formData.role === "agent" ? "Agent" : "Vendor"} Account
           </Button>
           <div className="text-center text-sm">
             <span className="text-gray-600 dark:text-gray-400">

@@ -147,6 +147,8 @@ export function Header() {
     switch (userRole) {
       case "vendor":
         return "Vendor";
+      case "agent":
+        return "Agent";
       case "admin":
         return "Admin";
       case "customer":
@@ -191,7 +193,7 @@ export function Header() {
             className="flex items-center cursor-pointer"
             onClick={() => {
               // Mark that user has navigated within the app
-              sessionStorage.setItem('hasNavigatedWithinApp', 'true');
+              sessionStorage.setItem("hasNavigatedWithinApp", "true");
             }}
             id="LogoADjustContainer"
           >
@@ -199,15 +201,17 @@ export function Header() {
             <img
               src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt+(1).png"
               alt="bucketlistt Logo"
-              className={`h-20 w-auto transition-opacity duration-300 ${isScrolled ? "opacity-0 absolute" : "opacity-100"
-                }`}
+              className={`h-20 w-auto transition-opacity duration-300 ${
+                isScrolled ? "opacity-0 absolute" : "opacity-100"
+              }`}
             />
             {/* Second logo - shown after scroll */}
             <img
               src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt.png"
               alt="bucketlistt Logo"
-              className={`h-20 w-auto transition-opacity duration-300 ${isScrolled ? "opacity-100" : "opacity-0 absolute"
-                }`}
+              className={`h-20 w-auto transition-opacity duration-300 ${
+                isScrolled ? "opacity-100" : "opacity-0 absolute"
+              }`}
             />
           </Link>
 

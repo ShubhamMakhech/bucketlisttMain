@@ -28,6 +28,7 @@ export type Database = {
           price: number;
           discount_percentage: number;
           discounted_price: number;
+          b2bPrice: number;
           updated_at: string;
         };
         Insert: {
@@ -43,6 +44,7 @@ export type Database = {
           price: number;
           discount_percentage?: number;
           discounted_price?: number;
+          b2bPrice?: number;
           updated_at?: string;
         };
         Update: {
@@ -58,6 +60,7 @@ export type Database = {
           price?: number;
           discount_percentage?: number;
           discounted_price?: number;
+          b2bPrice?: number;
           updated_at?: string;
         };
         Relationships: [

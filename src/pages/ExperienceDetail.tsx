@@ -48,8 +48,6 @@ const ExperienceDetail = () => {
   let id = stateExperienceData?.id;
   if (!id) {
     try {
-    
-      
       const parsed = JSON.parse(
         localStorage.getItem("bookingModalData") || "{}"
       );
@@ -61,7 +59,7 @@ const ExperienceDetail = () => {
       // Fail silently; id will remain undefined if parsing fails
     }
   }
-  const { isVendor, loading: roleLoading } = useUserRole();
+  const { isVendor, loading: roleLoading, isAgent, role } = useUserRole();
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [isBulkPaymentDialogOpen, setIsBulkPaymentDialogOpen] = useState(false);
@@ -212,9 +210,7 @@ const ExperienceDetail = () => {
 
   const formatCurrency = (amount: number) => {
     const currency = experience?.currency || "INR";
-    return currency === "USD"
-      ? `$${amount.toFixed(2)}`
-      : `₹${amount.toFixed(2)}`;
+    return currency === "USD" ? `$${amount}` : `₹${amount}`;
   };
 
   const hasExistingBookings = userBookings && userBookings.length > 0;
@@ -636,60 +632,64 @@ const ExperienceDetail = () => {
                 </div>
               )} */}
 
-                      <div className="flex items-center gap-3 mb-6">
-                        <span style={{ color: "grey" }}>From</span>
-                        {appliedCoupon && appliedCoupon.discount_calculation ? (
-                          <>
-                            <span className="text-3xl font-bold line-through text-muted-foreground">
-                              {formatCurrency(experience.price)}
-                            </span>
-                            <span className="text-3xl font-bold text-green-600">
-                              {formatCurrency(
-                                appliedCoupon.discount_calculation.final_amount
-                              )}
-                            </span>
-                            <Badge
-                              variant="secondary"
-                              className="bg-green-100 text-green-800"
-                            >
-                              Save{" "}
-                              {appliedCoupon.discount_calculation.savings_percentage.toFixed(
-                                1
-                              )}
-                              %
-                            </Badge>
-                          </>
-                        ) : discountedPrice &&
-                          discountedPrice !==
-                            (firstActivity?.price || experience.price) ? (
-                          <>
-                            <span className="text-lg text-muted-foreground line-through">
+                      {!isAgent && (
+                        <div className="flex items-center gap-3 mb-6">
+                          <span style={{ color: "grey" }}>From</span>
+                          {appliedCoupon &&
+                          appliedCoupon.discount_calculation ? (
+                            <>
+                              <span className="text-3xl font-bold line-through text-muted-foreground">
+                                {formatCurrency(experience.price)}
+                              </span>
+                              <span className="text-3xl font-bold text-green-600">
+                                {formatCurrency(
+                                  appliedCoupon.discount_calculation
+                                    .final_amount
+                                )}
+                              </span>
+                              <Badge
+                                variant="secondary"
+                                className="bg-green-100 text-green-800"
+                              >
+                                Save{" "}
+                                {appliedCoupon.discount_calculation.savings_percentage.toFixed(
+                                  1
+                                )}
+                                %
+                              </Badge>
+                            </>
+                          ) : discountedPrice &&
+                            discountedPrice !==
+                              (firstActivity?.price || experience.price) ? (
+                            <>
+                              <span className="text-lg text-muted-foreground line-through">
+                                {formatCurrency(
+                                  firstActivity?.price || experience.price
+                                )}
+                              </span>
+                              <span className="text-3xl font-bold text-green-600">
+                                {formatCurrency(discountedPrice)}
+                              </span>
+                            </>
+                          ) : experience.original_price &&
+                            experience.original_price !== experience.price ? (
+                            <>
+                              <span className="text-lg text-muted-foreground line-through">
+                                {formatCurrency(experience.original_price)}
+                              </span>
+                              <span className="text-3xl font-bold text-green-600">
+                                {formatCurrency(experience.price)}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-3xl font-bold text-orange-500">
                               {formatCurrency(
                                 firstActivity?.price || experience.price
                               )}
                             </span>
-                            <span className="text-3xl font-bold text-green-600">
-                              {formatCurrency(discountedPrice)}
-                            </span>
-                          </>
-                        ) : experience.original_price &&
-                          experience.original_price !== experience.price ? (
-                          <>
-                            <span className="text-lg text-muted-foreground line-through">
-                              {formatCurrency(experience.original_price)}
-                            </span>
-                            <span className="text-3xl font-bold text-green-600">
-                              {formatCurrency(experience.price)}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-3xl font-bold text-orange-500">
-                            {formatCurrency(
-                              firstActivity?.price || experience.price
-                            )}
-                          </span>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Coupon Section */}
                       {!isVendor && (
@@ -745,8 +745,9 @@ const ExperienceDetail = () => {
                         className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                         onClick={() => setIsBookingDialogOpen(true)}
                       >
-                        {bookingButtonText} -{" "}
-                        {appliedCoupon?.discount_calculation?.final_amount
+                        {bookingButtonText} {!isAgent && " - "}{" "}
+                        {!isAgent &&
+                        appliedCoupon?.discount_calculation?.final_amount
                           ? formatCurrency(
                               appliedCoupon.discount_calculation.final_amount
                             )

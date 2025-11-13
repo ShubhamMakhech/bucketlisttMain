@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface BookingWithDueAmount {
   due_amount?: number;
@@ -19,6 +20,7 @@ interface BookingWithDueAmount {
 
 export const UserBookings = () => {
   const { user } = useAuth();
+  const { isAgent } = useUserRole();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [globalFilter, setGlobalFilter] = React.useState("");
@@ -30,9 +32,13 @@ export const UserBookings = () => {
   const [selectedDate, setSelectedDate] = React.useState<string>("");
   const [selectedEndDate, setSelectedEndDate] = React.useState<string>("");
   const [showDateRangePicker, setShowDateRangePicker] = React.useState(false);
-  const [selectedActivityId, setSelectedActivityId] = React.useState<string | null>(null);
+  const [selectedActivityId, setSelectedActivityId] = React.useState<
+    string | null
+  >(null);
   const [showActivityFilter, setShowActivityFilter] = React.useState(false);
-  const [selectedTimeslotId, setSelectedTimeslotId] = React.useState<string | null>(null);
+  const [selectedTimeslotId, setSelectedTimeslotId] = React.useState<
+    string | null
+  >(null);
   const [showTimeslotFilter, setShowTimeslotFilter] = React.useState(false);
 
   // Column width state for resizable columns
@@ -41,34 +47,87 @@ export const UserBookings = () => {
     Array(columnCount).fill(150) // Default width 150px for each column
   );
 
-  // Column visibility state
-  const [columnVisibility, setColumnVisibility] = React.useState<boolean[]>(
-    Array(columnCount).fill(true) // All columns visible by default
-  );
+  // Column visibility state - hide certain columns for agents
+  // Index 10: "Official Price/ Original Price" (expectedFullPrice)
+  // Index 12: "Commission as per vendor" (commissionTotal/commissionPerVendor)
+  // Index 13: "Website Price" (discountedPrice)
+  // Index 14: "Discount Coupon"
+  const initialVisibility = React.useMemo(() => {
+    const visibility = Array(columnCount).fill(true);
+    if (isAgent) {
+      visibility[10] = false; // Official Price/ Original Price
+      visibility[12] = false; // Commission as per vendor
+      visibility[13] = false; // Website Price
+      visibility[14] = false; // Discount Coupon
+    }
+    return visibility;
+  }, [isAgent, columnCount]);
+
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<boolean[]>(initialVisibility);
+
+  // Update column visibility when isAgent changes
+  React.useEffect(() => {
+    if (isAgent) {
+      setColumnVisibility((prev) => {
+        const newVisibility = [...prev];
+        newVisibility[10] = false; // Official Price/ Original Price
+        newVisibility[12] = false; // Commission as per vendor
+        newVisibility[13] = false; // Website Price
+        newVisibility[14] = false; // Discount Coupon
+        return newVisibility;
+      });
+    }
+  }, [isAgent]);
 
   const [showColumnSelector, setShowColumnSelector] = React.useState(false);
   const columnSelectorRef = React.useRef<HTMLDivElement>(null);
-  
+
   // Column order state for drag and drop
   const [columnOrder, setColumnOrder] = React.useState<number[]>(
     Array.from({ length: columnCount }, (_, i) => i)
   );
-  const [draggedColumnIndex, setDraggedColumnIndex] = React.useState<number | null>(null);
-  const [dragOverColumnIndex, setDragOverColumnIndex] = React.useState<number | null>(null);
+  const [draggedColumnIndex, setDraggedColumnIndex] = React.useState<
+    number | null
+  >(null);
+  const [dragOverColumnIndex, setDragOverColumnIndex] = React.useState<
+    number | null
+  >(null);
 
   // Column headers array
   const columnHeaders = [
-    "Title", "Activity", "Contact Number", "Contact Name", "Email",
-    "Referred by", "Timeslot", "Date", "No. Of Participants",
-    "Notes for guides", "Official Price/ Original Price", "B2B Price",
-    "Commission as per vendor", "Website Price", "Discount Coupon",
-    "Ticket Price (customer cost)", "Advance paid to bucketlistt (10%)",
-    "Payment to be collected by vendor", "Actual Commission to bucketlistt (Net profit)",
-    "Amount to be collected from vendor/ '- to be paid'", "Advance + discount (vendor needs this)"
+    "Title",
+    "Activity",
+    "Contact Number",
+    "Contact Name",
+    "Email",
+    "Referred by",
+    "Timeslot",
+    "Date",
+    "No. Of Participants",
+    "Notes for guides",
+    "Official Price/ Original Price",
+    "B2B Price",
+    "Commission as per vendor",
+    "Website Price",
+    "Discount Coupon",
+    "Ticket Price (customer cost)",
+    "Advance paid to bucketlistt (10%)",
+    "Payment to be collected by vendor",
+    "Actual Commission to bucketlistt (Net profit)",
+    "Amount to be collected from vendor/ '- to be paid'",
+    "Advance + discount (vendor needs this)",
   ];
 
   // Function to toggle column visibility
   const toggleColumnVisibility = (index: number) => {
+    // Prevent agents from showing hidden columns
+    if (
+      isAgent &&
+      (index === 10 || index === 12 || index === 13 || index === 14)
+    ) {
+      return; // Don't allow toggling these columns for agents
+    }
     const newVisibility = [...columnVisibility];
     newVisibility[index] = !newVisibility[index];
     setColumnVisibility(newVisibility);
@@ -79,54 +138,110 @@ export const UserBookings = () => {
     const symbol = currency === "INR" ? "₹" : currency;
     return `${symbol} ${amount}`;
   };
-  
+
   // Column drag handlers
   const handleColumnDragStart = (columnIndex: number) => {
     setDraggedColumnIndex(columnIndex);
   };
-  
+
   const handleColumnDragOver = (e: React.DragEvent, columnIndex: number) => {
     e.preventDefault();
     setDragOverColumnIndex(columnIndex);
   };
-  
+
   const handleColumnDrop = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
-    
+
     if (draggedColumnIndex === null) return;
-    
+
     const newOrder = [...columnOrder];
     const draggedIndexInOrder = newOrder.indexOf(draggedColumnIndex);
     const targetIndexInOrder = newOrder.indexOf(targetIndex);
-    
+
     // Remove dragged item and insert at target position
     newOrder.splice(draggedIndexInOrder, 1);
     newOrder.splice(targetIndexInOrder, 0, draggedColumnIndex);
-    
+
     setColumnOrder(newOrder);
     setDraggedColumnIndex(null);
     setDragOverColumnIndex(null);
   };
-  
+
   const handleColumnDragEnd = () => {
     setDraggedColumnIndex(null);
     setDragOverColumnIndex(null);
   };
 
   // Function to render cell content based on column index
-  const renderCellContent = (columnIndex: number, booking: BookingWithDueAmount, profile: any, activityData: any, timeslot: any, experience: any, currency: string, officialPrice: number, b2bPriceTotal: number, commissionTotal: number, websitePrice: number, discountCoupon: number, ticketPrice: number, advancePaid10: number, paymentToCollectByVendor: number, actualCommissionNet: number, amountToCollectFromVendor: number, advancePlusDiscount: number) => {
+  const renderCellContent = (
+    columnIndex: number,
+    booking: BookingWithDueAmount,
+    profile: any,
+    activityData: any,
+    timeslot: any,
+    experience: any,
+    currency: string,
+    officialPrice: number,
+    b2bPriceTotal: number,
+    commissionTotal: number,
+    websitePrice: number,
+    discountCoupon: number,
+    ticketPrice: number,
+    advancePaid10: number,
+    paymentToCollectByVendor: number,
+    actualCommissionNet: number,
+    amountToCollectFromVendor: number,
+    advancePlusDiscount: number
+  ) => {
+    // If user is not an agent but booking is an agent booking, hide sensitive columns
+    const hiddenColumnsForAgentBookings = [10, 12, 13, 14]; // Official Price, Commission, Website Price, Discount Coupon
+    if (
+      !isAgent &&
+      (booking as any)?.isAgentBooking === true &&
+      hiddenColumnsForAgentBookings.includes(columnIndex)
+    ) {
+      return "-";
+    }
+
     const cells = [
       () => experience?.title || "N/A",
       () => activityData?.name || "N/A",
-      () => profile?.phone_number || booking?.booking_participants?.[0]?.phone_number ? (
-        <a href={`tel:${profile?.phone_number || booking?.booking_participants?.[0]?.phone_number}`} className="text-blue-600 hover:underline">
-          {profile?.phone_number || booking?.booking_participants?.[0]?.phone_number}
-        </a>
-      ) : "N/A",
-      () => profile ? `${profile.first_name} ${profile.last_name}`.trim() : booking?.booking_participants?.[0]?.name || "N/A",
-      () => profile?.email || booking?.booking_participants?.[0]?.email || "N/A",
-      () => (booking as any)?.referral_code || (booking as any)?.referred_by || "-",
-      () => timeslot?.start_time && timeslot?.end_time ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(timeslot.end_time)}` : "N/A",
+      () =>
+        booking.contact_person_number ||
+        profile?.phone_number ||
+        booking?.booking_participants?.[0]?.phone_number ? (
+          <a
+            href={`tel:${
+              booking.contact_person_number ||
+              profile?.phone_number ||
+              booking?.booking_participants?.[0]?.phone_number
+            }`}
+            className="text-blue-600 hover:underline"
+          >
+            {booking.contact_person_number ||
+              profile?.phone_number ||
+              booking?.booking_participants?.[0]?.phone_number}
+          </a>
+        ) : (
+          "N/A"
+        ),
+      () =>
+        booking.contact_person_name || profile
+          ? `${booking.contact_person_name || profile.first_name} `.trim()
+          : booking?.booking_participants?.[0]?.name || "N/A",
+      () =>
+        booking.contact_person_email ||
+        profile?.email ||
+        booking?.booking_participants?.[0]?.email ||
+        "N/A",
+      () =>
+        (booking as any)?.referral_code || (booking as any)?.referred_by || "-",
+      () =>
+        timeslot?.start_time && timeslot?.end_time
+          ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
+              timeslot.end_time
+            )}`
+          : "N/A",
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
       () => booking.note_for_guide || "-",
@@ -147,7 +262,9 @@ export const UserBookings = () => {
   };
 
   // Resize handler for table columns
-  const [resizingColumn, setResizingColumn] = React.useState<number | null>(null);
+  const [resizingColumn, setResizingColumn] = React.useState<number | null>(
+    null
+  );
   const [startX, setStartX] = React.useState(0);
   const [startWidth, setStartWidth] = React.useState(0);
 
@@ -173,13 +290,13 @@ export const UserBookings = () => {
     };
 
     if (resizingColumn !== null) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [resizingColumn, startX, startWidth, columnWidths]);
 
@@ -189,20 +306,22 @@ export const UserBookings = () => {
 
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (columnSelectorRef.current && !columnSelectorRef.current.contains(target)) {
-        console.log("Click outside detected, closing column selector");
+      if (
+        columnSelectorRef.current &&
+        !columnSelectorRef.current.contains(target)
+      ) {
         setShowColumnSelector(false);
       }
     };
 
     // Add a small delay to avoid catching the click that opened the dropdown
     const timeoutId = setTimeout(() => {
-      document.addEventListener('click', handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
     }, 0);
 
     return () => {
       clearTimeout(timeoutId);
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, [showColumnSelector]);
 
@@ -387,7 +506,10 @@ export const UserBookings = () => {
     // Apply date filter (mobile only) - supports range
     if (selectedDate && isMobile) {
       filtered = filtered.filter((booking) => {
-        const bookingDate = format(new Date(booking.booking_date), "yyyy-MM-dd");
+        const bookingDate = format(
+          new Date(booking.booking_date),
+          "yyyy-MM-dd"
+        );
 
         if (selectedEndDate) {
           // Date range filter
@@ -409,7 +531,9 @@ export const UserBookings = () => {
     // Apply activity filter
     if (selectedActivityId) {
       filtered = filtered.filter((booking) => {
-        return (booking.time_slots?.activities as any)?.id === selectedActivityId;
+        return (
+          (booking.time_slots?.activities as any)?.id === selectedActivityId
+        );
       });
     }
 
@@ -463,7 +587,19 @@ export const UserBookings = () => {
     });
 
     return filtered;
-  }, [bookings, showTodayOnly, selectedDate, selectedEndDate, selectedTimeslotId, selectedActivityId, globalFilter, sortBy, sortOrder, profileMap, isMobile]);
+  }, [
+    bookings,
+    showTodayOnly,
+    selectedDate,
+    selectedEndDate,
+    selectedTimeslotId,
+    selectedActivityId,
+    globalFilter,
+    sortBy,
+    sortOrder,
+    profileMap,
+    isMobile,
+  ]);
 
   // Get unique activities from bookings - only from active experiences
   const uniqueActivities = React.useMemo(() => {
@@ -608,7 +744,10 @@ export const UserBookings = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-1 p-3">
-          <div className="grid grid-cols-2 gap-1 text-sm" id="UserBookingsCardContentStyles">
+          <div
+            className="grid grid-cols-2 gap-1 text-sm"
+            id="UserBookingsCardContentStyles"
+          >
             <div>
               <span className="text-muted-foreground">Activity:</span>
               <p className="font-medium">
@@ -641,8 +780,11 @@ export const UserBookings = () => {
             </div> */}
           </div>
 
-          <div className="" >
-            <div className="grid grid-cols-2 gap-2 text-sm" id="UserBookingsCardContentStyles3">
+          <div className="">
+            <div
+              className="grid grid-cols-2 gap-2 text-sm"
+              id="UserBookingsCardContentStyles3"
+            >
               <div>
                 <span className="text-muted-foreground">Customer:</span>
                 <p className="font-medium">
@@ -651,18 +793,26 @@ export const UserBookings = () => {
                     : booking?.booking_participants?.[0]?.name || "N/A"}
                 </p>
               </div>
-
             </div>
           </div>
           {(profile?.phone_number ||
             booking?.booking_participants?.[0]?.phone_number) && (
-              <div className="text-sm" id="UserBookingsCardContentStyles4">
-                <span className="text-muted-foreground">Contact:</span>
-                <p className="font-medium" style={{ color: "blue" }}>
-                  <a href={`tel:${profile?.phone_number || booking?.booking_participants?.[0]?.phone_number}`}>{profile?.phone_number || booking?.booking_participants?.[0]?.phone_number || "N/A"}</a>
-                </p>
-              </div>
-            )}
+            <div className="text-sm" id="UserBookingsCardContentStyles4">
+              <span className="text-muted-foreground">Contact:</span>
+              <p className="font-medium" style={{ color: "blue" }}>
+                <a
+                  href={`tel:${
+                    profile?.phone_number ||
+                    booking?.booking_participants?.[0]?.phone_number
+                  }`}
+                >
+                  {profile?.phone_number ||
+                    booking?.booking_participants?.[0]?.phone_number ||
+                    "N/A"}
+                </a>
+              </p>
+            </div>
+          )}
           <div className="">
             <div className="space-y-2">
               {/* <div className="flex justify-between items-center">
@@ -707,8 +857,6 @@ export const UserBookings = () => {
             </div>
           )} */}
 
-
-
           {booking.note_for_guide && (
             <div className=" pt-1" id="UserBookingsCardContentStyles5">
               <div className="text-sm">
@@ -722,8 +870,7 @@ export const UserBookings = () => {
           {!isMobile &&
             user?.user_metadata?.role === "vendor" &&
             booking.time_slots?.activities?.b2bPrice &&
-            bookingAmount !=
-            "N/A" && (
+            bookingAmount != "N/A" && (
               <div className="border-t pt-3 mt-3">
                 <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3 space-y-2">
                   <div className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
@@ -732,12 +879,11 @@ export const UserBookings = () => {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     {/* Space reserved for vendor money calculations */}
                     <div className="text-sm">
-                      <span className="text-muted-foreground">
-                        B2B Price:
-                      </span>
+                      <span className="text-muted-foreground">B2B Price:</span>
                       <p className="font-medium">
                         {currency}{" "}
-                        {booking.time_slots?.activities?.b2bPrice *
+                        {(booking.b2bPrice ||
+                          booking.time_slots?.activities?.b2bPrice) *
                           booking.total_participants}
                       </p>
                     </div>
@@ -762,13 +908,12 @@ export const UserBookings = () => {
                       </p>
                     </div> */}
                     <div className="text-sm">
-                      <span className="text-muted-foreground">
-                        Commission:
-                      </span>
+                      <span className="text-muted-foreground">Commission:</span>
                       <p className="font-medium">
                         {currency}{" "}
                         {(booking.time_slots?.activities?.price -
-                          booking.time_slots?.activities?.b2bPrice) *
+                          (booking.b2bPrice ||
+                            booking.time_slots?.activities?.b2bPrice)) *
                           booking.total_participants}
                       </p>
                     </div>
@@ -794,8 +939,7 @@ export const UserBookings = () => {
                         Amount to be paid:
                       </span>
                       <p className="font-medium">
-                        {currency}{" "}
-                        {bookingAmount - (bookingAmount - dueAmount)}
+                        {currency} {bookingAmount - (bookingAmount - dueAmount)}
                       </p>
                     </div>
                     <div className="text-sm">
@@ -806,8 +950,9 @@ export const UserBookings = () => {
                       <p className="font-medium">
                         {currency}{" "}
                         {bookingAmount -
-                          booking.time_slots?.activities?.b2bPrice *
-                          booking.total_participants -
+                          (booking.b2bPrice ||
+                            booking.time_slots?.activities?.b2bPrice) *
+                            booking.total_participants -
                           (bookingAmount - dueAmount)}
                       </p>
                     </div>
@@ -834,18 +979,30 @@ export const UserBookings = () => {
             />
             <div className="relative">
               <Button
-                variant={isMobile && showDateRangePicker ? "default" : (sortBy === "booking_date" ? "default" : "outline")}
-                onClick={() => isMobile ? setShowDateRangePicker(!showDateRangePicker) : handleSort("booking_date")}
+                variant={
+                  isMobile && showDateRangePicker
+                    ? "default"
+                    : sortBy === "booking_date"
+                    ? "default"
+                    : "outline"
+                }
+                onClick={() =>
+                  isMobile
+                    ? setShowDateRangePicker(!showDateRangePicker)
+                    : handleSort("booking_date")
+                }
                 className="text-sm"
               >
                 <span className="text-sm">
                   {isMobile && isDateRangeActive
-                    ? (selectedDate && selectedEndDate
+                    ? selectedDate && selectedEndDate
                       ? `${selectedDate} to ${selectedEndDate}`
-                      : selectedDate)
+                      : selectedDate
                     : "Date"}
                 </span>
-                {!isMobile && sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
+                {!isMobile &&
+                  sortBy === "booking_date" &&
+                  (sortOrder === "asc" ? "↑" : "↓")}
               </Button>
 
               {/* Mobile Date Range Picker - Opens below Date button */}
@@ -900,7 +1057,10 @@ export const UserBookings = () => {
         )}
 
         {/* Filter Buttons Row - Shows on both mobile and desktop */}
-        <div className="relative flex flex-wrap gap-2" id="UserBookingsSortButtonStyles">
+        <div
+          className="relative flex flex-wrap gap-2"
+          id="UserBookingsSortButtonStyles"
+        >
           {/* Desktop: Date button sorts bookings */}
           {!isMobile && (
             <Button
@@ -918,9 +1078,7 @@ export const UserBookings = () => {
             className="text-sm"
             onClick={() => setShowTodayOnly((prev) => !prev)}
           >
-            {showTodayOnly
-              ? `Show All`
-              : `Today (${todayBookingsCount})`}
+            {showTodayOnly ? `Show All` : `Today (${todayBookingsCount})`}
           </Button>
 
           {/* Timeslot Filter Button */}
@@ -931,13 +1089,17 @@ export const UserBookings = () => {
               className="text-sm"
             >
               {selectedTimeslotId
-                ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)?.displayName || "Timeslot"
+                ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
+                    ?.displayName || "Timeslot"
                 : "Timeslot"}
             </Button>
 
             {/* Timeslot Filter Dropdown */}
             {showTimeslotFilter && (
-              <div className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto" style={{ zIndex: 1000 }}>
+              <div
+                className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
+                style={{ zIndex: 1000 }}
+              >
                 <Button
                   variant={selectedTimeslotId === null ? "default" : "outline"}
                   size="sm"
@@ -952,7 +1114,9 @@ export const UserBookings = () => {
                 {uniqueTimeslots.map((timeslot) => (
                   <Button
                     key={timeslot.id}
-                    variant={selectedTimeslotId === timeslot.id ? "default" : "outline"}
+                    variant={
+                      selectedTimeslotId === timeslot.id ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => {
                       setSelectedTimeslotId(timeslot.id);
@@ -975,13 +1139,17 @@ export const UserBookings = () => {
               className="text-sm"
             >
               {selectedActivityId
-                ? uniqueActivities.find((a) => a.id === selectedActivityId)?.name || "Activity"
+                ? uniqueActivities.find((a) => a.id === selectedActivityId)
+                    ?.name || "Activity"
                 : "Activity"}
             </Button>
 
             {/* Activity Filter Dropdown */}
             {showActivityFilter && (
-              <div className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto" style={{ zIndex: 1000 }}>
+              <div
+                className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
+                style={{ zIndex: 1000 }}
+              >
                 <Button
                   variant={selectedActivityId === null ? "default" : "outline"}
                   size="sm"
@@ -996,7 +1164,9 @@ export const UserBookings = () => {
                 {uniqueActivities.map((activity) => (
                   <Button
                     key={activity.id}
-                    variant={selectedActivityId === activity.id ? "default" : "outline"}
+                    variant={
+                      selectedActivityId === activity.id ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => {
                       setSelectedActivityId(activity.id);
@@ -1010,17 +1180,19 @@ export const UserBookings = () => {
               </div>
             )}
           </div>
-          <div className="mb-2 flex justify-end" id="UserBookingsColumnSelectorStyles">
+          <div
+            className="mb-2 flex justify-end"
+            id="UserBookingsColumnSelectorStyles"
+          >
             <div className="relative" ref={columnSelectorRef}>
               <Button
                 variant="outline"
                 onClick={(e) => {
-                  console.log("Column button clicked");
                   e.preventDefault();
                   e.stopPropagation();
                   setShowColumnSelector(!showColumnSelector);
                 }}
-              // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
               >
                 Columns
               </Button>
@@ -1029,27 +1201,55 @@ export const UserBookings = () => {
               {showColumnSelector && (
                 <div
                   className="absolute right-0 mt-2 w-[300px] p-4 border border-blue-500 rounded-lg bg-white shadow-lg max-h-96 overflow-y-auto z-50"
-                  style={{ minHeight: '200px' }}
+                  style={{ minHeight: "200px" }}
                 >
-                  <div className="text-sm font-semibold mb-3 text-gray-900">Select Columns to Display</div>
+                  <div className="text-sm font-semibold mb-3 text-gray-900">
+                    Select Columns to Display
+                  </div>
                   <div className="space-y-2">
-                    {columnHeaders.map((header, index) => (
-                      <label key={index} className="flex items-center gap-2 cursor-pointer hover:bg-muted/30 p-2 rounded">
-                        <input
-                          type="checkbox"
-                          checked={columnVisibility[index]}
-                          onChange={() => toggleColumnVisibility(index)}
-                          className="cursor-pointer"
-                        />
-                        <span className="text-sm">{header}</span>
-                      </label>
-                    ))}
+                    {columnHeaders.map((header, index) => {
+                      const isHiddenForAgent =
+                        isAgent &&
+                        (index === 10 ||
+                          index === 12 ||
+                          index === 13 ||
+                          index === 14);
+                      return (
+                        <label
+                          key={index}
+                          className={`flex items-center gap-2 p-2 rounded ${
+                            isHiddenForAgent
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-muted/30"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={columnVisibility[index]}
+                            onChange={() => toggleColumnVisibility(index)}
+                            disabled={isHiddenForAgent}
+                            className="cursor-pointer"
+                          />
+                          <span className="text-sm">{header}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                   <div className="mt-4 flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setColumnVisibility(Array(columnCount).fill(true))}
+                      onClick={() => {
+                        const newVisibility = Array(columnCount).fill(true);
+                        // Keep hidden columns hidden for agents
+                        if (isAgent) {
+                          newVisibility[10] = false; // Official Price/ Original Price
+                          newVisibility[12] = false; // Commission as per vendor
+                          newVisibility[13] = false; // Website Price
+                          newVisibility[14] = false; // Discount Coupon
+                        }
+                        setColumnVisibility(newVisibility);
+                      }}
                       className="text-xs flex-1"
                     >
                       Select All
@@ -1057,7 +1257,9 @@ export const UserBookings = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setColumnVisibility(Array(columnCount).fill(false))}
+                      onClick={() =>
+                        setColumnVisibility(Array(columnCount).fill(false))
+                      }
                       className="text-xs flex-1"
                     >
                       Deselect All
@@ -1085,9 +1287,17 @@ export const UserBookings = () => {
       {filteredAndSortedBookings.length > 0 ? (
         <>
           {/* Mobile: Card Layout */}
-          <div id="UserBookingsMobileLayout" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            id="UserBookingsMobileLayout"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
             {filteredAndSortedBookings.map((booking, index) => (
-              <BookingCard key={booking.id} booking={booking} index={index} isMobile={isMobile} />
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                index={index}
+                isMobile={isMobile}
+              />
             ))}
           </div>
 
@@ -1095,106 +1305,150 @@ export const UserBookings = () => {
           <div id="UserBookingsDesktopLayout" className="hidden">
             {/* Column Selector Button */}
 
-
             <div className="overflow-x-auto">
-              <table className="w-full" style={{ tableLayout: 'fixed' }}>
+              <table className="w-full" style={{ tableLayout: "fixed" }}>
                 <thead>
                   <tr>
-                    {columnOrder.map((originalIndex) =>
-                      columnVisibility[originalIndex] && (
-                        <th
-                          key={originalIndex}
-                          className={`p-3 text-left font-semibold text-xs whitespace-nowrap relative ${draggedColumnIndex === originalIndex ? 'opacity-50' : ''} ${dragOverColumnIndex === originalIndex ? 'border-2 border-blue-500' : ''}`}
-                          style={{ width: columnWidths[originalIndex] }}
-                          draggable={true}
-                          onDragStart={() => handleColumnDragStart(originalIndex)}
-                          onDragOver={(e) => handleColumnDragOver(e, originalIndex)}
-                          onDrop={(e) => handleColumnDrop(e, originalIndex)}
-                          onDragEnd={handleColumnDragEnd}
-                        >
-                          <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4 cursor-move opacity-50 hover:opacity-100" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                            </svg>
-                            {columnHeaders[originalIndex]}
-                          </span>
-                          <div
-                            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400"
-                            onMouseDown={(e) => {
-                              e.stopPropagation();
-                              handleMouseDown(e, originalIndex);
-                            }}
-                          />
-                        </th>
-                      )
+                    {columnOrder.map(
+                      (originalIndex) =>
+                        columnVisibility[originalIndex] && (
+                          <th
+                            key={originalIndex}
+                            className={`p-3 text-left font-semibold text-xs whitespace-nowrap relative ${
+                              draggedColumnIndex === originalIndex
+                                ? "opacity-50"
+                                : ""
+                            } ${
+                              dragOverColumnIndex === originalIndex
+                                ? "border-2 border-blue-500"
+                                : ""
+                            }`}
+                            style={{ width: columnWidths[originalIndex] }}
+                            draggable={true}
+                            onDragStart={() =>
+                              handleColumnDragStart(originalIndex)
+                            }
+                            onDragOver={(e) =>
+                              handleColumnDragOver(e, originalIndex)
+                            }
+                            onDrop={(e) => handleColumnDrop(e, originalIndex)}
+                            onDragEnd={handleColumnDragEnd}
+                          >
+                            <span className="flex items-center gap-1">
+                              <svg
+                                className="w-4 h-4 cursor-move opacity-50 hover:opacity-100"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                              </svg>
+                              {columnHeaders[originalIndex]}
+                            </span>
+                            <div
+                              className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400"
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                handleMouseDown(e, originalIndex);
+                              }}
+                            />
+                          </th>
+                        )
                     )}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAndSortedBookings.map((booking: BookingWithDueAmount, index) => {
-                    const profile = profileMap[booking.user_id];
-                    const activity = booking.time_slots?.activities;
-                    const timeslot = booking.time_slots;
-                    const experience = booking.experiences;
-                    const bookingAmount = (booking as any)?.booking_amount || 0;
-                    const dueAmount = booking?.due_amount || 0;
-                    const currency = activity?.currency || booking?.experiences?.currency || "INR";
+                  {filteredAndSortedBookings.map(
+                    (booking: BookingWithDueAmount, index) => {
+                      const profile = profileMap[booking.user_id];
+                      const activity = booking.time_slots?.activities;
+                      const timeslot = booking.time_slots;
+                      const experience = booking.experiences;
+                      const bookingAmount =
+                        (booking as any)?.booking_amount || 0;
+                      const dueAmount = booking?.due_amount || 0;
+                      const currency =
+                        activity?.currency ||
+                        booking?.experiences?.currency ||
+                        "INR";
 
-                    // Calculate all money values from API data
-                    const activityData = activity as any;
-                    const originalPrice = activityData?.price || experience?.price || 0;
-                    const officialPrice = originalPrice * booking.total_participants;
-                    const b2bPrice = activityData?.b2bPrice || 0;
-                    const b2bPriceTotal = b2bPrice * booking.total_participants;
-                    const commissionPerVendor = originalPrice - b2bPrice;
-                    const commissionTotal = commissionPerVendor * booking.total_participants;
-                    const discountedPrice = activityData?.discounted_price || 0;
-                    const websitePrice = discountedPrice * booking.total_participants;
-                    // Calculate discount from booking_amount vs expected price
-                    const expectedFullPrice = officialPrice;
-                    const discountCoupon = expectedFullPrice - bookingAmount > 0 ? expectedFullPrice - bookingAmount : 0;
-                    const ticketPrice = bookingAmount; // Ticket Price = Website Price - Discount Coupon
-                    const advancePaid10 = bookingAmount - dueAmount;
-                    const paymentToCollectByVendor = ticketPrice - advancePaid10; // Payment to be collected by vendor = ticketPrice - Advance paid (10%)
-                    const actualCommissionNet = ticketPrice - b2bPriceTotal; // Actual Commission (Net profit) = Ticket Price - B2B Price
-                    const amountToCollectFromVendor = (bookingAmount - b2bPriceTotal - (bookingAmount - dueAmount));
-                    const advancePlusDiscount = advancePaid10 + discountCoupon;
+                      // Calculate all money values from API data
+                      const activityData = activity as any;
+                      const originalPrice =
+                        activityData?.price || experience?.price || 0;
+                      const officialPrice =
+                        originalPrice * booking.total_participants;
+                      const b2bPrice =
+                        booking.b2bPrice || activityData?.b2bPrice || 0;
+                      const b2bPriceTotal =
+                        b2bPrice * booking.total_participants;
+                      const commissionPerVendor = originalPrice - b2bPrice;
+                      const commissionTotal =
+                        commissionPerVendor * booking.total_participants;
+                      const discountedPrice =
+                        activityData?.discounted_price || 0;
+                      const websitePrice =
+                        discountedPrice * booking.total_participants;
+                      // Calculate discount from booking_amount vs expected price
+                      const expectedFullPrice = officialPrice;
+                      const discountCoupon =
+                        expectedFullPrice - bookingAmount > 0
+                          ? expectedFullPrice - bookingAmount
+                          : 0;
+                      const ticketPrice = bookingAmount; // Ticket Price = Website Price - Discount Coupon
+                      const advancePaid10 = bookingAmount - dueAmount;
+                      const paymentToCollectByVendor =
+                        ticketPrice - advancePaid10; // Payment to be collected by vendor = ticketPrice - Advance paid (10%)
+                      const actualCommissionNet = ticketPrice - b2bPriceTotal; // Actual Commission (Net profit) = Ticket Price - B2B Price
+                      const amountToCollectFromVendor =
+                        bookingAmount -
+                        b2bPriceTotal -
+                        (bookingAmount - dueAmount);
+                      const advancePlusDiscount =
+                        advancePaid10 + discountCoupon;
 
-                    return (
-                      <tr key={booking.id}>
-                        {columnOrder.map((originalIndex) =>
-                          columnVisibility[originalIndex] && (
-                            <td
-                              key={originalIndex}
-                              className="p-3 text-sm"
-                              title={originalIndex === 0 ? experience?.title || "" : originalIndex === 9 ? booking.note_for_guide || "" : ""}
-                            >
-                              {renderCellContent(
-                                originalIndex,
-                                booking,
-                                profile,
-                                activityData,
-                                timeslot,
-                                experience,
-                                currency,
-                                officialPrice,
-                                b2bPriceTotal,
-                                commissionTotal,
-                                websitePrice,
-                                discountCoupon,
-                                ticketPrice,
-                                advancePaid10,
-                                paymentToCollectByVendor,
-                                actualCommissionNet,
-                                amountToCollectFromVendor,
-                                advancePlusDiscount
-                              )}
-                            </td>
-                          )
-                        )}
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr key={booking.id}>
+                          {columnOrder.map(
+                            (originalIndex) =>
+                              columnVisibility[originalIndex] && (
+                                <td
+                                  key={originalIndex}
+                                  className="p-3 text-sm"
+                                  title={
+                                    originalIndex === 0
+                                      ? experience?.title || ""
+                                      : originalIndex === 9
+                                      ? booking.note_for_guide || ""
+                                      : ""
+                                  }
+                                >
+                                  {renderCellContent(
+                                    originalIndex,
+                                    booking,
+                                    profile,
+                                    activityData,
+                                    timeslot,
+                                    experience,
+                                    currency,
+                                    officialPrice,
+                                    b2bPriceTotal,
+                                    commissionTotal,
+                                    websitePrice,
+                                    discountCoupon,
+                                    ticketPrice,
+                                    advancePaid10,
+                                    paymentToCollectByVendor,
+                                    actualCommissionNet,
+                                    amountToCollectFromVendor,
+                                    advancePlusDiscount
+                                  )}
+                                </td>
+                              )
+                          )}
+                        </tr>
+                      );
+                    }
+                  )}
                 </tbody>
               </table>
             </div>
