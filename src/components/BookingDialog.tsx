@@ -517,6 +517,39 @@ export const BookingDialog = ({
       const vendorWhatsappResponse = await SendWhatsappMessage(
         vendorWhatsappBody
       );
+       const adminWhatsappBody = {
+         version: "2.0",
+         country_code: "91",
+         wid: "16845",
+         type: "text",
+         data: [
+           {
+             mobile: "9265636871",
+             bodyValues: {
+               "1": data.participant.name,
+               "2": data?.participant_count?.toString() || "0",
+               "3": data.participant.phone_number,
+               "4": experience.title,
+               "5": timeSlot?.activities.name,
+               "6": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
+                 timeSlot?.start_time,
+                 "HH:mm"
+               ).format("hh:mm A")} - ${moment(
+                 timeSlot?.end_time,
+                 "HH:mm"
+               ).format("hh:mm A")}`,
+               "7": dueAmount || "0",
+               "8":
+                 data.referral_code ?? data.referral_code !== ""
+                   ? data.referral_code
+                   : "-",
+             },
+           },
+         ],
+       };
+        const adminWhatsappResponse = await SendWhatsappMessage(
+          adminWhatsappBody
+        );
       // console.log("vendorWhatsappResponse", vendorWhatsappResponse);
       // console.log(whatsappResponse);
 
