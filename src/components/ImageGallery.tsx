@@ -123,14 +123,14 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
             <video
               src={mainImage.video_url || mainImage.image_url}
               poster={mainImage.image_url}
-              className="w-full h-full object-cover"
+              className="w-full object-cover h-100"
             />
           ) : (
             <Image.PreviewGroup items={imageList}>
               <Image
                 src={mainImage.image_url}
                 alt={mainImage.alt_text || `${experienceTitle} main image`}
-                className="w-full h-full object-cover"
+                className="w-full object-cover h-100"
                 style={{ display: 'block' }}
               />
             </Image.PreviewGroup>
@@ -165,10 +165,11 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
                       <video
                         src={image.video_url || image.image_url}
                         poster={image.image_url}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover h-100"
                       />
                     ) : (
                       <img
+                      className='h-100'
                         src={image.image_url}
                         alt={image.alt_text || `${experienceTitle} ${imageIndex + 1}`}
                       />

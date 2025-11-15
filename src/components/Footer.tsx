@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { SiVisa, SiMastercard, SiAmericanexpress, SiGooglepay, SiPhonepe, SiPaytm } from "react-icons/si";
+import { ArrowRight } from "lucide-react";
 import "../Styles/Footer.css";
 export function Footer() {
   const navigate = useNavigate();
@@ -8,9 +10,9 @@ export function Footer() {
     <footer className="bg-background py-12 px-4 border-t border-border/50 FooterContainer">
       <div className="container">
         {/* Main Footer Content */}
-        <div className="FooterGridContainer">
+        <div className="FooterGridContainer zIndex10">
           {/* Company Info & QR Code */}
-          <div className="">
+          <div className="zIndex10">
             <div className="flex items-center space-x-2">
               <img
                 src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt.png"
@@ -35,7 +37,7 @@ export function Footer() {
             </div> */}
           </div>
           {/* Get Help 24/7 */}
-          <div>
+          <div className="zIndex10">
             <h3 className="font-semibold text-sm mb-4 text-foreground">
               GET HELP 24/7
             </h3>
@@ -72,7 +74,7 @@ export function Footer() {
           </div>
 
           {/* Cities */}
-          <div>
+          <div className="zIndex10">
             <h3 className="font-semibold text-sm mb-4 text-foreground">
               CITIES
             </h3>
@@ -146,7 +148,7 @@ export function Footer() {
           </div>
 
           {/* Bucketlistt */}
-          <div>
+          <div className="zIndex10">
             <h3 className="font-semibold text-sm mb-4 text-foreground">
               BUCKETLISTT
             </h3>
@@ -200,7 +202,7 @@ export function Footer() {
           </div>
 
           {/* Partners */}
-          <div>
+          <div className="zIndex10">
             <h3 className="font-semibold text-sm mb-4 text-foreground">
               PARTNERS
             </h3>
@@ -240,41 +242,37 @@ export function Footer() {
         <div className="border-t border-border/50 pt-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-6 lg:space-y-0">
             {/* Payment Methods */}
-            <div>
-              <h4 className="font-semibold text-sm mb-3 text-foreground">
+            <div className="zIndex10">
+              <h4 className="text-start font-semibold text-sm mb-3 text-foreground">
                 WE ACCEPT
               </h4>
-              <div className="flex flex-wrap gap-2">
-                <div className="w-10 h-6 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">
-                  VISA
+              <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex items-center justify-center" style={{ width: '50px', height: '30px' }}>
+                  <SiVisa className="w-full h-full" style={{ color: '#1A1F71' }} />
                 </div>
-                <div className="w-10 h-6 bg-orange-500 rounded text-white text-xs flex items-center justify-center font-bold">
-                  MC
+                <div className="flex items-center justify-center" style={{ width: '50px', height: '30px' }}>
+                  <SiMastercard className="w-full h-full" style={{ color: '#EB001B' }} />
                 </div>
-                <div className="w-10 h-6 bg-blue-700 rounded text-white text-xs flex items-center justify-center font-bold">
-                  AMEX
+                <div className="flex items-center justify-center" style={{ width: '50px', height: '30px' }}>
+                  <SiAmericanexpress className="w-full h-full" style={{ color: '#006FCF' }} />
                 </div>
-                <div className="w-10 h-6 bg-red-600 rounded text-white text-xs flex items-center justify-center font-bold">
-                  DC
+                <div className="flex items-center justify-center" style={{ width: '50px', height: '30px' }}>
+                  <SiGooglepay className="w-full h-full" style={{ color: '#4285F4' }} />
                 </div>
-                <div className="w-10 h-6 bg-purple-600 rounded text-white text-xs flex items-center justify-center font-bold">
-                  UPI
+                <div className="flex items-center justify-center" style={{ width: '50px', height: '30px' }}>
+                  <SiPhonepe className="w-full h-full" style={{ color: '#5F259F' }} />
                 </div>
-                <div className="w-10 h-6 bg-green-600 rounded text-white text-xs flex items-center justify-center font-bold">
-                  GPay
-                </div>
-                <div className="w-10 h-6 bg-blue-800 rounded text-white text-xs flex items-center justify-center font-bold">
-                  PayTM
+                <div className="flex items-center justify-center" style={{ width: '50px', height: '30px' }}>
+                  <SiPaytm className="w-full h-full" style={{ color: '#002E6E' }} />
                 </div>
               </div>
             </div>
 
             {/* Social Links */}
-            <div className="flex flex-wrap gap-3 justify-center lg:justify-end">
+            <div className="flex flex-wrap gap-3 justify-center lg:justify-end zIndex10 ">
               <Button
                 variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-orange-500"
+                className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-orange-500 transition-colors"
                 onClick={() =>
                   window.open(
                     "https://www.instagram.com/bucketlistt_experiences/",
@@ -283,14 +281,16 @@ export function Footer() {
                 }
               >
                 <svg
-                  className="h-4 w-4"
+                  className="h-5 w-5"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                 </svg>
+                <span style={{fontSize: '16px'}}>Follow us on Instagram</span>
+                <ArrowRight className="h-4 w-4" />
               </Button>
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-orange-500"
@@ -315,8 +315,8 @@ export function Footer() {
                 >
                   <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z" />
                 </svg>
-              </Button>
-              <Button
+              </Button> */}
+              {/* <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-orange-500"
@@ -341,13 +341,13 @@ export function Footer() {
                 >
                   <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                 </svg>
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
 
         {/* Bottom Copyright */}
-        <div className="border-t border-border/50 pt-6 mt-6">
+        <div className="border-t border-border/50 pt-6 mt-6 zIndex10">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 text-sm text-muted-foreground">
             <div className="flex flex-wrap gap-4">
               <span>© 2025 bucketlistt. All rights reserved.</span>
@@ -383,8 +383,11 @@ export function Footer() {
               </span>
             </div> */}
           </div>
+          <div className="BackgroundSkylineImageSet">
+          </div>
         </div>
       </div>
+
     </footer>
   );
 }

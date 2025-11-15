@@ -496,10 +496,10 @@ const ExperienceDetail = () => {
               experienceTitle={experience.title}
             />
           </div>
-          {/* <br /> */}
-          <h1 className="text-3xl font-bold mb-0 text-start mt-2">
+          <br />
+          <h2 className="text-start CommonH2">
             {experience.title}
-          </h1>
+          </h2>
           {/* Details Section */}
           <div className="space-y-6 ">
             <div>

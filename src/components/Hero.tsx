@@ -209,7 +209,7 @@ export function Hero() {
               // Force play on data loaded to prevent native controls
               const video = document.querySelector('video.parallax-video') as HTMLVideoElement;
               if (video) {
-                video.play().catch(() => {});
+                video.play().catch(() => { });
               }
             }}
           />
@@ -244,9 +244,12 @@ export function Hero() {
       <div id="MobileChangeAlignment" className="relative max-w-7xl z-20 w-full px-4 text-center flex flex-col items-center justify-center">
         <div className=" MobileChangeAlignmentContainer">
           {/* Main Heading */}
-          <div>
+          <div className="HeroHomeContentContainer">
+            {/* <div className="LogoHeroStyle">
+              <img src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt+(1).png" alt="" />
+            </div> */}
             <h1 id="MobileTextFontSize" className={`CommonH1  text-white leading-tight mb-4 ${isMobile ? "text-start" : ""}`}>
-              India's best experiences  curated just for you
+              India’s trusted platform for curated experiences
               {/* <br /> */}
 
             </h1>

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +11,39 @@ interface Testimonial {
   review: string;
   experience: string;
   initial: string;
+}
+
+// Avatar component with image fallback to initial
+function TestimonialAvatar({
+  image,
+  initial,
+  name
+}: {
+  image: string;
+  initial: string;
+  name: string;
+}) {
+  const [imageError, setImageError] = useState(false);
+
+  const isValidImage = image && image !== "-" && image.trim() !== "";
+
+  return (
+    <div
+      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-base overflow-hidden"
+      style={{ background: "rgb(39, 28, 55)" }}
+    >
+      {isValidImage && !imageError ? (
+        <img
+          src={image}
+          alt={name}
+          className="w-full h-full object-cover object-center"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <div>{initial}</div>
+      )}
+    </div>
+  );
 }
 
 const testimonials: Testimonial[] = [
@@ -179,31 +212,25 @@ export function TestimonialCarousel() {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`h-3 w-3 ${
-          i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-400"
-        }`}
+        className={`h-3 w-3 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-400"
+          }`}
       />
     ));
   };
 
   return (
     <section
-      className="py-5 md:py-24 px-4 "
-      style={{ background: "rgb(39 28 55)" }}
+      className="SectionPaddingBottom SectionPaddingTop"
+      id="TestimonialCarouselBackgroundStyles"
     >
       <div className=" max-w-7xl mx-auto">
-        <div className="flex flex-col lg:flex-row  items-start justify-between gap-8">
+        <div>
           {/* Left Side - Title and Navigation */}
-          <div
-            className="flex-shrink-0 lg:w-80 w-full text-center lg:text-left"
-            id="GapAddedForTestimonial"
-          >
-            <h1 className="text-white CommonH1 leading-tight">
+          <div>
+            <h2 className="text-white CommonH2 leading-tight">
               {/* <br /> */}
-              People love completing bucketlistt&nbsp;
-              {/* <br /> */}
-              with us 💖
-            </h1>
+              People's experience with us &nbsp;💜
+            </h2>
             {/* <br /> */}
             {/* Navigation Buttons */}
             {/* <div className="flex gap-3 justify-center lg:justify-start">
@@ -227,10 +254,10 @@ export function TestimonialCarousel() {
           </div>
 
           {/* Right Side - Horizontal Scrollable Testimonials */}
-          <div className="flex-1 relative w-full overflow-x-auto">
+          <div className="flex-1 relative w-full overflow-x-auto mt-4 PaddingTopSet">
             <div
               ref={scrollContainerRef}
-              className="flex gap-6  scrollbar-hide pb-4"
+              className="flex gap-4  scrollbar-hide pb-4"
               style={{
                 scrollbarWidth: "none",
                 msOverflowStyle: "none",
@@ -240,9 +267,10 @@ export function TestimonialCarousel() {
                 <div
                   key={testimonial.id}
                   className="bg-gray-800 rounded-2xl  flex flex-col flex-shrink-0 w-80 "
+
                 >
                   {/* Image */}
-                  <div
+                  {/* <div
                     className="h-40 w-full bg-gradient-to-br from-blue-500 to-purple-600 relative "
                     id="TestimonialImage"
                   >
@@ -262,21 +290,21 @@ export function TestimonialCarousel() {
                         {testimonial.rating}
                       </span>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Content */}
                   <div
                     className="p-6 flex-1 flex flex-col"
-                    style={{ background: "rgb(28 21 37)" }}
+                    style={{ background: "rgb(28 21 37)", borderRadius: "20px" }}
+
                   >
                     {/* Header with Avatar and Info */}
                     <div className="flex items-center gap-3 mb-4">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-base"
-                        style={{ background: "rgb(39, 28, 55)" }}
-                      >
-                        {testimonial.initial}
-                      </div>
+                      <TestimonialAvatar
+                        image={testimonial.image}
+                        initial={testimonial.initial}
+                        name={testimonial.name}
+                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-semibold text-white text-base">

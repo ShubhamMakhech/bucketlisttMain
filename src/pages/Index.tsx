@@ -12,19 +12,25 @@ import { Button } from "@/components/ui/button";
 import { SimpleHorizontalScroll } from "@/components/ui/SimpleHorizontalScroll";
 
 import { BidirectionalAnimatedSection } from "@/components/BidirectionalAnimatedSection";
-import { ArrowRight, Star, Gift } from "lucide-react";
+import { ArrowRight, Star, Gift, ChevronLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import RotatingText from "@/components/ui/RotatingText";
 import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperType } from "swiper";
 import { Autoplay, FreeMode } from "swiper/modules";
+import { IoIosArrowRoundBack } from "react-icons/io";
+import { IoIosArrowRoundForward } from "react-icons/io";
+
+
 import "swiper/css";
 import "swiper/css/free-mode";
 import "../Styles/Index.css";
 const Index = () => {
   const navigate = useNavigate();
+  const experiencesSwiperRef = useRef<SwiperType | null>(null);
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -213,15 +219,15 @@ const Index = () => {
             )}
           </div>
         </section> */}
-        <section className="section-wrapper section-bg-primary PaddingSectionTop">
+        <section className="section-wrapper section-bg-primary SectionPaddingTop SectionPaddingBottom" id="ExploreIndiaTopDestinations">
           <div className="container">
             <BidirectionalAnimatedSection
               animation="fade-up"
               delay={100}
               duration={600}
             >
-              <div className="flex items-center gap-3 mb-6 md:mb-8">
-                <h2 className="CommonH2 text-2xl md:text-3xl font-bold">
+              <div className="HeadingHeaderCommonUsed">
+                <h2 className="CommonH2">
                   Explore India's top destinations
                 </h2>
               </div>
@@ -320,15 +326,23 @@ const Index = () => {
         delay={200}
         duration={700}
       >
-        <section className="section-wrapper section-bg-secondary PaddingSectionTop">
+        <section className="section-wrapper SecondaryBackground SectionPaddingTop SectionPaddingBottom">
           <div className="container">
             <BidirectionalAnimatedSection
               animation="fade-up"
               delay={100}
               duration={600}
             >
-              <div className="flex items-center gap-3 mb-6 md:mb-8">
+              <div className="HeadingHeaderCommonUsed">
                 <h2 className="CommonH2">Top Experiences</h2>
+                <div className="SwiperButtonsControls">
+                  <button onClick={() => experiencesSwiperRef.current?.slidePrev()}>
+                    <IoIosArrowRoundBack />
+                  </button>
+                  <button onClick={() => experiencesSwiperRef.current?.slideNext()}>
+                    <IoIosArrowRoundForward />
+                  </button>
+                </div>
               </div>
             </BidirectionalAnimatedSection>
 
@@ -351,6 +365,9 @@ const Index = () => {
                     spaceBetween={16}
                     loop={true}
                     speed={600}
+                    onSwiper={(swiper) => {
+                      experiencesSwiperRef.current = swiper;
+                    }}
                     // autoplay={{
                     //   delay: 2000,
                     //   disableOnInteraction: false,
@@ -365,7 +382,7 @@ const Index = () => {
                         spaceBetween: 12,
                       },
                       1024: {
-                        slidesPerView: 4,
+                        slidesPerView: 3,
                         spaceBetween: 16,
                       },
                     }}
@@ -450,7 +467,7 @@ const Index = () => {
       </BidirectionalAnimatedSection>
 
       {/* App Download Banner */}
-      <AppDownloadBanner />
+      {/* <AppDownloadBanner /> */}
 
       {/* Why Choose Us */}
       <BidirectionalAnimatedSection
@@ -470,7 +487,7 @@ const Index = () => {
             {/* <br />
 <br /> */}
             <div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 "
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-3 "
               id="WhyChooseUsGrid"
             >
               {[
@@ -516,9 +533,10 @@ const Index = () => {
                       id="WhyChooseUsCard"
                     >
                       <div
-                        className={`w-12 BorderGrdientContainer h-12 md:w-16 md:h-16  mb-3 md:mb-4  ${feature.gradient} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
+                        id="WhyChooseUsCardIcon"
+                        className={`w-10 BorderGrdientContainer h-10 md:w-13 md:h-13  mb-3 md:mb-4  ${feature.gradient} rounded-4xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
                       >
-                        <IconComponent className="h-6 w-6 md:h-8 md:w-8 text-white" />
+                        <IconComponent className="h-6 w-6 md:h-6 md:w-6 text-white" />
                       </div>
                       <h3
                         className="CommonH3 text-start text_Adjust_For_Mobile
@@ -608,6 +626,7 @@ const Index = () => {
                 </div>
               </div>
             </div>
+           
           </div>
         </section>
       </BidirectionalAnimatedSection>

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LazyImage } from "./LazyImage";
 import { FavoriteButton } from "./FavoriteButton";
 import { useState } from "react";
+import { IoIosArrowRoundForward } from "react-icons/io";
 
 interface Category {
   id: string;
@@ -180,8 +181,8 @@ export function ExperienceCard({
     categories && categories.length > 0
       ? categories
       : category
-      ? [{ id: "fallback", name: category }]
-      : [];
+        ? [{ id: "fallback", name: category }]
+        : [];
 
   const getDistanceDisplay = () => {
     if (distanceKm === 0) return "On spot";
@@ -196,10 +197,46 @@ export function ExperienceCard({
   const displayImage =
     image && image !== "" ? image : primaryImage || "/placeholder.svg";
 
+  // Truncate title to 12 characters with ellipsis
+  const truncateTitle = (text: string, maxLength: number = 40) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
+  };
+
+  // Truncate HTML description to 100 characters (text only, preserving HTML tags)
+  const truncateHTMLDescription = (html: string, maxLength: number = 100) => {
+    if (!html) return "";
+
+    // Create a temporary DOM element to parse HTML
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+
+    // Get plain text content
+    const plainText = tempDiv.textContent || tempDiv.innerText || "";
+
+    // If plain text is within limit, return original HTML
+    if (plainText.length <= maxLength) return html;
+
+    // Truncate plain text to maxLength
+    const truncatedText = plainText.substring(0, maxLength);
+
+    // Try to truncate at word boundary (find last space)
+    const lastSpace = truncatedText.lastIndexOf(" ");
+    const finalText = lastSpace > maxLength * 0.8
+      ? truncatedText.substring(0, lastSpace)
+      : truncatedText;
+
+    // Return truncated text with ellipsis
+    return finalText + "...";
+  };
+
+  const truncatedTitle = truncateTitle(title);
+  const truncatedDescription = truncateHTMLDescription(description || "", 100);
+
   return (
     <Card
-      className={`group cursor-pointer overflow-hidden border-0 transition-all duration-300 transform hover:-translate-y-2 zoom-click-animation ${
-        isClicked ? "zoom-in-click" : ""
+      id="ExperienceCardStylesCard"
+      className={`group cursor-pointer overflow-hidden border-0 transition-all duration-300 
       } ExperienceCardMobileLayout`}
       onClick={handleClick}
       style={{ boxShadow: "none", borderRadius: "5px" }}
@@ -207,16 +244,15 @@ export function ExperienceCard({
       <CardContent className="p-0">
         {/* Desktop Layout */}
         <div className="OnlyPc">
-          <div className="relative">
+          <div className="relative" id="ExperiencePcCardImageStyles">
             {isSpecialOffer && (
               <Badge className="absolute top-3 left-3 z-10" id="BadgeEditStyle">
                 Special offer
               </Badge>
             )}
             <div
-              className={`absolute z-10 ${
-                index !== undefined ? "top-0 right-0" : "top-0 right-2"
-              }`}
+              className={`absolute z-10 ${index !== undefined ? "top-0 right-0" : "top-0 right-2"
+                }`}
               style={{ marginTop: "-2px" }}
             >
               <FavoriteButton
@@ -232,103 +268,119 @@ export function ExperienceCard({
             />
           </div>
 
-          <div className="p-3 space-y-1">
+          <div id="ExperiencePCCardContentStyles">
             <div>
-              {displayCategories.length > 0 && (
-                <div>
-                  {displayCategories.slice(0, 2).map((cat, index) => (
-                    <span
-                      key={cat.id || index}
-                      className="flex items-center gap-1"
-                    >
-                      {/* {cat.icon && <span>{cat.icon}</span>} */}
-                      <div id="FlexContainerRowBetween">
-                        {/* <span className="fontSizeSm">{cat.name}</span> */}
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 fontSizeSm" />
-                            <span className="font-medium fontSizeSm">
-                              {rating}
-                            </span>
+              <h3 className="CommonH3 text-start FontAdjustForMobile">{truncatedTitle}</h3>
+              {/* <br /> */}
+              {truncatedDescription && (
+                <p
+                  className="text-muted-foreground fontSizeSm text-start"
+                  dangerouslySetInnerHTML={{ __html: truncatedDescription }}
+                />
+              )}
+              <div id="ExperiencePcCardBackgroundStyles">
+                <div className="ExperiencePCCardContent">
+                  <div>
+                    <div>
+                      <div>
+                        {displayCategories.length > 0 && (
+                          <div>
+                            {displayCategories.slice(0, 2).map((cat, index) => (
+                              <span
+                                key={cat.id || index}
+                                className="flex items-center gap-1"
+                              >
+                                {/* {cat.icon && <span>{cat.icon}</span>} */}
+                                <div id="FlexContainerRowBetween">
+                                  {/* <span className="fontSizeSm">{cat.name}</span> */}
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1">
+                                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 fontSizeSm" />
+                                      <span className="font-medium fontSizeSm">
+                                        {rating}
+                                      </span>
+                                    </div>
+                                    <span className="text-sm text-muted-foreground fontSizeSm">
+                                      ({reviews})
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {index < Math.min(displayCategories.length, 2) - 1 && (
+                                  <span>•</span>
+                                )}
+                              </span>
+                            ))}
+                            {displayCategories.length > 2 && (
+                              <span className="text-xs">
+                                +{displayCategories.length - 2} more
+                              </span>
+                            )}
                           </div>
-                          <span className="text-sm text-muted-foreground fontSizeSm">
-                            ({reviews})
-                          </span>
-                        </div>
+                        )}
                       </div>
-
-                      {index < Math.min(displayCategories.length, 2) - 1 && (
-                        <span>•</span>
-                      )}
-                    </span>
-                  ))}
-                  {displayCategories.length > 2 && (
-                    <span className="text-xs">
-                      +{displayCategories.length - 2} more
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <h3 className="CommonH3 text-start FontAdjustForMobile">{title}</h3>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground marginUnset">
-              {duration && (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 fontSizeSm" />
-                  <span className="fontSizeSm">{duration}</span>
-                </div>
-              )}
-              {groupSize && (
-                <div className="flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  <span className="fontSizeSm">{groupSize}</span>
-                </div>
-              )}
-            </div>
-
-            {getDistanceDisplay() && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground ">
-                {distanceKm === 0 ? (
-                  <MapPin className="h-4 w-4" />
-                ) : (
-                  <Route className="h-4 w-4" />
-                )}
-                <span>{getDistanceDisplay()}</span>
-              </div>
-            )}
-            <div>
-              <div id="PriceContainerOfferHomePageCards">
-                {isDiscounted ? (
-                  <div
-                    className="flex flex-col gap-0"
-                    style={{ textAlign: "start" }}
-                  >
-                    <div className="FlexAdjustContainer font-bold fontSizeMd">
-                      <span style={{ color: "grey" }}>From</span>&nbsp;
-                      <span className="text-muted-foreground line-through">
-                        {displayOriginalPrice}
-                      </span>
                     </div>
-                    <span className="font-bold fontSizeMd text-green-600">
-                      {displayPrice}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="FlexAdjustContainer">
-                    <span
-                      className="text-lg font-bold fontSizeMd"
-                      style={{ color: "var(--brand-color)" }}
-                    >
-                      <span style={{ color: "grey" }}>From</span> {displayPrice}
-                    </span>
-                    {displayOriginalPrice && (
-                      <span className="text-sm text-muted-foreground line-through fontSizeSm">
-                        {displayOriginalPrice}
-                      </span>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground marginUnset">
+                      {duration && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3 fontSizeSm" />
+                          <span className="fontSizeSm">{duration}</span>
+                        </div>
+                      )}
+                      {groupSize && (
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          <span className="fontSizeSm">{groupSize}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {getDistanceDisplay() && (
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground ">
+                        {distanceKm === 0 ? (
+                          <MapPin className="h-4 w-4" />
+                        ) : (
+                          <Route className="h-4 w-4" />
+                        )}
+                        <span>{getDistanceDisplay()}</span>
+                      </div>
                     )}
                   </div>
-                )}
+                  <div>
+                    <div className="HeadingHeaderCommonUsed">
+                      <div id="PriceContainerOfferHomePageCards">
+                        {isDiscounted ? (
+                          <div
+                            className="flex flex-col gap-0"
+                            style={{ textAlign: "start" }}
+                          >
+                            <div className="FlexAdjustContainer font-bold fontSizeMd">
+                              <span className="SpanTextSmooth">From <span className="line-through">{displayOriginalPrice}</span></span>&nbsp;
+                            </div>
+                            {displayPrice}
+                          </div>
+                        ) : (
+                          <div className="FlexAdjustContainer">
+                            <span
+                              className="text-lg font-bold fontSizeMd"
+                              style={{ color: "var(--brand-color)" }}
+                            >
+                              <span>From</span> {displayPrice}
+                            </span>
+                            {displayOriginalPrice && (
+                              <span className="text-sm text-muted-foreground line-through fontSizeSm">
+                                {displayOriginalPrice}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="BookingButtonContainer">
+                        <button> <IoIosArrowRoundForward /></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -388,9 +440,8 @@ export function ExperienceCard({
                 )}
               </div>
               <div
-                className={`absolute z-10 ${
-                  index !== undefined ? "top-0 right-0" : "top-0 right-2"
-                }`}
+                className={`absolute z-10 ${index !== undefined ? "top-0 right-0" : "top-0 right-2"
+                  }`}
                 style={{ marginTop: "-2px" }}
               >
                 <FavoriteButton
@@ -400,20 +451,20 @@ export function ExperienceCard({
               </div>
             </div>
 
-            <h3 className="CommonH3 text-start FontAdjustForMobile">{title}</h3>
+            <h3 className="CommonH3 text-start FontAdjustForMobile">{truncatedTitle}</h3>
 
             <div
               className="DescriptionContainer"
               dangerouslySetInnerHTML={{
                 __html: description
                   ? description
-                      .replace(/<[^>]*>/g, "")
-                      .split(" ")
-                      .slice(0, 10)
-                      .join(" ") +
-                    (description.replace(/<[^>]*>/g, "").split(" ").length > 20
-                      ? "..."
-                      : "")
+                    .replace(/<[^>]*>/g, "")
+                    .split(" ")
+                    .slice(0, 10)
+                    .join(" ") +
+                  (description.replace(/<[^>]*>/g, "").split(" ").length > 20
+                    ? "..."
+                    : "")
                   : "",
               }}
             />

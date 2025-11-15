@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExperienceCard } from "@/components/ExperienceCard";
 import { LazyImage } from "@/components/LazyImage";
 import { DetailedItinerary } from "@/components/DetailedItinerary";
+import { IoLocation } from "react-icons/io5";
 
 // Static destination images mapping - now supports multiple images per destination
 const staticDestinationImages: Record<string, string[]> = {
@@ -136,9 +137,8 @@ const DestinationDetail = () => {
           mediaUrl.includes(".mov");
         media.push({
           src: mediaUrl,
-          alt: `${destination?.title} - ${isVideo ? "Video" : "View"} ${
-            index + 1
-          }`,
+          alt: `${destination?.title} - ${isVideo ? "Video" : "View"} ${index + 1
+            }`,
           id: `static-${index}`,
           type: isVideo ? "video" : "image",
         });
@@ -306,9 +306,12 @@ const DestinationDetail = () => {
 
       {/* Full Screen Image Swiper */}
       <section
-        className="relative h-screen w-full container"
+        className="relative h-screen w-full"
         id="DestinationDetailSwiper"
       >
+        <div className="DestinationDetailSwiperOverlay">
+          <h2 className="CommonH2 text-white"><IoLocation /> {destination.title}</h2>
+        </div>
         <Swiper
           modules={[Autoplay, Navigation, Pagination]}
           spaceBetween={20}
@@ -350,6 +353,7 @@ const DestinationDetail = () => {
           {getMultipleImages().map((media, index) => (
             <SwiperSlide key={media.id}>
               <div className="relative h-full w-full SwiperSlideBorderRadius">
+
                 {isVideo(media) ? (
                   <video
                     src={media.src}
@@ -498,7 +502,7 @@ const DestinationDetail = () => {
         </div>
       </div>
       <section
-        className="section-wrapper section-bg-primary"
+        className="section-wrapper SecondaryBackground"
         id="TopActivitiesToDo"
       >
         <div className="container">
@@ -589,7 +593,7 @@ const DestinationDetail = () => {
                     }}
                     breakpoints={{
                       1024: {
-                        slidesPerView: 4,
+                        slidesPerView: 3,
                         spaceBetween: 24,
                       },
                     }}
@@ -598,9 +602,8 @@ const DestinationDetail = () => {
                     {experiences.map((experience, index) => (
                       <SwiperSlide key={experience.id}>
                         <div
-                          className={`scroll-scale-in ${
-                            isAnimated ? "animate" : ""
-                          }`}
+                          className={`scroll-scale-in ${isAnimated ? "animate" : ""
+                            }`}
                           style={{ animationDelay: `${0.6 + index * 0.05}s` }}
                         >
                           <ExperienceCard
@@ -616,20 +619,18 @@ const DestinationDetail = () => {
                             reviews={
                               experience.reviews_count?.toString() || "0"
                             }
-                            price={`${
-                              experience.currency === "USD"
-                                ? "₹"
-                                : experience.currency == "INR"
+                            price={`${experience.currency === "USD"
+                              ? "₹"
+                              : experience.currency == "INR"
                                 ? "₹"
                                 : experience.currency
-                            } ${experience.price}`}
+                              } ${experience.price}`}
                             originalPrice={
                               experience.original_price
-                                ? `${
-                                    experience.currency === "USD"
-                                      ? "₹"
-                                      : experience.currency
-                                  } ${experience.original_price}`
+                                ? `${experience.currency === "USD"
+                                  ? "₹"
+                                  : experience.currency
+                                } ${experience.original_price}`
                                 : undefined
                             }
                             duration={experience.duration || undefined}
@@ -687,9 +688,8 @@ const DestinationDetail = () => {
                   {experiences.map((experience, index) => (
                     <div
                       key={experience.id}
-                      className={`scroll-scale-in ${
-                        isAnimated ? "animate" : ""
-                      }`}
+                      className={`scroll-scale-in ${isAnimated ? "animate" : ""
+                        }`}
                       style={{ animationDelay: `${0.6 + index * 0.05}s` }}
                       id="ExperienceCardContainerSpecificDestinationDetail"
                     >
@@ -704,22 +704,20 @@ const DestinationDetail = () => {
                         }
                         rating={Number(experience.rating)}
                         reviews={experience.reviews_count?.toString() || "0"}
-                        price={`${
-                          experience.currency === "USD"
-                            ? "₹"
-                            : experience.currency == "INR"
+                        price={`${experience.currency === "USD"
+                          ? "₹"
+                          : experience.currency == "INR"
                             ? "₹"
                             : experience.currency
-                        } ${experience.price}`}
+                          } ${experience.price}`}
                         originalPrice={
                           experience.original_price
-                            ? `${
-                                experience.currency === "USD"
-                                  ? "₹"
-                                  : experience.currency == "INR"
-                                  ? "₹"
-                                  : experience.currency
-                              } ${experience.original_price}`
+                            ? `${experience.currency === "USD"
+                              ? "₹"
+                              : experience.currency == "INR"
+                                ? "₹"
+                                : experience.currency
+                            } ${experience.original_price}`
                             : undefined
                         }
                         duration={experience.duration || undefined}

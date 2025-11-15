@@ -78,9 +78,9 @@ export function DestinationCard({
 
   return (
     <Card
-      className={`group cursor-pointer overflow-hidden border-0 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 zoom-click-animation ${
-        isClicked ? "zoom-in-click" : ""
-      }`}
+    id="DestinationCardStylesCard"
+      className={`group cursor-pointer overflow-hidden border-0 hover:shadow-xl transition-all duration-300 
+        }`}
       onClick={handleClick}
     >
       <CardContent className="p-0 relative" id="DestinationCardStyles">
@@ -89,20 +89,21 @@ export function DestinationCard({
           alt={title}
           loading="lazy"
           className="DestinationsImage"
-          // aspectRatio="aspect-[4/3]"
+        // aspectRatio="aspect-[4/3]"
         />
+        <div className=" bottom-0 left-0 right-0 p-4  from-black/60 to-transparent text-black" id="DestinationCardContentStyles">
+          <p className="text-sm opacity-90" style={{ textAlign: "start", color: "white" }}>
+            {subtitle.length > 80 ? subtitle.substring(0, 80) + "..." : subtitle}
+          </p>
+          <h2
+            className="WhiteColorText"
+            style={{ textAlign: "start" }}
+          >
+            {title}
+          </h2>
+        </div>
       </CardContent>
-      <div className=" bottom-0 left-0 right-0 p-4  from-black/60 to-transparent text-black">
-        <p className="text-sm opacity-90 mb-1" style={{ textAlign: "start" }}>
-          {subtitle.length > 80 ? subtitle.substring(0, 80) + "..." : subtitle}
-        </p>
-        <h2
-          className=""
-          style={{ textAlign: "start", color: "var(--brand-color)" }}
-        >
-          {title}
-        </h2>
-      </div>
+
     </Card>
   );
 }
