@@ -1,5 +1,5 @@
 #HeroVideoContainer {
-    height: 830px !important;
+    height: 90vh !important;
     overflow: hidden !important;
     position: relative;
 }
@@ -84,7 +84,7 @@
     display: flex !important;
     align-items: center !important;
     justify-content: end;
-    height: 60% !important;
+    height: 80% !important;
     padding-bottom: 50px;
     position: relative;
 }
@@ -98,21 +98,6 @@
     height: 100%;
 }
 
-/* Bottom fade-in shadow - 300px */
-.parallax-container::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: 200px;
-    background: linear-gradient(to top, rgb(255 255 255) 0%, rgba(255, 255, 255, 0.532) 50%, #00000000 100%);
-    z-index: 15;
-    pointer-events: none;
-    /* opacity: 0.4; */
-    /* opacity: 0.4; */
-}
 
 .MobileChangeAlignmentContainer {
     max-width: 600px !important;
