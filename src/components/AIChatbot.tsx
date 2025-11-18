@@ -82,7 +82,7 @@ export function AIChatbot() {
         )
         .eq("is_active", true)
         .eq("activities.is_active", true)
-        .limit(15);
+        .limit(50); // Increased to get more activities
 
       if (error) throw error;
 
@@ -473,7 +473,7 @@ export function AIChatbot() {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 z-50 rounded-full h-14 w-14 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg"
+        className="fixed bottom-4 right-4 z-50 rounded-full h-14 w-14 bg-[#940fdb] hover:bg-[#7a0bb8] shadow-lg"
         size="icon"
       >
         <MessageCircle className="h-6 w-6 text-white" />
@@ -490,13 +490,13 @@ export function AIChatbot() {
     >
       <CardHeader
         className={cn(
-          "flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-t-lg",
+          "flex flex-row items-center justify-between space-y-0 pb-2 bg-[#940fdb] text-white rounded-t-lg",
           isMinimized && "pb-2"
         )}
       >
         <CardTitle className="text-sm flex items-center gap-2">
           <Bot className="h-4 w-4" />
-          BucketListt Assistant
+          bucketlistt Assistant
         </CardTitle>
         <div className="flex items-center gap-1">
           <Button
@@ -528,7 +528,7 @@ export function AIChatbot() {
               {messages.length === 0 && (
                 <div className="text-center text-sm text-muted-foreground py-8">
                   <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>Hey! I'm BucketListt Assistant 🎒</p>
+                  <p>Hey! I'm bucketlistt Assistant 🎒</p>
                   <p className="text-xs mt-1">
                     Ask me about adventures, bookings, or destinations!
                   </p>
@@ -546,7 +546,7 @@ export function AIChatbot() {
                     className={cn(
                       "max-w-[85%] rounded-lg px-3 py-2 text-sm",
                       message.isUser
-                        ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white"
+                        ? "bg-[#940fdb] text-white"
                         : "bg-muted text-foreground"
                     )}
                   >
@@ -589,7 +589,7 @@ export function AIChatbot() {
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
               size="icon"
-              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+              className="bg-[#940fdb] hover:bg-[#7a0bb8] text-white"
             >
               <Send className="h-4 w-4" />
             </Button>
