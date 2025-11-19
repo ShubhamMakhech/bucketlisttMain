@@ -85,7 +85,7 @@ h6 {
 
 .CommonH2 {
   font-weight: 500 !important;
-  font-size: 30px !important;
+  font-size: 27px !important;
   /* line-height: 0px; */
   text-transform: capitalize;
   font-family: "Be Vietnam Pro", sans-serif !important;
@@ -1030,7 +1030,7 @@ h6 {
   transition: transform 0.3s ease;
 }
 
-.image-gallery-main .ant-image{
+.image-gallery-main .ant-image {
   height: 100%;
   width: 100%;
   object-fit: cover;
@@ -2343,6 +2343,7 @@ h6 {
 *::-webkit-media-controls-panel {
   display: none !important;
   -webkit-appearance: none;
+  position: absolute !important; top: -9999px !important;
 }
 
 /* Old shadow dom for play button */
@@ -2350,6 +2351,7 @@ h6 {
 *::-webkit-media-controls-play-button {
   display: none !important;
   -webkit-appearance: none;
+  position: absolute !important; top: -9999px !important;
 }
 
 /* New shadow dom for play button */
@@ -2359,10 +2361,12 @@ h6 {
 *::-webkit-media-controls-start-playback-button {
   display: none !important;
   -webkit-appearance: none;
+  position: absolute !important; top: -9999px !important;
 }
 
 video::-webkit-media-controls {
   display: none !important;
+  position: absolute; top: -9999px
 }
 
 #ExperiencePcCardImageStyles {
@@ -2509,6 +2513,6 @@ video::-webkit-media-controls {
   gap: 10px;
 }
 
-.DestinationDetailSwiperOverlay h2 svg{
+.DestinationDetailSwiperOverlay h2 svg {
   font-size: 30px;
 }
