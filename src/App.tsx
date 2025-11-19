@@ -43,8 +43,8 @@ import ConfirmBooking from "./pages/ConfirmBooking";
 import WhatsAppButton from "./pages/whatsapp";
 const queryClient = new QueryClient();
 
-// Component to conditionally render AIChatbot only on homepage
-const ConditionalAIChatbot = () => {
+
+const WhatsappButtonConditional = () => {
   const location = useLocation();
   const isHomepage = location.pathname === "/";
 
@@ -52,7 +52,7 @@ const ConditionalAIChatbot = () => {
     return null;
   }
 
-  return <WhatsAppButton />;
+  return <AIChatbot />;
 };
 
 // Component to conditionally render MobileFloatingButton based on route
@@ -217,7 +217,7 @@ const App: React.FC = () => {
             </Layout>
 
             {/* AI Chatbot - Only show on homepage */}
-            <ConditionalAIChatbot />
+            <WhatsappButtonConditional />
             {/* Mobile Floating Button - Only show on experience detail routes */}
             <ConditionalMobileButton />
           </BrowserRouter>

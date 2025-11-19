@@ -1,341 +1,601 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Bot, Send, X, Minimize2, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface Message {
-  id: string;
-  content: string;
-  isUser: boolean;
-  timestamp: Date;
-}
+import {
+  useAIChat,
+  type AIChatContext,
+  type UIPayload,
+  type ActionSuggestion,
+} from "@/hooks/useAIChat";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { isSameDay } from "date-fns";
 
 export function AIChatbot() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content:
-        "Hi there! 👋 I'm your bucketlistt AI assistant. I can help you discover amazing experiences, answer questions about destinations, assist with bookings, and provide travel recommendations. How can I help you today?",
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Get API key from Supabase Edge Function
-  const getApiKey = async () => {
-    const supabaseUrl =
-      import.meta.env.VITE_SUPABASE_URL ||
-      "https://uaptkggmrsxoqayjjnlz.supabase.co";
-    const response = await fetch(`${supabaseUrl}/functions/v1/get-secrets`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
-    });
-    const secrets = await response.json();
-    return secrets.groqAuthKey;
-  };
+  // Fetch destinations
+  const { data: destinations = [] } = useQuery({
+    queryKey: ["chatbot-destinations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("destinations")
+        .select("id, title")
+        .order("created_at", { ascending: true })
+        .limit(10);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+      if (error) throw error;
+      return (
+        data?.map((d) => ({
+          id: d.id,
+          name: d.title,
+        })) || []
+      );
+    },
+  });
 
+  // Fetch activities (experiences with their activities)
+  const { data: activities = [] } = useQuery({
+    queryKey: ["chatbot-activities"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("experiences")
+        .select(
+          `
+          id,
+          title,
+          description,
+          price,
+          currency,
+          duration,
+          location,
+          vendor_id,
+          category,
+          destination_id,
+          destinations (
+            id,
+            title
+          ),
+          activities!inner (
+            id,
+            name,
+            price,
+            discounted_price,
+            currency,
+            duration,
+            is_active
+          )
+        `
+        )
+        .eq("is_active", true)
+        .eq("activities.is_active", true)
+        .limit(50); // Increased to get more activities
+
+      if (error) throw error;
+
+      return (
+        data?.flatMap(
+          (exp: any) =>
+            (exp.activities as any[])
+              ?.filter((activity) => activity.is_active === true) // Double-check filter
+              .map((activity) => ({
+                id: activity.id,
+                experience_id: exp.id, // Store experience ID for navigation
+                experience_data: exp, // Store full experience data (for navigation, not sent to AI)
+                title: `${exp.title} - ${activity.name}`,
+                activity_name: activity.name, // Explicit activity name for AI filtering
+                experience_title: exp.title, // Experience title
+                destination: exp.destinations?.title || null, // Destination name
+                category: exp.category || null, // Category
+                short_description: exp.description
+                  ? exp.description
+                      .replace(/<[^>]*>/g, "") // Remove HTML tags
+                      .substring(0, 80) + "..."
+                  : "",
+                price_range: activity.discounted_price
+                  ? `${exp.currency || "INR"} ${activity.discounted_price} - ${
+                      activity.price
+                    }`
+                  : `${exp.currency || "INR"} ${activity.price}`,
+                duration: activity.duration || exp.duration || "N/A",
+                vendor_id: exp.vendor_id,
+              })) || []
+        ) || []
+      );
+    },
+  });
+
+  // Fetch user bookings
+  const { data: userBookings = [] } = useQuery({
+    queryKey: ["chatbot-user-bookings", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(
+          `
+          id,
+          booking_date,
+          status,
+          booking_amount,
+          time_slots (
+            start_time,
+            end_time,
+            activities (
+              id,
+              name
+            )
+          ),
+          experiences (
+            title
+          )
+        `
+        )
+        .eq("user_id", user.id)
+        .order("booking_date", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      return (
+        (data as any[])?.map((booking: any) => ({
+          id: booking.id,
+          activity_id: booking.time_slots?.activities?.id,
+          date: booking.booking_date,
+          time: booking.time_slots?.start_time
+            ? `${booking.time_slots.start_time} - ${booking.time_slots.end_time}`
+            : undefined,
+          status: booking.status,
+          vendor: "N/A", // Could fetch vendor info if needed
+          price: booking.booking_amount,
+          activity_title:
+            booking.time_slots?.activities?.name || booking.experiences?.title,
+        })) || []
+      );
+    },
+    enabled: !!user,
+  });
+
+  // Get today's bookings
+  const todayBookings = useMemo(() => {
+    if (!userBookings.length) return [];
+    const today = new Date();
+    return userBookings
+      .filter(
+        (booking) => booking.date && isSameDay(new Date(booking.date), today)
+      )
+      .map((booking) => ({
+        id: booking.id,
+        activity_title: booking.activity_title,
+        time: booking.time,
+        status: booking.status,
+        vendor: booking.vendor,
+      }));
+  }, [userBookings]);
+
+  // Build context
+  const context: AIChatContext = useMemo(
+    () => ({
+      session: !!user,
+      user: user
+        ? {
+            id: user.id,
+            name:
+              user.user_metadata?.full_name ||
+              user.email?.split("@")[0] ||
+              "User",
+            email: user.email || "",
+          }
+        : null,
+      available_destinations: destinations,
+      available_activities: activities,
+      user_bookings: userBookings,
+      today_bookings: todayBookings,
+      system_time: new Date().toISOString(),
+    }),
+    [user, destinations, activities, userBookings, todayBookings]
+  );
+
+  const { messages, isLoading, sendMessage, clearMessages } = useAIChat({
+    context,
+  });
+
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (scrollAreaRef.current && isOpen) {
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  }, [messages, isOpen]);
 
-  const sendMessage = async () => {
+  // Focus input when opened
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [isOpen]);
+
+  const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input.trim(),
-      isUser: true,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    const message = await sendMessage(input);
     setInput("");
-    setIsLoading(true);
 
-    try {
-      const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    // Handle action suggestions
+    if (message.actionSuggestion) {
+      handleActionSuggestion(message.actionSuggestion);
+    }
+  };
 
-      if (!apiKey) {
-        throw new Error("API key not available");
-      }
-
-      const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              {
-                role: "system",
-                content: `You are a helpful AI assistant for bucketlistt, a travel experiences booking platform. Here's what you need to know about bucketlistt:
-
-ABOUT bucketlistt:
-bucketlistt is a comprehensive travel experiences platform that helps people discover and book amazing activities, tours, and experiences around the world. We connect travelers with unique adventures and local experiences.
-
-KEY FEATURES:
-- Discover curated experiences across various destinations
-- Book tours, activities, and unique local experiences
-- Browse by categories like adventure, culture, food, nature, etc.
-- Read reviews and ratings from other travelers
-- Save favorites for future reference
-- Secure booking and payment processing
-- User profiles and booking management
-- Vendor dashboard for experience providers
-
-WHAT YOU CAN HELP WITH:
-1. Experience Discovery: Help users find experiences based on their interests, location, budget, or travel dates
-2. Destination Information: Provide insights about destinations, best times to visit, local culture, etc.
-3. Booking Assistance: Guide users through the booking process and answer questions about experiences
-4. Travel Recommendations: Suggest experiences based on user preferences and past bookings
-5. General Support: Answer questions about the platform, policies, and features
-6. Vendor Support: Help vendors understand how to create and manage their experiences
-
-USER CONTEXT:
-${user ? `The user is logged in as ${user.email}` : "The user is not logged in"}
-
-TONE & STYLE:
-- Be friendly, enthusiastic, and helpful
-- Show excitement about travel and experiences
-- Provide specific, actionable recommendations
-- Ask clarifying questions to better assist users
-- Keep responses concise but informative
-- Use emojis appropriately to make conversations engaging
-- If users ask about booking, guide them to the relevant pages
-- If users need to sign up, direct them to the auth page
-
-Always aim to inspire users to explore and book amazing experiences through bucketlistt!`,
-              },
-              {
-                role: "user",
-                content: input.trim(),
-              },
-            ],
-            temperature: 0.7,
-            max_tokens: 500,
-          }),
+  const handleActionSuggestion = (action: ActionSuggestion) => {
+    switch (action.type) {
+      case "open_login":
+        navigate("/auth");
+        break;
+      case "open_booking_modal":
+        // This would need to be handled by parent component or context
+        // For now, navigate to experiences page
+        navigate("/experiences");
+        break;
+      case "navigate":
+        if (action.payload?.path) {
+          navigate(action.payload.path);
         }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to get response from AI");
-      }
-
-      const data = await response.json();
-      const aiResponse =
-        data.choices[0]?.message?.content ||
-        "Sorry, I could not generate a response.";
-
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: aiResponse,
-        isUser: false,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      console.error("Error calling Groq API:", error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content:
-          "Sorry, I encountered an error. Please try again later. In the meantime, feel free to explore our experiences or contact our support team! 😊",
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
+        break;
+      default:
+        break;
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSend();
     }
   };
 
-  const clearChat = () => {
-    setMessages([
-      {
-        id: "1",
-        content:
-          "Hi there! 👋 I'm your bucketlistt AI assistant. I can help you discover amazing experiences, answer questions about destinations, assist with bookings, and provide travel recommendations. How can I help you today?",
-        isUser: false,
-        timestamp: new Date(),
-      },
-    ]);
+  const handleItemAction = async (item: any) => {
+    // Handle navigation based on item properties
+    if (item.path) {
+      navigate(item.path);
+      return;
+    }
+
+    // Check for special navigation IDs first (before treating as experience ID)
+    const itemId = item.id?.toLowerCase() || "";
+    const itemTitle = item.title?.toLowerCase() || "";
+
+    // Check if ID or title indicates bookings navigation
+    if (
+      itemId.includes("booking") ||
+      itemId.includes("check_bookings") ||
+      itemId.includes("view_bookings") ||
+      itemTitle.includes("booking")
+    ) {
+      navigate("/bookings");
+      return;
+    }
+
+    // Check if ID or title indicates activities/experiences search
+    if (
+      itemId.includes("activit") ||
+      itemId.includes("find") ||
+      itemId.includes("search") ||
+      itemId.includes("experience") ||
+      itemTitle.includes("activit") ||
+      itemTitle.includes("find")
+    ) {
+      navigate("/experiences");
+      return;
+    }
+
+    // Handle experience/activity navigation with proper state
+    if (item.id && item.id.length > 10 && !item.id.includes("_")) {
+      try {
+        // First, check if we already have this activity in our fetched activities
+        const existingActivity = activities.find((a: any) => a.id === item.id);
+
+        let experienceId = item.id;
+        let experienceData = null;
+
+        if (existingActivity?.experience_data) {
+          // We have the experience data cached!
+          experienceId = existingActivity.experience_id || item.id;
+          experienceData = existingActivity.experience_data;
+        } else if (existingActivity?.experience_id) {
+          // We have the experience ID but not the data, fetch it (only if active)
+          const { data: expData } = await supabase
+            .from("experiences")
+            .select("*")
+            .eq("id", existingActivity.experience_id)
+            .eq("is_active", true)
+            .single();
+
+          if (expData) {
+            experienceId = existingActivity.experience_id;
+            experienceData = expData;
+          }
+        } else {
+          // Not in our cache, check if it's an activity ID first
+          const { data: activityData } = await supabase
+            .from("activities")
+            .select("experience_id, experiences(*)")
+            .eq("id", item.id)
+            .eq("is_active", true)
+            .single();
+
+          if (activityData?.experience_id) {
+            // It's an activity ID, get the experience (only if experience is also active)
+            const exp = activityData.experiences as any;
+            if (exp?.is_active === true) {
+              experienceId = activityData.experience_id;
+              experienceData = exp;
+            }
+          } else {
+            // It's likely an experience ID, fetch the experience (only if active)
+            const { data: expData } = await supabase
+              .from("experiences")
+              .select("*")
+              .eq("id", item.id)
+              .eq("is_active", true)
+              .single();
+
+            if (expData) {
+              experienceData = expData;
+            }
+          }
+        }
+
+        if (experienceData) {
+          // Create slug from title (same pattern as ExperienceCard)
+          const experienceName = (experienceData.title || item.title || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-")
+            .trim();
+
+          navigate(`/experience/${experienceName}`, {
+            state: {
+              experienceData: {
+                id: experienceId,
+                title: experienceData.title,
+                image_url: experienceData.image_url,
+                price: experienceData.price,
+                original_price: experienceData.original_price,
+                currency: experienceData.currency,
+                duration: experienceData.duration,
+                group_size: experienceData.group_size,
+                description: experienceData.description,
+                location: experienceData.location,
+                rating: experienceData.rating,
+                reviews_count: experienceData.reviews_count,
+              },
+              fromPage: "ai-chatbot",
+              timestamp: Date.now(),
+            },
+          });
+          return;
+        }
+      } catch (error) {
+        console.error("Error fetching experience data:", error);
+        // Fallback: try to navigate with title as slug
+        if (item.title) {
+          // Extract experience title if it's in format "Experience - Activity"
+          const titleParts = item.title.split(" - ");
+          const experienceTitle = titleParts[0] || item.title;
+
+          const experienceName = experienceTitle
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-")
+            .trim();
+          navigate(`/experience/${experienceName}`, {
+            state: {
+              experienceData: {
+                id: item.id,
+                title: experienceTitle,
+              },
+              fromPage: "ai-chatbot",
+              timestamp: Date.now(),
+            },
+          });
+        }
+      }
+    }
+  };
+
+  const renderUIPayload = (payload: UIPayload) => {
+    if (!payload || !payload.items || payload.items.length === 0) return null;
+
+    return (
+      <div className="mt-2 space-y-2">
+        {payload.items.map((item, index) => (
+          <Card
+            key={item.id || index}
+            className="p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => handleItemAction(item)}
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h4 className="font-semibold text-sm">{item.title}</h4>
+                {item.short_description && (
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {item.short_description}
+                  </p>
+                )}
+                {item.price_text && (
+                  <Badge variant="secondary" className="mt-2">
+                    {item.price_text}
+                  </Badge>
+                )}
+              </div>
+              {item.action && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleItemAction(item);
+                  }}
+                >
+                  {item.action === "book" ? "Book" : "View"}
+                </Button>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
   };
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-6 right-3 md:bottom-8 md:right-10 z-50">
-        <Button
-          onClick={() => setIsOpen(true)}
-          size="sm"
-          className="rounded-full h-12 w-12  bg-white bg-[url('/bucketlistt_chatbot_logo.svg')] bg-center bg-cover shadow-lg hover:shadow-xl transition-all duration-300 group flex items-center justify-center
-          /* Light mode: Dark circular background */
-            border-none 
-          /* Dark mode: Light background with transparency */
-          dark:bg-white dark:bg-opacity-10 dark:backdrop-blur-md dark:border-white dark:border-opacity-20"
-        >
-          <span className="sr-only">Open AI Chat</span>
-        </Button>
-
-        {/* Floating notification */}
-        <div className="absolute -top-12 -left-20 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-white px-3 py-2 rounded-lg shadow-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-          Need help? Ask me anything! 💬
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white dark:border-t-neutral-800"></div>
-        </div>
-      </div>
+      <Button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-4 right-4 z-50 rounded-full h-14 w-14 bg-[#940fdb] hover:bg-[#7a0bb8] shadow-lg"
+        size="icon"
+      >
+        <MessageCircle className="h-6 w-6 text-white" />
+      </Button>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <Card
+    <Card
+      className={cn(
+        "fixed bottom-4 right-4 z-50 shadow-2xl transition-all duration-300",
+        isMinimized ? "w-80 h-16" : "w-96 h-[600px]"
+      )}
+    >
+      <CardHeader
         className={cn(
-          "w-80 md:w-96 shadow-2xl transition-all duration-300 bg-white/10 backdrop-blur-md border border-white/20",
-          isMinimized ? "h-14" : "h-[500px]"
+          "flex flex-row items-center justify-between space-y-0 pb-2 bg-[#940fdb] text-white rounded-t-lg",
+          isMinimized && "pb-2"
         )}
       >
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-white/20 backdrop-blur-md text-neutral-800 dark:text-white rounded-t-lg border-b border-white/20">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <strong>bucketlistt</strong> AI Assistant
-          </CardTitle>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMinimized(!isMinimized)}
-              className="h-6 w-6 p-0 text-neutral-700 dark:text-white hover:bg-white/30"
-              title={isMinimized ? "Expand chat" : "Minimize chat"}
-            >
-              <Minimize2 className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsOpen(false)}
-              className="h-6 w-6 p-0 text-neutral-700 dark:text-white hover:bg-white/30"
-              title="Close chat"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-        </CardHeader>
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Bot className="h-4 w-4" />
+          bucketlistt Assistant
+        </CardTitle>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="h-6 w-6 p-0 text-white hover:bg-white/20"
+          >
+            <Minimize2 className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setIsOpen(false);
+              setIsMinimized(false);
+            }}
+            className="h-6 w-6 p-0 text-white hover:bg-white/20"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      </CardHeader>
 
-        {!isMinimized && (
-          <CardContent className="p-0 flex flex-col h-[450px]">
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {messages.map((message) => (
+      {!isMinimized && (
+        <CardContent className="p-0 flex flex-col h-[540px]">
+          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+            <div className="space-y-4">
+              {messages.length === 0 && (
+                <div className="text-center text-sm text-muted-foreground py-8">
+                  <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>Hey! I'm bucketlistt Assistant 🎒</p>
+                  <p className="text-xs mt-1">
+                    Ask me about adventures, bookings, or destinations!
+                  </p>
+                </div>
+              )}
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={cn(
+                    "flex",
+                    message.isUser ? "justify-end" : "justify-start"
+                  )}
+                >
                   <div
-                    key={message.id}
                     className={cn(
-                      "flex",
-                      message.isUser ? "justify-end" : "justify-start"
+                      "max-w-[85%] rounded-lg px-3 py-2 text-sm",
+                      message.isUser
+                        ? "bg-[#940fdb] text-white"
+                        : "bg-muted text-foreground"
                     )}
                   >
-                    <div
-                      className={cn(
-                        "max-w-[85%] rounded-lg px-3 py-2 text-sm break-words",
-                        message.isUser
-                          ? "bg-gradient-to-r from-gradient-secondary-start to-gradient-secondary-end text-white"
-                          : "bg-muted text-muted-foreground border"
-                      )}
-                    >
-                      <div className="whitespace-pre-wrap">
-                        {message.content}
-                      </div>
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    {message.uiPayload && renderUIPayload(message.uiPayload)}
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-muted rounded-lg px-3 py-2 text-sm">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
                       <div
-                        className={cn(
-                          "text-xs mt-1 opacity-70",
-                          message.isUser
-                            ? "text-white/70"
-                            : "text-muted-foreground"
-                        )}
-                      >
-                        {message.timestamp.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </div>
+                        className="w-2 h-2 bg-current rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-current rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      />
                     </div>
                   </div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted rounded-lg px-3 py-2 text-sm text-muted-foreground border">
-                      <div className="flex items-center space-x-1">
-                        <div
-                          className="w-2 h-2 bg-current rounded-full animate-bounce"
-                          style={{ animationDelay: "0ms" }}
-                        />
-                        <div
-                          className="w-2 h-2 bg-current rounded-full animate-bounce"
-                          style={{ animationDelay: "150ms" }}
-                        />
-                        <div
-                          className="w-2 h-2 bg-current rounded-full animate-bounce"
-                          style={{ animationDelay: "300ms" }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
-
-            <div className="p-4 border-t border-white/20 bg-white/10 backdrop-blur-md">
-              <div className="flex space-x-2">
-                <Input
-                  placeholder="Ask me about travel experiences..."
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={isLoading}
-                  className="flex-1"
-                />
-                <Button
-                  onClick={sendMessage}
-                  disabled={isLoading || !input.trim()}
-                  size="sm"
-                  className="bg-gradient-to-r from-gradient-secondary-start to-gradient-secondary-end hover:from-info-dark hover:to-gradient-secondary-end px-3"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="text-xs text-muted-foreground mt-2 text-center">
-                Created by Darshit Joshi
-              </div>
+                </div>
+              )}
             </div>
-          </CardContent>
-        )}
-      </Card>
-    </div>
+          </ScrollArea>
+
+          <div className="p-3 border-t flex items-center gap-2">
+            <Input
+              ref={inputRef}
+              placeholder="Ask about adventures..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={isLoading}
+              className="flex-1"
+            />
+            <Button
+              onClick={handleSend}
+              disabled={isLoading || !input.trim()}
+              size="icon"
+              className="bg-[#940fdb] hover:bg-[#7a0bb8] text-white"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      )}
+    </Card>
   );
 }
