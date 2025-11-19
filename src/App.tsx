@@ -52,7 +52,7 @@ const WhatsappButtonConditional = () => {
     return null;
   }
 
-  return <AIChatbot />;
+  return <WhatsAppButton />;
 };
 
 // Component to conditionally render MobileFloatingButton based on route
