@@ -554,7 +554,7 @@ const ExperienceDetail = () => {
                       />
                     </div>
                     <div className="feature-badge-content">
-                      <p>Instant Tickets to your mobile</p>
+                      <p>Tickets to your mobile</p>
                     </div>
                   </div>
                 </div>

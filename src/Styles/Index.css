@@ -183,9 +183,9 @@
     }
 
     #DestinationCardStyles {
-        height: 300px;
-        min-height: 300px;
-        max-height: 300px;
+        height: 250px;
+        min-height: 250px;
+        max-height: 250px;
         /* width: 300px !important; */
     }
 
@@ -286,7 +286,7 @@
     .ContainerDesinsPurposeOnly {
         max-width: 800px;
         margin: 0 auto;
-        padding: 0 1rem;
+        padding: 0 0rem;
     }
 
     .WhyChooseFlexContainerColumnCenter {

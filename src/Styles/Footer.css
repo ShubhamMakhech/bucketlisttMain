@@ -1,37 +1,298 @@
-.FooterGridContainer {
+/* Footer Container - White Background */
+.FooterContainer {
+    background-color: #ffffff;
+    color: #000000;
+    /* border-top: 1px solid #e5e7eb; */
+}
+
+
+/* Top Section: Logo and Call Button */
+.FooterTopSection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    /* padding-bottom: 48px; */
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 30px;
+}
+
+.FooterTopLeft {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
 }
 
-.FooterGridContainer {
-    text-align: start !important;
+.FooterLogo {
+    width: 150px;
+    height: auto;
 }
 
-.FooterLogoStyles {
-    width: 150px !important;
-    margin-top: -30px;
+.FooterTopRight {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.FooterInstagramButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    color: #525252;
+    background-color: transparent;
+    border: none;
+    font-weight: 400;
+    transition: color 0.2s;
+}
+
+.FooterInstagramButton:hover {
+    color: #f97316;
+    background-color: transparent;
+}
+
+.FooterInstagramButton svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Main Content Section: Links and Image */
+.FooterMainSection {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 48px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 24px;
+}
+
+/* Links Section - Left Side */
+.FooterLinksSection {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.FooterLinksColumn {
+    display: flex;
+    flex-direction: column;
+}
+
+.FooterColumnHeader {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #000000;
+    margin-bottom: 16px;
+    text-align: start;
+}
+
+.FooterLinksList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.FooterLinksList li {
+    margin: 0;
+    text-align: start;
+}
+
+.FooterLinksList li button {
+    padding: 0px;
+    height: 100%;
+    color: rgb(82, 82, 82) !important;
+    font-weight: 400;
+}
+
+.FooterLink {
+    color: #000000 !important;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 0;
+    height: auto;
+    font-weight: 400;
+    transition: color 0.2s;
+}
+
+.FooterLink:hover {
+    color: #f97316 !important;
+    text-decoration: none;
+}
+
+/* Image Section - Right Side */
+.FooterImageSection {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    /* padding: 24px; */
+}
+
+.FooterImageContainer {
+    width: 100%;
+    max-width: 400px;
+    height: 200px;
+    background-color: #f3f4f6;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.FooterImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Bottom Section: Copyright and Payment Methods */
+.FooterBottomSection {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.FooterBottomLeft {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #000000;
+}
+
+.FooterCopyright {
+    color: #000000;
+}
+
+.FooterBottomLink {
+    color: #000000 !important;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 0;
+    height: auto;
+    font-weight: 400;
+    transition: color 0.2s;
+}
+
+.FooterBottomLink:hover {
+    color: #f97316 !important;
+    text-decoration: none;
+}
+
+.FooterBottomRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.FooterPaymentHeader {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #000000;
+    margin: 0;
+}
+
+.FooterPaymentMethods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.FooterPaymentIcon {
+    width: 50px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .FooterLinksSection {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+
+    .FooterMainSection {
+        gap: 32px;
+    }
 }
 
 @media (max-width: 768px) {
-    .FooterGridContainer {
+
+
+    .FooterTopSection {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        /* padding-bottom: 32px; */
+        margin-bottom: 32px;
+    }
+
+    .FooterTopRight {
+        justify-content: flex-start;
+    }
+
+    .FooterMainSection {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        padding-bottom: 32px;
+        margin-bottom: 24px;
+    }
+
+    .FooterLinksSection {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+
+    .FooterImageSection {
+        padding: 0px;
+    }
+
+    .FooterImageContainer {
+        height: 150px;
+        max-width: 100%;
+    }
+
+    .FooterBottomSection {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .FooterBottomRight {
+        align-items: flex-start;
+    }
+
+    .FooterLogo {
+        width: 130px;
+    }
+}
+
+@media (max-width: 640px) {
+    .FooterLinksSection {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .FooterBottomLeft {
         /* flex-direction: column; */
-        flex-wrap: wrap;
-        gap: 5px !important;
-        margin-bottom: 20px;
+        align-items: flex-start;
+        gap: 8px;
     }
 
-    .FooterGridContainer>div:first-child {
-        width: 100% !important;
-        padding-bottom: 0px !important;
+    .FooterBottomLink{
+        padding: 0px !important;
     }
-
-    .FooterGridContainer>div {
-        width: 47% !important;
-        padding-bottom: 20px;
-    }
-
-    .FooterLogoStyles {
-        width: 130px !important;
-        margin-left: -5px;
+    .FooterInstagramButton{
+        padding: 0px !important;
     }
 }
