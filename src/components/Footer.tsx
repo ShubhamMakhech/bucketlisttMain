@@ -47,29 +47,7 @@ export function Footer() {
         <div className="FooterMainSection">
           {/* Left Side: Navigation Links */}
           <div className="FooterLinksSection">
-            <div className="FooterLinksColumn">
-              <h3 className="FooterColumnHeader">Contact</h3>
-              <ul className="FooterLinksList">
-                <li>
-                  <Button
-                    variant="link"
-                    className="FooterLink"
-                    onClick={() => navigate("/contact")}
-                  >
-                    contact@bucketlistt.com
-                  </Button>
-                </li>
-                <li>
-                  <Button
-                    variant="link"
-                    className="FooterLink"
-                    onClick={() => window.open("tel:+918200362890")}
-                  >
-                    +91 820 036 2890
-                  </Button>
-                </li>
-              </ul>
-            </div>
+            
 
             <div className="FooterLinksColumn">
               <h3 className="FooterColumnHeader">CITIES</h3>
@@ -143,7 +121,7 @@ export function Footer() {
             </div>
 
             <div className="FooterLinksColumn">
-              <h3 className="FooterColumnHeader">BUCKETLISTT</h3>
+              <h3 className="FooterColumnHeader">About us</h3>
               <ul className="FooterLinksList">
                 <li>
                   <Button
@@ -151,7 +129,7 @@ export function Footer() {
                     className="FooterLink"
                     onClick={() => navigate("/our-story")}
                   >
-                    Our story
+                    Founder's story
                   </Button>
                 </li>
                 <li>
@@ -178,7 +156,7 @@ export function Footer() {
                     className="FooterLink"
                     onClick={() => navigate("/coming-soon")}
                   >
-                    Company blog
+                     Blogs
                   </Button>
                 </li>
                 <li>
@@ -194,7 +172,7 @@ export function Footer() {
             </div>
 
             <div className="FooterLinksColumn">
-              <h3 className="FooterColumnHeader">PARTNERS</h3>
+              <h3 className="FooterColumnHeader">Partner with Us</h3>
               <ul className="FooterLinksList">
                 <li>
                   <Button
@@ -221,6 +199,29 @@ export function Footer() {
                     onClick={() => navigate("/coming-soon")}
                   >
                     Creators & influencers
+                  </Button>
+                </li>
+              </ul>
+            </div>
+            <div className="FooterLinksColumn">
+              <h3 className="FooterColumnHeader">Contact</h3>
+              <ul className="FooterLinksList">
+                <li>
+                  <Button
+                    variant="link"
+                    className="FooterLink"
+                    onClick={() => navigate("/contact")}
+                  >
+                    contact@bucketlistt.com
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    variant="link"
+                    className="FooterLink"
+                    onClick={() => window.open("tel:+918200362890")}
+                  >
+                    +91 820 036 2890
                   </Button>
                 </li>
               </ul>
