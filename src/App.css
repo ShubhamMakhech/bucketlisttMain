@@ -757,6 +757,7 @@ h6 {
     margin-right: -10px;
     margin-top: -5px;
     rotate: 0deg;
+    display: none !important;
   }
 }
 
@@ -2345,7 +2346,8 @@ h6 {
 *::-webkit-media-controls-panel {
   display: none !important;
   -webkit-appearance: none;
-  position: absolute !important; top: -9999px !important;
+  position: absolute !important;
+  top: -9999px !important;
 }
 
 /* Old shadow dom for play button */
@@ -2353,7 +2355,8 @@ h6 {
 *::-webkit-media-controls-play-button {
   display: none !important;
   -webkit-appearance: none;
-  position: absolute !important; top: -9999px !important;
+  position: absolute !important;
+  top: -9999px !important;
 }
 
 /* New shadow dom for play button */
@@ -2363,12 +2366,14 @@ h6 {
 *::-webkit-media-controls-start-playback-button {
   display: none !important;
   -webkit-appearance: none;
-  position: absolute !important; top: -9999px !important;
+  position: absolute !important;
+  top: -9999px !important;
 }
 
 video::-webkit-media-controls {
   display: none !important;
-  position: absolute; top: -9999px
+  position: absolute;
+  top: -9999px
 }
 
 #ExperiencePcCardImageStyles {
@@ -2518,3 +2523,9 @@ video::-webkit-media-controls {
 .DestinationDetailSwiperOverlay h2 svg {
   font-size: 30px;
 }
+
+/* @media (min-width: 768px) {
+  #ExperiencePcCardImageStyles::after {
+    display: none !important;
+  }
+} */
