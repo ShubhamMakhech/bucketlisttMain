@@ -41,7 +41,7 @@ import BlogDetail from "./pages/BlogDetail";
 import QRCodeRedirect from "./pages/QRCodeRedirect";
 import ConfirmBooking from "./pages/ConfirmBooking";
 import WhatsAppButton from "./pages/whatsapp";
-import Users from "./pages/users";
+import Users from "./pages/Users";
 const queryClient = new QueryClient();
 
 
