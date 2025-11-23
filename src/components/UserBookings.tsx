@@ -20,7 +20,7 @@ interface BookingWithDueAmount {
 
 export const UserBookings = () => {
   const { user } = useAuth();
-  const { isAgent } = useUserRole();
+  const { isAgent, isAdmin } = useUserRole();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [globalFilter, setGlobalFilter] = React.useState("");
@@ -40,6 +40,18 @@ export const UserBookings = () => {
     string | null
   >(null);
   const [showTimeslotFilter, setShowTimeslotFilter] = React.useState(false);
+  const [selectedExperienceId, setSelectedExperienceId] = React.useState<
+    string | null
+  >(null);
+  const [showExperienceFilter, setShowExperienceFilter] = React.useState(false);
+  const [selectedAgentId, setSelectedAgentId] = React.useState<string | null>(
+    null
+  );
+  const [showAgentFilter, setShowAgentFilter] = React.useState(false);
+  const [selectedVendorId, setSelectedVendorId] = React.useState<string | null>(
+    null
+  );
+  const [showVendorFilter, setShowVendorFilter] = React.useState(false);
 
   // Column width state for resizable columns
   const columnCount = 20; // Total number of columns
@@ -326,93 +338,86 @@ export const UserBookings = () => {
   }, [showColumnSelector]);
 
   const { data: bookings = [], isLoading } = useQuery({
-    queryKey: ["user-bookings", user?.id],
+    queryKey: ["user-bookings", user?.id, isAdmin],
     queryFn: async () => {
       if (!user) return [];
-      // console.log("user", user);
-      if (user.user_metadata.role === "vendor") {
-        const { data, error } = await supabase
+
+      try {
+        let query = supabase
           .from("bookings")
           .select(
             `
-          *,
-          experiences (
-            id,
-            title,
-            location,
-            price,
-            currency,
-            vendor_id,
-            is_active
-          ),
-          time_slots (
-            id,
-            start_time,
-            end_time,
-            activity_id,
-            activities (
+            *,
+            experiences (
               id,
-              name,
+              title,
+              location,
               price,
-              b2bPrice,
-              discounted_price,
-              discount_percentage,
-              currency
+              currency,
+              vendor_id,
+              is_active
+            ),
+            time_slots (
+              id,
+              start_time,
+              end_time,
+              activity_id,
+              activities (
+                id,
+                name,
+                price,
+                b2bPrice,
+                discounted_price,
+                discount_percentage,
+                currency
+              )
+            ),
+            booking_participants (
+              name,
+              email,
+              phone_number
             )
-          ),
-          booking_participants (
-            name,
-            email,
-            phone_number
+          `
           )
-        `
-          )
-          .eq("experiences.vendor_id", user.id)
           .order("created_at", { ascending: false });
 
-        if (error) throw error;
-        return data;
-      } else {
-        const { data, error } = await supabase
-          .from("bookings")
-          .select(
-            `
-          *,
-          experiences (
-            id,
-            title,
-            location,
-            price,
-            currency,
-            is_active
-          ),
-          time_slots (
-            id,
-            start_time,
-            end_time,
-            activity_id,
-            activities (
-              id,
-              name,
-              price,
-              b2bPrice,
-              discounted_price,
-              discount_percentage,
-              currency
-            )
-          ),
-          booking_participants (
-            name,
-            email,
-            phone_number
-          )
-        `
-          )
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
+        // If admin, fetch all bookings (no filter)
+        // If vendor, filter by vendor_id
+        // Otherwise, filter by user_id
+        if (isAdmin) {
+          // No filter - get all bookings
+          // RLS policy should allow admins to see all bookings
+        } else if (user.user_metadata.role === "vendor") {
+          query = query.eq("experiences.vendor_id", user.id);
+        } else {
+          query = query.eq("user_id", user.id);
+        }
 
-        if (error) throw error;
-        return data;
+        const { data, error } = await query;
+
+        if (error) {
+          console.error("Error fetching bookings:", error);
+          console.error("Error details:", {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+            isAdmin,
+            userId: user.id,
+          });
+          throw error;
+        }
+
+        console.log("Bookings fetched successfully:", {
+          count: data?.length || 0,
+          isAdmin,
+          userId: user.id,
+        });
+
+        return data || [];
+      } catch (error) {
+        console.error("Exception in bookings query:", error);
+        throw error;
       }
     },
     enabled: !!user,
@@ -537,6 +542,27 @@ export const UserBookings = () => {
       });
     }
 
+    // Apply experience filter (admin only)
+    if (isAdmin && selectedExperienceId) {
+      filtered = filtered.filter((booking) => {
+        return booking.experiences?.id === selectedExperienceId;
+      });
+    }
+
+    // Apply agent filter (admin only)
+    if (isAdmin && selectedAgentId) {
+      filtered = filtered.filter((booking) => {
+        return booking.user_id === selectedAgentId;
+      });
+    }
+
+    // Apply vendor filter (admin only)
+    if (isAdmin && selectedVendorId) {
+      filtered = filtered.filter((booking) => {
+        return booking.experiences?.vendor_id === selectedVendorId;
+      });
+    }
+
     // Apply search filter
     if (globalFilter) {
       filtered = filtered.filter((booking) => {
@@ -594,6 +620,10 @@ export const UserBookings = () => {
     selectedEndDate,
     selectedTimeslotId,
     selectedActivityId,
+    selectedExperienceId,
+    selectedAgentId,
+    selectedVendorId,
+    isAdmin,
     globalFilter,
     sortBy,
     sortOrder,
@@ -618,6 +648,124 @@ export const UserBookings = () => {
     });
     return Array.from(activities.values());
   }, [bookings]);
+
+  // Get unique experiences from bookings (for admin filter)
+  const uniqueExperiences = React.useMemo(() => {
+    const experiences = new Map();
+    bookings.forEach((booking) => {
+      const experience = booking.experiences;
+      if (experience && experience.id && experience.title) {
+        experiences.set(experience.id, {
+          id: experience.id,
+          title: experience.title,
+        });
+      }
+    });
+    return Array.from(experiences.values());
+  }, [bookings]);
+
+  // Fetch all vendors from user_roles and their profiles (admin only)
+  const { data: vendorProfiles = [] } = useQuery({
+    queryKey: ["vendor-profiles-all"],
+    queryFn: async () => {
+      if (!isAdmin) return [];
+
+      // First get all vendor user IDs from user_roles
+      const { data: vendorRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "vendor");
+
+      if (rolesError) {
+        console.error("Error fetching vendor roles:", rolesError);
+        return [];
+      }
+
+      if (!vendorRoles || vendorRoles.length === 0) return [];
+
+      // Get vendor user IDs
+      const vendorUserIds = vendorRoles.map((role) => role.user_id);
+
+      // Fetch profiles for all vendors
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", vendorUserIds);
+
+      if (profilesError) {
+        console.error("Error fetching vendor profiles:", profilesError);
+        return [];
+      }
+
+      return profiles || [];
+    },
+    enabled: isAdmin,
+  });
+
+  // Fetch all agents from user_roles and their profiles (admin only)
+  const { data: agentProfiles = [] } = useQuery({
+    queryKey: ["agent-profiles-all"],
+    queryFn: async () => {
+      if (!isAdmin) return [];
+
+      // First get all agent user IDs from user_roles
+      // Note: Using type assertion since 'agent' may not be in TypeScript enum but exists in DB
+      const { data: agentRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "agent" as any);
+
+      if (rolesError) {
+        console.error("Error fetching agent roles:", rolesError);
+        return [];
+      }
+
+      if (!agentRoles || agentRoles.length === 0) return [];
+
+      // Get agent user IDs
+      const agentUserIds = agentRoles.map((role) => role.user_id);
+
+      // Fetch profiles for all agents
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", agentUserIds);
+
+      if (profilesError) {
+        console.error("Error fetching agent profiles:", profilesError);
+        return [];
+      }
+
+      return profiles || [];
+    },
+    enabled: isAdmin,
+  });
+
+  // Get unique agents from profiles (admin only)
+  const uniqueAgents = React.useMemo(() => {
+    if (!isAdmin) return [];
+    return agentProfiles.map((profile: any) => ({
+      id: profile.id,
+      name:
+        `${profile.first_name} ${profile.last_name}`.trim() ||
+        profile.email ||
+        profile.id,
+      email: profile.email || profile.id,
+    }));
+  }, [agentProfiles, isAdmin]);
+
+  // Get unique vendors from profiles (admin only)
+  const uniqueVendors = React.useMemo(() => {
+    if (!isAdmin) return [];
+    return vendorProfiles.map((profile: any) => ({
+      id: profile.id,
+      name:
+        `${profile.first_name} ${profile.last_name}`.trim() ||
+        profile.email ||
+        profile.id,
+      email: profile.email || profile.id,
+    }));
+  }, [vendorProfiles, isAdmin]);
 
   const formatTime12Hour = (timeString: string) => {
     if (!timeString) return "N/A";
@@ -1180,6 +1328,167 @@ export const UserBookings = () => {
               </div>
             )}
           </div>
+
+          {/* Experience Filter Button (Admin only) */}
+          {isAdmin && (
+            <div className="relative">
+              <Button
+                variant={selectedExperienceId ? "default" : "outline"}
+                onClick={() => setShowExperienceFilter(!showExperienceFilter)}
+                className="text-sm"
+              >
+                {selectedExperienceId
+                  ? uniqueExperiences.find((e) => e.id === selectedExperienceId)
+                      ?.title || "Experience"
+                  : "Experience"}
+              </Button>
+
+              {/* Experience Filter Dropdown */}
+              {showExperienceFilter && (
+                <div
+                  className="absolute left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
+                  style={{ zIndex: 1000 }}
+                >
+                  <Button
+                    variant={
+                      selectedExperienceId === null ? "default" : "outline"
+                    }
+                    size="sm"
+                    onClick={() => {
+                      setSelectedExperienceId(null);
+                      setShowExperienceFilter(false);
+                    }}
+                    className="w-full justify-start text-xs"
+                  >
+                    All Experiences
+                  </Button>
+                  {uniqueExperiences.map((experience) => (
+                    <Button
+                      key={experience.id}
+                      variant={
+                        selectedExperienceId === experience.id
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedExperienceId(experience.id);
+                        setShowExperienceFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      {experience.title}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Agent Filter Button (Admin only) */}
+          {isAdmin && (
+            <div className="relative">
+              <Button
+                variant={selectedAgentId ? "default" : "outline"}
+                onClick={() => setShowAgentFilter(!showAgentFilter)}
+                className="text-sm"
+              >
+                {selectedAgentId
+                  ? uniqueAgents.find((a) => a.id === selectedAgentId)?.name ||
+                    "Agent"
+                  : "Agent"}
+              </Button>
+
+              {/* Agent Filter Dropdown */}
+              {showAgentFilter && (
+                <div
+                  className="absolute left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
+                  style={{ zIndex: 1000 }}
+                >
+                  <Button
+                    variant={selectedAgentId === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedAgentId(null);
+                      setShowAgentFilter(false);
+                    }}
+                    className="w-full justify-start text-xs"
+                  >
+                    All Agents
+                  </Button>
+                  {uniqueAgents.map((agent) => (
+                    <Button
+                      key={agent.id}
+                      variant={
+                        selectedAgentId === agent.id ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedAgentId(agent.id);
+                        setShowAgentFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      {agent.name}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Vendor Filter Button (Admin only) */}
+          {isAdmin && (
+            <div className="relative">
+              <Button
+                variant={selectedVendorId ? "default" : "outline"}
+                onClick={() => setShowVendorFilter(!showVendorFilter)}
+                className="text-sm"
+              >
+                {selectedVendorId
+                  ? uniqueVendors.find((v) => v.id === selectedVendorId)
+                      ?.name || "Vendor"
+                  : "Vendor"}
+              </Button>
+
+              {/* Vendor Filter Dropdown */}
+              {showVendorFilter && (
+                <div
+                  className="absolute left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
+                  style={{ zIndex: 1000 }}
+                >
+                  <Button
+                    variant={selectedVendorId === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedVendorId(null);
+                      setShowVendorFilter(false);
+                    }}
+                    className="w-full justify-start text-xs"
+                  >
+                    All Vendors
+                  </Button>
+                  {uniqueVendors.map((vendor) => (
+                    <Button
+                      key={vendor.id}
+                      variant={
+                        selectedVendorId === vendor.id ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedVendorId(vendor.id);
+                        setShowVendorFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      {vendor.name}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div
             className="mb-2 flex justify-end"
             id="UserBookingsColumnSelectorStyles"

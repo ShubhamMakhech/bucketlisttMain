@@ -13,18 +13,18 @@ const EditExperience = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { isVendor, loading: roleLoading } = useUserRole();
+  const { isVendor, loading: roleLoading, isAdmin } = useUserRole();
   const queryClient = useQueryClient();
-
+console.log("isAdmin", isAdmin);
   useEffect(() => {
     if (!authLoading && !roleLoading) {
       if (!user) {
         navigate("/auth");
-      } else if (!isVendor) {
+      } else if (!isVendor && !isAdmin) {
         navigate("/profile");
       }
     }
-  }, [user, isVendor, authLoading, roleLoading, navigate]);
+  }, [user, isVendor, isAdmin, authLoading, roleLoading, navigate]);
 
   // Invalidate cache when component mounts to ensure fresh data
   useEffect(() => {
@@ -82,7 +82,12 @@ const EditExperience = () => {
       if (activitiesError) throw activitiesError;
 
       // If no activities exist, fetch legacy time slots for backward compatibility
-      let legacyTimeSlots: { id: string; start_time: string; end_time: string; capacity: number }[] = [];
+      let legacyTimeSlots: {
+        id: string;
+        start_time: string;
+        end_time: string;
+        capacity: number;
+      }[] = [];
       if (!activitiesData || activitiesData.length === 0) {
         const { data: timeSlotsData, error: timeSlotsError } = await supabase
           .from("time_slots")
@@ -144,7 +149,7 @@ const EditExperience = () => {
     );
   }
 
-  if (!user || !isVendor) {
+  if (!user && !isVendor && !isAdmin) {
     return null;
   }
 

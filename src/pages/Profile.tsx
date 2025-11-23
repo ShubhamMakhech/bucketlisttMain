@@ -28,7 +28,7 @@ import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const { user, loading } = useAuth();
-  const { isVendor, loading: roleLoading } = useUserRole();
+  const { isVendor, isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [activeSection, setActiveSection] = useState("bookings"); // Default to bookings initially
@@ -95,7 +95,7 @@ const Profile = () => {
   };
 
   const sidebarItems = [
-    ...(isVendor
+    ...(isVendor || isAdmin
       ? [
           {
             id: "analytics",
