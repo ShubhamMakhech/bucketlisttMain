@@ -38,7 +38,7 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { isVendor } = useUserRole();
+  const { isVendor, isAdmin } = useUserRole();
   const { role } = useUserRole();
   const { favoritesCount } = useFavorites();
   const { theme } = useTheme();
@@ -383,6 +383,15 @@ export function Header() {
                     <FileText className="mr-2 h-4 w-4" />
                     Reviews
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => isAdmin && navigate("/users")}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      Users
+                    </DropdownMenuItem>
+                  )}
                   {/* <DropdownMenuItem
                     className="cursor-pointer"
                     onClick={() => navigate("/coming-soon")}

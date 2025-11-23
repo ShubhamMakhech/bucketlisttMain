@@ -41,6 +41,7 @@ import BlogDetail from "./pages/BlogDetail";
 import QRCodeRedirect from "./pages/QRCodeRedirect";
 import ConfirmBooking from "./pages/ConfirmBooking";
 import WhatsAppButton from "./pages/whatsapp";
+import Users from "./pages/users";
 const queryClient = new QueryClient();
 
 
@@ -198,6 +199,7 @@ const App: React.FC = () => {
                   <Route path="/terms" element={<TermsAndConditions />} />
                   <Route path="/search" element={<SearchResults />} />
                   <Route path="/coming-soon" element={<ComingSoon />} />
+                  <Route path="/users" element={<Users />} />
                   <Route path="/partner" element={<Partner />} />
                   <Route
                     path="/vendor/experiences"
