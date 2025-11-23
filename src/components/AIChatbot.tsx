@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { isSameDay } from "date-fns";
 
 export function AIChatbot() {
-  const { user } = useAuth();
+  const { user } = useAuth(); 
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);

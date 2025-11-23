@@ -312,6 +312,23 @@ export function useAIChat(options: UseAIChatOptions = {}) {
             );
           }
 
+          // Handle token limit errors
+          const errorCode = errorData.error?.code || "";
+          const errorMessage = errorData.error?.message || "";
+          const isTokenLimitError =
+            errorCode.includes("context_length") ||
+            errorCode.includes("token") ||
+            errorMessage.toLowerCase().includes("token") ||
+            errorMessage.toLowerCase().includes("context length") ||
+            errorMessage.toLowerCase().includes("max tokens") ||
+            errorMessage.toLowerCase().includes("too many tokens");
+
+          if (isTokenLimitError) {
+            throw new Error(
+              `I'm having trouble processing your request. Please contact support at +91 8511838237 for assistance.`
+            );
+          }
+
           throw new Error(
             errorData.error?.message || "Failed to get response from AI"
           );
