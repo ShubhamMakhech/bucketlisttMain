@@ -42,8 +42,8 @@ import QRCodeRedirect from "./pages/QRCodeRedirect";
 import ConfirmBooking from "./pages/ConfirmBooking";
 import WhatsAppButton from "./pages/whatsapp";
 import Users from "./pages/Users";
+import { AdminBlogPage } from "./components/AdminBlogPage";
 const queryClient = new QueryClient();
-
 
 const WhatsappButtonConditional = () => {
   const location = useLocation();
@@ -174,7 +174,8 @@ const App: React.FC = () => {
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/blogs" element={<Blogs />} />
-                  <Route path="/blogs/:id" element={<BlogDetail />} />
+                  <Route path="/blogs/:slug" element={<BlogDetail />} />
+                  <Route path="/admin/blogs" element={<AdminBlogPage />} />
                   <Route path="/qrcode" element={<QRCodeRedirect />} />
                   <Route
                     path="/email-confirmation"

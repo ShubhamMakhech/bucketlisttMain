@@ -154,7 +154,7 @@ export function Footer() {
                   <Button
                     variant="link"
                     className="FooterLink"
-                    onClick={() => navigate("/coming-soon")}
+                    onClick={() => navigate("/blogs")}
                   >
                      Blogs
                   </Button>
