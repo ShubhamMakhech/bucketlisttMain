@@ -183,17 +183,19 @@ const BlogDetail = () => {
           )}
 
           {/* Content */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="prose prose-sm md:prose-base lg:prose-lg max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: blog.content }}
-            style={{
-              wordWrap: "break-word",
-              overflowWrap: "break-word",
-            }}
-          />
+          <div id="BlogDetailContent">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="prose prose-sm md:prose-base lg:prose-lg max-w-none dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: blog.content }}
+              style={{
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+              }}
+            />
+          </div>
 
           {/* Back Button */}
           <motion.div

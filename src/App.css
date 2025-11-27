@@ -2529,3 +2529,11 @@ video::-webkit-media-controls {
     display: none !important;
   }
 } */
+
+#BlogDetailContent br {
+  display: none;
+}
+
+#BlogDetailContent p {
+  margin-bottom: 8px;
+}
