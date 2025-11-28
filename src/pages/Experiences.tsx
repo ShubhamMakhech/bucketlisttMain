@@ -137,7 +137,7 @@ const Experiences = () => {
         "name": experience.title,
         "description": experience.description || `Experience ${experience.title} with bucketlistt`,
         "image": experience.image_url,
-        "url": `https://www.bucketlistt.com/experience/${experience.id}`,
+        "url": `https://www.bucketlistt.com/experience/${experience.url_name || experience.id}`,
         "offers": {
           "@type": "Offer",
           "price": experience.price,
@@ -218,6 +218,7 @@ const Experiences = () => {
                       duration={experience.duration || undefined}
                       groupSize={experience.group_size || undefined}
                       isSpecialOffer={experience.is_special_offer || false}
+                      urlName={experience.url_name}
                     />
                   ))}
                 </div>

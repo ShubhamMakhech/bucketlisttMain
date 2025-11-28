@@ -868,7 +868,8 @@ export const UserBookings = () => {
               <span
                 className="cursor-pointer hover:text-brand-primary"
                 onClick={() => {
-                  const experienceName = (booking.experiences?.title || "")
+                  // Use url_name if available, otherwise fall back to generating slug from title
+                  const experienceName = booking.experiences?.url_name || (booking.experiences?.title || "")
                     .toLowerCase()
                     .replace(/[^a-z0-9\s-]/g, "")
                     .replace(/\s+/g, "-")

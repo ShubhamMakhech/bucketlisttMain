@@ -427,6 +427,7 @@ const Index = () => {
                             isSpecialOffer={
                               experience.is_special_offer || false
                             }
+                            urlName={experience.url_name}
                           />
                         </div>
                       </SwiperSlide>

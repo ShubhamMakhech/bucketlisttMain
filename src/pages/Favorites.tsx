@@ -94,6 +94,7 @@ const Favorites = () => {
                 duration={favorite.experiences.duration || undefined}
                 groupSize={favorite.experiences.group_size || undefined}
                 isSpecialOffer={favorite.experiences.is_special_offer || false}
+                urlName={favorite.experiences.url_name}
               />
             ))}
           </div>

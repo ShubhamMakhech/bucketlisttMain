@@ -35,7 +35,7 @@ import { CouponValidationResult } from "@/hooks/useDiscountCoupon";
 import "../Styles/ExperienceDetail.css";
 import { Row, Col } from "antd";
 const ExperienceDetail = () => {
-  const { name } = useParams();
+  const { name } = useParams(); // This is the url_name from the URL
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -44,21 +44,6 @@ const ExperienceDetail = () => {
   const stateExperienceData = location.state?.experienceData;
   const fromPage = location.state?.fromPage;
 
-  // Get ID from state, fallback to ID from parsed localStorage if available
-  let id = stateExperienceData?.id;
-  if (!id) {
-    try {
-      const parsed = JSON.parse(
-        localStorage.getItem("bookingModalData") || "{}"
-      );
-
-      id = parsed?.selectedExperienceId;
-
-      // localStorage.removeItem("bookingModalData");
-    } catch (e) {
-      // Fail silently; id will remain undefined if parsing fails
-    }
-  }
   const { isVendor, loading: roleLoading, isAgent, role } = useUserRole();
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
@@ -69,32 +54,40 @@ const ExperienceDetail = () => {
     useState<CouponValidationResult | null>(null);
   const [showCouponInput, setShowCouponInput] = useState(false);
 
+  // Fetch experience by url_name from URL params
   const {
     data: experience,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["experience", id],
+    queryKey: ["experience", name],
     queryFn: async () => {
+      if (!name) throw new Error("URL name is required");
+
       const { data, error } = await supabase
         .from("experiences")
         .select("*")
-        .eq("id", id)
+        .eq("url_name", name)
         .single();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
-    // Use state data as initial data if available
-    initialData: stateExperienceData,
+    enabled: !!name,
+    // Use state data as initial data if available and url_name matches
+    initialData:
+      stateExperienceData?.url_name === name ? stateExperienceData : undefined,
     // Only fetch if we don't have state data or if the data is stale
-    staleTime: stateExperienceData ? 5 * 60 * 1000 : 0, // 5 minutes if we have state data
+    staleTime: stateExperienceData?.url_name === name ? 5 * 60 * 1000 : 0, // 5 minutes if we have state data
   });
+
+  // Get the experience ID after fetching (for subsequent queries)
+  const id = experience?.id;
 
   const { data: images } = useQuery({
     queryKey: ["experience-images", id],
     queryFn: async () => {
+      if (!id) return [];
       const { data, error } = await supabase
         .from("experience_images")
         .select("*")
@@ -497,9 +490,7 @@ const ExperienceDetail = () => {
             />
           </div>
           <br />
-          <h2 className="text-start CommonH2">
-            {experience.title}
-          </h2>
+          <h2 className="text-start CommonH2">{experience.title}</h2>
           {/* Details Section */}
           <div className="space-y-6 ">
             <div>

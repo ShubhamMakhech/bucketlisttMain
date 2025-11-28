@@ -173,6 +173,7 @@ const SearchResults = () => {
                       duration={experience.duration || undefined}
                       groupSize={experience.group_size || undefined}
                       isSpecialOffer={experience.is_special_offer || false}
+                      urlName={experience.url_name}
                     />
                   ))}
                 </div>

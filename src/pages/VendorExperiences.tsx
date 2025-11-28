@@ -247,7 +247,8 @@ const VendorExperiences = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  const experienceName = experience.title
+                                  // Use url_name if available, otherwise fall back to generating slug from title
+                                  const experienceName = experience.url_name || experience.title
                                     .toLowerCase()
                                     .replace(/[^a-z0-9\s-]/g, "")
                                     .replace(/\s+/g, "-")

@@ -111,7 +111,7 @@ export const generateStructuredData = {
     name: experience.title,
     description: experience.description,
     image: experience.image_url,
-    url: `https://www.bucketlistt.com/experience/${experience.id}`,
+    url: `https://www.bucketlistt.com/experience/${experience.url_name || experience.id}`,
     address: {
       "@type": "PostalAddress",
       addressLocality: experience.location,

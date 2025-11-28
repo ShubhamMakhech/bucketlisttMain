@@ -35,6 +35,7 @@ interface ExperienceCardProps {
   endPoint?: string;
   index?: number; // New prop for index number
   description?: string; // New prop for description
+  urlName?: string; // New prop for URL-friendly name
 }
 
 export function ExperienceCard({
@@ -56,6 +57,7 @@ export function ExperienceCard({
   endPoint,
   index,
   description,
+  urlName,
 }: ExperienceCardProps) {
   const navigate = useNavigate();
   const [isClicked, setIsClicked] = useState(false);
@@ -142,7 +144,8 @@ export function ExperienceCard({
 
     // Add a small delay for the animation to be visible before navigation
     setTimeout(() => {
-      const experienceName = title
+      // Use url_name if available, otherwise fall back to generating slug from title
+      const experienceName = urlName || title
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, "")
         .replace(/\s+/g, "-")
@@ -168,6 +171,7 @@ export function ExperienceCard({
             endPoint,
             description,
             isSpecialOffer,
+            url_name: urlName,
           },
           fromPage: "experience-card",
           timestamp: Date.now(),
