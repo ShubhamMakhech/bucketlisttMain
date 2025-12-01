@@ -47,7 +47,7 @@ export function Footer() {
         <div className="FooterMainSection">
           {/* Left Side: Navigation Links */}
           <div className="FooterLinksSection">
-            
+
 
             <div className="FooterLinksColumn">
               <h3 className="FooterColumnHeader">CITIES</h3>
@@ -156,7 +156,7 @@ export function Footer() {
                     className="FooterLink"
                     onClick={() => navigate("/blogs")}
                   >
-                     Blogs
+                    Blogs
                   </Button>
                 </li>
                 <li>
@@ -178,7 +178,7 @@ export function Footer() {
                   <Button
                     variant="link"
                     className="FooterLink"
-                    onClick={() => navigate("/coming-soon")}
+                    onClick={() => navigate("/partner")}
                   >
                     Experience providers
                   </Button>

@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Tag, CheckCircle, AlertCircle, Minus } from "lucide-react";
+import { Plus, X, Tag, CheckCircle, AlertCircle, Minus, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -152,8 +152,12 @@ export const BookingDialog = ({
   const [b2bPrice, setB2bPrice] = useState<number>(0);
   const [sellingPrice, setSellingPrice] = useState<number>(0);
   const [advancePayment, setAdvancePayment] = useState<number>(0);
+  const [isReferralCodeExpanded, setIsReferralCodeExpanded] = useState(false);
+  const [isCouponCodeExpanded, setIsCouponCodeExpanded] = useState(false);
   const form = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
+    mode: "onBlur",
+    reValidateMode: "onBlur",
     defaultValues: {
       participant: { name: "", email: "", phone_number: "" },
       participant_count: 1,
@@ -352,9 +356,8 @@ export const BookingDialog = ({
         const discountText =
           result.coupon?.type === "percentage"
             ? `${result.discount_calculation.savings_percentage.toFixed(1)}%`
-            : `${selectedActivity?.currency || experience.currency} ${
-                result.discount_calculation.discount_amount
-              }`;
+            : `${selectedActivity?.currency || experience.currency} ${result.discount_calculation.discount_amount
+            }`;
 
         setCouponValidation({
           isValid: true,
@@ -517,39 +520,39 @@ export const BookingDialog = ({
       const vendorWhatsappResponse = await SendWhatsappMessage(
         vendorWhatsappBody
       );
-       const adminWhatsappBody = {
-         version: "2.0",
-         country_code: "91",
-         wid: "16845",
-         type: "text",
-         data: [
-           {
-             mobile: "9265636871",
-             bodyValues: {
-               "1": data.participant.name,
-               "2": data?.participant_count?.toString() || "0",
-               "3": data.participant.phone_number,
-               "4": experience.title,
-               "5": timeSlot?.activities.name,
-               "6": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
-                 timeSlot?.start_time,
-                 "HH:mm"
-               ).format("hh:mm A")} - ${moment(
-                 timeSlot?.end_time,
-                 "HH:mm"
-               ).format("hh:mm A")}`,
-               "7": dueAmount || "0",
-               "8":
-                 data.referral_code ?? data.referral_code !== ""
-                   ? data.referral_code
-                   : "-",
-             },
-           },
-         ],
-       };
-        const adminWhatsappResponse = await SendWhatsappMessage(
-          adminWhatsappBody
-        );
+      const adminWhatsappBody = {
+        version: "2.0",
+        country_code: "91",
+        wid: "16845",
+        type: "text",
+        data: [
+          {
+            mobile: "9265636871",
+            bodyValues: {
+              "1": data.participant.name,
+              "2": data?.participant_count?.toString() || "0",
+              "3": data.participant.phone_number,
+              "4": experience.title,
+              "5": timeSlot?.activities.name,
+              "6": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
+                timeSlot?.start_time,
+                "HH:mm"
+              ).format("hh:mm A")} - ${moment(
+                timeSlot?.end_time,
+                "HH:mm"
+              ).format("hh:mm A")}`,
+              "7": dueAmount || "0",
+              "8":
+                data.referral_code ?? data.referral_code !== ""
+                  ? data.referral_code
+                  : "-",
+            },
+          },
+        ],
+      };
+      const adminWhatsappResponse = await SendWhatsappMessage(
+        adminWhatsappBody
+      );
       // console.log("vendorWhatsappResponse", vendorWhatsappResponse);
       // console.log(whatsappResponse);
 
@@ -619,8 +622,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? parseFloat((calculatedBookingAmount - advancePayment).toFixed(2))
           : partialPayment
-          ? dueAmount
-          : 0;
+            ? dueAmount
+            : 0;
 
       // console.log("Direct booking amount calculation:", {
       // selectedActivity,
@@ -737,8 +740,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? (calculatedBookingAmount - advancePayment).toFixed(2)
           : partialPayment
-          ? dueAmount.toString()
-          : "0";
+            ? dueAmount.toString()
+            : "0";
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
@@ -781,8 +784,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? parseFloat((calculatedBookingAmount - advancePayment).toFixed(2))
           : partialPayment
-          ? dueAmount
-          : 0;
+            ? dueAmount
+            : 0;
 
       // console.log("Payment booking amount calculation:", {
       // selectedActivity,
@@ -883,8 +886,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? (calculatedBookingAmount - advancePayment).toFixed(2)
           : partialPayment
-          ? finalDueAmount.toString()
-          : "0";
+            ? finalDueAmount.toString()
+            : "0";
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
@@ -1106,16 +1109,16 @@ export const BookingDialog = ({
   const upfrontAmount = isAgent
     ? 0 // Agents don't pay upfront
     : partialPayment
-    ? parseFloat((finalPrice * 0.1).toFixed(2))
-    : finalPrice;
+      ? parseFloat((finalPrice * 0.1).toFixed(2))
+      : finalPrice;
   const dueAmount =
     isAgent && advancePayment > 0
       ? parseFloat((finalPrice - advancePayment).toFixed(2)) // Due = booking amount - advance payment
       : isAgent
-      ? 0 // No due amount if no advance payment
-      : partialPayment
-      ? parseFloat((finalPrice - upfrontAmount).toFixed(2))
-      : 0;
+        ? 0 // No due amount if no advance payment
+        : partialPayment
+          ? parseFloat((finalPrice - upfrontAmount).toFixed(2))
+          : 0;
 
   // Get time slots for summary display
   const { data: timeSlots } = useQuery({
@@ -1152,20 +1155,21 @@ export const BookingDialog = ({
 
   const totalActivityPrice = selectedActivity
     ? parseFloat(
-        (getActivityPrice(selectedActivity) * participantCount).toFixed(2)
-      )
+      (getActivityPrice(selectedActivity) * participantCount).toFixed(2)
+    )
     : 0;
 
   return (
     <Modal
       open={isOpen}
       onCancel={handleClose}
-      title={`Book Experience: ${experience.title}`}
+      // title={`Book Experience: ${experience.title}`}
       width={1000}
       footer={null}
       destroyOnClose={true}
       maskClosable={false}
       className="BookingDialogModal"
+      bodyStyle={{ padding: "10px" }}
     >
       {currentStep === 1 ? (
         // Step 1: Activity Selection (Mobile) or Activity + Date + Time Selection (Desktop)
@@ -1266,128 +1270,119 @@ export const BookingDialog = ({
         // Step 2: Participants and Payment Details
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
               {/* Left Column: Activity Summary */}
+
               <div>
-                <h3 className="textSmall mb-4">Booking Summary</h3>
-                <Card className="p-2">
-                  {/* Experience Image */}
-                  {/* {experience.image_url && (
-                    <div className="mb-4">
-                      <img
-                        src={experience.image_url}
-                        alt={experience.title}
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                    </div>
-                  )} */}
 
-                  {/* Date Selection */}
-                  <div className="flex items-center gap-4 mb-4 DateSelectorContainer">
-                    <div
-                      className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-1 min-w-[90px]"
-                      style={{ border: "1px solid #e0e0e0" }}
-                    >
-                      <div className="text-red-500 text-sm font-medium">
-                        {selectedDate ? format(selectedDate, "MMM") : "---"}
-                      </div>
-                      <div className="text-2xl font-bold text-gray-900">
-                        {selectedDate ? format(selectedDate, "d") : "--"}
-                      </div>
-                      <div className="text-gray-500 text-xs">
-                        {selectedDate ? format(selectedDate, "EEE") : "---"}
-                      </div>
-                    </div>
-
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-                        <span className="font-medium text-gray-900">
-                          {selectedActivity?.name || "Select Activity"}
-                        </span>
-                        {/* <div className="ml-auto w-4 h-4 text-gray-400">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                          </svg>
-                        </div> */}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 text-gray-400">
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12,6 12,12 16,14"></polyline>
-                          </svg>
-                        </div>
-                        <span className="text-gray-600">
-                          {timeSlots?.find((slot) => slot.id === selectedSlotId)
-                            ? `${formatTime(
-                                timeSlots.find(
-                                  (slot) => slot.id === selectedSlotId
-                                )!.start_time
-                              )}-${formatTime(
-                                timeSlots.find(
-                                  (slot) => slot.id === selectedSlotId
-                                )!.end_time
-                              )}`
-                            : "Select Time Slot"}
-                        </span>
-                        {/* <div className="ml-auto w-4 h-4 text-gray-400">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                          </svg>
-                        </div> */}
-                      </div>
-                    </div>
+                <div className="BackgroundImageSet">
+                  <div className="ActivityImageShow">
+                    <img src={experience.image_url} alt={experience.title} className="w-full h-full object-cover rounded-lg" />
                   </div>
+                  <Card className="py-2 px-2" id="BookingSummaryCard">
+                    <h3 className="textSmall">Booking Summary</h3>
 
-                  <hr className="my-4" />
+                    {/* Date Selection */}
+                    <div className="DateSelectorContainer">
+                      <div
+                        className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-1.5 md:p-2"
+                        style={{ border: "1px solid #e0e0e0" }}
+                      >
+                        <div className="text-red-500 text-xs md:text-sm font-medium">
+                          {selectedDate ? format(selectedDate, "MMM") : "---"}
+                        </div>
+                        <div className="text-xl md:text-2xl font-bold text-gray-900">
+                          {selectedDate ? format(selectedDate, "d") : "--"}
+                        </div>
+                        <div className="text-gray-500 text-xs">
+                          {selectedDate ? format(selectedDate, "EEE") : "---"}
+                        </div>
+                      </div>
 
-                  {/* Pricing Breakdown */}
-                  <div className="flex justify-between items-center mb-0">
-                    <span className="text-gray-600">
-                      {participantCount}{" "}
-                      {participantCount === 1 ? "Person" : "People"}
-                    </span>
-                    <div className="text-right">
-                      {(selectedActivity as any)?.discounted_price &&
-                      (selectedActivity as any).discounted_price !==
-                        (selectedActivity as any).price ? (
-                        <div className="flex flex-col items-end">
-                          <span className="text-sm text-gray-400 line-through">
-                            {selectedActivity.currency === "INR"
-                              ? "₹"
-                              : selectedActivity?.currency}{" "}
-                            {selectedActivity.price * participantCount}
-                          </span>
-                          <span className="font-medium text-green-600">
-                            {selectedActivity.currency === "INR"
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 md:w-4 md:h-4 bg-gray-400 rounded-sm flex-shrink-0"></div>
+                            <span className="ExperienceTitleText text-sm md:text-base truncate">
+                              {experience.title.length > 25
+                                ? `${experience.title.substring(0, 25)}...`
+                                : experience.title}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 md:w-4 md:h-4 bg-gray-400 rounded-sm flex-shrink-0"></div>
+                            <span className="font-medium text-gray-900 text-sm md:text-base truncate">
+                              {selectedActivity?.name || "Select Activity"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 md:w-4 md:h-4 text-gray-400 flex-shrink-0">
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                className="w-full h-full"
+                              >
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12,6 12,12 16,14"></polyline>
+                              </svg>
+                            </div>
+                            <span className="text-gray-600 text-sm md:text-base">
+                              {timeSlots?.find((slot) => slot.id === selectedSlotId)
+                                ? `${formatTime(
+                                  timeSlots.find(
+                                    (slot) => slot.id === selectedSlotId
+                                  )!.start_time
+                                )}`
+                                : "Select Time Slot"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr className="my-2 md:my-3" />
+
+                    {/* Pricing Breakdown */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-sm md:text-base">
+                        {participantCount}{" "}
+                        {participantCount === 1 ? "Person" : "People"}
+                      </span>
+                      <div className="text-right">
+                        {(selectedActivity as any)?.discounted_price &&
+                          (selectedActivity as any).discounted_price !==
+                          (selectedActivity as any).price ? (
+                          <div className="flex items-end gap-2">
+                            <span className="text-xs md:text-sm text-gray-400 line-through">
+                              {selectedActivity.currency === "INR"
+                                ? "₹"
+                                : selectedActivity?.currency}{" "}
+                              {selectedActivity.price * participantCount}
+                            </span>
+                            <span className="font-semibold text-green-600 text-sm md:text-base">
+                              {selectedActivity.currency === "INR"
+                                ? "₹"
+                                : selectedActivity?.currency}{" "}
+                              {totalActivityPrice}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="font-semibold text-sm md:text-base">
+                            {selectedActivity?.currency === "INR"
                               ? "₹"
                               : selectedActivity?.currency}{" "}
                             {totalActivityPrice}
                           </span>
-                        </div>
-                      ) : (
-                        <span className="font-medium">
-                          {selectedActivity?.currency === "INR"
-                            ? "₹"
-                            : selectedActivity?.currency}{" "}
-                          {totalActivityPrice}
-                        </span>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* <hr className="my-4" /> */}
+                    {/* <hr className="my-4" /> */}
 
-                  {/* Total Payable */}
-                  {/* <div className="flex justify-between items-center">
+                    {/* Total Payable */}
+                    {/* <div className="flex justify-between items-center">
                     <div>
                       <div className="font-bold text-lg">Total payable</div>
                       <div className="text-sm text-gray-500 flex items-center gap-1">
@@ -1407,7 +1402,8 @@ export const BookingDialog = ({
                       </div>
                     </div>
                   </div> */}
-                </Card>
+                  </Card>
+                </div>
               </div>
 
               {/* Right Column: Participants and Details */}
@@ -1540,7 +1536,7 @@ export const BookingDialog = ({
 
                 {/* Participants Section */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Participants</h3>
+                  {/* <h3 className="text-lg font-semibold">Participants</h3> */}
 
                   {/* Participant Count Selector */}
                   <FormField
@@ -1552,100 +1548,123 @@ export const BookingDialog = ({
                       );
 
                       return (
-                        <FormItem>
-                          <FormLabel>Number of Participants</FormLabel>
-                          <div className="flex items-center gap-2">
-                            {/* Minus Button */}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              className="h-10 w-10 shrink-0"
-                              onClick={() => {
-                                if (field.value > 1) {
-                                  const newValue = field.value - 1;
-                                  field.onChange(newValue);
-                                  setInputValue(newValue.toString());
-                                }
-                              }}
-                              disabled={field.value <= 1}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
+                        <>
+                          <FormItem id="participant-count-form-item">
+                            <div className="flex items-center gap-2 justify-between">
+                              <Card style={{ width: "100%", padding: "3px 10px" }} id="ParticipantCountCard">
+                                <div>
+                                  <FormLabel>Number of Participants</FormLabel>
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    {/* Minus Button */}
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-10 w-10 shrink-0"
+                                      onClick={() => {
+                                        if (field.value > 1) {
+                                          const newValue = field.value - 1;
+                                          field.onChange(newValue);
+                                          setInputValue(newValue.toString());
+                                        }
+                                      }}
+                                      disabled={field.value <= 1}
+                                    >
+                                      <Minus className="h-4 w-4" />
+                                    </Button>
 
-                            {/* Input Field */}
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={inputValue}
-                                onChange={(e) => {
-                                  setInputValue(e.target.value);
-                                }}
-                                onBlur={(e) => {
-                                  const value = parseInt(e.target.value);
-                                  if (isNaN(value) || value < 1) {
-                                    field.onChange(1);
-                                    setInputValue("1");
-                                  } else if (value > 50) {
-                                    field.onChange(50);
-                                    setInputValue("50");
-                                  } else {
-                                    field.onChange(value);
-                                    setInputValue(value.toString());
-                                  }
-                                }}
-                                className="text-center font-medium"
-                                placeholder="1"
-                              />
-                            </FormControl>
+                                    {/* Input Field */}
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        max="10"
+                                        value={inputValue}
+                                        onChange={(e) => {
+                                          setInputValue(e.target.value);
+                                        }}
+                                        onBlur={(e) => {
+                                          const value = parseInt(e.target.value);
+                                          if (isNaN(value) || value < 1) {
+                                            field.onChange(1);
+                                            setInputValue("1");
+                                          } else if (value > 50) {
+                                            field.onChange(50);
+                                            setInputValue("50");
+                                          } else {
+                                            field.onChange(value);
+                                            setInputValue(value.toString());
+                                          }
+                                        }}
+                                        className="text-center font-medium"
+                                        placeholder="1"
+                                      />
+                                    </FormControl>
 
-                            {/* Plus Button */}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              className="h-10 w-10 shrink-0"
-                              onClick={() => {
-                                if (field.value < 50) {
-                                  const newValue = field.value + 1;
-                                  field.onChange(newValue);
-                                  setInputValue(newValue.toString());
-                                }
-                              }}
-                              disabled={field.value >= 50}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="text-sm text-muted-foreground text-center">
+                                    {/* Plus Button */}
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-10 w-10 shrink-0"
+                                      onClick={() => {
+                                        if (field.value < 50) {
+                                          const newValue = field.value + 1;
+                                          field.onChange(newValue);
+                                          setInputValue(newValue.toString());
+                                        }
+                                      }}
+                                      disabled={field.value >= 50}
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </Card>
+                            </div>
+                            {/* <div className="text-sm text-muted-foreground text-center">
                             {field.value}{" "}
                             {field.value === 1 ? "Person" : "People"}
-                          </div>
-                          <FormMessage />
-                        </FormItem>
+                          </div> */}
+                          </FormItem>
+                        </>
                       );
                     }}
                   />
 
                   {/* Single Participant Form */}
-                  <Card>
-                    <CardContent className="p-4">
-                      <h4 className="font-medium mb-4">
+                  <Card id="primary-contact-details-card">
+                    <CardContent className="px-3 py-3">
+                      <h4 className="font-medium mb-1">
                         Primary Contact Details
                       </h4>
-                      <div className="grid grid-cols-1 gap-4">
+                      <div className="grid grid-cols-1 gap-2">
                         <FormField
                           control={form.control}
                           name="participant.name"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Name</FormLabel>
+                              {/* <FormLabel>Name</FormLabel> */}
                               <FormControl>
-                                <Input placeholder="Full name" {...field} />
+                                <Input
+                                  placeholder="Full name *"
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.value);
+                                    // Trigger validation if field becomes empty
+                                    if (!e.target.value.trim()) {
+                                      form.trigger("participant.name");
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    field.onBlur();
+                                    // Trigger validation on blur
+                                    form.trigger("participant.name");
+                                  }}
+                                />
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -1655,11 +1674,11 @@ export const BookingDialog = ({
                           name="participant.email"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Email</FormLabel>
+                              {/* <FormLabel>Email</FormLabel> */}
                               <FormControl>
                                 <Input
                                   type="email"
-                                  placeholder="email@example.com"
+                                  placeholder="Email *"
                                   {...field}
                                   onChange={(e) => {
                                     const value = e.target.value.trim();
@@ -1672,7 +1691,6 @@ export const BookingDialog = ({
                                   }}
                                 />
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -1682,10 +1700,10 @@ export const BookingDialog = ({
                           name="participant.phone_number"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Phone</FormLabel>
+                              {/* <FormLabel>Phone</FormLabel> */}
                               <FormControl>
                                 <Input
-                                  placeholder="Phone number (10 digits)"
+                                  placeholder="Phone number *"
                                   {...field}
                                   onChange={(e) => {
                                     // Remove all non-numeric characters and spaces
@@ -1703,133 +1721,178 @@ export const BookingDialog = ({
                                   maxLength={10}
                                 />
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Note for Guide */}
-                <FormField
-                  control={form.control}
-                  name="note_for_guide"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Note for Tour Guide (Optional)</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Any special requests or information for your guide..."
-                          {...field}
+                        <FormField
+                          control={form.control}
+                          name="note_for_guide"
+                          render={({ field }) => (
+                            <FormItem id="note-for-guide-textarea">
+                              {/* <FormLabel>Note for Tour Guide (Optional)</FormLabel> */}
+                              <FormControl >
+                                <Textarea style={{ minHeight: "20px" }} 
+                                  placeholder="Any special requests/information for your guide"
+                                  {...field}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="referral_code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Referral Code (Optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Referral Code"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(e.target.value.toUpperCase())
-                          }
-                          value={field.value?.toUpperCase() || ""}
+                        <FormField
+                          control={form.control}
+                          name="referral_code"
+                          render={({ field }) => (
+                            <FormItem>
+                              {!isReferralCodeExpanded ? (
+                                <div
+                                  onClick={() => setIsReferralCodeExpanded(true)}
+                                  className="cursor-pointer"
+                                >
+                                  <span className="text-sm GrayColor">
+                                    Referral Code (Optional)
+                                  </span>
+                                  <ChevronDown className="h-4 w-4 inline-block ml-2" />
+                                </div>
+                              ) : (
+                                <>
+                                  <div
+                                    onClick={() => {
+                                      setIsReferralCodeExpanded(false);
+                                      if (!field.value) {
+                                        field.onChange("");
+                                      }
+                                    }}
+                                    className="cursor-pointer mb-2"
+                                  >
+                                    <span className="text-sm GrayColor">
+                                      Referral Code (Optional)
+                                    </span>
+                                    <ChevronUp className="h-4 w-4 inline-block ml-2" />
+                                  </div>
+                                  <FormControl>
+                                    <Input
+                                      id="referral-code-input"
+                                      placeholder="Referral Code"
+                                      {...field}
+                                      onChange={(e) =>
+                                        field.onChange(e.target.value.toUpperCase())
+                                      }
+                                      value={field.value?.toUpperCase() || ""}
+                                      autoFocus
+                                    />
+                                  </FormControl>
+                                </>
+                              )}
+                            </FormItem>
+                          )}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        {!isAgent && (
+                          <div className="space-y-3">
+                            <FormField
+                              control={form.control}
+                              name="coupon_code"
+                              render={({ field }) => (
+                                <FormItem>
+                                  {!isCouponCodeExpanded ? (
+                                    <div
+                                      onClick={() => setIsCouponCodeExpanded(true)}
+                                      className="cursor-pointer"
+                                    >
+                                      <span className="text-sm GrayColor">
+                                        Coupon Code (Optional)
+                                      </span>
+                                      <ChevronDown className="h-4 w-4 inline-block ml-2" />
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div
+                                        onClick={() => {
+                                          setIsCouponCodeExpanded(false);
+                                          if (!couponCode) {
+                                            handleCouponCodeChange("");
+                                          }
+                                        }}
+                                        className="cursor-pointer mb-2"
+                                      >
+                                        <span className="text-sm GrayColor">
+                                          Coupon Code (Optional)
+                                        </span>
+                                        <ChevronUp className="h-4 w-4 inline-block ml-2" />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <FormControl>
+                                          <Input
+                                            placeholder="Enter coupon code"
+                                            value={couponCode}
+                                            onChange={(e) =>
+                                              handleCouponCodeChange(e.target.value)
+                                            }
+                                            autoFocus
+                                          />
+                                        </FormControl>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          onClick={handleCouponValidation}
+                                          disabled={!couponCode.trim()}
+                                          className="flex items-center gap-2"
+                                        >
+                                          <Tag className="h-4 w-4" />
+                                          Apply
+                                        </Button>
+                                      </div>
+                                    </>
+                                  )}
+                                </FormItem>
+                              )}
+                            />
 
-                {/* Coupon Code Section - Hidden for agents */}
-                {!isAgent && (
-                  <div className="space-y-3">
-                    <FormField
-                      control={form.control}
-                      name="coupon_code"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Coupon Code (Optional)</FormLabel>
-                          <div className="flex gap-2">
-                            <FormControl>
-                              <Input
-                                placeholder="Enter coupon code"
-                                value={couponCode}
-                                onChange={(e) =>
-                                  handleCouponCodeChange(e.target.value)
-                                }
-                              />
-                            </FormControl>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={handleCouponValidation}
-                              disabled={!couponCode.trim()}
-                              className="flex items-center gap-2"
-                            >
-                              <Tag className="h-4 w-4" />
-                              Apply
-                            </Button>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                            {/* Coupon Validation Status - Only show error messages */}
+                            {couponValidation && !couponValidation.isValid && (
+                              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+                                <AlertCircle className="h-4 w-4 text-red-600" />
+                                <span className="text-sm text-red-800">
+                                  {couponValidation.message}
+                                </span>
+                              </div>
+                            )}
 
-                    {/* Coupon Validation Status - Only show error messages */}
-                    {couponValidation && !couponValidation.isValid && (
-                      <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                        <span className="text-sm text-red-800">
-                          {couponValidation.message}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Applied Coupon Display */}
-                    {((couponValidation?.isValid && couponValidation.coupon) ||
-                      appliedCoupon) && (
-                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Tag className="h-4 w-4 text-green-600" />
-                            <span className="font-medium text-green-800">
-                              Coupon Applied:{" "}
-                              {couponValidation?.isValid &&
-                              couponValidation.coupon
-                                ? couponValidation.coupon.coupon.coupon_code
-                                : appliedCoupon.coupon.coupon_code}
-                            </span>
-                          </div>
-                          <Badge
-                            variant="secondary"
-                            className="bg-green-100 text-green-800"
-                          >
-                            {(() => {
-                              const activeCoupon =
-                                couponValidation?.isValid &&
-                                couponValidation.coupon
-                                  ? couponValidation.coupon
-                                  : appliedCoupon;
-                              return activeCoupon.coupon.type === "percentage"
-                                ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
-                                    1
-                                  )}%`
-                                : `Save ${experience.currency} ${activeCoupon.discount_calculation.discount_amount}`;
-                            })()}
-                          </Badge>
-                        </div>
-                        {/* <div className="mt-2 text-sm text-green-700"> */}
-                        {/* {(() => {
+                            {/* Applied Coupon Display */}
+                            {((couponValidation?.isValid && couponValidation.coupon) ||
+                              appliedCoupon) && (
+                                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Tag className="h-4 w-4 text-green-600" />
+                                      <span className="font-medium text-green-800">
+                                        Coupon Applied:{" "}
+                                        {couponValidation?.isValid &&
+                                          couponValidation.coupon
+                                          ? couponValidation.coupon.coupon.coupon_code
+                                          : appliedCoupon.coupon.coupon_code}
+                                      </span>
+                                    </div>
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-green-100 text-green-800"
+                                    >
+                                      {(() => {
+                                        const activeCoupon =
+                                          couponValidation?.isValid &&
+                                            couponValidation.coupon
+                                            ? couponValidation.coupon
+                                            : appliedCoupon;
+                                        return activeCoupon.coupon.type === "percentage"
+                                          ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
+                                            1
+                                          )}%`
+                                          : `Save ${experience.currency} ${activeCoupon.discount_calculation.discount_amount}`;
+                                      })()}
+                                    </Badge>
+                                  </div>
+                                  {/* <div className="mt-2 text-sm text-green-700"> */}
+                                  {/* {(() => {
                           const activeCoupon =
                             couponValidation?.isValid && couponValidation.coupon
                               ? couponValidation.coupon
@@ -1868,224 +1931,116 @@ export const BookingDialog = ({
                             </>
                           );
                         })()} */}
-                        {/* </div> */}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Terms and Conditions */}
-                <FormField
-                  control={form.control}
-                  name="terms_accepted"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="cursor-pointer">
-                          I accept the{" "}
-                          <a
-                            href="/terms"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-0 h-auto text-orange-500 hover:text-orange-600"
-                          >
-                            Terms & Conditions
-                          </a>
-                        </FormLabel>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                {/* Price Summary */}
-                {!isAgent && (
-                  <Card className="bg-muted">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="text-lg font-semibold">
-                            {partialPayment
-                              ? "Payment Breakdown"
-                              : "Total Cost"}
-                          </span>
-                          {selectedActivity && (
-                            <div className="text-sm text-muted-foreground">
-                              {selectedActivity.name}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          {(() => {
-                            const activeCoupon =
-                              couponValidation?.isValid &&
-                              couponValidation.coupon
-                                ? couponValidation.coupon
-                                : appliedCoupon;
-
-                            if (partialPayment) {
-                              return (
-                                <div>
-                                  <div className="text-lg text-muted-foreground line-through">
-                                    {selectedActivity?.currency}{" "}
-                                    {selectedActivity.price * participantCount}
-                                  </div>
-                                  <div className="text-2xl font-bold text-green-600">
-                                    {selectedActivity?.currency} {finalPrice}
-                                  </div>
-                                  <div className="space-y-1 mt-2">
-                                    <div className="text-lg font-semibold text-blue-600">
-                                      Pay Now: {selectedActivity?.currency}{" "}
-                                      {upfrontAmount}
-                                    </div>
-                                    <div className="text-sm text-orange-600">
-                                      Due On-Site: {selectedActivity?.currency}{" "}
-                                      {dueAmount}
-                                    </div>
-                                  </div>
-                                  {activeCoupon && (
-                                    <div className="text-sm text-green-600 mt-1">
-                                      {activeCoupon.coupon.type === "percentage"
-                                        ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
-                                            1
-                                          )}%`
-                                        : `Save ${selectedActivity?.currency} ${
-                                            totalActivityPrice - finalPrice
-                                          }`}
-                                    </div>
-                                  )}
+                                  {/* </div> */}
                                 </div>
-                              );
-                            } else if (activeCoupon) {
-                              return (
-                                <div>
-                                  <div className="text-lg text-muted-foreground line-through">
-                                    {selectedActivity?.currency}{" "}
-                                    {selectedActivity.price * participantCount}
-                                  </div>
-                                  <div className="text-2xl font-bold text-green-600">
-                                    {selectedActivity?.currency} {finalPrice}
-                                  </div>
-                                  <div className="text-sm text-green-600">
-                                    {activeCoupon.coupon.type === "percentage"
-                                      ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
-                                          1
-                                        )}%`
-                                      : `Save ${selectedActivity?.currency} ${
-                                          totalActivityPrice - finalPrice
-                                        }`}
-                                  </div>
-                                </div>
-                              );
-                            } else {
-                              // Show discounted price if available
-                              const isDiscounted =
-                                (selectedActivity as any)?.discounted_price &&
-                                (selectedActivity as any).discounted_price !==
-                                  (selectedActivity as any).price;
-                              if (isDiscounted) {
-                                return (
-                                  <div>
-                                    <div className="text-lg text-muted-foreground line-through">
-                                      {selectedActivity?.currency}{" "}
-                                      {selectedActivity.price *
-                                        participantCount}
-                                    </div>
-                                    <div className="text-2xl font-bold text-green-600">
-                                      {selectedActivity?.currency}{" "}
-                                      {totalActivityPrice}
-                                    </div>
-                                  </div>
-                                );
-                              } else {
-                                return (
-                                  <div className="text-2xl font-bold text-orange-500">
-                                    {selectedActivity?.currency}{" "}
-                                    {totalActivityPrice}
-                                  </div>
-                                );
-                              }
-                            }
-                          })()}
-                          <div className="text-sm text-muted-foreground">
-                            {participantCount} participant
-                            {participantCount > 1 ? "s" : ""} ×{" "}
-                            {selectedActivity?.currency}{" "}
-                            {getActivityPrice(selectedActivity)}
+                              )}
                           </div>
-                        </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
-                )}
+                  {!isAgent && (
+                    <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20" id="pay-10-now-card">
+                      <CardContent className="p-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-blue-800 dark:text-blue-200">
+                              Pay 10% Now, Rest On-Site
+                            </h4>
+                            <p className="text-sm text-blue-600 dark:text-blue-300">
+                              Book your adventure with 10% — pay the rest when you
+                              arrive at spot!
+                            </p>
+                          </div>
+                          <Switch
+                            checked={partialPayment}
+                            onCheckedChange={setPartialPayment}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  <FormField
+                  
+                    control={form.control}
+                    name="terms_accepted"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0" id="terms-and-conditions-label">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none" >
+                          <FormLabel className="cursor-pointer">
+                            I accept the{" "}
+                            <a
+                              href="/terms"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-0 h-auto text-orange-500 hover:text-orange-600"
+                            >
+                              Terms & Conditions
+                            </a>
+                          </FormLabel>
+                        </div>
+                      </FormItem>
+
+                    )}
+                  />
+                 
+
+                  {/* Step 2 Footer */}
+                  <div className="flex gap-3 pt-0 mt-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handlePrevStep}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={
+                        isSubmitting ||
+                        !selectedDate ||
+                        !selectedSlotId ||
+                        (isAgent && (!b2bPrice || !sellingPrice)) ||
+                        (isAgent && advancePayment > 0 && advancePayment > finalPrice)
+                      }
+                      className="flex-1 bg-orange-500 hover:bg-orange-600"
+                    >
+                      {isSubmitting
+                        ? "Processing..."
+                        : isAgent
+                          ? advancePayment > 0
+                            ? `Confirm Booking (Due: ${selectedActivity?.currency || experience.currency
+                            } ${dueAmount % 1 === 0 ? dueAmount : dueAmount.toFixed(2)})`
+                            : "Confirm Booking"
+                          : partialPayment
+                            ? `Pay ${selectedActivity?.currency || experience.currency} ${upfrontAmount % 1 === 0 ? upfrontAmount : upfrontAmount.toFixed(2)} & Confirm Booking`
+                            : `Pay ${selectedActivity?.currency || experience.currency} ${finalPrice % 1 === 0 ? finalPrice : finalPrice.toFixed(2)} & Confirm Booking`}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Note for Guide */}
+
+
+
+                {/* Coupon Code Section - Hidden for agents */}
+
+
+                {/* Terms and Conditions */}
+
+
               </div>
             </div>
 
             {/* Partial Payment Toggle - Hidden for agents */}
-            {!isAgent && (
-              <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-blue-800 dark:text-blue-200">
-                        Pay 10% Now, Rest On-Site
-                      </h4>
-                      <p className="text-sm text-blue-600 dark:text-blue-300">
-                        Book your adventure with 10% — pay the rest when you
-                        arrive at spot!
-                      </p>
-                    </div>
-                    <Switch
-                      checked={partialPayment}
-                      onCheckedChange={setPartialPayment}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
-            {/* Step 2 Footer */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handlePrevStep}
-                className="flex-1"
-              >
-                Back
-              </Button>
-              <Button
-                type="submit"
-                disabled={
-                  isSubmitting ||
-                  !selectedDate ||
-                  !selectedSlotId ||
-                  (isAgent && (!b2bPrice || !sellingPrice)) ||
-                  (isAgent && advancePayment > 0 && advancePayment > finalPrice)
-                }
-                className="flex-1 bg-orange-500 hover:bg-orange-600"
-              >
-                {isSubmitting
-                  ? "Processing..."
-                  : isAgent
-                  ? advancePayment > 0
-                    ? `Confirm Booking (Due: ${
-                        selectedActivity?.currency || experience.currency
-                      } ${dueAmount.toFixed(2)})`
-                    : "Confirm Booking"
-                  : partialPayment
-                  ? `Pay ${
-                      selectedActivity?.currency || experience.currency
-                    } ${upfrontAmount} & Confirm Booking`
-                  : "Pay & Confirm Booking"}
-              </Button>
-            </div>
           </form>
         </Form>
       )}

@@ -125,7 +125,11 @@
 
 
 @media (max-width:900px) {
-
+    #MobileTextFontSize {
+        text-align: start;
+        /* text-transform: uppercase; */
+    }
+    
     #HeroVideoContainer {
         height: 450px !important;
     }

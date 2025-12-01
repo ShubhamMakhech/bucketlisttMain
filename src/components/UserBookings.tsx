@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from "@/hooks/useUserRole";
+import { Filter, X, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface BookingWithDueAmount {
   due_amount?: number;
@@ -24,9 +26,7 @@ export const UserBookings = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [sortBy, setSortBy] = React.useState<
-    "booking_date" | "title" | "status"
-  >("booking_date");
+  const [sortBy, setSortBy] = React.useState<number | "booking_date" | "title" | "status">(7); // Default to Date column (index 7)
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [showTodayOnly, setShowTodayOnly] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState<string>("");
@@ -53,19 +53,40 @@ export const UserBookings = () => {
   );
   const [showVendorFilter, setShowVendorFilter] = React.useState(false);
 
+  // Excel-like column filters state
+  const [columnFilters, setColumnFilters] = React.useState<Record<number, string[]>>({});
+  const [openFilterDropdown, setOpenFilterDropdown] = React.useState<number | null>(null);
+  const [filterDropdownPosition, setFilterDropdownPosition] = React.useState<{ top: number; left: number } | null>(null);
+  const [filterSearchQueries, setFilterSearchQueries] = React.useState<Record<number, string>>({});
+  const filterDropdownRefs = React.useRef<Record<number, HTMLDivElement | null>>({});
+  const headerRefs = React.useRef<Record<number, HTMLTableCellElement | null>>({});
+
   // Column width state for resizable columns
   const columnCount = 20; // Total number of columns
   const [columnWidths, setColumnWidths] = React.useState<number[]>(
-    Array(columnCount).fill(150) // Default width 150px for each column
+    Array(columnCount).fill(100) // Default width 100px for each column (compact)
   );
 
-  // Column visibility state - hide certain columns for agents
+  // Column visibility state - default visible columns only
+  // Default visible: Activity (1), Contact Name (3), Contact Number (2), 
+  // No. Of Participants (8), Payment to be collected by vendor (17), 
+  // Timeslot (6), Amount to be collected from vendor (19)
   // Index 10: "Official Price/ Original Price" (expectedFullPrice)
   // Index 12: "Commission as per vendor" (commissionTotal/commissionPerVendor)
   // Index 13: "Website Price" (discountedPrice)
   // Index 14: "Discount Coupon"
   const initialVisibility = React.useMemo(() => {
-    const visibility = Array(columnCount).fill(true);
+    const visibility = Array(columnCount).fill(false); // Start with all hidden
+    // Set default visible columns
+    visibility[1] = true;  // Activity
+    visibility[2] = true;  // Contact Number
+    visibility[3] = true;  // Contact Name
+    visibility[6] = true;  // Timeslot
+    visibility[8] = true;  // No. Of Participants
+    visibility[17] = true; // Payment to be collected by vendor
+    visibility[19] = true; // Amount to be collected from vendor/ '- to be paid'
+
+    // Ensure agent restrictions are applied
     if (isAgent) {
       visibility[10] = false; // Official Price/ Original Price
       visibility[12] = false; // Commission as per vendor
@@ -80,16 +101,17 @@ export const UserBookings = () => {
 
   // Update column visibility when isAgent changes
   React.useEffect(() => {
-    if (isAgent) {
-      setColumnVisibility((prev) => {
-        const newVisibility = [...prev];
+    setColumnVisibility((prev) => {
+      const newVisibility = [...prev];
+      // Ensure agent restrictions are applied
+      if (isAgent) {
         newVisibility[10] = false; // Official Price/ Original Price
         newVisibility[12] = false; // Commission as per vendor
         newVisibility[13] = false; // Website Price
         newVisibility[14] = false; // Discount Coupon
-        return newVisibility;
-      });
-    }
+      }
+      return newVisibility;
+    });
   }, [isAgent]);
 
   const [showColumnSelector, setShowColumnSelector] = React.useState(false);
@@ -220,15 +242,14 @@ export const UserBookings = () => {
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-        profile?.phone_number ||
-        booking?.booking_participants?.[0]?.phone_number ? (
+          profile?.phone_number ||
+          booking?.booking_participants?.[0]?.phone_number ? (
           <a
-            href={`tel:${
-              booking.contact_person_number ||
+            href={`tel:${booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-            }`}
-            className="text-blue-600 hover:underline"
+              }`}
+            className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
               profile?.phone_number ||
@@ -251,8 +272,8 @@ export const UserBookings = () => {
       () =>
         timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-              timeslot.end_time
-            )}`
+            timeslot.end_time
+          )}`
           : "N/A",
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
@@ -563,6 +584,99 @@ export const UserBookings = () => {
       });
     }
 
+    // Apply Excel-like column filters
+    Object.keys(columnFilters).forEach((colIndexStr) => {
+      const colIndex = parseInt(colIndexStr);
+      const selectedValues = columnFilters[colIndex];
+      if (selectedValues && selectedValues.length > 0) {
+        filtered = filtered.filter((booking) => {
+          const profile = profileMap[booking.user_id];
+          const activity = booking.time_slots?.activities as any;
+          const timeslot = booking.time_slots;
+          const experience = booking.experiences;
+          const currency = activity?.currency || booking?.experiences?.currency || "INR";
+
+          // Get cell value for this column
+          const getCellValue = (colIdx: number): string => {
+            switch (colIdx) {
+              case 0: // Title
+                return experience?.title || "";
+              case 1: // Activity
+                return activity?.name || "";
+              case 2: // Contact Number
+                return booking.contact_person_number || profile?.phone_number || booking?.booking_participants?.[0]?.phone_number || "";
+              case 3: // Contact Name
+                return booking.contact_person_name || (profile ? `${profile.first_name} ${profile.last_name}`.trim() : "") || booking?.booking_participants?.[0]?.name || "";
+              case 4: // Email
+                return booking.contact_person_email || profile?.email || booking?.booking_participants?.[0]?.email || "";
+              case 5: // Referred by
+                return (booking as any)?.referral_code || (booking as any)?.referred_by || "";
+              case 6: // Timeslot
+                return timeslot?.start_time && timeslot?.end_time
+                  ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(timeslot.end_time)}`
+                  : "";
+              case 7: // Date
+                return format(new Date(booking.booking_date), "MMM d, yyyy");
+              case 8: // No. Of Participants
+                return String(booking?.total_participants || "");
+              case 9: // Notes for guides
+                return booking.note_for_guide || "";
+              case 10: // Official Price/ Original Price
+                const originalPrice = activity?.price || experience?.price || 0;
+                return formatCurrency(currency, originalPrice * booking.total_participants);
+              case 11: // B2B Price
+                const b2bPrice = booking.b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(currency, b2bPrice * booking.total_participants);
+              case 12: // Commission as per vendor
+                const originalPrice2 = activity?.price || experience?.price || 0;
+                const b2bPrice2 = booking.b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(currency, (originalPrice2 - b2bPrice2) * booking.total_participants);
+              case 13: // Website Price
+                const discountedPrice = activity?.discounted_price || 0;
+                return formatCurrency(currency, discountedPrice * booking.total_participants);
+              case 14: // Discount Coupon
+                const originalPrice3 = activity?.price || experience?.price || 0;
+                const officialPrice = originalPrice3 * booking.total_participants;
+                const bookingAmount = (booking as any)?.booking_amount || 0;
+                const discountCoupon = officialPrice - bookingAmount > 0 ? officialPrice - bookingAmount : 0;
+                return formatCurrency(currency, discountCoupon);
+              case 15: // Ticket Price (customer cost)
+                return formatCurrency(currency, (booking as any)?.booking_amount || 0);
+              case 16: // Advance paid to bucketlistt (10%)
+                const bookingAmount2 = (booking as any)?.booking_amount || 0;
+                const dueAmount = booking?.due_amount || 0;
+                return formatCurrency(currency, bookingAmount2 - dueAmount);
+              case 17: // Payment to be collected by vendor
+                const bookingAmount3 = (booking as any)?.booking_amount || 0;
+                const dueAmount2 = booking?.due_amount || 0;
+                return formatCurrency(currency, bookingAmount3 - (bookingAmount3 - dueAmount2));
+              case 18: // Actual Commission to bucketlistt (Net profit)
+                const bookingAmount4 = (booking as any)?.booking_amount || 0;
+                const b2bPrice3 = booking.b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(currency, bookingAmount4 - (b2bPrice3 * booking.total_participants));
+              case 19: // Amount to be collected from vendor/ '- to be paid'
+                const bookingAmount5 = (booking as any)?.booking_amount || 0;
+                const b2bPrice4 = booking.b2bPrice || activity?.b2bPrice || 0;
+                const dueAmount3 = booking?.due_amount || 0;
+                return formatCurrency(currency, bookingAmount5 - (b2bPrice4 * booking.total_participants) - (bookingAmount5 - dueAmount3));
+              case 20: // Advance + discount (vendor needs this)
+                const bookingAmount6 = (booking as any)?.booking_amount || 0;
+                const dueAmount4 = booking?.due_amount || 0;
+                const originalPrice4 = activity?.price || experience?.price || 0;
+                const officialPrice2 = originalPrice4 * booking.total_participants;
+                const discountCoupon2 = officialPrice2 - bookingAmount6 > 0 ? officialPrice2 - bookingAmount6 : 0;
+                return formatCurrency(currency, (bookingAmount6 - dueAmount4) + discountCoupon2);
+              default:
+                return "";
+            }
+          };
+
+          const cellValue = getCellValue(colIndex);
+          return selectedValues.includes(cellValue);
+        });
+      }
+    });
+
     // Apply search filter
     if (globalFilter) {
       filtered = filtered.filter((booking) => {
@@ -586,29 +700,139 @@ export const UserBookings = () => {
 
     // Apply sorting
     filtered.sort((a, b) => {
-      let aValue, bValue;
+      let aValue: any, bValue: any;
 
-      switch (sortBy) {
-        case "booking_date":
-          aValue = new Date(a.booking_date).getTime();
-          bValue = new Date(b.booking_date).getTime();
-          break;
-        case "title":
-          aValue = a.experiences?.title || "";
-          bValue = b.experiences?.title || "";
-          break;
-        case "status":
-          aValue = a.status || "";
-          bValue = b.status || "";
-          break;
-        default:
-          return 0;
+      // Handle column index sorting
+      if (typeof sortBy === "number") {
+        const profileA = profileMap[a.user_id];
+        const profileB = profileMap[b.user_id];
+        const activityA = a.time_slots?.activities as any;
+        const activityB = b.time_slots?.activities as any;
+        const timeslotA = a.time_slots;
+        const timeslotB = b.time_slots;
+        const experienceA = a.experiences;
+        const experienceB = b.experiences;
+        const currency = activityA?.currency || a.experiences?.currency || "INR";
+
+        // Calculate values for all columns
+        const getCellValue = (booking: any, profile: any, activity: any, timeslot: any, experience: any, colIndex: number) => {
+          switch (colIndex) {
+            case 0: // Title
+              return experience?.title || "";
+            case 1: // Activity
+              return activity?.name || "";
+            case 2: // Contact Number
+              return booking.contact_person_number || profile?.phone_number || booking?.booking_participants?.[0]?.phone_number || "";
+            case 3: // Contact Name
+              return booking.contact_person_name || (profile ? `${profile.first_name} ${profile.last_name}`.trim() : "") || booking?.booking_participants?.[0]?.name || "";
+            case 4: // Email
+              return booking.contact_person_email || profile?.email || booking?.booking_participants?.[0]?.email || "";
+            case 5: // Referred by
+              return (booking as any)?.referral_code || (booking as any)?.referred_by || "";
+            case 6: // Timeslot
+              return timeslot?.start_time && timeslot?.end_time
+                ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(timeslot.end_time)}`
+                : "";
+            case 7: // Date
+              return new Date(booking.booking_date).getTime();
+            case 8: // No. Of Participants
+              return booking?.total_participants || 0;
+            case 9: // Notes for guides
+              return booking.note_for_guide || "";
+            case 10: // Official Price/ Original Price
+              const originalPriceA = activity?.price || experience?.price || 0;
+              return originalPriceA * booking.total_participants;
+            case 11: // B2B Price
+              const b2bPriceA = booking.b2bPrice || activity?.b2bPrice || 0;
+              return b2bPriceA * booking.total_participants;
+            case 12: // Commission as per vendor
+              const originalPriceA2 = activity?.price || experience?.price || 0;
+              const b2bPriceA2 = booking.b2bPrice || activity?.b2bPrice || 0;
+              return (originalPriceA2 - b2bPriceA2) * booking.total_participants;
+            case 13: // Website Price
+              const discountedPriceA = activity?.discounted_price || 0;
+              return discountedPriceA * booking.total_participants;
+            case 14: // Discount Coupon
+              const originalPriceA3 = activity?.price || experience?.price || 0;
+              const officialPriceA = originalPriceA3 * booking.total_participants;
+              const bookingAmountA = (booking as any)?.booking_amount || 0;
+              return officialPriceA - bookingAmountA > 0 ? officialPriceA - bookingAmountA : 0;
+            case 15: // Ticket Price (customer cost)
+              return (booking as any)?.booking_amount || 0;
+            case 16: // Advance paid to bucketlistt (10%)
+              const bookingAmountA2 = (booking as any)?.booking_amount || 0;
+              const dueAmountA = booking?.due_amount || 0;
+              return bookingAmountA2 - dueAmountA;
+            case 17: // Payment to be collected by vendor
+              const bookingAmountA3 = (booking as any)?.booking_amount || 0;
+              const dueAmountA2 = booking?.due_amount || 0;
+              return bookingAmountA3 - (bookingAmountA3 - dueAmountA2);
+            case 18: // Actual Commission to bucketlistt (Net profit)
+              const bookingAmountA4 = (booking as any)?.booking_amount || 0;
+              const b2bPriceA3 = booking.b2bPrice || activity?.b2bPrice || 0;
+              return bookingAmountA4 - (b2bPriceA3 * booking.total_participants);
+            case 19: // Amount to be collected from vendor/ '- to be paid'
+              const bookingAmountA5 = (booking as any)?.booking_amount || 0;
+              const b2bPriceA4 = booking.b2bPrice || activity?.b2bPrice || 0;
+              const dueAmountA3 = booking?.due_amount || 0;
+              return bookingAmountA5 - (b2bPriceA4 * booking.total_participants) - (bookingAmountA5 - dueAmountA3);
+            case 20: // Advance + discount (vendor needs this)
+              const bookingAmountA6 = (booking as any)?.booking_amount || 0;
+              const dueAmountA4 = booking?.due_amount || 0;
+              const originalPriceA4 = activity?.price || experience?.price || 0;
+              const officialPriceA2 = originalPriceA4 * booking.total_participants;
+              const discountCouponA = officialPriceA2 - bookingAmountA6 > 0 ? officialPriceA2 - bookingAmountA6 : 0;
+              return (bookingAmountA6 - dueAmountA4) + discountCouponA;
+            default:
+              return "";
+          }
+        };
+
+        // Get values for comparison
+        aValue = getCellValue(a, profileA, activityA, timeslotA, experienceA, sortBy);
+        bValue = getCellValue(b, profileB, activityB, timeslotB, experienceB, sortBy);
+
+        aValue = getCellValue(a, profileA, activityA, timeslotA, experienceA, sortBy);
+        bValue = getCellValue(b, profileB, activityB, timeslotB, experienceB, sortBy);
+      } else {
+        // Handle legacy string-based sorting
+        switch (sortBy) {
+          case "booking_date":
+            aValue = new Date(a.booking_date).getTime();
+            bValue = new Date(b.booking_date).getTime();
+            break;
+          case "title":
+            aValue = a.experiences?.title || "";
+            bValue = b.experiences?.title || "";
+            break;
+          case "status":
+            aValue = a.status || "";
+            bValue = b.status || "";
+            break;
+          default:
+            return 0;
+        }
       }
 
-      if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : -1;
+      // Handle null/undefined values
+      if (aValue === null || aValue === undefined) aValue = "";
+      if (bValue === null || bValue === undefined) bValue = "";
+
+      // Compare values
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        if (sortOrder === "asc") {
+          return aValue - bValue;
+        } else {
+          return bValue - aValue;
+        }
       } else {
-        return aValue < bValue ? 1 : -1;
+        const aStr = String(aValue).toLowerCase();
+        const bStr = String(bValue).toLowerCase();
+        if (sortOrder === "asc") {
+          return aStr > bStr ? 1 : aStr < bStr ? -1 : 0;
+        } else {
+          return aStr < bStr ? 1 : aStr > bStr ? -1 : 0;
+        }
       }
     });
 
@@ -629,6 +853,7 @@ export const UserBookings = () => {
     sortOrder,
     profileMap,
     isMobile,
+    columnFilters,
   ]);
 
   // Get unique activities from bookings - only from active experiences
@@ -808,6 +1033,239 @@ export const UserBookings = () => {
     }
   };
 
+  // Excel-like sorting by column index
+  const handleColumnSort = (columnIndex: number) => {
+    if (sortBy === columnIndex) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(columnIndex);
+      setSortOrder("asc");
+    }
+  };
+
+  // Get sort indicator for column
+  const getSortIndicator = (columnIndex: number) => {
+    if (sortBy === columnIndex) {
+      return sortOrder === "asc" ? "↑" : "↓";
+    }
+    return "⇅"; // Default indicator showing sortable
+  };
+
+  // Get unique values for a column (for filter dropdown) - use all bookings, not filtered
+  const getUniqueColumnValues = React.useMemo(() => {
+    const valuesMap: Record<number, string[]> = {};
+
+    bookings.forEach((booking) => {
+      const profile = profileMap[booking.user_id];
+      const activity = booking.time_slots?.activities as any;
+      const timeslot = booking.time_slots;
+      const experience = booking.experiences;
+      const currency = activity?.currency || booking?.experiences?.currency || "INR";
+
+      for (let colIndex = 0; colIndex <= 20; colIndex++) {
+        if (!valuesMap[colIndex]) {
+          valuesMap[colIndex] = [];
+        }
+
+        const getCellValue = (colIdx: number): string => {
+          switch (colIdx) {
+            case 0: return experience?.title || "";
+            case 1: return activity?.name || "";
+            case 2: return booking.contact_person_number || profile?.phone_number || booking?.booking_participants?.[0]?.phone_number || "";
+            case 3: return booking.contact_person_name || (profile ? `${profile.first_name} ${profile.last_name}`.trim() : "") || booking?.booking_participants?.[0]?.name || "";
+            case 4: return booking.contact_person_email || profile?.email || booking?.booking_participants?.[0]?.email || "";
+            case 5: return (booking as any)?.referral_code || (booking as any)?.referred_by || "";
+            case 6: return timeslot?.start_time && timeslot?.end_time
+              ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(timeslot.end_time)}`
+              : "";
+            case 7: return format(new Date(booking.booking_date), "MMM d, yyyy");
+            case 8: return String(booking?.total_participants || "");
+            case 9: return booking.note_for_guide || "";
+            case 10: {
+              const originalPrice = activity?.price || experience?.price || 0;
+              return formatCurrency(currency, originalPrice * booking.total_participants);
+            }
+            case 11: {
+              const b2bPrice = booking.b2bPrice || activity?.b2bPrice || 0;
+              return formatCurrency(currency, b2bPrice * booking.total_participants);
+            }
+            case 12: {
+              const originalPrice = activity?.price || experience?.price || 0;
+              const b2bPrice = booking.b2bPrice || activity?.b2bPrice || 0;
+              return formatCurrency(currency, (originalPrice - b2bPrice) * booking.total_participants);
+            }
+            case 13: {
+              const discountedPrice = activity?.discounted_price || 0;
+              return formatCurrency(currency, discountedPrice * booking.total_participants);
+            }
+            case 14: {
+              const originalPrice = activity?.price || experience?.price || 0;
+              const officialPrice = originalPrice * booking.total_participants;
+              const bookingAmount = (booking as any)?.booking_amount || 0;
+              const discountCoupon = officialPrice - bookingAmount > 0 ? officialPrice - bookingAmount : 0;
+              return formatCurrency(currency, discountCoupon);
+            }
+            case 15: return formatCurrency(currency, (booking as any)?.booking_amount || 0);
+            case 16: {
+              const bookingAmount = (booking as any)?.booking_amount || 0;
+              const dueAmount = booking?.due_amount || 0;
+              return formatCurrency(currency, bookingAmount - dueAmount);
+            }
+            case 17: {
+              const bookingAmount = (booking as any)?.booking_amount || 0;
+              const dueAmount = booking?.due_amount || 0;
+              return formatCurrency(currency, bookingAmount - (bookingAmount - dueAmount));
+            }
+            case 18: {
+              const bookingAmount = (booking as any)?.booking_amount || 0;
+              const b2bPrice = booking.b2bPrice || activity?.b2bPrice || 0;
+              return formatCurrency(currency, bookingAmount - (b2bPrice * booking.total_participants));
+            }
+            case 19: {
+              const bookingAmount = (booking as any)?.booking_amount || 0;
+              const b2bPrice = booking.b2bPrice || activity?.b2bPrice || 0;
+              const dueAmount = booking?.due_amount || 0;
+              return formatCurrency(currency, bookingAmount - (b2bPrice * booking.total_participants) - (bookingAmount - dueAmount));
+            }
+            case 20: {
+              const bookingAmount = (booking as any)?.booking_amount || 0;
+              const dueAmount = booking?.due_amount || 0;
+              const originalPrice = activity?.price || experience?.price || 0;
+              const officialPrice = originalPrice * booking.total_participants;
+              const discountCoupon = officialPrice - bookingAmount > 0 ? officialPrice - bookingAmount : 0;
+              return formatCurrency(currency, (bookingAmount - dueAmount) + discountCoupon);
+            }
+            default: return "";
+          }
+        };
+
+        const value = getCellValue(colIndex);
+        if (value && !valuesMap[colIndex].includes(value)) {
+          valuesMap[colIndex].push(value);
+        }
+      }
+    });
+
+    // Sort values for each column
+    Object.keys(valuesMap).forEach((key) => {
+      valuesMap[parseInt(key)].sort();
+    });
+
+    return valuesMap;
+  }, [bookings, profileMap]);
+
+  // Handle filter toggle
+  const handleFilterToggle = (columnIndex: number, value: string) => {
+    setColumnFilters((prev) => {
+      const currentFilters = prev[columnIndex] || [];
+      const newFilters = currentFilters.includes(value)
+        ? currentFilters.filter((v) => v !== value)
+        : [...currentFilters, value];
+
+      return {
+        ...prev,
+        [columnIndex]: newFilters.length > 0 ? newFilters : undefined,
+      };
+    });
+  };
+
+  // Clear filter for a column
+  const handleClearColumnFilter = (columnIndex: number) => {
+    setColumnFilters((prev) => {
+      const newFilters = { ...prev };
+      delete newFilters[columnIndex];
+      return newFilters;
+    });
+    setFilterSearchQueries((prev) => {
+      const newQueries = { ...prev };
+      delete newQueries[columnIndex];
+      return newQueries;
+    });
+  };
+
+  // Select all values for a column
+  const handleSelectAll = (columnIndex: number) => {
+    const allValues = getUniqueColumnValues[columnIndex] || [];
+    const searchQuery = filterSearchQueries[columnIndex]?.toLowerCase() || "";
+    const filteredValues = allValues.filter((value) =>
+      value.toLowerCase().includes(searchQuery)
+    );
+    setColumnFilters((prev) => ({
+      ...prev,
+      [columnIndex]: filteredValues,
+    }));
+  };
+
+  // Deselect all values for a column
+  const handleDeselectAll = (columnIndex: number) => {
+    setColumnFilters((prev) => {
+      const newFilters = { ...prev };
+      delete newFilters[columnIndex];
+      return newFilters;
+    });
+  };
+
+  // Check if all visible values are selected
+  const areAllVisibleSelected = (columnIndex: number): boolean => {
+    const allValues = getUniqueColumnValues[columnIndex] || [];
+    const searchQuery = filterSearchQueries[columnIndex]?.toLowerCase() || "";
+    const filteredValues = allValues.filter((value) =>
+      value.toLowerCase().includes(searchQuery)
+    );
+    if (filteredValues.length === 0) return false;
+    const selectedValues = columnFilters[columnIndex] || [];
+    return filteredValues.every((value) => selectedValues.includes(value));
+  };
+
+  // Click outside handler for filter dropdowns
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openFilterDropdown !== null) {
+        const ref = filterDropdownRefs.current[openFilterDropdown];
+        const filterIcon = (event.target as HTMLElement).closest('.filter-icon');
+        if (ref && !ref.contains(event.target as Node) && !filterIcon) {
+          setOpenFilterDropdown(null);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openFilterDropdown]);
+
+  // Update dropdown position when scrolling or resizing
+  React.useEffect(() => {
+    if (openFilterDropdown !== null) {
+      const updatePosition = () => {
+        const headerElement = headerRefs.current[openFilterDropdown];
+        if (headerElement) {
+          const rect = headerElement.getBoundingClientRect();
+          setFilterDropdownPosition({
+            top: rect.bottom + 4,
+            left: rect.left,
+          });
+        }
+      };
+
+      const handleScroll = () => updatePosition();
+      const handleResize = () => updatePosition();
+
+      // Use capture phase to catch scroll events in all containers
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleResize);
+
+      // Initial position update
+      updatePosition();
+
+      return () => {
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, [openFilterDropdown]);
+
   const handleClearDateFilter = () => {
     setSelectedDate("");
     setSelectedEndDate("");
@@ -946,22 +1404,21 @@ export const UserBookings = () => {
           </div>
           {(profile?.phone_number ||
             booking?.booking_participants?.[0]?.phone_number) && (
-            <div className="text-sm" id="UserBookingsCardContentStyles4">
-              <span className="text-muted-foreground">Contact:</span>
-              <p className="font-medium" style={{ color: "blue" }}>
-                <a
-                  href={`tel:${
-                    profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number
-                  }`}
-                >
-                  {profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number ||
-                    "N/A"}
-                </a>
-              </p>
-            </div>
-          )}
+              <div className="text-sm" id="UserBookingsCardContentStyles4">
+                <span className="text-muted-foreground">Contact:</span>
+                <p className="font-medium" style={{ color: "blue" }}>
+                  <a
+                    href={`tel:${profile?.phone_number ||
+                      booking?.booking_participants?.[0]?.phone_number
+                      }`}
+                  >
+                    {profile?.phone_number ||
+                      booking?.booking_participants?.[0]?.phone_number ||
+                      "N/A"}
+                  </a>
+                </p>
+              </div>
+            )}
           <div className="">
             <div className="space-y-2">
               {/* <div className="flex justify-between items-center">
@@ -1101,7 +1558,7 @@ export const UserBookings = () => {
                         {bookingAmount -
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                            booking.total_participants -
+                          booking.total_participants -
                           (bookingAmount - dueAmount)}
                       </p>
                     </div>
@@ -1132,8 +1589,8 @@ export const UserBookings = () => {
                   isMobile && showDateRangePicker
                     ? "default"
                     : sortBy === "booking_date"
-                    ? "default"
-                    : "outline"
+                      ? "default"
+                      : "outline"
                 }
                 onClick={() =>
                   isMobile
@@ -1210,18 +1667,7 @@ export const UserBookings = () => {
           className="relative flex flex-wrap gap-2"
           id="UserBookingsSortButtonStyles"
         >
-          {/* Desktop: Date button sorts bookings */}
-          {!isMobile && (
-            <Button
-              variant={sortBy === "booking_date" ? "default" : "outline"}
-              onClick={() => handleSort("booking_date")}
-              className="text-sm"
-            >
-              <span className="text-sm">Date</span>
-              {sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
-            </Button>
-          )}
-
+          {/* Today's Button - KEEP */}
           <Button
             variant={showTodayOnly ? "default" : "outline"}
             className="text-sm"
@@ -1230,266 +1676,7 @@ export const UserBookings = () => {
             {showTodayOnly ? `Show All` : `Today (${todayBookingsCount})`}
           </Button>
 
-          {/* Timeslot Filter Button */}
-          <div className="relative">
-            <Button
-              variant={selectedTimeslotId ? "default" : "outline"}
-              onClick={() => setShowTimeslotFilter(!showTimeslotFilter)}
-              className="text-sm"
-            >
-              {selectedTimeslotId
-                ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                    ?.displayName || "Timeslot"
-                : "Timeslot"}
-            </Button>
-
-            {/* Timeslot Filter Dropdown */}
-            {showTimeslotFilter && (
-              <div
-                className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
-                style={{ zIndex: 1000 }}
-              >
-                <Button
-                  variant={selectedTimeslotId === null ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedTimeslotId(null);
-                    setShowTimeslotFilter(false);
-                  }}
-                  className="w-full justify-start text-xs"
-                >
-                  All Timeslots
-                </Button>
-                {uniqueTimeslots.map((timeslot) => (
-                  <Button
-                    key={timeslot.id}
-                    variant={
-                      selectedTimeslotId === timeslot.id ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => {
-                      setSelectedTimeslotId(timeslot.id);
-                      setShowTimeslotFilter(false);
-                    }}
-                    className="w-full justify-start text-xs"
-                  >
-                    {timeslot.displayName}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Activity Filter Button */}
-          <div className="relative">
-            <Button
-              variant={selectedActivityId ? "default" : "outline"}
-              onClick={() => setShowActivityFilter(!showActivityFilter)}
-              className="text-sm"
-            >
-              {selectedActivityId
-                ? uniqueActivities.find((a) => a.id === selectedActivityId)
-                    ?.name || "Activity"
-                : "Activity"}
-            </Button>
-
-            {/* Activity Filter Dropdown */}
-            {showActivityFilter && (
-              <div
-                className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
-                style={{ zIndex: 1000 }}
-              >
-                <Button
-                  variant={selectedActivityId === null ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedActivityId(null);
-                    setShowActivityFilter(false);
-                  }}
-                  className="w-full justify-start text-xs"
-                >
-                  All Activities
-                </Button>
-                {uniqueActivities.map((activity) => (
-                  <Button
-                    key={activity.id}
-                    variant={
-                      selectedActivityId === activity.id ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => {
-                      setSelectedActivityId(activity.id);
-                      setShowActivityFilter(false);
-                    }}
-                    className="w-full justify-start text-xs"
-                  >
-                    {activity.name}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Experience Filter Button (Admin only) */}
-          {isAdmin && (
-            <div className="relative">
-              <Button
-                variant={selectedExperienceId ? "default" : "outline"}
-                onClick={() => setShowExperienceFilter(!showExperienceFilter)}
-                className="text-sm"
-              >
-                {selectedExperienceId
-                  ? uniqueExperiences.find((e) => e.id === selectedExperienceId)
-                      ?.title || "Experience"
-                  : "Experience"}
-              </Button>
-
-              {/* Experience Filter Dropdown */}
-              {showExperienceFilter && (
-                <div
-                  className="absolute left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
-                  style={{ zIndex: 1000 }}
-                >
-                  <Button
-                    variant={
-                      selectedExperienceId === null ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => {
-                      setSelectedExperienceId(null);
-                      setShowExperienceFilter(false);
-                    }}
-                    className="w-full justify-start text-xs"
-                  >
-                    All Experiences
-                  </Button>
-                  {uniqueExperiences.map((experience) => (
-                    <Button
-                      key={experience.id}
-                      variant={
-                        selectedExperienceId === experience.id
-                          ? "default"
-                          : "outline"
-                      }
-                      size="sm"
-                      onClick={() => {
-                        setSelectedExperienceId(experience.id);
-                        setShowExperienceFilter(false);
-                      }}
-                      className="w-full justify-start text-xs"
-                    >
-                      {experience.title}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Agent Filter Button (Admin only) */}
-          {isAdmin && (
-            <div className="relative">
-              <Button
-                variant={selectedAgentId ? "default" : "outline"}
-                onClick={() => setShowAgentFilter(!showAgentFilter)}
-                className="text-sm"
-              >
-                {selectedAgentId
-                  ? uniqueAgents.find((a) => a.id === selectedAgentId)?.name ||
-                    "Agent"
-                  : "Agent"}
-              </Button>
-
-              {/* Agent Filter Dropdown */}
-              {showAgentFilter && (
-                <div
-                  className="absolute left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
-                  style={{ zIndex: 1000 }}
-                >
-                  <Button
-                    variant={selectedAgentId === null ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setSelectedAgentId(null);
-                      setShowAgentFilter(false);
-                    }}
-                    className="w-full justify-start text-xs"
-                  >
-                    All Agents
-                  </Button>
-                  {uniqueAgents.map((agent) => (
-                    <Button
-                      key={agent.id}
-                      variant={
-                        selectedAgentId === agent.id ? "default" : "outline"
-                      }
-                      size="sm"
-                      onClick={() => {
-                        setSelectedAgentId(agent.id);
-                        setShowAgentFilter(false);
-                      }}
-                      className="w-full justify-start text-xs"
-                    >
-                      {agent.name}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Vendor Filter Button (Admin only) */}
-          {isAdmin && (
-            <div className="relative">
-              <Button
-                variant={selectedVendorId ? "default" : "outline"}
-                onClick={() => setShowVendorFilter(!showVendorFilter)}
-                className="text-sm"
-              >
-                {selectedVendorId
-                  ? uniqueVendors.find((v) => v.id === selectedVendorId)
-                      ?.name || "Vendor"
-                  : "Vendor"}
-              </Button>
-
-              {/* Vendor Filter Dropdown */}
-              {showVendorFilter && (
-                <div
-                  className="absolute left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
-                  style={{ zIndex: 1000 }}
-                >
-                  <Button
-                    variant={selectedVendorId === null ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setSelectedVendorId(null);
-                      setShowVendorFilter(false);
-                    }}
-                    className="w-full justify-start text-xs"
-                  >
-                    All Vendors
-                  </Button>
-                  {uniqueVendors.map((vendor) => (
-                    <Button
-                      key={vendor.id}
-                      variant={
-                        selectedVendorId === vendor.id ? "default" : "outline"
-                      }
-                      size="sm"
-                      onClick={() => {
-                        setSelectedVendorId(vendor.id);
-                        setShowVendorFilter(false);
-                      }}
-                      className="w-full justify-start text-xs"
-                    >
-                      {vendor.name}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
+          {/* Columns Button - KEEP */}
           <div
             className="mb-2 flex justify-end"
             id="UserBookingsColumnSelectorStyles"
@@ -1502,7 +1689,7 @@ export const UserBookings = () => {
                   e.stopPropagation();
                   setShowColumnSelector(!showColumnSelector);
                 }}
-                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+              // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
               >
                 Columns
               </Button>
@@ -1527,11 +1714,10 @@ export const UserBookings = () => {
                       return (
                         <label
                           key={index}
-                          className={`flex items-center gap-2 p-2 rounded ${
-                            isHiddenForAgent
-                              ? "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer hover:bg-muted/30"
-                          }`}
+                          className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
+                            ? "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer hover:bg-muted/30"
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -1579,6 +1765,279 @@ export const UserBookings = () => {
               )}
             </div>
           </div>
+
+          {/* Export to Excel Button Container - KEEP */}
+          <div className="export-to-excel-container">
+            {/* Export to Excel button will be added here */}
+          </div>
+
+          {/* COMMENTED OUT BUTTONS - DO NOT DELETE */}
+          {/* Desktop: Date button sorts bookings */}
+          {/* {!isMobile && (
+          <Button
+              variant={sortBy === "booking_date" ? "default" : "outline"}
+              onClick={() => handleSort("booking_date")}
+            className="text-sm"
+          >
+              <span className="text-sm">Date</span>
+              {sortBy === "booking_date" && (sortOrder === "asc" ? "↑" : "↓")}
+          </Button>
+          )} */}
+
+          {/* Timeslot Filter Button */}
+          {/* <div className="relative">
+            <Button
+              variant={selectedTimeslotId ? "default" : "outline"}
+              onClick={() => setShowTimeslotFilter(!showTimeslotFilter)}
+              className="text-sm"
+            >
+              {selectedTimeslotId
+                ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
+                    ?.displayName || "Timeslot"
+                : "Timeslot"}
+            </Button>
+
+            {showTimeslotFilter && (
+              <div
+                className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
+                style={{ zIndex: 1000 }}
+              >
+                <Button
+                  variant={selectedTimeslotId === null ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setSelectedTimeslotId(null);
+                    setShowTimeslotFilter(false);
+                  }}
+                  className="w-full justify-start text-xs"
+                >
+                  All Timeslots
+                </Button>
+                {uniqueTimeslots.map((timeslot) => (
+                  <Button
+                    key={timeslot.id}
+                    variant={
+                      selectedTimeslotId === timeslot.id ? "default" : "outline"
+                    }
+                    size="sm"
+                    onClick={() => {
+                      setSelectedTimeslotId(timeslot.id);
+                      setShowTimeslotFilter(false);
+                    }}
+                    className="w-full justify-start text-xs"
+                  >
+                    {timeslot.displayName}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div> */}
+
+          {/* Activity Filter Button */}
+          {/* <div className="relative">
+            <Button
+              variant={selectedActivityId ? "default" : "outline"}
+              onClick={() => setShowActivityFilter(!showActivityFilter)}
+              className="text-sm"
+            >
+              {selectedActivityId
+                ? uniqueActivities.find((a) => a.id === selectedActivityId)
+                    ?.name || "Activity"
+                : "Activity"}
+            </Button>
+
+            {showActivityFilter && (
+              <div
+                className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
+                style={{ zIndex: 1000 }}
+              >
+                <Button
+                  variant={selectedActivityId === null ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setSelectedActivityId(null);
+                    setShowActivityFilter(false);
+                  }}
+                  className="w-full justify-start text-xs"
+                >
+                  All Activities
+                </Button>
+                {uniqueActivities.map((activity) => (
+                  <Button
+                    key={activity.id}
+                    variant={
+                      selectedActivityId === activity.id ? "default" : "outline"
+                    }
+                    size="sm"
+                    onClick={() => {
+                      setSelectedActivityId(activity.id);
+                      setShowActivityFilter(false);
+                    }}
+                    className="w-full justify-start text-xs"
+                  >
+                    {activity.name}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div> */}
+
+          {/* Experience Filter Button (Admin only) */}
+          {/* {isAdmin && (
+            <div className="relative">
+              <Button
+                variant={selectedExperienceId ? "default" : "outline"}
+                onClick={() => setShowExperienceFilter(!showExperienceFilter)}
+                className="text-sm"
+              >
+                {selectedExperienceId
+                  ? uniqueExperiences.find((e) => e.id === selectedExperienceId)
+                      ?.title || "Experience"
+                  : "Experience"}
+              </Button>
+
+              {showExperienceFilter && (
+                <div
+                  className="absolute left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
+                  style={{ zIndex: 1000 }}
+                >
+                  <Button
+                    variant={
+                      selectedExperienceId === null ? "default" : "outline"
+                    }
+                    size="sm"
+                    onClick={() => {
+                      setSelectedExperienceId(null);
+                      setShowExperienceFilter(false);
+                    }}
+                    className="w-full justify-start text-xs"
+                  >
+                    All Experiences
+                  </Button>
+                  {uniqueExperiences.map((experience) => (
+                    <Button
+                      key={experience.id}
+                      variant={
+                        selectedExperienceId === experience.id
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedExperienceId(experience.id);
+                        setShowExperienceFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      {experience.title}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )} */}
+
+          {/* Agent Filter Button (Admin only) */}
+          {/* {isAdmin && (
+            <div className="relative">
+              <Button
+                variant={selectedAgentId ? "default" : "outline"}
+                onClick={() => setShowAgentFilter(!showAgentFilter)}
+                className="text-sm"
+              >
+                {selectedAgentId
+                  ? uniqueAgents.find((a) => a.id === selectedAgentId)?.name ||
+                    "Agent"
+                  : "Agent"}
+              </Button>
+
+              {showAgentFilter && (
+                <div
+                  className="absolute left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
+                  style={{ zIndex: 1000 }}
+                >
+                  <Button
+                    variant={selectedAgentId === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedAgentId(null);
+                      setShowAgentFilter(false);
+                    }}
+                    className="w-full justify-start text-xs"
+                  >
+                    All Agents
+                  </Button>
+                  {uniqueAgents.map((agent) => (
+                    <Button
+                      key={agent.id}
+                      variant={
+                        selectedAgentId === agent.id ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedAgentId(agent.id);
+                        setShowAgentFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      {agent.name}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )} */}
+
+          {/* Vendor Filter Button (Admin only) */}
+          {/* {isAdmin && (
+            <div className="relative">
+              <Button
+                variant={selectedVendorId ? "default" : "outline"}
+                onClick={() => setShowVendorFilter(!showVendorFilter)}
+                className="text-sm"
+              >
+                {selectedVendorId
+                  ? uniqueVendors.find((v) => v.id === selectedVendorId)
+                      ?.name || "Vendor"
+                  : "Vendor"}
+              </Button>
+
+              {showVendorFilter && (
+                <div
+                  className="absolute left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
+                  style={{ zIndex: 1000 }}
+                >
+                  <Button
+                    variant={selectedVendorId === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedVendorId(null);
+                      setShowVendorFilter(false);
+                    }}
+                    className="w-full justify-start text-xs"
+                  >
+                    All Vendors
+                  </Button>
+                  {uniqueVendors.map((vendor) => (
+                    <Button
+                      key={vendor.id}
+                      variant={
+                        selectedVendorId === vendor.id ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedVendorId(vendor.id);
+                        setShowVendorFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      {vendor.name}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )} */}
         </div>
 
         {/* Desktop Search Bar - Hidden on mobile */}
@@ -1615,8 +2074,8 @@ export const UserBookings = () => {
           <div id="UserBookingsDesktopLayout" className="hidden">
             {/* Column Selector Button */}
 
-            <div className="overflow-x-auto">
-              <table className="w-full" style={{ tableLayout: "fixed" }}>
+            <div className="overflow-x-auto overflow-y-visible">
+              <table className="w-full text-xs" style={{ tableLayout: "fixed" }}>
                 <thead>
                   <tr>
                     {columnOrder.map(
@@ -1624,15 +2083,20 @@ export const UserBookings = () => {
                         columnVisibility[originalIndex] && (
                           <th
                             key={originalIndex}
-                            className={`p-3 text-left font-semibold text-xs whitespace-nowrap relative ${
-                              draggedColumnIndex === originalIndex
-                                ? "opacity-50"
-                                : ""
-                            } ${
-                              dragOverColumnIndex === originalIndex
+                            ref={(el) => {
+                              headerRefs.current[originalIndex] = el;
+                            }}
+                            data-column-index={originalIndex}
+                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${draggedColumnIndex === originalIndex
+                              ? "opacity-50"
+                              : ""
+                              } ${dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                            }`}
+                              } ${sortBy === originalIndex
+                                ? "bg-blue-50"
+                                : ""
+                              }`}
                             style={{ width: columnWidths[originalIndex] }}
                             draggable={true}
                             onDragStart={() =>
@@ -1643,17 +2107,234 @@ export const UserBookings = () => {
                             }
                             onDrop={(e) => handleColumnDrop(e, originalIndex)}
                             onDragEnd={handleColumnDragEnd}
+                            onClick={(e) => {
+                              // Only sort if not dragging and not clicking on filter icon
+                              if (draggedColumnIndex === null && !(e.target as HTMLElement).closest('.filter-icon')) {
+                                e.stopPropagation();
+                                handleColumnSort(originalIndex);
+                              }
+                            }}
                           >
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1 w-full">
                               <svg
-                                className="w-4 h-4 cursor-move opacity-50 hover:opacity-100"
+                                className="w-3 h-3 cursor-move opacity-50 hover:opacity-100 flex-shrink-0"
                                 fill="currentColor"
                                 viewBox="0 0 24 24"
+                                onMouseDown={(e) => e.stopPropagation()}
                               >
                                 <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                               </svg>
-                              {columnHeaders[originalIndex]}
+                              <span className="flex-1 truncate">{columnHeaders[originalIndex]}</span>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <span
+                                  className="filter-icon cursor-pointer hover:bg-gray-200 rounded p-0.5 transition-colors duration-150"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (openFilterDropdown === originalIndex) {
+                                      setOpenFilterDropdown(null);
+                                    } else {
+                                      const headerElement = headerRefs.current[originalIndex];
+                                      if (headerElement) {
+                                        const rect = headerElement.getBoundingClientRect();
+                                        setFilterDropdownPosition({
+                                          top: rect.bottom + 4,
+                                          left: rect.left,
+                                        });
+                                      }
+                                      setOpenFilterDropdown(originalIndex);
+                                    }
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = "#e5e7eb";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                  }}
+                                  title="Filter"
+                                >
+                                  <Filter
+                                    className={`w-3 h-3 ${columnFilters[originalIndex] && columnFilters[originalIndex].length > 0
+                                        ? "text-blue-600"
+                                        : "text-gray-400"
+                                      }`}
+                                  />
+                                </span>
+                              </div>
                             </span>
+                            {/* Filter Dropdown */}
+                            {openFilterDropdown === originalIndex && filterDropdownPosition && (
+                              <div
+                                ref={(el) => {
+                                  filterDropdownRefs.current[originalIndex] = el;
+                                }}
+                                className="fixed border border-gray-300 rounded-lg shadow-xl z-[9999] min-w-[250px] max-w-[350px] max-h-[400px] overflow-hidden"
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseEnter={(e) => e.stopPropagation()}
+                                onMouseLeave={(e) => e.stopPropagation()}
+                                style={{
+                                  position: "fixed",
+                                  top: `${filterDropdownPosition.top}px`,
+                                  left: `${filterDropdownPosition.left}px`,
+                                  backgroundColor: "#ffffff",
+                                  opacity: 1,
+                                }}
+                              >
+                                <div className="p-2 border-b border-gray-200 bg-gray-50">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-semibold text-gray-900">Filter by {columnHeaders[originalIndex]}</span>
+                                    {columnFilters[originalIndex] && columnFilters[originalIndex].length > 0 && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-xs hover:bg-gray-200"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleClearColumnFilter(originalIndex);
+                                        }}
+                                      >
+                                        <X className="w-3 h-3 mr-1" />
+                                        Clear
+                                      </Button>
+                                    )}
+                                  </div>
+                                  {/* Sort Buttons */}
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex && sortOrder === "asc"
+                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                          : "hover:bg-gray-200"
+                                        }`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (sortBy === originalIndex && sortOrder === "asc") {
+                                          setSortBy(7); // Reset to default
+                                          setSortOrder("desc");
+                                        } else {
+                                          setSortBy(originalIndex);
+                                          setSortOrder("asc");
+                                        }
+                                      }}
+                                      title="Sort Ascending"
+                                    >
+                                      <ArrowUp className="w-3 h-3 mr-1" />
+                                      Sort ↑
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex && sortOrder === "desc"
+                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                          : "hover:bg-gray-200"
+                                        }`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (sortBy === originalIndex && sortOrder === "desc") {
+                                          setSortBy(7); // Reset to default
+                                          setSortOrder("desc");
+                                        } else {
+                                          setSortBy(originalIndex);
+                                          setSortOrder("desc");
+                                        }
+                                      }}
+                                      title="Sort Descending"
+                                    >
+                                      <ArrowDown className="w-3 h-3 mr-1" />
+                                      Sort ↓
+                                    </Button>
+                                  </div>
+                                </div>
+                                {/* Search Input */}
+                                <div className="p-2 border-b border-gray-200 bg-white">
+                                  <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+                                    <Input
+                                      type="text"
+                                      placeholder="Search..."
+                                      value={filterSearchQueries[originalIndex] || ""}
+                                      onChange={(e) => {
+                                        setFilterSearchQueries((prev) => ({
+                                          ...prev,
+                                          [originalIndex]: e.target.value,
+                                        }));
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="pl-7 h-7 text-xs"
+                                    />
+                                  </div>
+                                </div>
+                                {/* Select All / Deselect All */}
+                                <div className="p-2 border-b border-gray-200 bg-white">
+                                  <div className="flex items-center gap-2">
+                                    {areAllVisibleSelected(originalIndex) ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-xs hover:bg-gray-100 flex-1"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeselectAll(originalIndex);
+                                        }}
+                                      >
+                                        Deselect All
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-xs hover:bg-gray-100 flex-1"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleSelectAll(originalIndex);
+                                        }}
+                                      >
+                                        Select All
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                                {/* Filter Options List */}
+                                <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
+                                  {getUniqueColumnValues[originalIndex] && getUniqueColumnValues[originalIndex].length > 0 ? (() => {
+                                    const searchQuery = filterSearchQueries[originalIndex]?.toLowerCase() || "";
+                                    const filteredValues = getUniqueColumnValues[originalIndex].filter((value) =>
+                                      value.toLowerCase().includes(searchQuery)
+                                    );
+
+                                    if (filteredValues.length === 0) {
+                                      return (
+                                        <div className="text-xs text-gray-500 p-2 text-center">No matching values</div>
+                                      );
+                                    }
+
+                                    return filteredValues.map((value, idx) => {
+                                      const isChecked = columnFilters[originalIndex]?.includes(value) || false;
+                                      return (
+                                        <label
+                                          key={idx}
+                                          className="flex items-center gap-2 p-1.5 hover:bg-blue-50 active:bg-blue-100 cursor-pointer text-xs rounded transition-colors duration-150"
+                                          onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = "#eff6ff";
+                                          }}
+                                          onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor = "transparent";
+                                          }}
+                                        >
+                                          <Checkbox
+                                            checked={isChecked}
+                                            onCheckedChange={() => handleFilterToggle(originalIndex, value)}
+                                          />
+                                          <span className="truncate flex-1 text-gray-900">{value || "(empty)"}</span>
+                                        </label>
+                                      );
+                                    });
+                                  })() : (
+                                    <div className="text-xs text-gray-500 p-2">No values available</div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                             <div
                               className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400"
                               onMouseDown={(e) => {
@@ -1723,13 +2404,13 @@ export const UserBookings = () => {
                               columnVisibility[originalIndex] && (
                                 <td
                                   key={originalIndex}
-                                  className="p-3 text-sm"
+                                  className="px-1 py-0.5 text-xs text-left"
                                   title={
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                      ? booking.note_for_guide || ""
-                                      : ""
+                                        ? booking.note_for_guide || ""
+                                        : ""
                                   }
                                 >
                                   {renderCellContent(
