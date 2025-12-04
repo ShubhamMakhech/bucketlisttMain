@@ -134,7 +134,7 @@ export const BookingWithCoupon: React.FC<BookingWithCouponProps> = ({
         >
           {isBooking
             ? "Processing..."
-            : `Book Now - ${formatCurrency(
+            : `Check Availability - ${formatCurrency(
                 appliedCoupon?.discount_calculation?.final_amount ||
                   originalPrice
               )}`}

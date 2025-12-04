@@ -46,6 +46,7 @@ export function FavoriteButton({ experienceId, className, size = "sm" }: Favorit
       onClick={handleClick}
     >
       <Heart 
+      style={{color: "white"}}
         className={cn(
           "h-4 w-4",
           size === "lg" && "h-5 w-5",

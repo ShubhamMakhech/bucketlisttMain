@@ -803,6 +803,13 @@ h6 {
   background: #940fdb2b;
 }
 
+#UserBookingsSortButtonStyles {
+  display: flex;
+  gap: 5px;
+  flex-direction: row;
+  /* display: none; */
+}
+
 
 @media (max-width: 768px) {
   #UserBookingsColumnSelectorStyles {
@@ -860,6 +867,7 @@ h6 {
     display: flex;
     gap: 5px;
     flex-direction: row;
+    display: block;
   }
 
   /* Show mobile layout, hide desktop layout on mobile */

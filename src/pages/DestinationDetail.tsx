@@ -9,46 +9,54 @@ import { LazyImage } from "@/components/LazyImage";
 import { DetailedItinerary } from "@/components/DetailedItinerary";
 import { IoLocation } from "react-icons/io5";
 
-// Static destination images mapping - now supports multiple images per destination
-const staticDestinationImages: Record<string, string[]> = {
+// Helper function to detect media type from URL
+const getMediaType = (url: string): "video" | "image" => {
+  const videoExtensions = [".mp4", ".webm", ".ogg", ".avi", ".mov"];
+  const lowerUrl = url.toLowerCase();
+  return videoExtensions.some((ext) => lowerUrl.includes(ext)) ? "video" : "image";
+};
+
+// Static destination media mapping with type information
+type MediaItem = {
+  src: string;
+  type: "video" | "image";
+};
+
+const staticDestinationImages: Record<string, MediaItem[]> = {
   Darjeeling: [
-    "https://images.unsplash.com/photo-1637737118663-f1a53ee1d5a7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1544894062-f500cf4fbd2c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1661970131022-714b905f7031?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    { src: "https://images.unsplash.com/photo-1637737118663-f1a53ee1d5a7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
+    { src: "https://images.unsplash.com/photo-1544894062-f500cf4fbd2c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
+    { src: "https://images.unsplash.com/photo-1661970131022-714b905f7031?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
   ],
   Goa: [
-    "https://images.unsplash.com/photo-1496566084516-c5b96fcbd5c8?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1580741186862-c5d0bf2aff33?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1682743710558-b338ba285925?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    { src: "https://images.unsplash.com/photo-1496566084516-c5b96fcbd5c8?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
+    { src: "https://images.unsplash.com/photo-1580741186862-c5d0bf2aff33?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
+    { src: "https://images.unsplash.com/photo-1682743710558-b338ba285925?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
   ],
   Jaipur: [
-    "https://prepseed.s3.ap-south-1.amazonaws.com/Jaipur.svg",
-    "https://images.unsplash.com/photo-1539650116574-75c0c6d73c0e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
-    "https://images.unsplash.com/photo-1578662996442-48f60103fc96?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+    { src: "https://prepseed.s3.ap-south-1.amazonaws.com/Jaipur.svg", type: "image" },
+    { src: "https://images.unsplash.com/photo-1539650116574-75c0c6d73c0e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", type: "image" },
+    { src: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", type: "image" },
   ],
   Kerala: [
-    "https://prepseed.s3.ap-south-1.amazonaws.com/Kerela.svg",
-    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
-    "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+    { src: "https://prepseed.s3.ap-south-1.amazonaws.com/Kerela.svg", type: "image" },
+    { src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", type: "image" },
+    { src: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", type: "image" },
   ],
   Rishikesh: [
-    "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/RishikeshVideo.mp4",
-    // "https://images.unsplash.com/photo-1720819029162-8500607ae232?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    // "https://images.unsplash.com/photo-1650341278999-d1b5142cfe30?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    // "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
-    // "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3",
+    { src: "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/RishikeshVideo.mp4", type: "video" },
   ],
   Mysore: [
-    "https://plus.unsplash.com/premium_photo-1697730494992-7d5a0c46ea52?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1698688513674-d38bea6a34c2?q=80&w=3133&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    { src: "https://plus.unsplash.com/premium_photo-1697730494992-7d5a0c46ea52?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
+    { src: "https://images.unsplash.com/photo-1698688513674-d38bea6a34c2?q=80&w=3133&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
   ],
   Matheran: [
-    "https://images.unsplash.com/photo-1663070549709-8b524a0560e7?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    "https://images.unsplash.com/photo-1590812854696-65cefa66f181?q=80&w=2108&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    { src: "https://images.unsplash.com/photo-1663070549709-8b524a0560e7?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
+    { src: "https://images.unsplash.com/photo-1590812854696-65cefa66f181?q=80&w=2108&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
   ],
   Saputara: [
-    "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage1.jpg",
-    "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage2.jpg",
+    { src: "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage1.jpg", type: "image" },
+    { src: "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage2.jpg", type: "image" },
   ],
 };
 import {
@@ -67,7 +75,7 @@ import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Select,
   SelectContent,
@@ -92,6 +100,7 @@ const DestinationDetail = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("rating");
   const [isAnimated, setIsAnimated] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Scroll to top and trigger animations when component mounts
   useEffect(() => {
@@ -121,46 +130,60 @@ const DestinationDetail = () => {
     staleTime: stateDestinationData ? 5 * 60 * 1000 : 0, // 5 minutes if we have state data
   });
 
-  // Get multiple images/videos for swiper - only shows static media, skips database image
-  const getMultipleImages = () => {
-    const media = [];
-
-    // Add all static images/videos for this destination
+  // Get all media items for the destination with type information
+  const getDestinationMedia = (): MediaItem[] => {
     const staticMedia = staticDestinationImages[destination?.title || ""];
-    if (staticMedia && staticMedia.length > 0) {
-      staticMedia.forEach((mediaUrl, index) => {
-        const isVideo =
-          mediaUrl.includes(".mp4") ||
-          mediaUrl.includes(".webm") ||
-          mediaUrl.includes(".ogg") ||
-          mediaUrl.includes(".avi") ||
-          mediaUrl.includes(".mov");
-        media.push({
-          src: mediaUrl,
-          alt: `${destination?.title} - ${isVideo ? "Video" : "View"} ${
-            index + 1
-          }`,
-          id: `static-${index}`,
-          type: isVideo ? "video" : "image",
-        });
-      });
-    } else if (destination?.image_url) {
-      // Fallback: Only show database image if no static media exists
-      media.push({
-        src: destination.image_url,
-        alt: destination.title,
-        id: "main",
-        type: "image",
-      });
+    return staticMedia || [];
+  };
+
+  // Get the first video URL for the destination
+  const getVideoUrl = () => {
+    const media = getDestinationMedia();
+    const video = media.find((item) => item.type === "video");
+    return video ? video.src : null;
+  };
+
+  // Get all images for the destination
+  const getImages = (): MediaItem[] => {
+    return getDestinationMedia().filter((item) => item.type === "image");
+  };
+
+  // Get all videos for the destination
+  const getVideos = (): MediaItem[] => {
+    return getDestinationMedia().filter((item) => item.type === "video");
+  };
+
+  // Ensure first video plays when ready (for video swiper)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && getVideos().length > 0) {
+      const playVideo = () => {
+        if (video && video.paused && !video.ended) {
+          video.play().catch(() => { });
+        }
+      };
+
+      // Try to play immediately
+      playVideo();
+
+      // Also set up event listeners as backup
+      video.addEventListener("canplay", playVideo, { once: true });
+      video.addEventListener("loadeddata", playVideo, { once: true });
+      video.addEventListener("canplaythrough", playVideo, { once: true });
+
+      // Try again after short delays
+      const timer1 = setTimeout(playVideo, 300);
+      const timer2 = setTimeout(playVideo, 1000);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        video.removeEventListener("canplay", playVideo);
+        video.removeEventListener("loadeddata", playVideo);
+        video.removeEventListener("canplaythrough", playVideo);
+      };
     }
-
-    return media;
-  };
-
-  // Helper function to check if media is video
-  const isVideo = (media: any) => {
-    return media.type === "video";
-  };
+  }, [destination?.title]);
 
   const { data: categories } = useQuery({
     queryKey: ["categories"],
@@ -297,156 +320,193 @@ const DestinationDetail = () => {
 
   // Get the image source - use static image if title matches, otherwise use database image
   const getImageSource = () => {
-    const staticImages = staticDestinationImages[destination.title];
-    return staticImages?.[0] || destination.image_url;
+    const media = getDestinationMedia();
+    const firstImage = media.find((item) => item.type === "image");
+    return firstImage?.src || destination.image_url;
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Full Screen Image Swiper */}
+      {/* Full Screen Media Swipers - Videos and Images */}
       <section
         className="relative h-screen w-full"
         id="DestinationDetailSwiper"
       >
-        <div className="DestinationDetailSwiperOverlay">
-          <h2 className="CommonH2 text-white">
-            <IoLocation /> {destination.title}
-          </h2>
-        </div>
-        <Swiper
-          modules={[Autoplay, Navigation, Pagination]}
-          spaceBetween={20}
-          autoplay={{
-            delay: 2000,
-            disableOnInteraction: false,
-          }}
-          pagination={{
-            clickable: true,
-            bulletClass: "swiper-pagination-bullet",
-            bulletActiveClass: "swiper-pagination-bullet-active",
-          }}
-          loop={getMultipleImages().length > 1}
-          className="h-full w-full"
-          onSlideChange={(swiper) => {
-            // Reset all videos to beginning
-            const allVideos = swiper.el.querySelectorAll("video");
-            allVideos.forEach((video: HTMLVideoElement) => {
-              video.currentTime = 0;
-              video.pause();
-            });
+        {getVideos().length > 0 ? (
+          // Video Swiper - Shows videos with full autoplay
+          <Swiper
+            modules={[Autoplay, Navigation, Pagination]}
+            spaceBetween={0}
+            slidesPerView={1}
+            autoplay={false} // Videos control their own timing
+            pagination={{
+              clickable: true,
+              bulletClass: "swiper-pagination-bullet",
+              bulletActiveClass: "swiper-pagination-bullet-active",
+            }}
+            loop={getVideos().length > 1}
+            className="h-full w-full"
+            onSlideChange={(swiper) => {
+              // Reset all videos
+              const allVideos = swiper.el.querySelectorAll("video");
+              allVideos.forEach((video: HTMLVideoElement) => {
+                video.currentTime = 0;
+                video.pause();
+              });
 
-            // Check if current slide has a video
-            const currentSlide = swiper.slides[swiper.activeIndex];
-            const video = currentSlide?.querySelector(
-              "video"
-            ) as HTMLVideoElement;
-            if (video) {
-              // Stop autoplay and play video
-              swiper.autoplay.stop();
-              video.currentTime = 0;
-              video.play().catch(console.error);
-            } else {
-              // Resume autoplay for images
-              swiper.autoplay.start();
-            }
-          }}
-        >
-          {getMultipleImages().map((media, index) => (
-            <SwiperSlide key={media.id}>
-              <div className="relative h-full w-full SwiperSlideBorderRadius">
-                {isVideo(media) ? (
+              // Play current video
+              const currentSlide = swiper.slides[swiper.activeIndex];
+              const video = currentSlide?.querySelector("video") as HTMLVideoElement;
+              if (video) {
+                video.currentTime = 0;
+                video.play().catch(() => { });
+              }
+            }}
+            onSwiper={(swiper) => {
+              // Initialize first video
+              setTimeout(() => {
+                const currentSlide = swiper.slides[swiper.activeIndex];
+                const video = currentSlide?.querySelector("video") as HTMLVideoElement;
+                if (video) {
+                  video.currentTime = 0;
+                  video.play().catch(() => { });
+                }
+              }, 200);
+            }}
+          >
+            {getVideos().map((media, index) => (
+              <SwiperSlide key={`video-${index}`}>
+                <div className="relative h-full w-full SwiperSlideBorderRadius">
                   <video
+                    ref={index === 0 ? videoRef : null}
                     src={media.src}
                     className="h-full w-full object-cover"
                     muted
+                    autoPlay
                     playsInline
-                    preload="metadata"
-                    onEnded={(e) => {
-                      // Move to next slide when video ends
-                      const swiperElement = e.currentTarget.closest(
-                        ".swiper"
-                      ) as any;
-                      const swiper = swiperElement?.swiper;
-                      if (swiper) {
-                        swiper.slideNext();
-                        // Resume autoplay after video ends
-                        setTimeout(() => {
-                          swiper.autoplay.start();
-                        }, 100);
+                    webkit-playsinline="true"
+                    preload="auto"
+                    loop={false}
+                    controls={false}
+                    disablePictureInPicture
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onLoadedData={(e) => {
+                      const video = e.currentTarget;
+                      video.play().catch(() => { });
+                    }}
+                    onCanPlay={(e) => {
+                      const video = e.currentTarget;
+                      if (video.paused) {
+                        video.play().catch(() => { });
                       }
                     }}
+                    onCanPlayThrough={(e) => {
+                      const video = e.currentTarget;
+                      if (video.paused) {
+                        video.play().catch(() => { });
+                      }
+                    }}
+                    onPlay={(e) => {
+                      // Stop Swiper autoplay when video starts
+                      const swiperElement = e.currentTarget.closest(".swiper") as any;
+                      const swiper = swiperElement?.swiper;
+                      if (swiper) {
+                        swiper.autoplay.stop();
+                      }
+                    }}
+                    onPause={(e) => {
+                      // Prevent video from being paused - resume immediately
+                      const video = e.currentTarget;
+                      if (!video.ended && video.currentTime > 0) {
+                        // Only resume if not ended and has played some
+                        setTimeout(() => {
+                          if (video.paused && !video.ended) {
+                            video.play().catch(() => { });
+                          }
+                        }, 50);
+                      }
+                    }}
+                    onTimeUpdate={(e) => {
+                      // Monitor playback - if paused unexpectedly, resume
+                      const video = e.currentTarget;
+                      if (video.paused && !video.ended && video.currentTime > 0.1) {
+                        // Video was playing but got paused - resume it
+                        video.play().catch(() => { });
+                      }
+                    }}
+                    onEnded={(e) => {
+                      // When video ends, wait 15 seconds then slide to next
+                      const swiperElement = e.currentTarget.closest(".swiper") as any;
+                      const swiper = swiperElement?.swiper;
+                      if (swiper) {
+                        setTimeout(() => {
+                          swiper.slideNext();
+                        }, 15000); // 15 seconds delay after video ends
+                      }
+                    }}
+                    onError={(e) => {
+                      console.error("Video playback error:", e);
+                    }}
                   />
-                ) : (
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        ) : getImages().length > 0 ? (
+          // Image Swiper - Shows images with 3 second autoplay
+          <Swiper
+            modules={[Autoplay, Navigation, Pagination]}
+            spaceBetween={0}
+            slidesPerView={1}
+            autoplay={{
+              delay: 3000, // 3 seconds for images
+              disableOnInteraction: false,
+            }}
+            pagination={{
+              clickable: true,
+              bulletClass: "swiper-pagination-bullet",
+              bulletActiveClass: "swiper-pagination-bullet-active",
+            }}
+            loop={getImages().length > 1}
+            className="h-full w-full"
+          >
+            {getImages().map((media, index) => (
+              <SwiperSlide key={`image-${index}`}>
+                <div className="relative h-full w-full SwiperSlideBorderRadius">
                   <LazyImage
                     src={media.src}
-                    alt={media.alt}
+                    alt={`${destination?.title} - View ${index + 1}`}
                     aspectRatio="aspect-auto"
                     className="h-full w-full object-cover"
                   />
-                )}
-                {/* Overlay */}
-                {/* <div className="absolute inset-0 bg-black/20"></div>
-                <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
-                  <h2 className="CommonH2 text-white">{destination.title}</h2>
-                  <p className="text-white">{destination.subtitle}</p>
-                </div> */}
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-
-        {/* Custom Navigation Buttons */}
-        {/* <div className="destination-swiper-button-prev destination-nav-btn">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        ) : (
+          <div className="h-full w-full bg-muted flex items-center justify-center">
+            <p className="text-muted-foreground">No media available</p>
+          </div>
+        )}
+        <div className="ShowcaseThisDescription">
+          <p
+            style={{
+              textAlign: "start",
+              fontSize: "14px",
+              marginTop: "-5px",
+            }}
+          >
+            Rishikesh -
+            bungee jumping, rafting, yoga an a lot more...
+          </p>
         </div>
-        <div className="destination-swiper-button-next destination-nav-btn">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div> */}
       </section>
 
       {/* Destination Info Section */}
-      <section
-        className="section-wrapper section-bg-primary"
-        style={{ marginTop: "-20px", paddingBottom: "10px" }}
-      >
-        <div className="container">
-          <div
-            className={`scroll-fade-in ${isAnimated ? "animate" : ""}`}
-            style={{ animationDelay: "0.1s" }}
-          >
-            <div className="space-y-6">
-              <div>
-                {/* <h1 className="CommonH1 textStart">About {destination.title}</h1> */}
-                {/* {destination.description && (
-                  <p className="text-sm textStart">
-                    {destination.description}
-                  </p>
-                )} */}
-                {/* <p style={{ textAlign: "start", }} >Rishikesh is where adventure meets spirituality—rafting, bungee jumping, yoga, and the sacred Triveni Sangam all in one unforgettable destination!</p> */}
-                <p
-                  style={{
-                    textAlign: "start",
-                    fontSize: "14px",
-                    marginTop: "-5px",
-                  }}
-                >
-                  Rishikesh is where adventure meets spirituality—rafting,
-                  bungee jumping, yoga, and the sacred Triveni Sangam all in one
-                  unforgettable destination!
-                </p>
-                {/* <br /> */}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      <div className="features-badges-container container">
+
+      {/* <div className="features-badges-container container">
         <div className="features-badges-grid">
           {destination.best_time_to_visit && (
             <div className="feature-badge">
@@ -502,7 +562,7 @@ const DestinationDetail = () => {
             </div>
           )}
         </div>
-      </div>
+      </div> */}
       <section
         className="section-wrapper SecondaryBackground"
         id="TopActivitiesToDo"
@@ -518,7 +578,7 @@ const DestinationDetail = () => {
                 {/* <Filter className="h-5 w-5 text-brand-primary" /> */}
                 <h2
                   className="CommonH2"
-                  style={{ textTransform: "unset", marginBottom: "10px" }}
+                  style={{ textTransform: "unset",margin:"10px 0px" }}
                 >
                   Top activities to do in {destination.title}
                 </h2>
@@ -604,9 +664,8 @@ const DestinationDetail = () => {
                     {experiences.map((experience, index) => (
                       <SwiperSlide key={experience.id}>
                         <div
-                          className={`scroll-scale-in ${
-                            isAnimated ? "animate" : ""
-                          }`}
+                          className={`scroll-scale-in ${isAnimated ? "animate" : ""
+                            }`}
                           style={{ animationDelay: `${0.6 + index * 0.05}s` }}
                         >
                           <ExperienceCard
@@ -622,20 +681,18 @@ const DestinationDetail = () => {
                             reviews={
                               experience.reviews_count?.toString() || "0"
                             }
-                            price={`${
-                              experience.currency === "USD"
-                                ? "₹"
-                                : experience.currency == "INR"
+                            price={`${experience.currency === "USD"
+                              ? "₹"
+                              : experience.currency == "INR"
                                 ? "₹"
                                 : experience.currency
-                            } ${experience.price}`}
+                              } ${experience.price}`}
                             originalPrice={
                               experience.original_price
-                                ? `${
-                                    experience.currency === "USD"
-                                      ? "₹"
-                                      : experience.currency
-                                  } ${experience.original_price}`
+                                ? `${experience.currency === "USD"
+                                  ? "₹"
+                                  : experience.currency
+                                } ${experience.original_price}`
                                 : undefined
                             }
                             duration={experience.duration || undefined}
@@ -694,9 +751,8 @@ const DestinationDetail = () => {
                   {experiences.map((experience, index) => (
                     <div
                       key={experience.id}
-                      className={`scroll-scale-in ${
-                        isAnimated ? "animate" : ""
-                      }`}
+                      className={`scroll-scale-in ${isAnimated ? "animate" : ""
+                        }`}
                       style={{ animationDelay: `${0.6 + index * 0.05}s` }}
                       id="ExperienceCardContainerSpecificDestinationDetail"
                     >
@@ -711,22 +767,20 @@ const DestinationDetail = () => {
                         }
                         rating={Number(experience.rating)}
                         reviews={experience.reviews_count?.toString() || "0"}
-                        price={`${
-                          experience.currency === "USD"
-                            ? "₹"
-                            : experience.currency == "INR"
+                        price={`${experience.currency === "USD"
+                          ? "₹"
+                          : experience.currency == "INR"
                             ? "₹"
                             : experience.currency
-                        } ${experience.price}`}
+                          } ${experience.price}`}
                         originalPrice={
                           experience.original_price
-                            ? `${
-                                experience.currency === "USD"
-                                  ? "₹"
-                                  : experience.currency == "INR"
-                                  ? "₹"
-                                  : experience.currency
-                              } ${experience.original_price}`
+                            ? `${experience.currency === "USD"
+                              ? "₹"
+                              : experience.currency == "INR"
+                                ? "₹"
+                                : experience.currency
+                            } ${experience.original_price}`
                             : undefined
                         }
                         duration={experience.duration || undefined}

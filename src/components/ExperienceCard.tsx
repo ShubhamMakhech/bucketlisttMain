@@ -464,7 +464,7 @@ export function ExperienceCard({
                   ? description
                     .replace(/<[^>]*>/g, "")
                     .split(" ")
-                    .slice(0, 10)
+                    .slice(0, 8)
                     .join(" ") +
                   (description.replace(/<[^>]*>/g, "").split(" ").length > 20
                     ? "..."
@@ -475,38 +475,53 @@ export function ExperienceCard({
             <div id="PriceContainerOfferHomePageCards">
               {isDiscounted ? (
                 <div
-                  className="flex flex-col gap-0"
-                  style={{ textAlign: "start" }}
+                  className="flex justify-between "
+                  style={{ textAlign: "start", width: "100%" }}
                 >
-                  <div className="FlexAdjustContainer">
-                    <span className="FromText textSmall">from</span>
-                    <span className="text-muted-foreground line-through textSmall">
-                      {displayOriginalPrice}
-                    </span>
+                  <div>
+                    <div className="FlexAdjustContainer">
+                      <span className="FromText textSmall">from</span>
+                      <span className="text-muted-foreground line-through textSmall">
+                        {displayOriginalPrice}
+                      </span>
+                    </div>
+                    <div style={{ marginTop: "-5px" }}>
+                      <span className="text-lg font-bold fontSizeMd text-green-600">
+                        {displayPrice}
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ marginTop: "-5px" }}>
-                    <span className="text-lg font-bold fontSizeMd text-green-600">
-                      {displayPrice}
-                    </span>
+                  <div className="BookingButtonContainer">
+                    <button> <IoIosArrowRoundForward /></button>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div>
-                    <span className="FromText">from</span>{" "}
-                    {displayOriginalPrice && (
-                      <span className="text-sm text-muted-foreground line-through fontSizeSm">
-                        {displayOriginalPrice}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ marginTop: "-5px" }}>
-                    <span
-                      className="text-lg font-bold fontSizeMd"
-                      style={{ color: "var(--brand-color)" }}
-                    >
-                      {displayPrice}
-                    </span>
+                  <div className="flex items-center justify-between "
+                    style={{ width: "100%" }}>
+                    <div>
+                      <div>
+                        <span className="FromText">from</span>{" "}
+                        {displayOriginalPrice && (
+                          <span className="text-sm text-muted-foreground line-through fontSizeSm">
+                            {displayOriginalPrice}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ marginTop: "-5px" }}>
+                        <span
+                          className="text-lg font-bold fontSizeMd"
+                          style={{ color: "var(--brand-color)" }}
+                        >
+                          {displayPrice}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="BookingButtonContainer" style={{
+
+                    }}>
+                      <button> <IoIosArrowRoundForward /></button>
+                    </div>
                   </div>
                 </>
               )}

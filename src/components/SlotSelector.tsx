@@ -282,8 +282,8 @@ export const SlotSelector = ({
     if (slot.available_spots <= 3) {
       return <Badge color="orange">Few Spots Left</Badge>;
     }
-    return <Badge color="green">Available</Badge>;
-  };
+    return ("")
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -307,10 +307,8 @@ export const SlotSelector = ({
       {!showOnlyDateAndTime && (
         <>
           {/* Add Activity Selector */}
-          <div>
-            <label className="text-base font-semibold mb-3 block textSmall">
-              Select Activity
-            </label>
+          <div >
+            <label className="text-base font-semibold mb-3 block textSmall">Select Activity</label>
 
             {/* Desktop Activity Swiper Slider */}
             <div className="activity-swiper-container hidden md:block">
@@ -631,13 +629,11 @@ export const SlotSelector = ({
           {/* Existing Calendar and Time Slots components */}
           {selectedActivityId && (
             <>
-              <div className="CalenderLayoutContainer">
-                <label className="text-base font-medium mb-3 block textSmall">
-                  Select a date
-                </label>
+              <div className='CalenderLayoutContainer '>
+                <label className="text-base font-medium mb-3 font-semibold block textSmall">Select date</label>
 
                 {/* Horizontal Date Picker */}
-                <div className="flex items-center gap-1  pb-2 overflowAdjustContainer">
+                <div className="grid grid-cols-5 gap-1 pb-2 AdjustContainer">
                   {next4Days.map((date) => {
                     const isSelected =
                       selectedDate && isSameDay(date, selectedDate);
@@ -654,11 +650,10 @@ export const SlotSelector = ({
                         onClick={() => !isDisabled && onDateChange(date)}
                       >
                         <div
-                          className={`w-16 h-20 rounded-lg border-2 p-2 text-center flex flex-col justify-between ${
-                            isSelected
-                              ? "border-[var(--brand-color)] bg-orange-50"
-                              : "border-gray-200 bg-white hover:border-gray-300"
-                          }`}
+                          className={`w-full h-20 rounded-lg border-2 p-2 text-center flex flex-col justify-between ${isSelected
+                            ? 'border-[var(--brand-color)] bg-orange-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                            }`}
                         >
                           <div className="text-xs text-gray-500 font-medium textSmall">
                             {format(date, "EEE")}
@@ -719,7 +714,7 @@ export const SlotSelector = ({
                       ))}
                     </div>
                   ) : timeSlots && timeSlots.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ">
+                    <div className="grid grid-cols-2 md:grid-cols-2 gap-1 ">
                       {timeSlots.map((slot) => {
                         const available = isSlotAvailable(slot);
                         const isSelected = selectedSlotId === slot.id;
@@ -742,14 +737,13 @@ export const SlotSelector = ({
                             style={{ marginBottom: "0", padding: "0px" }}
                           >
                             <div className="flex flex-col md:flex-row md:items-center justify-between p-0 md:p-4 FlexGridContainer">
-                              <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-0">
+                              <div className="flex items-center gap-2 md:gap-3 md:mb-0">
                                 <Clock className="h-4 w-4 md:h-5 md:w-5 text-gray-500 flex-shrink-0" />
                                 <div className="min-w-0">
-                                  <div className="font-medium text-sm md:text-base">
-                                    {formatTime(slot.start_time)} -{" "}
-                                    {formatTime(slot.end_time)}
+                                  <div className="ParaGraphEdit md:text-base font-semibold">
+                                    {formatTime(slot.start_time)} 
                                   </div>
-                                  <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-500">
+                                  {/* <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-500">
                                     <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                                     <span className="truncate">
                                       {slot.available_spots} of {slot.capacity}{" "}
@@ -757,11 +751,11 @@ export const SlotSelector = ({
                                       {slot.booked_count > 0 &&
                                         ` (${slot.booked_count} booked)`}
                                     </span>
-                                  </div>
+                                  </div> */}
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2 justify-end md:justify-start">
+                              {/* <div className="flex items-center gap-2 justify-end md:justify-start">
                                 {getSlotStatusBadge(slot)}
                                 {isSelected && (
                                   <Badge
@@ -771,7 +765,7 @@ export const SlotSelector = ({
                                     Selected
                                   </Badge>
                                 )}
-                              </div>
+                              </div> */}
                             </div>
 
                             {!available && slot.available_spots > 0 && (

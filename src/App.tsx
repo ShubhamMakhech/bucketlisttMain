@@ -115,7 +115,7 @@ const ConditionalMobileButton = () => {
       price={firstActivity?.price || experience.price || 0}
       originalPrice={experience.original_price}
       currency={experience.currency || "INR"}
-      bookingButtonText="Book Now"
+      bookingButtonText="Check Availability"
       discountedPrice={discountedPrice}
       onBookingClick={() => {
         // Dispatch custom event to open booking dialog

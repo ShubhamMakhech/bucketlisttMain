@@ -227,7 +227,7 @@ const ExperienceDetail = () => {
     images && images.length > 0
       ? images
       : experience?.image_url
-      ? [
+        ? [
           {
             id: "main",
             image_url: experience.image_url,
@@ -236,7 +236,7 @@ const ExperienceDetail = () => {
             is_primary: true,
           },
         ]
-      : [];
+        : [];
 
   // Bulk Booking CSV Download
   const handleDownloadBulkBookingCSV = () => {
@@ -305,8 +305,7 @@ const ExperienceDetail = () => {
 
         if (!bookingDate || !participantName || !participantEmail) {
           errors.push(
-            `Row ${
-              i + 2
+            `Row ${i + 2
             }: Missing required fields (booking_date, participant_name, participant_email)`
           );
           continue;
@@ -342,8 +341,7 @@ const ExperienceDetail = () => {
 
         if (bookingsError) {
           errors.push(
-            `Row ${i + 2}: Error checking existing bookings - ${
-              bookingsError.message
+            `Row ${i + 2}: Error checking existing bookings - ${bookingsError.message
             }`
           );
           continue;
@@ -370,8 +368,7 @@ const ExperienceDetail = () => {
 
         if (!availableSlot) {
           errors.push(
-            `Row ${
-              i + 2
+            `Row ${i + 2
             }: No available time slots for ${participantName} on ${bookingDate}`
           );
           continue;
@@ -471,7 +468,7 @@ const ExperienceDetail = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <div className="container py-8 px-4">
+      <div className="container py-4 px-2">
         {/* <Button 
           variant="ghost" 
           onClick={() => navigate('/')}
@@ -489,8 +486,8 @@ const ExperienceDetail = () => {
               experienceTitle={experience.title}
             />
           </div>
-          <br />
-          <h2 className="text-start CommonH2">{experience.title}</h2>
+          {/* <br /> */}
+          <h2 className="text-start CommonH2" style={{ marginTop: "10px" }}>{experience.title}</h2>
           {/* Details Section */}
           <div className="space-y-6 ">
             <div>
@@ -509,10 +506,14 @@ const ExperienceDetail = () => {
                 <div className="features-badges-grid">
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
-                      <img
+                      {/* <img
                         src="/Images/ATOAICertified.svg"
                         alt="ATOAI Certified"
-                      />
+                      /> */}
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                      </svg>
+
                     </div>
                     <div className="feature-badge-content">
                       <p>ATOAI Certified</p>
@@ -520,10 +521,14 @@ const ExperienceDetail = () => {
                   </div>
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
-                      <img
+                      {/* <img
                         src="/Images/BookPayLater.svg"
                         alt="Book Now Pay Later"
-                      />
+                      /> */}
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+                      </svg>
+
                     </div>
                     <div className="feature-badge-content">
                       <p>Book Now, Pay Later</p>
@@ -531,7 +536,10 @@ const ExperienceDetail = () => {
                   </div>
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
-                      <IoCheckmarkDoneCircle />
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75" />
+                      </svg>
+
                     </div>
                     <div className="feature-badge-content">
                       <p>Free Cancellation</p>
@@ -539,10 +547,10 @@ const ExperienceDetail = () => {
                   </div>
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
-                      <img
-                        src="/Images/MobileUpatedIcon.svg"
-                        alt="Mobile Tickets"
-                      />
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                      </svg>
+
                     </div>
                     <div className="feature-badge-content">
                       <p>Tickets to your mobile</p>
@@ -627,7 +635,7 @@ const ExperienceDetail = () => {
                         <div className="flex items-center gap-3 mb-6">
                           <span style={{ color: "grey" }}>From</span>
                           {appliedCoupon &&
-                          appliedCoupon.discount_calculation ? (
+                            appliedCoupon.discount_calculation ? (
                             <>
                               <span className="text-3xl font-bold line-through text-muted-foreground">
                                 {formatCurrency(experience.price)}
@@ -651,7 +659,7 @@ const ExperienceDetail = () => {
                             </>
                           ) : discountedPrice &&
                             discountedPrice !==
-                              (firstActivity?.price || experience.price) ? (
+                            (firstActivity?.price || experience.price) ? (
                             <>
                               <span className="text-lg text-muted-foreground line-through">
                                 {formatCurrency(
@@ -738,20 +746,20 @@ const ExperienceDetail = () => {
                       >
                         {bookingButtonText} {!isAgent && " - "}{" "}
                         {!isAgent &&
-                        appliedCoupon?.discount_calculation?.final_amount
+                          appliedCoupon?.discount_calculation?.final_amount
                           ? formatCurrency(
-                              appliedCoupon.discount_calculation.final_amount
-                            )
+                            appliedCoupon.discount_calculation.final_amount
+                          )
                           : discountedPrice &&
                             discountedPrice !==
-                              (firstActivity?.price || experience.price)
-                          ? formatCurrency(discountedPrice)
-                          : experience.original_price &&
-                            experience.original_price !== experience.price
-                          ? formatCurrency(experience.price)
-                          : formatCurrency(
-                              firstActivity?.price || experience.price
-                            )}
+                            (firstActivity?.price || experience.price)
+                            ? formatCurrency(discountedPrice)
+                            : experience.original_price &&
+                              experience.original_price !== experience.price
+                              ? formatCurrency(experience.price)
+                              : formatCurrency(
+                                firstActivity?.price || experience.price
+                              )}
                       </Button>
 
                       {/* Bulk Booking Buttons for Vendor */}
