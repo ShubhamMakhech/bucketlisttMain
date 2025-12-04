@@ -1274,9 +1274,9 @@ export const BookingDialog = ({
               <div>
 
                 <div className="BackgroundImageSet">
-                  <div className="ActivityImageShow">
+                  {/* <div className="ActivityImageShow">
                     <img src={experience.image_url} alt={experience.title} className="w-full h-full object-cover rounded-lg" />
-                  </div>
+                  </div> */}
                   <Card className="py-2 px-2" id="BookingSummaryCard">
                     <h3 className="textSmall">Booking Summary</h3>
 
