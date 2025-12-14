@@ -62,6 +62,7 @@ interface ExperienceData {
   duration: string;
   group_size: string;
   location: string;
+  location2: string;
   start_point: string;
   end_point: string;
   distance_km: number;
@@ -111,6 +112,7 @@ export function CreateExperienceForm({
     description: initialData?.description || "",
     category_ids: initialData?.category_ids || [],
     location: initialData?.location || "",
+    location2: initialData?.location2 || "",
     start_point: initialData?.start_point || "",
     end_point: initialData?.end_point || "",
     days_open: initialData?.days_open || [],
@@ -927,6 +929,7 @@ export function CreateExperienceForm({
         duration: null, // Legacy field - no longer used
         group_size: null, // Legacy field - no longer used
         location: formData.location,
+        location2: formData.location2,
         start_point: formData.start_point,
         end_point: formData.end_point,
         distance_km: 0, // Legacy field - kept for compatibility

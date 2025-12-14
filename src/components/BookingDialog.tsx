@@ -31,7 +31,16 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Tag, CheckCircle, AlertCircle, Minus, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Plus,
+  X,
+  Tag,
+  CheckCircle,
+  AlertCircle,
+  Minus,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -356,8 +365,9 @@ export const BookingDialog = ({
         const discountText =
           result.coupon?.type === "percentage"
             ? `${result.discount_calculation.savings_percentage.toFixed(1)}%`
-            : `${selectedActivity?.currency || experience.currency} ${result.discount_calculation.discount_amount
-            }`;
+            : `${selectedActivity?.currency || experience.currency} ${
+                result.discount_calculation.discount_amount
+              }`;
 
         setCouponValidation({
           isValid: true,
@@ -420,30 +430,61 @@ export const BookingDialog = ({
       // console.log(vendor);
 
       const whatsappBody = {
-        version: "2.0",
-        country_code: "91",
-        wid: "16703",
-        type: "text",
-        data: [
-          {
-            mobile: data.participant.phone_number,
-            bodyValues: {
-              "1": data.participant.name,
-              "2": timeSlot?.activities.name,
-              "3": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
-                timeSlot?.start_time,
-                "HH:mm"
-              ).format("hh:mm A")} - ${moment(
-                timeSlot?.end_time,
-                "HH:mm"
-              ).format("hh:mm A")}`,
-              "4": timeSlot?.experiences?.location,
-              "5": data?.participant_count?.toString() || "0",
-              "6": finalPrice.toFixed(2).toString(),
-              "7": dueAmount || "0",
+        integrated_number: "919274046332",
+        content_type: "template",
+        payload: {
+          messaging_product: "whatsapp",
+          type: "template",
+          template: {
+            name: "booking_confirmed_vendor",
+            language: {
+              code: "en",
+              policy: "deterministic",
             },
+            namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+            to_and_components: [
+              {
+                to: [data.participant.phone_number],
+                components: {
+                  body_1: {
+                    type: "text",
+                    value: data.participant.name,
+                  },
+                  body_2: {
+                    type: "text",
+                    value: timeSlot?.activities.name || "",
+                  },
+                  body_3: {
+                    type: "text",
+                    value: `${moment(selectedDate).format(
+                      "DD/MM/YYYY"
+                    )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+                      "hh:mm A"
+                    )} - ${moment(timeSlot?.end_time, "HH:mm").format(
+                      "hh:mm A"
+                    )}`,
+                  },
+                  body_4: {
+                    type: "text",
+                    value: timeSlot?.experiences?.location || "",
+                  },
+                  body_5: {
+                    type: "text",
+                    value: data?.participant_count?.toString() || "0",
+                  },
+                  body_6: {
+                    type: "text",
+                    value: finalPrice.toFixed(2).toString(),
+                  },
+                  body_7: {
+                    type: "text",
+                    value: dueAmount || "0",
+                  },
+                },
+              },
+            ],
           },
-        ],
+        },
       };
       // const whatsappBody = {
       //   version: "2.0",
@@ -472,34 +513,68 @@ export const BookingDialog = ({
       const whatsappResponse = await SendWhatsappMessage(whatsappBody);
       // console.log("whatsappResponse", whatsappResponse);
       const vendorWhatsappBody = {
-        version: "2.0",
-        country_code: "91",
-        wid: "16845",
-        type: "text",
-        data: [
-          {
-            mobile: vendor?.phone_number,
-            bodyValues: {
-              "1": data.participant.name,
-              "2": data?.participant_count?.toString() || "0",
-              "3": data.participant.phone_number,
-              "4": experience.title,
-              "5": timeSlot?.activities.name,
-              "6": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
-                timeSlot?.start_time,
-                "HH:mm"
-              ).format("hh:mm A")} - ${moment(
-                timeSlot?.end_time,
-                "HH:mm"
-              ).format("hh:mm A")}`,
-              "7": dueAmount || "0",
-              "8":
-                data.referral_code ?? data.referral_code !== ""
-                  ? data.referral_code
-                  : "-",
+        integrated_number: "919274046332",
+        content_type: "template",
+        payload: {
+          messaging_product: "whatsapp",
+          type: "template",
+          template: {
+            name: "booking_confirmed_vendor",
+            language: {
+              code: "en",
+              policy: "deterministic",
             },
+            namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+            to_and_components: [
+              {
+                to: [vendor?.phone_number],
+                components: {
+                  body_1: {
+                    type: "text",
+                    value: data.participant.name,
+                  },
+                  body_2: {
+                    type: "text",
+                    value: data?.participant_count?.toString() || "0",
+                  },
+                  body_3: {
+                    type: "text",
+                    value: data.participant.phone_number,
+                  },
+                  body_4: {
+                    type: "text",
+                    value: experience.title,
+                  },
+                  body_5: {
+                    type: "text",
+                    value: timeSlot?.activities.name || "",
+                  },
+                  body_6: {
+                    type: "text",
+                    value: `${moment(selectedDate).format(
+                      "DD/MM/YYYY"
+                    )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+                      "hh:mm A"
+                    )} - ${moment(timeSlot?.end_time, "HH:mm").format(
+                      "hh:mm A"
+                    )}`,
+                  },
+                  body_7: {
+                    type: "text",
+                    value: dueAmount || "0",
+                  },
+                  body_8: {
+                    type: "text",
+                    value:
+                      data.referral_code && data.referral_code !== ""
+                        ? data.referral_code
+                        : "-",
+                  },
+                },
+              },
+            ],
           },
-        ],
+        },
       };
       //   bodyValues: {
       //         "1": data.participant.name,
@@ -521,34 +596,68 @@ export const BookingDialog = ({
         vendorWhatsappBody
       );
       const adminWhatsappBody = {
-        version: "2.0",
-        country_code: "91",
-        wid: "16845",
-        type: "text",
-        data: [
-          {
-            mobile: "9265636871",
-            bodyValues: {
-              "1": data.participant.name,
-              "2": data?.participant_count?.toString() || "0",
-              "3": data.participant.phone_number,
-              "4": experience.title,
-              "5": timeSlot?.activities.name,
-              "6": `${moment(selectedDate).format("DD/MM/YYYY")} - ${moment(
-                timeSlot?.start_time,
-                "HH:mm"
-              ).format("hh:mm A")} - ${moment(
-                timeSlot?.end_time,
-                "HH:mm"
-              ).format("hh:mm A")}`,
-              "7": dueAmount || "0",
-              "8":
-                data.referral_code ?? data.referral_code !== ""
-                  ? data.referral_code
-                  : "-",
+        integrated_number: "919274046332",
+        content_type: "template",
+        payload: {
+          messaging_product: "whatsapp",
+          type: "template",
+          template: {
+            name: "booking_confirmed_vendor",
+            language: {
+              code: "en",
+              policy: "deterministic",
             },
+            namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+            to_and_components: [
+              {
+                to: ["9265636871"],
+                components: {
+                  body_1: {
+                    type: "text",
+                    value: data.participant.name,
+                  },
+                  body_2: {
+                    type: "text",
+                    value: data?.participant_count?.toString() || "0",
+                  },
+                  body_3: {
+                    type: "text",
+                    value: data.participant.phone_number,
+                  },
+                  body_4: {
+                    type: "text",
+                    value: experience.title,
+                  },
+                  body_5: {
+                    type: "text",
+                    value: timeSlot?.activities.name || "",
+                  },
+                  body_6: {
+                    type: "text",
+                    value: `${moment(selectedDate).format(
+                      "DD/MM/YYYY"
+                    )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+                      "hh:mm A"
+                    )} - ${moment(timeSlot?.end_time, "HH:mm").format(
+                      "hh:mm A"
+                    )}`,
+                  },
+                  body_7: {
+                    type: "text",
+                    value: dueAmount || "0",
+                  },
+                  body_8: {
+                    type: "text",
+                    value:
+                      data.referral_code && data.referral_code !== ""
+                        ? data.referral_code
+                        : "-",
+                  },
+                },
+              },
+            ],
           },
-        ],
+        },
       };
       const adminWhatsappResponse = await SendWhatsappMessage(
         adminWhatsappBody
@@ -622,8 +731,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? parseFloat((calculatedBookingAmount - advancePayment).toFixed(2))
           : partialPayment
-            ? dueAmount
-            : 0;
+          ? dueAmount
+          : 0;
 
       // console.log("Direct booking amount calculation:", {
       // selectedActivity,
@@ -740,8 +849,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? (calculatedBookingAmount - advancePayment).toFixed(2)
           : partialPayment
-            ? dueAmount.toString()
-            : "0";
+          ? dueAmount.toString()
+          : "0";
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
@@ -784,8 +893,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? parseFloat((calculatedBookingAmount - advancePayment).toFixed(2))
           : partialPayment
-            ? dueAmount
-            : 0;
+          ? dueAmount
+          : 0;
 
       // console.log("Payment booking amount calculation:", {
       // selectedActivity,
@@ -886,8 +995,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? (calculatedBookingAmount - advancePayment).toFixed(2)
           : partialPayment
-            ? finalDueAmount.toString()
-            : "0";
+          ? finalDueAmount.toString()
+          : "0";
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
@@ -1107,16 +1216,16 @@ export const BookingDialog = ({
   const upfrontAmount = isAgent
     ? 0 // Agents don't pay upfront
     : partialPayment
-      ? parseFloat((finalPrice * 0.1).toFixed(2))
-      : finalPrice;
+    ? parseFloat((finalPrice * 0.1).toFixed(2))
+    : finalPrice;
   const dueAmount =
     isAgent && advancePayment > 0
       ? parseFloat((finalPrice - advancePayment).toFixed(2)) // Due = booking amount - advance payment
       : isAgent
-        ? 0 // No due amount if no advance payment
-        : partialPayment
-          ? parseFloat((finalPrice - upfrontAmount).toFixed(2))
-          : 0;
+      ? 0 // No due amount if no advance payment
+      : partialPayment
+      ? parseFloat((finalPrice - upfrontAmount).toFixed(2))
+      : 0;
 
   // Get time slots for summary display
   const { data: timeSlots } = useQuery({
@@ -1153,8 +1262,8 @@ export const BookingDialog = ({
 
   const totalActivityPrice = selectedActivity
     ? parseFloat(
-      (getActivityPrice(selectedActivity) * participantCount).toFixed(2)
-    )
+        (getActivityPrice(selectedActivity) * participantCount).toFixed(2)
+      )
     : 0;
 
   return (
@@ -1272,7 +1381,6 @@ export const BookingDialog = ({
               {/* Left Column: Activity Summary */}
 
               <div>
-
                 <div className="BackgroundImageSet">
                   {/* <div className="ActivityImageShow">
                     <img src={experience.image_url} alt={experience.title} className="w-full h-full object-cover rounded-lg" />
@@ -1327,12 +1435,14 @@ export const BookingDialog = ({
                               </svg>
                             </div>
                             <span className="text-gray-600 text-sm md:text-base">
-                              {timeSlots?.find((slot) => slot.id === selectedSlotId)
+                              {timeSlots?.find(
+                                (slot) => slot.id === selectedSlotId
+                              )
                                 ? `${formatTime(
-                                  timeSlots.find(
-                                    (slot) => slot.id === selectedSlotId
-                                  )!.start_time
-                                )}`
+                                    timeSlots.find(
+                                      (slot) => slot.id === selectedSlotId
+                                    )!.start_time
+                                  )}`
                                 : "Select Time Slot"}
                             </span>
                           </div>
@@ -1350,7 +1460,7 @@ export const BookingDialog = ({
                       </span>
                       <div className="text-right">
                         {(selectedActivity as any)?.discounted_price &&
-                          (selectedActivity as any).discounted_price !==
+                        (selectedActivity as any).discounted_price !==
                           (selectedActivity as any).price ? (
                           <div className="flex items-end gap-2">
                             <span className="text-xs md:text-sm text-gray-400 line-through">
@@ -1549,7 +1659,10 @@ export const BookingDialog = ({
                         <>
                           <FormItem id="participant-count-form-item">
                             <div className="flex items-center gap-2 justify-between">
-                              <Card style={{ width: "100%", padding: "3px 10px" }} id="ParticipantCountCard">
+                              <Card
+                                style={{ width: "100%", padding: "3px 10px" }}
+                                id="ParticipantCountCard"
+                              >
                                 <div>
                                   <FormLabel>Number of Participants</FormLabel>
                                 </div>
@@ -1584,7 +1697,9 @@ export const BookingDialog = ({
                                           setInputValue(e.target.value);
                                         }}
                                         onBlur={(e) => {
-                                          const value = parseInt(e.target.value);
+                                          const value = parseInt(
+                                            e.target.value
+                                          );
                                           if (isNaN(value) || value < 1) {
                                             field.onChange(1);
                                             setInputValue("1");
@@ -1728,8 +1843,9 @@ export const BookingDialog = ({
                           render={({ field }) => (
                             <FormItem id="note-for-guide-textarea">
                               {/* <FormLabel>Note for Tour Guide (Optional)</FormLabel> */}
-                              <FormControl >
-                                <Textarea style={{ minHeight: "20px" }} 
+                              <FormControl>
+                                <Textarea
+                                  style={{ minHeight: "20px" }}
                                   placeholder="Any special requests/information for your guide"
                                   {...field}
                                 />
@@ -1744,7 +1860,9 @@ export const BookingDialog = ({
                             <FormItem>
                               {!isReferralCodeExpanded ? (
                                 <div
-                                  onClick={() => setIsReferralCodeExpanded(true)}
+                                  onClick={() =>
+                                    setIsReferralCodeExpanded(true)
+                                  }
                                   className="cursor-pointer"
                                 >
                                   <span className="text-sm GrayColor">
@@ -1774,7 +1892,9 @@ export const BookingDialog = ({
                                       placeholder="Referral Code"
                                       {...field}
                                       onChange={(e) =>
-                                        field.onChange(e.target.value.toUpperCase())
+                                        field.onChange(
+                                          e.target.value.toUpperCase()
+                                        )
                                       }
                                       value={field.value?.toUpperCase() || ""}
                                       autoFocus
@@ -1794,7 +1914,9 @@ export const BookingDialog = ({
                                 <FormItem>
                                   {!isCouponCodeExpanded ? (
                                     <div
-                                      onClick={() => setIsCouponCodeExpanded(true)}
+                                      onClick={() =>
+                                        setIsCouponCodeExpanded(true)
+                                      }
                                       className="cursor-pointer"
                                     >
                                       <span className="text-sm GrayColor">
@@ -1824,7 +1946,9 @@ export const BookingDialog = ({
                                             placeholder="Enter coupon code"
                                             value={couponCode}
                                             onChange={(e) =>
-                                              handleCouponCodeChange(e.target.value)
+                                              handleCouponCodeChange(
+                                                e.target.value
+                                              )
                                             }
                                             autoFocus
                                           />
@@ -1857,40 +1981,43 @@ export const BookingDialog = ({
                             )}
 
                             {/* Applied Coupon Display */}
-                            {((couponValidation?.isValid && couponValidation.coupon) ||
+                            {((couponValidation?.isValid &&
+                              couponValidation.coupon) ||
                               appliedCoupon) && (
-                                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <Tag className="h-4 w-4 text-green-600" />
-                                      <span className="font-medium text-green-800">
-                                        Coupon Applied:{" "}
-                                        {couponValidation?.isValid &&
-                                          couponValidation.coupon
-                                          ? couponValidation.coupon.coupon.coupon_code
-                                          : appliedCoupon.coupon.coupon_code}
-                                      </span>
-                                    </div>
-                                    <Badge
-                                      variant="secondary"
-                                      className="bg-green-100 text-green-800"
-                                    >
-                                      {(() => {
-                                        const activeCoupon =
-                                          couponValidation?.isValid &&
-                                            couponValidation.coupon
-                                            ? couponValidation.coupon
-                                            : appliedCoupon;
-                                        return activeCoupon.coupon.type === "percentage"
-                                          ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
+                              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Tag className="h-4 w-4 text-green-600" />
+                                    <span className="font-medium text-green-800">
+                                      Coupon Applied:{" "}
+                                      {couponValidation?.isValid &&
+                                      couponValidation.coupon
+                                        ? couponValidation.coupon.coupon
+                                            .coupon_code
+                                        : appliedCoupon.coupon.coupon_code}
+                                    </span>
+                                  </div>
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-green-100 text-green-800"
+                                  >
+                                    {(() => {
+                                      const activeCoupon =
+                                        couponValidation?.isValid &&
+                                        couponValidation.coupon
+                                          ? couponValidation.coupon
+                                          : appliedCoupon;
+                                      return activeCoupon.coupon.type ===
+                                        "percentage"
+                                        ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
                                             1
                                           )}%`
-                                          : `Save ${experience.currency} ${activeCoupon.discount_calculation.discount_amount}`;
-                                      })()}
-                                    </Badge>
-                                  </div>
-                                  {/* <div className="mt-2 text-sm text-green-700"> */}
-                                  {/* {(() => {
+                                        : `Save ${experience.currency} ${activeCoupon.discount_calculation.discount_amount}`;
+                                    })()}
+                                  </Badge>
+                                </div>
+                                {/* <div className="mt-2 text-sm text-green-700"> */}
+                                {/* {(() => {
                           const activeCoupon =
                             couponValidation?.isValid && couponValidation.coupon
                               ? couponValidation.coupon
@@ -1929,16 +2056,19 @@ export const BookingDialog = ({
                             </>
                           );
                         })()} */}
-                                  {/* </div> */}
-                                </div>
-                              )}
+                                {/* </div> */}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
                     </CardContent>
                   </Card>
                   {!isAgent && (
-                    <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20" id="pay-10-now-card">
+                    <Card
+                      className="border-blue-200 bg-blue-50 dark:bg-blue-950/20"
+                      id="pay-10-now-card"
+                    >
                       <CardContent className="p-2">
                         <div className="flex items-center justify-between">
                           <div>
@@ -1946,8 +2076,8 @@ export const BookingDialog = ({
                               Pay 10% Now, Rest On-Site
                             </h4>
                             <p className="text-sm text-blue-600 dark:text-blue-300">
-                              Book your adventure with 10% — pay the rest when you
-                              arrive at spot!
+                              Book your adventure with 10% — pay the rest when
+                              you arrive at spot!
                             </p>
                           </div>
                           <Switch
@@ -1959,18 +2089,20 @@ export const BookingDialog = ({
                     </Card>
                   )}
                   <FormField
-                  
                     control={form.control}
                     name="terms_accepted"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0" id="terms-and-conditions-label">
+                      <FormItem
+                        className="flex flex-row items-start space-x-3 space-y-0"
+                        id="terms-and-conditions-label"
+                      >
                         <FormControl>
                           <Checkbox
                             checked={field.value}
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
-                        <div className="space-y-1 leading-none" >
+                        <div className="space-y-1 leading-none">
                           <FormLabel className="cursor-pointer">
                             I accept the{" "}
                             <a
@@ -1984,10 +2116,8 @@ export const BookingDialog = ({
                           </FormLabel>
                         </div>
                       </FormItem>
-
                     )}
                   />
-                 
 
                   {/* Step 2 Footer */}
                   <div className="flex gap-3 pt-0 mt-0">
@@ -2006,39 +2136,52 @@ export const BookingDialog = ({
                         !selectedDate ||
                         !selectedSlotId ||
                         (isAgent && (!b2bPrice || !sellingPrice)) ||
-                        (isAgent && advancePayment > 0 && advancePayment > finalPrice)
+                        (isAgent &&
+                          advancePayment > 0 &&
+                          advancePayment > finalPrice)
                       }
                       className="flex-1 bg-orange-500 hover:bg-orange-600"
                     >
                       {isSubmitting
                         ? "Processing..."
                         : isAgent
-                          ? advancePayment > 0
-                            ? `Confirm Booking (Due: ${selectedActivity?.currency || experience.currency
-                            } ${dueAmount % 1 === 0 ? dueAmount : dueAmount.toFixed(2)})`
-                            : "Confirm Booking"
-                          : partialPayment
-                            ? `Pay ${selectedActivity?.currency || experience.currency} ${upfrontAmount % 1 === 0 ? upfrontAmount : upfrontAmount.toFixed(2)} & Confirm Booking`
-                            : `Pay ${selectedActivity?.currency || experience.currency} ${finalPrice % 1 === 0 ? finalPrice : finalPrice.toFixed(2)} & Confirm Booking`}
+                        ? advancePayment > 0
+                          ? `Confirm Booking (Due: ${
+                              selectedActivity?.currency || experience.currency
+                            } ${
+                              dueAmount % 1 === 0
+                                ? dueAmount
+                                : dueAmount.toFixed(2)
+                            })`
+                          : "Confirm Booking"
+                        : partialPayment
+                        ? `Pay ${
+                            selectedActivity?.currency || experience.currency
+                          } ${
+                            upfrontAmount % 1 === 0
+                              ? upfrontAmount
+                              : upfrontAmount.toFixed(2)
+                          } & Confirm Booking`
+                        : `Pay ${
+                            selectedActivity?.currency || experience.currency
+                          } ${
+                            finalPrice % 1 === 0
+                              ? finalPrice
+                              : finalPrice.toFixed(2)
+                          } & Confirm Booking`}
                     </Button>
                   </div>
                 </div>
 
                 {/* Note for Guide */}
 
-
-
                 {/* Coupon Code Section - Hidden for agents */}
 
-
                 {/* Terms and Conditions */}
-
-
               </div>
             </div>
 
             {/* Partial Payment Toggle - Hidden for agents */}
-
           </form>
         </Form>
       )}
