@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import RotatingText from "@/components/ui/RotatingText";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
@@ -24,18 +25,149 @@ import { Autoplay, FreeMode } from "swiper/modules";
 import { IoIosArrowRoundBack } from "react-icons/io";
 import { IoIosArrowRoundForward } from "react-icons/io";
 
-
 import "swiper/css";
 import "swiper/css/free-mode";
 import "../Styles/Index.css";
 const Index = () => {
   const navigate = useNavigate();
   const experiencesSwiperRef = useRef<SwiperType | null>(null);
+  const { user } = useAuth();
 
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Get user location and store in profiles table
+  useEffect(() => {
+    const updateUserLocation = async () => {
+      if (!user?.id) return;
+
+      // Check if geolocation is available
+      if (!navigator.geolocation) {
+        console.log("Geolocation is not supported by this browser.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+
+          try {
+            // Try to get readable location name using reverse geocoding
+            let locationString = `${latitude},${longitude}`;
+
+            try {
+              // Use OpenStreetMap Nominatim API for reverse geocoding (free, no API key required)
+              // Note: Nominatim requires a User-Agent header
+              const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+                {
+                  headers: {
+                    "User-Agent": "bucketlistt-app/1.0",
+                  },
+                }
+              );
+
+              if (response.ok) {
+                const data = await response.json();
+
+                if (data && data.address) {
+                  const address = data.address;
+
+                  // Build a readable location string (city, state) - excluding country
+                  const locationParts = [];
+
+                  // Get city name (try multiple fields)
+                  if (address.city) {
+                    locationParts.push(address.city);
+                  } else if (address.town) {
+                    locationParts.push(address.town);
+                  } else if (address.village) {
+                    locationParts.push(address.village);
+                  } else if (address.suburb) {
+                    locationParts.push(address.suburb);
+                  } else if (address.county) {
+                    locationParts.push(address.county);
+                  } else if (address.district) {
+                    locationParts.push(address.district);
+                  }
+
+                  // Get state (try multiple fields)
+                  if (address.state) {
+                    locationParts.push(address.state);
+                  } else if (address.state_district) {
+                    locationParts.push(address.state_district);
+                  } else if (address.region) {
+                    locationParts.push(address.region);
+                  }
+
+                  if (locationParts.length > 0) {
+                    locationString = locationParts.join(", ");
+                  } else {
+                    // Fallback: try to extract city and state from display_name
+                    if (data.display_name) {
+                      // Parse display_name to extract city and state
+                      // Format is usually: "City, State, Country, ..."
+                      const parts = data.display_name
+                        .split(",")
+                        .map((p) => p.trim());
+                      if (parts.length >= 2) {
+                        // Take first two parts (city and state)
+                        locationString = parts.slice(0, 2).join(", ");
+                      } else {
+                        locationString = data.display_name;
+                      }
+                    }
+                  }
+                }
+              } else {
+              }
+            } catch (geocodeError) {
+              // If reverse geocoding fails, just use coordinates
+              console.log(
+                "Reverse geocoding failed, using coordinates:",
+                geocodeError
+              );
+            }
+            // Update the profile with recent_location
+            const { data: updateData, error } = await supabase
+              .from("profiles")
+              .update({
+                recent_location: locationString as any,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", user.id)
+              .select();
+
+            if (error) {
+              console.error("Error updating user location:", error);
+              console.error("Error details:", {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                code: error.code,
+              });
+            } else {
+            }
+          } catch (error) {
+            console.error("Error updating user location:", error);
+          }
+        },
+        (error) => {
+          console.error("Error getting user location:", error);
+          // Optionally, you can store error info or a default location
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 300000, // Cache for 5 minutes
+        }
+      );
+    };
+
+    updateUserLocation();
+  }, [user?.id]);
 
   const { data: destinations, isLoading: destinationsLoading } = useQuery({
     queryKey: ["destinations"],
@@ -219,7 +351,10 @@ const Index = () => {
             )}
           </div>
         </section> */}
-        <section className="section-wrapper section-bg-primary SectionPaddingTop SectionPaddingBottom" id="ExploreIndiaTopDestinations">
+        <section
+          className="section-wrapper section-bg-primary SectionPaddingTop SectionPaddingBottom"
+          id="ExploreIndiaTopDestinations"
+        >
           <div className="container">
             <BidirectionalAnimatedSection
               animation="fade-up"
@@ -227,9 +362,7 @@ const Index = () => {
               duration={600}
             >
               <div className="HeadingHeaderCommonUsed">
-                <h2 className="CommonH2">
-                  Explore India's top destinations
-                </h2>
+                <h2 className="CommonH2">Explore India's top destinations</h2>
               </div>
             </BidirectionalAnimatedSection>
 
@@ -336,10 +469,14 @@ const Index = () => {
               <div className="HeadingHeaderCommonUsed">
                 <h2 className="CommonH2">Top Experiences</h2>
                 <div className="SwiperButtonsControls">
-                  <button onClick={() => experiencesSwiperRef.current?.slidePrev()}>
+                  <button
+                    onClick={() => experiencesSwiperRef.current?.slidePrev()}
+                  >
                     <IoIosArrowRoundBack />
                   </button>
-                  <button onClick={() => experiencesSwiperRef.current?.slideNext()}>
+                  <button
+                    onClick={() => experiencesSwiperRef.current?.slideNext()}
+                  >
                     <IoIosArrowRoundForward />
                   </button>
                 </div>
@@ -406,20 +543,22 @@ const Index = () => {
                             reviews={
                               experience.reviews_count?.toString() || "0"
                             }
-                            price={`${experience.currency === "USD"
-                              ? "₹"
-                              : experience.currency == "INR"
+                            price={`${
+                              experience.currency === "USD"
+                                ? "₹"
+                                : experience.currency == "INR"
                                 ? "₹"
                                 : experience.currency
-                              } ${experience.price}`}
+                            } ${experience.price}`}
                             originalPrice={
                               experience.original_price
-                                ? `${experience.currency === "USD"
-                                  ? "₹"
-                                  : experience.currency == "INR"
-                                    ? "₹"
-                                    : experience.currency
-                                } ${experience.original_price}`
+                                ? `${
+                                    experience.currency === "USD"
+                                      ? "₹"
+                                      : experience.currency == "INR"
+                                      ? "₹"
+                                      : experience.currency
+                                  } ${experience.original_price}`
                                 : undefined
                             }
                             duration={experience.duration || undefined}
@@ -568,7 +707,7 @@ const Index = () => {
                     className="LogoATOAIStyles"
                     src="/ATOAI_logo.jpg"
                     alt="ATOAI Logo"
-                  // className="mx-auto w-32 md:w-48 h-auto rounded-lg"
+                    // className="mx-auto w-32 md:w-48 h-auto rounded-lg"
                   />
                 </BidirectionalAnimatedSection>
 
@@ -627,7 +766,6 @@ const Index = () => {
                 </div>
               </div>
             </div>
-           
           </div>
         </section>
       </BidirectionalAnimatedSection>

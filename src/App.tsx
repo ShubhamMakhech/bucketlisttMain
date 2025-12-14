@@ -129,18 +129,18 @@ const App: React.FC = () => {
   // Function to check if the user is loggedin via google whenever LOGIN MODAL OEPENS WE ARE STORING A KEY LIKE LOGGED IN SO AT THAT TIME WE GET TO KNOW FROM WHICH PAGE WE ARE LOGGED IN BECAUSE WHEN WE USE GOOGLE REDIRECT IT WILL MAKE US REDIRECT TO STATIC ANY PATH AFTER THAT WE NEED TO REDIRECT TO THE PAGE FROM WHERE WE ARE LOGGED IN
 
   const checkLoggedInPathVsCurerntPath = () => {
-    console.log("checking logged in path vs current path");
-    console.log("loggedInPath", localStorage.getItem("loggedInPath"));
-    console.log("currentPath", window.location.pathname);
+    // console.log("checking logged in path vs current path");
+    // console.log("loggedInPath", localStorage.getItem("loggedInPath"));
+    // console.log("currentPath", window.location.pathname);
 
     const loggedInPath = localStorage.getItem("loggedInPath");
     const currentPath = window.location.pathname;
     if (loggedInPath && currentPath !== loggedInPath) {
-      console.log("redirecting to logged in path");
+      // console.log("redirecting to logged in path");
       window.location.href = loggedInPath;
       localStorage.removeItem("loggedInPath");
     } else {
-      console.log("removing logged in path");
+      // console.log("removing logged in path");
       localStorage.removeItem("loggedInPath");
     }
   };
@@ -157,7 +157,7 @@ const App: React.FC = () => {
     if ((navigationEntry?.type as string) === "reload") {
       // Clear the navigation flag when page is actually reloaded
       sessionStorage.removeItem("hasNavigatedWithinApp");
-      console.log("Page reloaded - cleared navigation flag");
+      // console.log("Page reloaded - cleared navigation flag");
     }
   }, []);
 
