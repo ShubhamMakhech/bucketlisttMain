@@ -437,7 +437,7 @@ export const BookingDialog = ({
           messaging_product: "whatsapp",
           type: "template",
           template: {
-            name: "booking_confirmed_vendor",
+            name: "booking_confirmation_user_v2",
             language: {
               code: "en",
               policy: "deterministic",
@@ -475,7 +475,7 @@ export const BookingDialog = ({
                   },
                   body_6: {
                     type: "text",
-                    value: finalPrice.toFixed(2).toString(),
+                    value: upfrontAmount.toFixed(2).toString(),
                   },
                   body_7: {
                     type: "text",
@@ -513,6 +513,9 @@ export const BookingDialog = ({
 
       const whatsappResponse = await SendWhatsappMessage(whatsappBody);
       // console.log("whatsappResponse", whatsappResponse);
+      const discountPrice =
+        selectedActivity?.price * data.participant_count - finalPrice;
+      const advancePlusDiscountPrice = upfrontAmount + discountPrice;
       const vendorWhatsappBody = {
         integrated_number: "919274046332",
         content_type: "template",
@@ -520,7 +523,7 @@ export const BookingDialog = ({
           messaging_product: "whatsapp",
           type: "template",
           template: {
-            name: "booking_confirmed_vendor",
+            name: "booking_confirmation_vendor_v2",
             language: {
               code: "en",
               policy: "deterministic",
@@ -528,7 +531,11 @@ export const BookingDialog = ({
             namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
             to_and_components: [
               {
-                to: [vendor?.phone_number],
+                to: [
+                  vendor?.phone_number.toString().length !== 10
+                    ? vendor?.phone_number
+                    : "+91" + vendor?.phone_number.toString(),
+                ],
                 components: {
                   body_1: {
                     type: "text",
@@ -567,9 +574,7 @@ export const BookingDialog = ({
                   body_8: {
                     type: "text",
                     value:
-                      data.referral_code && data.referral_code !== ""
-                        ? data.referral_code
-                        : "-",
+                      advancePlusDiscountPrice.toFixed(2).toString() || "0",
                   },
                 },
               },
@@ -603,7 +608,7 @@ export const BookingDialog = ({
           messaging_product: "whatsapp",
           type: "template",
           template: {
-            name: "booking_confirmed_vendor",
+            name: "booking_confirmation_vendor_v2",
             language: {
               code: "en",
               policy: "deterministic",
@@ -611,7 +616,7 @@ export const BookingDialog = ({
             namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
             to_and_components: [
               {
-                to: ["9265636871"],
+                to: ["+919265636871"],
                 components: {
                   body_1: {
                     type: "text",
@@ -650,9 +655,7 @@ export const BookingDialog = ({
                   body_8: {
                     type: "text",
                     value:
-                      data.referral_code && data.referral_code !== ""
-                        ? data.referral_code
-                        : "-",
+                      advancePlusDiscountPrice.toFixed(2).toString() || "0",
                   },
                 },
               },
