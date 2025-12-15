@@ -340,6 +340,7 @@ export const BookingDialog = ({
     setB2bPrice(0);
     setSellingPrice(0);
     setAdvancePayment(0);
+    localStorage.removeItem("bookingModalData");
     onClose();
   };
 
@@ -1050,6 +1051,34 @@ export const BookingDialog = ({
       return;
     }
 
+    // Validate participant count against available spots
+    if (
+      selectedSlotId &&
+      availableSpots !== undefined &&
+      data.participant_count > availableSpots
+    ) {
+      toast({
+        title: "Not enough spots available",
+        description: `Only ${availableSpots} spot${
+          availableSpots !== 1 ? "s" : ""
+        } available for this time slot. Please select fewer participants.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if there are any spots available at all
+    if (selectedSlotId && availableSpots === 0) {
+      toast({
+        title: "No spots available",
+        description:
+          "This time slot is fully booked. Please select another time slot.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    localStorage.removeItem("bookingModalData");
     // For agents, validate b2bPrice and sellingPrice
     if (isAgent) {
       if (!b2bPrice || b2bPrice <= 0) {
@@ -1227,7 +1256,7 @@ export const BookingDialog = ({
       ? parseFloat((finalPrice - upfrontAmount).toFixed(2))
       : 0;
 
-  // Get time slots for summary display
+  // Get time slots for summary display with availability
   const { data: timeSlots } = useQuery({
     queryKey: [
       "time-slots-summary",
@@ -1239,17 +1268,56 @@ export const BookingDialog = ({
       if (!selectedDate || !selectedActivityId) return [];
 
       const dateStr = selectedDate.toISOString().split("T")[0];
-      const { data, error } = await supabase
+
+      // Get time slots for the experience
+      const { data: slots, error: slotsError } = await supabase
         .from("time_slots")
         .select("*")
         .eq("experience_id", experience.id)
         .eq("activity_id", selectedActivityId);
 
-      if (error) throw error;
-      return data || [];
+      if (slotsError) throw slotsError;
+
+      // Get bookings for this specific date
+      const { data: bookings, error: bookingsError } = await supabase
+        .from("bookings")
+        .select("time_slot_id, total_participants")
+        .eq("experience_id", experience.id)
+        .gte("booking_date", `${dateStr}T00:00:00`)
+        .lt("booking_date", `${dateStr}T23:59:59`)
+        .eq("status", "confirmed");
+
+      if (bookingsError) throw bookingsError;
+
+      // Calculate availability for each slot
+      const slotsWithAvailability = (slots || []).map((slot: any) => {
+        const slotBookings = (bookings || []).filter(
+          (booking: any) => booking.time_slot_id === slot.id
+        );
+        const bookedCount = slotBookings.reduce(
+          (sum: number, booking: any) => sum + booking.total_participants,
+          0
+        );
+        const availableSpots = slot.capacity - bookedCount;
+
+        return {
+          ...slot,
+          booked_count: bookedCount,
+          available_spots: Math.max(0, availableSpots),
+        };
+      });
+
+      return slotsWithAvailability;
     },
     enabled: !!selectedDate && !!selectedActivityId,
   });
+
+  // Get available spots for the selected slot
+  const selectedSlot = timeSlots?.find(
+    (slot: any) => slot.id === selectedSlotId
+  );
+  const availableSpots = selectedSlot?.available_spots ?? 0;
+  const maxParticipants = Math.min(50, availableSpots || 50);
 
   // Format time function
   const formatTime = (time: string) => {
@@ -1665,6 +1733,16 @@ export const BookingDialog = ({
                               >
                                 <div>
                                   <FormLabel>Number of Participants</FormLabel>
+                                  {selectedSlotId &&
+                                    availableSpots !== undefined && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        {availableSpots > 0
+                                          ? `${availableSpots} spot${
+                                              availableSpots !== 1 ? "s" : ""
+                                            } available`
+                                          : "No spots available"}
+                                      </p>
+                                    )}
                                 </div>
                                 <div>
                                   <div className="flex items-center gap-2">
@@ -1691,8 +1769,9 @@ export const BookingDialog = ({
                                       <Input
                                         type="number"
                                         min="1"
-                                        max="10"
+                                        max={maxParticipants}
                                         value={inputValue}
+                                        disabled={true}
                                         onChange={(e) => {
                                           setInputValue(e.target.value);
                                         }}
@@ -1703,9 +1782,11 @@ export const BookingDialog = ({
                                           if (isNaN(value) || value < 1) {
                                             field.onChange(1);
                                             setInputValue("1");
-                                          } else if (value > 50) {
-                                            field.onChange(50);
-                                            setInputValue("50");
+                                          } else if (value > maxParticipants) {
+                                            field.onChange(maxParticipants);
+                                            setInputValue(
+                                              maxParticipants.toString()
+                                            );
                                           } else {
                                             field.onChange(value);
                                             setInputValue(value.toString());
@@ -1723,13 +1804,16 @@ export const BookingDialog = ({
                                       size="icon"
                                       className="h-10 w-10 shrink-0"
                                       onClick={() => {
-                                        if (field.value < 50) {
+                                        if (field.value < maxParticipants) {
                                           const newValue = field.value + 1;
                                           field.onChange(newValue);
                                           setInputValue(newValue.toString());
                                         }
                                       }}
-                                      disabled={field.value >= 50}
+                                      disabled={
+                                        field.value >= maxParticipants ||
+                                        availableSpots === 0
+                                      }
                                     >
                                       <Plus className="h-4 w-4" />
                                     </Button>
@@ -2107,9 +2191,30 @@ export const BookingDialog = ({
                             I accept the{" "}
                             <a
                               href="/terms"
-                              target="_blank"
+                              // target="_blank"
                               rel="noopener noreferrer"
                               className="p-0 h-auto text-orange-500 hover:text-orange-600"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                // Get current form data
+                                const formData = form.getValues();
+
+                                // Create bookingModalData with the same structure as onSubmit
+                                const bookingModalData = {
+                                  data: formData,
+                                  selectedDate: selectedDate,
+                                  selectedSlotId: selectedSlotId,
+                                  selectedActivityId: selectedActivityId,
+                                };
+
+                                // Save to localStorage
+                                localStorage.setItem(
+                                  "bookingModalData",
+                                  JSON.stringify(bookingModalData)
+                                );
+
+                                navigate("/terms");
+                              }}
                             >
                               Terms & Conditions
                             </a>

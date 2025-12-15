@@ -743,7 +743,7 @@ export const SlotSelector = ({
                                   <div className="ParaGraphEdit md:text-base font-semibold">
                                     {formatTime(slot.start_time)} 
                                   </div>
-                                  {/* <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-500">
+                                  <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-500">
                                     <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
                                     <span className="truncate">
                                       {slot.available_spots} of {slot.capacity}{" "}
@@ -751,7 +751,7 @@ export const SlotSelector = ({
                                       {slot.booked_count > 0 &&
                                         ` (${slot.booked_count} booked)`}
                                     </span>
-                                  </div> */}
+                                  </div>
                                 </div>
                               </div>
 
