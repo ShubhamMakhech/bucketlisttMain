@@ -13,7 +13,9 @@ import { IoLocation } from "react-icons/io5";
 const getMediaType = (url: string): "video" | "image" => {
   const videoExtensions = [".mp4", ".webm", ".ogg", ".avi", ".mov"];
   const lowerUrl = url.toLowerCase();
-  return videoExtensions.some((ext) => lowerUrl.includes(ext)) ? "video" : "image";
+  return videoExtensions.some((ext) => lowerUrl.includes(ext))
+    ? "video"
+    : "image";
 };
 
 // Static destination media mapping with type information
@@ -24,39 +26,124 @@ type MediaItem = {
 
 const staticDestinationImages: Record<string, MediaItem[]> = {
   Darjeeling: [
-    { src: "https://images.unsplash.com/photo-1637737118663-f1a53ee1d5a7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
-    { src: "https://images.unsplash.com/photo-1544894062-f500cf4fbd2c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
-    { src: "https://images.unsplash.com/photo-1661970131022-714b905f7031?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
+    {
+      src: "https://images.unsplash.com/photo-1637737118663-f1a53ee1d5a7?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1544894062-f500cf4fbd2c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1661970131022-714b905f7031?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image",
+    },
   ],
   Goa: [
-    { src: "https://images.unsplash.com/photo-1496566084516-c5b96fcbd5c8?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
-    { src: "https://images.unsplash.com/photo-1580741186862-c5d0bf2aff33?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
-    { src: "https://images.unsplash.com/photo-1682743710558-b338ba285925?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
+    {
+      src: "https://images.unsplash.com/photo-1496566084516-c5b96fcbd5c8?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1580741186862-c5d0bf2aff33?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1682743710558-b338ba285925?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image",
+    },
   ],
   Jaipur: [
-    { src: "https://prepseed.s3.ap-south-1.amazonaws.com/Jaipur.svg", type: "image" },
-    { src: "https://images.unsplash.com/photo-1539650116574-75c0c6d73c0e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", type: "image" },
-    { src: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", type: "image" },
+    {
+      src: "https://prepseed.s3.ap-south-1.amazonaws.com/Jaipur.svg",
+      type: "image",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1539650116574-75c0c6d73c0e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+      type: "image",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+      type: "image",
+    },
   ],
   Kerala: [
-    { src: "https://prepseed.s3.ap-south-1.amazonaws.com/Kerela.svg", type: "image" },
-    { src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", type: "image" },
-    { src: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3", type: "image" },
+    {
+      src: "https://prepseed.s3.ap-south-1.amazonaws.com/Kerela.svg",
+      type: "image",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+      type: "image",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3",
+      type: "image",
+    },
   ],
   Rishikesh: [
-    { src: "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/RishikeshVideo.mp4", type: "video" },
+    {
+      src: "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/RishikeshVideo.mp4",
+      type: "video",
+    },
   ],
   Mysore: [
-    { src: "https://plus.unsplash.com/premium_photo-1697730494992-7d5a0c46ea52?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
-    { src: "https://images.unsplash.com/photo-1698688513674-d38bea6a34c2?q=80&w=3133&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
+    {
+      src: "https://plus.unsplash.com/premium_photo-1697730494992-7d5a0c46ea52?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1698688513674-d38bea6a34c2?q=80&w=3133&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image",
+    },
   ],
   Matheran: [
-    { src: "https://images.unsplash.com/photo-1663070549709-8b524a0560e7?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
-    { src: "https://images.unsplash.com/photo-1590812854696-65cefa66f181?q=80&w=2108&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", type: "image" },
+    {
+      src: "https://images.unsplash.com/photo-1663070549709-8b524a0560e7?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1590812854696-65cefa66f181?q=80&w=2108&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image",
+    },
   ],
   Saputara: [
-    { src: "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage1.jpg", type: "image" },
-    { src: "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage2.jpg", type: "image" },
+    {
+      src: "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage1.jpg",
+      type: "image",
+    },
+    {
+      src: "https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/SaputaraHillStationImage2.jpg",
+      type: "image",
+    },
+  ],
+  Mandvi: [
+    {
+      src: "https://prepseed.s3.ap-south-1.amazonaws.com/Mandvi+Beach+(1).jpg",
+      type: "image",
+    },
+    {
+      src: "https://prepseed.s3.ap-south-1.amazonaws.com/Mandvi+Beach+(2).jpg",
+      type: "image",
+    },
+    {
+      src: "https://prepseed.s3.ap-south-1.amazonaws.com/mandvi(3).jpg",
+      type: "image",
+    },
+  ],
+  "Shivrajpur Beach": [
+    {
+      src: "https://prepseed.s3.ap-south-1.amazonaws.com/shivrajpur+(1).jpeg",
+      type: "image",
+    },
+    {
+      src: "https://prepseed.s3.ap-south-1.amazonaws.com/shivrajpur+(2).jpeg",
+      type: "image",
+    },
+    {
+      src: "https://prepseed.s3.ap-south-1.amazonaws.com/shivrajpur+(3).jpg",
+      type: "image",
+    },
   ],
 };
 import {
@@ -159,7 +246,7 @@ const DestinationDetail = () => {
     if (video && getVideos().length > 0) {
       const playVideo = () => {
         if (video && video.paused && !video.ended) {
-          video.play().catch(() => { });
+          video.play().catch(() => {});
         }
       };
 
@@ -358,20 +445,24 @@ const DestinationDetail = () => {
 
               // Play current video
               const currentSlide = swiper.slides[swiper.activeIndex];
-              const video = currentSlide?.querySelector("video") as HTMLVideoElement;
+              const video = currentSlide?.querySelector(
+                "video"
+              ) as HTMLVideoElement;
               if (video) {
                 video.currentTime = 0;
-                video.play().catch(() => { });
+                video.play().catch(() => {});
               }
             }}
             onSwiper={(swiper) => {
               // Initialize first video
               setTimeout(() => {
                 const currentSlide = swiper.slides[swiper.activeIndex];
-                const video = currentSlide?.querySelector("video") as HTMLVideoElement;
+                const video = currentSlide?.querySelector(
+                  "video"
+                ) as HTMLVideoElement;
                 if (video) {
                   video.currentTime = 0;
-                  video.play().catch(() => { });
+                  video.play().catch(() => {});
                 }
               }, 200);
             }}
@@ -391,26 +482,32 @@ const DestinationDetail = () => {
                     loop={false}
                     controls={false}
                     disablePictureInPicture
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
                     onLoadedData={(e) => {
                       const video = e.currentTarget;
-                      video.play().catch(() => { });
+                      video.play().catch(() => {});
                     }}
                     onCanPlay={(e) => {
                       const video = e.currentTarget;
                       if (video.paused) {
-                        video.play().catch(() => { });
+                        video.play().catch(() => {});
                       }
                     }}
                     onCanPlayThrough={(e) => {
                       const video = e.currentTarget;
                       if (video.paused) {
-                        video.play().catch(() => { });
+                        video.play().catch(() => {});
                       }
                     }}
                     onPlay={(e) => {
                       // Stop Swiper autoplay when video starts
-                      const swiperElement = e.currentTarget.closest(".swiper") as any;
+                      const swiperElement = e.currentTarget.closest(
+                        ".swiper"
+                      ) as any;
                       const swiper = swiperElement?.swiper;
                       if (swiper) {
                         swiper.autoplay.stop();
@@ -423,7 +520,7 @@ const DestinationDetail = () => {
                         // Only resume if not ended and has played some
                         setTimeout(() => {
                           if (video.paused && !video.ended) {
-                            video.play().catch(() => { });
+                            video.play().catch(() => {});
                           }
                         }, 50);
                       }
@@ -431,14 +528,20 @@ const DestinationDetail = () => {
                     onTimeUpdate={(e) => {
                       // Monitor playback - if paused unexpectedly, resume
                       const video = e.currentTarget;
-                      if (video.paused && !video.ended && video.currentTime > 0.1) {
+                      if (
+                        video.paused &&
+                        !video.ended &&
+                        video.currentTime > 0.1
+                      ) {
                         // Video was playing but got paused - resume it
-                        video.play().catch(() => { });
+                        video.play().catch(() => {});
                       }
                     }}
                     onEnded={(e) => {
                       // When video ends, wait 15 seconds then slide to next
-                      const swiperElement = e.currentTarget.closest(".swiper") as any;
+                      const swiperElement = e.currentTarget.closest(
+                        ".swiper"
+                      ) as any;
                       const swiper = swiperElement?.swiper;
                       if (swiper) {
                         setTimeout(() => {
@@ -498,8 +601,7 @@ const DestinationDetail = () => {
               marginTop: "-5px",
             }}
           >
-            Rishikesh -
-            bungee jumping, rafting, yoga an a lot more...
+            Rishikesh - bungee jumping, rafting, yoga an a lot more...
           </p>
         </div>
       </section>
@@ -578,7 +680,7 @@ const DestinationDetail = () => {
                 {/* <Filter className="h-5 w-5 text-brand-primary" /> */}
                 <h2
                   className="CommonH2"
-                  style={{ textTransform: "unset",margin:"10px 0px" }}
+                  style={{ textTransform: "unset", margin: "10px 0px" }}
                 >
                   Top activities to do in {destination.title}
                 </h2>
@@ -664,8 +766,9 @@ const DestinationDetail = () => {
                     {experiences.map((experience, index) => (
                       <SwiperSlide key={experience.id}>
                         <div
-                          className={`scroll-scale-in ${isAnimated ? "animate" : ""
-                            }`}
+                          className={`scroll-scale-in ${
+                            isAnimated ? "animate" : ""
+                          }`}
                           style={{ animationDelay: `${0.6 + index * 0.05}s` }}
                         >
                           <ExperienceCard
@@ -681,18 +784,20 @@ const DestinationDetail = () => {
                             reviews={
                               experience.reviews_count?.toString() || "0"
                             }
-                            price={`${experience.currency === "USD"
-                              ? "₹"
-                              : experience.currency == "INR"
+                            price={`${
+                              experience.currency === "USD"
+                                ? "₹"
+                                : experience.currency == "INR"
                                 ? "₹"
                                 : experience.currency
-                              } ${experience.price}`}
+                            } ${experience.price}`}
                             originalPrice={
                               experience.original_price
-                                ? `${experience.currency === "USD"
-                                  ? "₹"
-                                  : experience.currency
-                                } ${experience.original_price}`
+                                ? `${
+                                    experience.currency === "USD"
+                                      ? "₹"
+                                      : experience.currency
+                                  } ${experience.original_price}`
                                 : undefined
                             }
                             duration={experience.duration || undefined}
@@ -751,8 +856,9 @@ const DestinationDetail = () => {
                   {experiences.map((experience, index) => (
                     <div
                       key={experience.id}
-                      className={`scroll-scale-in ${isAnimated ? "animate" : ""
-                        }`}
+                      className={`scroll-scale-in ${
+                        isAnimated ? "animate" : ""
+                      }`}
                       style={{ animationDelay: `${0.6 + index * 0.05}s` }}
                       id="ExperienceCardContainerSpecificDestinationDetail"
                     >
@@ -767,20 +873,22 @@ const DestinationDetail = () => {
                         }
                         rating={Number(experience.rating)}
                         reviews={experience.reviews_count?.toString() || "0"}
-                        price={`${experience.currency === "USD"
-                          ? "₹"
-                          : experience.currency == "INR"
+                        price={`${
+                          experience.currency === "USD"
+                            ? "₹"
+                            : experience.currency == "INR"
                             ? "₹"
                             : experience.currency
-                          } ${experience.price}`}
+                        } ${experience.price}`}
                         originalPrice={
                           experience.original_price
-                            ? `${experience.currency === "USD"
-                              ? "₹"
-                              : experience.currency == "INR"
-                                ? "₹"
-                                : experience.currency
-                            } ${experience.original_price}`
+                            ? `${
+                                experience.currency === "USD"
+                                  ? "₹"
+                                  : experience.currency == "INR"
+                                  ? "₹"
+                                  : experience.currency
+                              } ${experience.original_price}`
                             : undefined
                         }
                         duration={experience.duration || undefined}
