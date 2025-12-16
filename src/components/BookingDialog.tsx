@@ -445,7 +445,11 @@ export const BookingDialog = ({
             namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
             to_and_components: [
               {
-                to: [data.participant.phone_number],
+                to: [
+                  data.participant.phone_number.toString().length !== 10
+                    ? data.participant.phone_number
+                    : "+91" + data.participant.phone_number.toString(),
+                ],
                 components: {
                   body_1: {
                     type: "text",
