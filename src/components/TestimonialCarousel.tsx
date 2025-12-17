@@ -224,14 +224,14 @@ export function TestimonialCarousel() {
       className="SectionPaddingBottom SectionPaddingTop"
       id="TestimonialCarouselBackgroundStyles"
     >
-      <div className=" max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto MaxWidthContainer">
         <div>
           {/* Left Side - Title and Navigation */}
           <div>
-            <h2 className="text-white CommonH2 leading-tight">
+            <div className="text-white SectionHeading">
               {/* <br /> */}
               People's experience with us &nbsp;💜
-            </h2>
+            </div>
             {/* <br /> */}
             {/* Navigation Buttons */}
             {/* <div className="flex gap-3 justify-center lg:justify-start">
@@ -296,7 +296,7 @@ export function TestimonialCarousel() {
                   {/* Content */}
                   <div
                     className="p-6 flex-1 flex flex-col"
-                    style={{ background: "rgb(28 21 37)", borderRadius: "20px" }}
+                    style={{ background: "rgb(28 21 37)", borderRadius: "20px",heigh:"100%" }}
 
                   >
                     {/* Header with Avatar and Info */}

@@ -841,11 +841,11 @@ const DestinationDetail = () => {
             <div className="FlexContainerChange ">
               <div className="flex items-center gap-4 HeadingADjustMargin">
                 {/* <Filter className="h-5 w-5 text-brand-primary" /> */}
-                <h2
+                <div
                   className="SectionHeading"
                 >
                   Top activities to do in {destination.title}
-                </h2>
+                </div>
               </div>
             </div>
 
@@ -853,7 +853,7 @@ const DestinationDetail = () => {
 
           {/* Experiences - Desktop Swiper / Mobile Static Grid */}
           <div
-            className={`scroll-fade-in ${isAnimated ? "animate" : ""}`}
+            className={`scroll-fade-in ${isAnimated ? "animate" : ""} MarginTopLarge`}
             style={{ animationDelay: "0.5s" }}
           >
             {experiencesLoading ? (

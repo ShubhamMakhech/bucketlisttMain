@@ -12,8 +12,8 @@
     grid-template-columns: 1fr 1fr;
     gap: 24px;
     /* padding-bottom: 48px; */
-    border-bottom: 1px solid #e5e7eb;
-    margin-bottom: 30px;
+    /* border-bottom: 1px solid #e5e7eb; */
+    margin-bottom: 0px;
 }
 
 .FooterTopLeft {
@@ -224,18 +224,34 @@
     }
 
     .FooterMainSection {
-        gap: 32px;
+        gap: 0px;
     }
 }
 
 @media (max-width: 768px) {
-
+    .FooterColumnHeader{
+        margin-bottom: 10px;
+    }
+    .FooterWrapper{
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+    .FooterPaymentMethods{
+        gap: 4px;
+    }
+.FooterLinksList{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0px 10px;
+}
 
     .FooterTopSection {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 0px;
         /* padding-bottom: 32px; */
-        margin-bottom: 32px;
+        margin-bottom: 0px;
     }
 
     .FooterTopRight {
@@ -244,15 +260,16 @@
 
     .FooterMainSection {
         grid-template-columns: 1fr;
-        gap: 32px;
-        padding-bottom: 32px;
-        margin-bottom: 24px;
+        gap: 0px;
+        padding-bottom: 0px;
+        margin-bottom: 0px;
         display: flex;
         flex-direction: column;
+        border: none !important;
     }
 
     .FooterLinksSection {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(1, 1fr);
         gap: 24px;
     }
 
@@ -263,6 +280,7 @@
     .FooterImageContainer {
         height: 150px;
         max-width: 100%;
+        display: none !important;
     }
 
     .FooterBottomSection {
@@ -280,10 +298,7 @@
 }
 
 @media (max-width: 640px) {
-    .FooterLinksSection {
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-    }
+   
 
     .FooterBottomLeft {
         /* flex-direction: column; */

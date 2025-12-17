@@ -632,7 +632,7 @@ const ExperienceDetail = () => {
 
           <div className="experience-detail-title-section">
             <div className="experience-detail-title-content">
-              <h1 className="experience-detail-title">{experience.title}</h1>
+              <div className="experience-detail-title">{experience.title}</div>
               <div className="experience-detail-info">
                 <div className="experience-info-item">
                   <CheckCircle2 className="experience-info-icon" />
@@ -726,8 +726,8 @@ const ExperienceDetail = () => {
         </div>
       </div>
 
-      <div className="container py-0 px-0">
-        <div className="container ExperienceDetailContainer">
+      <div className=" py-0 px-0">
+        <div className=" ExperienceDetailContainer">
           {/* Details Section */}
           <div className="space-y-6 ">
             <div>

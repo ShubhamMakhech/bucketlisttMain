@@ -131,3 +131,9 @@ object-fit: cover;
 .TestimonialCardContainer{
     min-width: 400px;
 }
+
+@media (max-width:700px){
+    .TestimonialCardContainer{
+        min-width: 100% !important;
+    }
+}

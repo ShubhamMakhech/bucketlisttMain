@@ -95,7 +95,7 @@
 .destinations-media-content {
     font-size: 0.95rem;
     line-height: 1.5;
-    margin-bottom: 32px;
+    /* margin-bottom: 32px; */
     color: rgba(255, 255, 255, 0.85);
     font-weight: 300;
     font-style: italic;
@@ -271,6 +271,9 @@
 }
 
 @media (max-width: 768px) {
+    .destinations-slider-container{
+        min-height: 100%;
+    }
     .destinations-slide {
         height: 100%;
     }

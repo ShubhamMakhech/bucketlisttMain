@@ -1,41 +1,69 @@
+/* Professional Itinerary Cards - Background Images */
 .destinations-itinerary-section {
-    background-color: #34084c;
-}
-
-
-.destinations-itinerary-container .SectionHeading {
-    color: white !important;
-}
-
-.destinations-itinerary-container {
-    width: 100%;
-}
-
-
-.destinations-itinerary-cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 28px;
-    /* max-width: 1100px;
-    margin: 0 auto; */
-}
-
-.destinations-itinerary-card {
+    padding: 6rem 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     position: relative;
-    background: #ffffff;
-    border-radius: 20px;
-    padding: 0;
-    border: none;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    min-height: 380px;
-}
-
-.itinerary-card-background {
+  }
+  
+  .destinations-itinerary-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 70% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .destinations-itinerary-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .SectionHeading {
+    font-size: clamp(2.75rem, 5.5vw, 4.5rem);
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 5rem;
+    letter-spacing: -0.025em;
+  }
+  
+  .destinations-itinerary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 2.5rem;
+    margin-top: 4rem;
+  }
+  
+  .destinations-itinerary-card {
+    position: relative;
+    height: 450px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.08),
+      0 8px 20px rgba(0, 0, 0, 0.04),
+      0 0 0 1px rgba(255, 255, 255, 0.8),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+  }
+  
+  .itinerary-card-background {
     position: absolute;
     top: 0;
     left: 0;
@@ -44,122 +72,173 @@
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    transition: transform 0.6s ease;
-    z-index: 0;
-}
-
-.itinerary-card-day1 .itinerary-card-background {
-    background-image: url('https://images.unsplash.com/photo-1629141334092-9f57a94b6686?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-}
-
-.itinerary-card-day2 .itinerary-card-background {
-    background-image: url('https://images.unsplash.com/photo-1637095222991-eadc948b6f29?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-}
-
-.itinerary-card-day5 .itinerary-card-background {
-    background-image: url('https://images.unsplash.com/photo-1549221360-456a9c197d5b?q=80&w=2074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-}
-
-.itinerary-card-overlay {
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    filter: brightness(0.65) contrast(1.15);
+  }
+  
+  /* Professional Background Images */
+  .itinerary-card-day1 .itinerary-card-background {
+    background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80');
+  }
+  
+  .itinerary-card-day2 .itinerary-card-background {
+    background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80');
+  }
+  
+  .itinerary-card-day5 .itinerary-card-background {
+    background-image: url('https://images.unsplash.com/photo-1551524160-602ae7e8eee9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80');
+  }
+  
+  .itinerary-card-overlay {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 280px;
-    height: 280px;
-    border-radius: 50%;
-    background: rgba(26, 31, 113, 0.75);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.4) 0%,
+      rgba(0, 0, 0, 0.75) 70%,
+      rgba(0, 0, 0, 0.9) 100%
+    );
     z-index: 1;
     transition: all 0.4s ease;
-}
-
-.destinations-itinerary-card:hover .itinerary-card-background {
-    transform: scale(1.05);
-}
-
-.destinations-itinerary-card:hover .itinerary-card-overlay {
-    width: 300px;
-    height: 300px;
-    background: rgba(26, 31, 113, 0.8);
-}
-
-.destinations-itinerary-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 40px rgba(26, 31, 113, 0.15);
-}
-
-.itinerary-card-number {
+  }
+  
+  .itinerary-card-content {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 6rem;
-    font-weight: 900;
-    color: rgba(255, 255, 255, 0.12);
-    line-height: 1;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 3rem 2.5rem 2.5rem;
     z-index: 2;
+    color: white;
     transition: all 0.4s ease;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    letter-spacing: -4px;
-    pointer-events: none;
-}
-
-.destinations-itinerary-card:hover .itinerary-card-number {
-    color: rgba(255, 255, 255, 0.18);
-    transform: translate(-50%, -50%) scale(1.05);
-}
-
-.itinerary-card-content {
-    position: relative;
+  }
+  
+  .itinerary-card-number {
+    position: absolute;
+    top: 2.5rem;
+    right: 2.5rem;
+    font-size: 4rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     z-index: 3;
-    padding: 48px 36px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  .itinerary-card-badge {
+    display: inline-flex;
     align-items: center;
-    text-align: center;
-}
-
-.itinerary-card-badge {
-    display: inline-block;
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    color: #ffffff;
-    padding: 8px 18px;
-    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
     font-size: 0.9rem;
     font-weight: 600;
-    margin-bottom: 20px;
-    width: fit-content;
-    transition: all 0.3s ease;
-}
-
-.destinations-itinerary-card:hover .itinerary-card-badge {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.itinerary-card-title {
-    font-size: 1.85rem;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    margin-bottom: 1.25rem;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .itinerary-card-title {
+    font-size: 2rem;
     font-weight: 700;
-    margin-bottom: 14px;
-    color: #ffffff;
-    line-height: 1.2;
-    transition: transform 0.3s ease;
+    margin: 0 0 0.75rem 0;
+    line-height: 1.25;
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-}
-
-.destinations-itinerary-card:hover .itinerary-card-title {
-    transform: translateY(-2px);
-}
-
-.itinerary-card-description {
-    font-size: 1rem;
+    letter-spacing: -0.02em;
+  }
+  
+  .itinerary-card-description {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.05rem;
     line-height: 1.6;
-    color: rgba(255, 255, 255, 0.95);
     margin: 0;
-    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
-    max-width: 240px;
-}
+    font-weight: 400;
+    max-width: 85%;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Professional Hover Effects */
+  .destinations-itinerary-card:hover {
+    transform: translateY(-12px);
+    box-shadow: 
+      0 35px 70px rgba(0, 0, 0, 0.12),
+      0 15px 35px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(255, 255, 255, 0.9);
+  }
+  
+  .destinations-itinerary-card:hover .itinerary-card-background {
+    transform: scale(1.05);
+  }
+  
+  .destinations-itinerary-card:hover .itinerary-card-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.65) 70%,
+      rgba(0, 0, 0, 0.85) 100%
+    );
+  }
+  
+  .destinations-itinerary-card:hover .itinerary-card-number {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .destinations-itinerary-card:hover .itinerary-card-badge {
+    transform: translateX(8px);
+    background: rgba(255, 255, 255, 0.25);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .destinations-itinerary-cards {
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .destinations-itinerary-section {
+      padding: 4rem 0;
+    }
+    
+    .destinations-itinerary-cards {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    
+    .destinations-itinerary-card {
+      height: 420px;
+    }
+    
+    .itinerary-card-content {
+      padding: 2.5rem 2rem 2rem;
+    }
+    
+    .SectionHeading {
+      margin-bottom: 3.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .destinations-itinerary-container {
+      padding: 0 1.5rem;
+    }
+    
+    .destinations-itinerary-card {
+      height: 400px;
+    }
+    
+    .itinerary-card-title {
+      font-size: 1.75rem;
+    }
+  }
+  

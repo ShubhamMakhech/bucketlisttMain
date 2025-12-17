@@ -414,9 +414,8 @@ const Index = () => {
               delay={100}
               duration={600}
             >
-              <div className="HeadingHeaderCommonUsed">
-                <h2 className="CommonH2">Explore India's top destinations</h2>
-              </div>
+                <div className="SectionHeading textStart">Explore India's top destinations</div>
+            
             </BidirectionalAnimatedSection>
 
             {destinationsLoading ? (
@@ -527,7 +526,7 @@ const Index = () => {
               duration={600}
             >
               <div className="HeadingHeaderCommonUsed">
-                <h2 className="CommonH2">Top Experiences</h2>
+                <h2 className="SectionHeading">Top Experiences</h2>
                 <div className="SwiperButtonsControls">
                   <button
                     onClick={() => experiencesSwiperRef.current?.slidePrev()}
@@ -768,7 +767,7 @@ const Index = () => {
           <div className='overlayImageContainer'>
             <img src="/Images/SkyDivingBackGroundImage.jpeg" alt="" />
           </div>
-          <div className='MaxWidthContainer'>
+          <div>
             <div id='WhyChooseBucketListtHomeContainer'>
               {/* <div className='WhyChooseBucketListtPointsContainer'>
                     <div>
@@ -791,7 +790,7 @@ const Index = () => {
                 </div> */}
               <div className='WhyChooseBucketListtHomeContent'>
                 <div>
-                  <h2 className='SectionHeading textAlignStart ColorWhite'>Why Choose bucketlistt?</h2>
+                  <div className='SectionHeading textAlignStart ColorWhite'>Why Choose bucketlistt?</div>
                   <p className='textAlignStart MarginTopSmall ColorWhite'>Our values shape every journey, every interaction, and every detail we design.</p>
                 </div>
                 <div className='MarginTopLarge'>
@@ -845,16 +844,7 @@ const Index = () => {
 
 
 
-
-
-
-
-
-
-
-
-
-
+      <div className="MaxWidthContainer SectionPaddingBottom"  >
       <div className="ContainerDesinsPurposeOnly MaxWidth800">
         <div className="mt-12 md:mt-16 md:space-y-5">
           <BidirectionalAnimatedSection
@@ -862,9 +852,9 @@ const Index = () => {
             delay={100}
             duration={600}
           >
-            <h2 className="CommonH2 TextAlignment">
-              And we are ATOAI certified
-            </h2>
+            <div className="SectionHeading textCenter">
+            We are following ATOAI guidelines
+            </div>
             <img
               className="LogoATOAIStyles"
               src="/ATOAI_logo.jpg"
@@ -927,6 +917,7 @@ const Index = () => {
             </BidirectionalAnimatedSection>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

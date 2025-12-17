@@ -239,7 +239,7 @@
 
 #TopExperiencesSection .destination-card-button {
     width: auto;
-    background-color: #1A1F71;
+    background-color: #500d74 !important;
     color: #ffffff;
     font-size: 0.9rem;
     font-weight: 700;
@@ -256,7 +256,7 @@
 
 #TopExperiencesSection .destination-card-button:hover,
 #TopActivitiesToDo .destination-card-button:hover {
-    background-color: #555;
+    background-color: #500d74;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -313,6 +313,7 @@
         width: 100%;
         padding: 8px 16px;
         font-size: 0.85rem;
+        background-color:#500d74;
     }
 }
 
