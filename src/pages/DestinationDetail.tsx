@@ -183,7 +183,6 @@ const DestinationDetail = () => {
   const fromPage = location.state?.fromPage;
 
   // Get ID from state, fallback to undefined if not available
-  const id = stateDestinationData?.id;
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("rating");
   const [isAnimated, setIsAnimated] = useState(false);
@@ -199,23 +198,28 @@ const DestinationDetail = () => {
   }, []);
 
   const { data: destination, isLoading: destinationLoading } = useQuery({
-    queryKey: ["destination", id],
+    queryKey: ["destination", name],
     queryFn: async () => {
+      if (!name) throw new Error("Destination URL name is required");
+
       const { data, error } = await supabase
         .from("destinations")
         .select("*")
-        .eq("id", id)
+        .eq("url_name", name)
         .single();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
-    // Use state data as initial data if available
-    initialData: stateDestinationData,
+    enabled: !!name,
+    // Use state data as initial data if available and url_name matches
+    initialData:
+      stateDestinationData?.url_name === name ? stateDestinationData : undefined,
     // Only fetch if we don't have state data or if the data is stale
-    staleTime: stateDestinationData ? 5 * 60 * 1000 : 0, // 5 minutes if we have state data
+    staleTime: stateDestinationData?.url_name === name ? 5 * 60 * 1000 : 0, // 5 minutes if we have state data
   });
+
+  const id = destination?.id;
 
   // Get all media items for the destination with type information
   const getDestinationMedia = (): MediaItem[] => {
