@@ -1,10 +1,9 @@
+// @ts-nocheck
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ImageGallery } from "@/components/ImageGallery";
 import { BookingDialog } from "@/components/BookingDialog";
 import { BookingSuccessAnimation } from "@/components/BookingSuccessAnimation";
 import { UserBookings } from "@/components/UserBookings";
@@ -14,6 +13,11 @@ import { CouponInput } from "@/components/CouponInput";
 import { CouponManager } from "@/components/CouponManager";
 import { useAuth } from "@/contexts/AuthContext";
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "@/components/GlobalCss/ExperienceDetailGallery.css";
 
 import {
   ArrowLeft,
@@ -24,8 +28,15 @@ import {
   Calendar,
   Route,
   Tag,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  CreditCard,
+  Smartphone,
+  Compass,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 // import { saveAs } from "file-saver"
 import { useUserRole } from "@/hooks/useUserRole";
 import { BulkBookingPaymentDialog } from "@/components/BulkBookingPaymentDialog";
@@ -33,12 +44,16 @@ import { ExperienceVendorAnalytics } from "@/components/ExperienceVendorAnalytic
 import { CertificationBadges } from "@/components/CertificationBadges";
 import { CouponValidationResult } from "@/hooks/useDiscountCoupon";
 import "../Styles/ExperienceDetail.css";
-import { Row, Col } from "antd";
+import { Image } from "antd";
 const ExperienceDetail = () => {
   const { name } = useParams(); // This is the url_name from the URL
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const swiperRef = useRef<any>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const [showBottomBar, setShowBottomBar] = useState(false);
 
   // Get experience data from navigation state (if available)
   const stateExperienceData = location.state?.experienceData;
@@ -144,8 +159,8 @@ const ExperienceDetail = () => {
   // Merge vendor_id if we fetched it separately
   const experienceWithVendorId =
     experience &&
-    (experience.vendor_id === undefined || experience.vendor_id === null) &&
-    vendorIdData
+      (experience.vendor_id === undefined || experience.vendor_id === null) &&
+      vendorIdData
       ? { ...experience, vendor_id: vendorIdData }
       : experience;
 
@@ -186,6 +201,28 @@ const ExperienceDetail = () => {
   // Get the first activity's discounted price (assuming single activity for desktop display)
   const firstActivity = activities?.[0];
   const discountedPrice = (firstActivity as any)?.discounted_price;
+
+  // Calculate pricing logic similar to new component
+  const basePrice = firstActivity?.price || experience?.price || 0;
+  let finalPrice, originalPrice, hasDiscount, discountPercentage;
+
+  if (discountedPrice && discountedPrice !== basePrice) {
+    hasDiscount = true;
+    originalPrice = basePrice;
+    finalPrice = discountedPrice;
+    discountPercentage = Math.round(((basePrice - discountedPrice) / basePrice) * 100);
+  } else if (experience?.original_price && experience?.original_price !== experience?.price) {
+    hasDiscount = true;
+    originalPrice = experience.original_price;
+    finalPrice = experience.price;
+    discountPercentage = Math.round(((experience.original_price - experience.price) / experience.original_price) * 100);
+  } else {
+    hasDiscount = false;
+    originalPrice = null;
+    finalPrice = basePrice;
+    discountPercentage = 0;
+  }
+
   // console.log("experienceeeee", experience);
   const { data: userBookings, refetch: refetchBookings } = useQuery({
     queryKey: ["user-experience-bookings", user?.id, id],
@@ -275,6 +312,34 @@ const ExperienceDetail = () => {
   const hasExistingBookings = userBookings && userBookings.length > 0;
   const bookingButtonText = hasExistingBookings ? "Book Another" : "Book Now";
 
+  // Mount state for portal
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Scroll detection for bottom bar
+  useEffect(() => {
+    if (!mounted) return;
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      if (scrollY > 200) {
+        setShowBottomBar(true);
+      } else {
+        setShowBottomBar(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Check initial scroll position
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [mounted]);
+
   // Listen for custom event from MobileFloatingButton
   useEffect(() => {
     const handleOpenBookingDialog = () => {
@@ -293,7 +358,7 @@ const ExperienceDetail = () => {
     images && images.length > 0
       ? images
       : experience?.image_url
-      ? [
+        ? [
           {
             id: "main",
             image_url: experience.image_url,
@@ -302,7 +367,28 @@ const ExperienceDetail = () => {
             is_primary: true,
           },
         ]
-      : [];
+        : [];
+
+  // Format images for swiper
+  const activityImages = galleryImages.map((img, index) => ({
+    id: img.id || index,
+    url: img.image_url || "",
+    alt: img.alt_text || `${experience?.title} - Image ${index + 1}`
+  }));
+
+  const handlePreviewSlideChange = (swiper: any) => {
+    const activeIndex = swiper.activeIndex;
+    setSelectedImageIndex(activeIndex);
+  };
+
+  const handleBackClick = () => {
+    const fromPage = location.state?.fromPage;
+    if (fromPage) {
+      navigate(-1);
+    } else {
+      navigate(-1);
+    }
+  };
 
   // Bulk Booking CSV Download
   const handleDownloadBulkBookingCSV = () => {
@@ -371,8 +457,7 @@ const ExperienceDetail = () => {
 
         if (!bookingDate || !participantName || !participantEmail) {
           errors.push(
-            `Row ${
-              i + 2
+            `Row ${i + 2
             }: Missing required fields (booking_date, participant_name, participant_email)`
           );
           continue;
@@ -408,8 +493,7 @@ const ExperienceDetail = () => {
 
         if (bookingsError) {
           errors.push(
-            `Row ${i + 2}: Error checking existing bookings - ${
-              bookingsError.message
+            `Row ${i + 2}: Error checking existing bookings - ${bookingsError.message
             }`
           );
           continue;
@@ -436,8 +520,7 @@ const ExperienceDetail = () => {
 
         if (!availableSlot) {
           errors.push(
-            `Row ${
-              i + 2
+            `Row ${i + 2
             }: No available time slots for ${participantName} on ${bookingDate}`
           );
           continue;
@@ -502,7 +585,6 @@ const ExperienceDetail = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container py-16 px-4">
           <div className="text-center">Loading...</div>
         </div>
@@ -514,7 +596,6 @@ const ExperienceDetail = () => {
     // console.log("experience not found", experience, id);
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container py-16 px-4">
           <div className="text-center">Experience not found</div>
         </div>
@@ -525,7 +606,6 @@ const ExperienceDetail = () => {
   if (experience.is_active === false) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container py-16 px-4">
           <div className="text-center">This experience is not active.</div>
         </div>
@@ -534,31 +614,120 @@ const ExperienceDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div id="ExperienceDetail" className="min-h-screen bg-background experience-detail-page">
 
-      <div className="container py-4 px-2">
-        {/* <Button 
-          variant="ghost" 
-          onClick={() => navigate('/')}
-          className="mb-6 hover:bg-accent"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Homefsa
-        </Button> */}
-
-        <div className="container ExperienceDetailContainer">
-          {/* Image Gallery Section */}
-          <div className="GridImageGalleryContainer">
-            <ImageGallery
-              images={galleryImages}
-              experienceTitle={experience.title}
-            />
+      {/* Top Section with Title and Info */}
+      <div className="experience-detail-top-section SectionPaddingTop">
+        <div className="MaxWidthContainer">
+          <div className="experience-detail-header">
+            <Button
+              variant="ghost"
+              onClick={handleBackClick}
+              className="experience-detail-back-button"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to activities
+            </Button>
           </div>
-          {/* <br /> */}
-          <h2 className="text-start CommonH2" style={{ marginTop: "10px" }}>
-            {experience.title}
-          </h2>
+
+          <div className="experience-detail-title-section">
+            <div className="experience-detail-title-content">
+              <h1 className="experience-detail-title">{experience.title}</h1>
+              <div className="experience-detail-info">
+                <div className="experience-info-item">
+                  <CheckCircle2 className="experience-info-icon" />
+                  <span>ATOAI Certified</span>
+                </div>
+                <div className="experience-info-item">
+                  <CreditCard className="experience-info-icon" />
+                  <span>Book Now, Pay Later</span>
+                </div>
+                <div className="experience-info-item">
+                  <CheckCircle2 className="experience-info-icon" />
+                  <span>Free Cancellation</span>
+                </div>
+                <div className="experience-info-item">
+                  <Smartphone className="experience-info-icon" />
+                  <span>Tickets to your mobile</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Swiper Navigation Buttons - Right Side */}
+            {activityImages.length > 1 && (
+              <div className="experience-detail-nav-buttons">
+                <button
+                  className="experience-nav-button experience-nav-prev"
+                  onClick={() => swiperRef.current?.slidePrev()}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  className="experience-nav-button experience-nav-next"
+                  onClick={() => swiperRef.current?.slideNext()}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Preview Images Swiper */}
+          {activityImages.length > 0 && (
+            <div className="experience-detail-preview-swiper">
+              <Image.PreviewGroup
+                items={activityImages.map((img) => ({
+                  src: img.url,
+                  alt: img.alt,
+                }))}
+              >
+                <Swiper
+                  modules={[Navigation]}
+                  spaceBetween={12}
+                  slidesPerView={2.4}
+                  breakpoints={{
+                    320: {
+                      slidesPerView: 1.5,
+                      spaceBetween: 8,
+                    },
+                    480: {
+                      slidesPerView: 1.4,
+                      spaceBetween: 10,
+                    },
+                    768: {
+                      slidesPerView: 2.4,
+                      spaceBetween: 12,
+                    },
+                  }}
+                  navigation={false}
+                  onSwiper={(swiper) => {
+                    swiperRef.current = swiper;
+                  }}
+                  onSlideChange={handlePreviewSlideChange}
+                  className="experience-preview-swiper"
+                >
+                  {activityImages.map((image, index) => (
+                    <SwiperSlide key={image.id}>
+                      <div
+                        className={`experience-preview-image ${selectedImageIndex === index ? 'active' : ''}`}
+                      >
+                        <Image
+                          src={image.url}
+                          alt={image.alt}
+                          preview={{}}
+                        />
+                      </div>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              </Image.PreviewGroup>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="container py-0 px-0">
+        <div className="container ExperienceDetailContainer">
           {/* Details Section */}
           <div className="space-y-6 ">
             <div>
@@ -572,103 +741,6 @@ const ExperienceDetail = () => {
                   </>
                 )}
               </div> */}
-              {/* <br /> */}
-              <div className="features-badges-container">
-                <div className="features-badges-grid">
-                  <div className="feature-badge">
-                    <div className="feature-badge-icon">
-                      {/* <img
-                        src="/Images/ATOAICertified.svg"
-                        alt="ATOAI Certified"
-                      /> */}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="size-6"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="feature-badge-content">
-                      <p>ATOAI Certified</p>
-                    </div>
-                  </div>
-                  <div className="feature-badge">
-                    <div className="feature-badge-icon">
-                      {/* <img
-                        src="/Images/BookPayLater.svg"
-                        alt="Book Now Pay Later"
-                      /> */}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="size-6"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="feature-badge-content">
-                      <p>Book Now, Pay Later</p>
-                    </div>
-                  </div>
-                  <div className="feature-badge">
-                    <div className="feature-badge-icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="size-6"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75"
-                        />
-                      </svg>
-                    </div>
-                    <div className="feature-badge-content">
-                      <p>Free Cancellation</p>
-                    </div>
-                  </div>
-                  <div className="feature-badge">
-                    <div className="feature-badge-icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="size-6"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
-                        />
-                      </svg>
-                    </div>
-                    <div className="feature-badge-content">
-                      <p>Tickets to your mobile</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* {experience.is_special_offer && (
                 <Badge className="mb-4 bg-orange-500 hover:bg-orange-600">
@@ -687,194 +759,169 @@ const ExperienceDetail = () => {
               </div> */}
             </div>
 
-            <div>
-              <Row gutter={[30, 30]}>
-                <Col lg={16}>
-                  {experience.description && (
-                    <div>
-                      {/* <h2 className="text-xl font-semibold mb-3">
-                        About this experience
-                      </h2> */}
-                      <div className="DescriptionEditContainer">
+            {/* Details and Pricing Grid Section */}
+            <div className="experience-detail-details-section SectionPaddingTop SectionPaddingBottom">
+              <div className="MaxWidthContainer">
+                <div className="experience-detail-grid">
+                  {/* Left Column - Experience Details */}
+                  <div className="experience-detail-details-left">
+                    {experience.description && (
+                      <div className="experience-detail-description">
                         <div
-                          className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+                          className="DescriptionEditContainer"
                           dangerouslySetInnerHTML={{
                             __html: experience.description,
                           }}
                         />
                       </div>
+                    )}
+
+                    {/* Additional Experience Info */}
+                    <div className="experience-detail-meta">
+                      {experience.duration && (
+                        <div className="experience-meta-item">
+                          <Clock className="experience-meta-icon" />
+                          <span>{experience.duration}</span>
+                        </div>
+                      )}
+                      {experience.group_size && (
+                        <div className="experience-meta-item">
+                          <Users className="experience-meta-icon" />
+                          <span>{experience.group_size}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </Col>
-                <Col lg={8}>
-                  <div className="ExperienceDetailRightContainer">
-                    {/* <MobileFloatingButton
-                      price={experience.price}
-                      originalPrice={experience.original_price}
-                      currency={experience.currency}
-                      bookingButtonText={bookingButtonText}
-                      onBookingClick={() => setIsBookingDialogOpen(true)}
-                    /> */}
-                    <div className="PcOnlyButtonContainer">
-                      <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
-                        {experience.duration && (
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            <span>{experience.duration}</span>
-                          </div>
-                        )}
-                        {experience.group_size && (
-                          <div className="flex items-center gap-1">
-                            <Users className="h-4 w-4" />
-                            <span>{experience.group_size}</span>
-                          </div>
-                        )}
-                      </div>
+                  </div>
 
-                      {/* {getDistanceDisplay() && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 p-3 bg-muted rounded-lg">
-                  {experience.distance_km === 0 ? (
-                    <MapPin className="h-4 w-4 text-orange-500" />
-                  ) : (
-                    <Route className="h-4 w-4 text-orange-500" />
-                  )}
-                  <span className="font-medium">{getDistanceDisplay()}</span>
-                </div>
-              )} */}
-
-                      {!isAgent && (
-                        <div className="flex items-center gap-3 mb-6">
-                          <span style={{ color: "grey" }}>From</span>
-                          {appliedCoupon &&
-                          appliedCoupon.discount_calculation ? (
-                            <>
-                              <span className="text-3xl font-bold line-through text-muted-foreground">
-                                {formatCurrency(experience.price)}
-                              </span>
-                              <span className="text-3xl font-bold text-green-600">
-                                {formatCurrency(
-                                  appliedCoupon.discount_calculation
-                                    .final_amount
-                                )}
-                              </span>
-                              <Badge
-                                variant="secondary"
-                                className="bg-green-100 text-green-800"
-                              >
-                                Save{" "}
-                                {appliedCoupon.discount_calculation.savings_percentage.toFixed(
-                                  1
-                                )}
-                                %
-                              </Badge>
-                            </>
-                          ) : discountedPrice &&
-                            discountedPrice !==
-                              (firstActivity?.price || experience.price) ? (
-                            <>
-                              <span className="text-lg text-muted-foreground line-through">
-                                {formatCurrency(
-                                  firstActivity?.price || experience.price
-                                )}
-                              </span>
-                              <span className="text-3xl font-bold text-green-600">
-                                {formatCurrency(discountedPrice)}
-                              </span>
-                            </>
-                          ) : experience.original_price &&
-                            experience.original_price !== experience.price ? (
-                            <>
-                              <span className="text-lg text-muted-foreground line-through">
-                                {formatCurrency(experience.original_price)}
-                              </span>
-                              <span className="text-3xl font-bold text-green-600">
-                                {formatCurrency(experience.price)}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-3xl font-bold text-orange-500">
-                              {formatCurrency(
-                                firstActivity?.price || experience.price
-                              )}
-                            </span>
-                          )}
+                  {/* Right Column - Merged Pricing and Benefits Card */}
+                  <div className="experience-detail-details-right">
+                    <div className="experience-unified-card">
+                      {/* Tilted Badge */}
+                      {appliedCoupon?.discount_calculation ? (
+                        <div className="tilted-badge">
+                          <span className="tilted-badge-text">
+                            {Math.round(appliedCoupon.discount_calculation.savings_percentage)}% OFF
+                          </span>
+                        </div>
+                      ) : hasDiscount ? (
+                        <div className="tilted-badge">
+                          <span className="tilted-badge-text">
+                            {discountPercentage}% OFF
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="tilted-badge tilted-badge-popular">
+                          <span className="tilted-badge-text">Best Deal</span>
                         </div>
                       )}
 
-                      {/* Coupon Section */}
-                      {!isVendor && (
-                        <div className="mb-4">
-                          {/* {!showCouponInput && !appliedCoupon && (
-                            <Button
-                              variant="outline"
-                              className="w-full mb-2"
-                              onClick={() => setShowCouponInput(true)}
-                            >
-                              <Tag className="h-4 w-4 mr-2" />
-                              Have a coupon code?
-                            </Button>
-                          )} */}
+                      {/* Card Header */}
+                      <div className="unified-card-header">
+                        <div className="card-title-section">
+                          <div className="card-icon">
+                            <Compass className="card-icon-svg" />
+                          </div>
+                          <div>
+                            <h2 className="card-title">Book Your Adventure</h2>
+                            <p className="card-subtitle">Secure your spot today</p>
+                          </div>
+                        </div>
+                      </div>
 
-                          {/* {showCouponInput && (
-                            <CouponInput
-                              experienceId={experience.id}
-                              bookingAmount={experience.price}
-                              currency={experience.currency || "INR"}
-                              onCouponApplied={handleCouponApplied}
-                              onCouponRemoved={handleCouponRemoved}
-                              className="mb-4"
-                            />
-                          )} */}
-
-                          {appliedCoupon && (
-                            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Tag className="h-4 w-4 text-green-600" />
-                                  <span className="font-medium text-green-800">
-                                    Coupon Applied:{" "}
-                                    {appliedCoupon.coupon?.coupon_code}
-                                  </span>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={handleCouponRemoved}
-                                  className="text-green-600 hover:text-green-800"
-                                >
-                                  Remove
-                                </Button>
-                              </div>
+                      {/* Meta Information */}
+                      {(experience.duration || experience.group_size) && (
+                        <div className="experience-pricing-meta">
+                          {experience.duration && (
+                            <div className="experience-pricing-meta-item">
+                              <Clock className="h-4 w-4" />
+                              <span>{experience.duration}</span>
+                            </div>
+                          )}
+                          {experience.group_size && (
+                            <div className="experience-pricing-meta-item">
+                              <Users className="h-4 w-4" />
+                              <span>{experience.group_size}</span>
                             </div>
                           )}
                         </div>
                       )}
 
+                      {/* Pricing Section */}
+                      <div className="experience-pricing">
+                        <span className="pricing-label">Starting from</span>
+                        <div className="pricing-wrapper">
+                          {appliedCoupon?.discount_calculation ? (
+                            <>
+                              <span className="pricing-original">
+                                {formatCurrency(experience.price)}
+                              </span>
+                              <div className="pricing-main">
+                                <span className="pricing-discounted">
+                                  {formatCurrency(appliedCoupon.discount_calculation.final_amount)}
+                                </span>
+                              </div>
+                            </>
+                          ) : hasDiscount ? (
+                            <>
+                              <span className="pricing-original">
+                                {formatCurrency(originalPrice || 0)}
+                              </span>
+                              <div className="pricing-main">
+                                <span className="pricing-discounted">
+                                  {formatCurrency(finalPrice)}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="pricing-main">
+                              <span className="pricing-current">
+                                {formatCurrency(finalPrice || 0)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Coupon Section */}
+                      {!isVendor && appliedCoupon && (
+                        <div className="mb-4">
+                          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Tag className="h-4 w-4 text-green-600" />
+                                <span className="font-medium text-green-800 text-sm">
+                                  Coupon Applied: {appliedCoupon.coupon?.coupon_code}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleCouponRemoved}
+                                className="text-green-600 hover:text-green-800"
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Book Now Button */}
                       <Button
                         size="lg"
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                        className="experience-book-button"
                         onClick={() => setIsBookingDialogOpen(true)}
                       >
-                        {bookingButtonText} {!isAgent && " - "}{" "}
+                        {bookingButtonText} {!isAgent && " - "}
                         {!isAgent &&
-                        appliedCoupon?.discount_calculation?.final_amount
-                          ? formatCurrency(
-                              appliedCoupon.discount_calculation.final_amount
-                            )
-                          : discountedPrice &&
-                            discountedPrice !==
-                              (firstActivity?.price || experience.price)
-                          ? formatCurrency(discountedPrice)
-                          : experience.original_price &&
-                            experience.original_price !== experience.price
-                          ? formatCurrency(experience.price)
-                          : formatCurrency(
-                              firstActivity?.price || experience.price
-                            )}
+                          appliedCoupon?.discount_calculation?.final_amount
+                          ? formatCurrency(appliedCoupon.discount_calculation.final_amount)
+                          : hasDiscount
+                            ? formatCurrency(finalPrice)
+                            : formatCurrency(finalPrice || 0)}
                       </Button>
 
-                      {/* Bulk Booking Buttons for Vendor */}
-                      {/* {isVendor && ( */}
+                      {/* Bulk Booking Buttons - Keep all 3 buttons */}
                       <div className="flex flex-col gap-2 mt-2">
                         <Button
                           variant="outline"
@@ -898,32 +945,44 @@ const ExperienceDetail = () => {
                           onChange={handleBulkUploadFile}
                         />
                       </div>
-                      {/* )} */}
-                    </div>
-                    <div className="WhyBucketlisttContainer">
-                      <h1>Why bucketlistt?</h1>
-                      <br />
-                      <ul>
-                        <li>
-                          <span>✓</span> Certified Vendors with many years of
-                          experience
-                        </li>
-                        <li>
-                          <span>✓</span> Get the lowest prices and last minute
-                          availability
-                        </li>
-                        <li>
-                          <span>✓</span> Browse verified reviews
-                        </li>
-                        <li>
-                          <span>✓</span> Have a question? Talk to our experts
-                          24/7
-                        </li>
-                      </ul>
+
+                      {/* Divider */}
+                      <div className="card-divider"></div>
+
+                      {/* Benefits Section */}
+                      <div className="unified-benefits-section">
+                        <h3 className="benefits-title">Why Choose Us?</h3>
+                        <ul className="benefits-list">
+                          <li className="benefit-item">
+                            <div className="check-icon-wrapper">
+                              <span className="check-icon">✓</span>
+                            </div>
+                            <span className="benefit-text">Certified Vendors with many years of experience</span>
+                          </li>
+                          <li className="benefit-item">
+                            <div className="check-icon-wrapper">
+                              <span className="check-icon">✓</span>
+                            </div>
+                            <span className="benefit-text">Get the lowest prices and last minute availability</span>
+                          </li>
+                          <li className="benefit-item">
+                            <div className="check-icon-wrapper">
+                              <span className="check-icon">✓</span>
+                            </div>
+                            <span className="benefit-text">Browse verified reviews</span>
+                          </li>
+                          <li className="benefit-item">
+                            <div className="check-icon-wrapper">
+                              <span className="check-icon">✓</span>
+                            </div>
+                            <span className="benefit-text">Have a question? Talk to our experts 24/7</span>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
-                </Col>
-              </Row>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -964,7 +1023,7 @@ const ExperienceDetail = () => {
 
         {/* Recent Bookings for this Experience */}
         {user && (
-          <div className="mt-12">
+          <div className="mt-5">
             <div className="border-t pt-8">
               <div className="flex items-center gap-3 mb-6">
                 <Calendar className="h-5 w-5 text-brand-primary" />
@@ -1021,6 +1080,61 @@ const ExperienceDetail = () => {
           participantsData={bulkParticipantsData}
           onPaymentSuccess={handleBulkPaymentSuccess}
         />
+
+        {/* Mobile Fixed Bottom Bar - Rendered via Portal */}
+        {mounted && typeof window !== 'undefined' && createPortal(
+          <div className={`mobile-fixed-bottom-bar ${showBottomBar ? 'mobile-bottom-bar-visible' : ''}`}>
+            <div className="mobile-bottom-bar-content">
+              {/* Discount Badge */}
+              {(appliedCoupon?.discount_calculation || hasDiscount) && (
+                <div className="mobile-discount-badge">
+                  <span>
+                    {appliedCoupon?.discount_calculation
+                      ? Math.round(appliedCoupon.discount_calculation.savings_percentage)
+                      : discountPercentage}% OFF
+                  </span>
+                </div>
+              )}
+
+              {/* Pricing */}
+              <div className="mobile-pricing-section">
+                {appliedCoupon?.discount_calculation ? (
+                  <>
+                    <span className="mobile-original-price">
+                      {formatCurrency(experience.price || 0)}
+                    </span>
+                    <span className="mobile-discounted-price">
+                      {formatCurrency(appliedCoupon.discount_calculation.final_amount)}
+                    </span>
+                  </>
+                ) : hasDiscount ? (
+                  <>
+                    <span className="mobile-original-price">
+                      {formatCurrency(originalPrice || 0)}
+                    </span>
+                    <span className="mobile-discounted-price">
+                      {formatCurrency(finalPrice)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="mobile-current-price">
+                    {formatCurrency(finalPrice || 0)}
+                  </span>
+                )}
+              </div>
+
+              {/* Book Now Button */}
+              <Button
+                size="lg"
+                className="mobile-book-button"
+                onClick={() => setIsBookingDialogOpen(true)}
+              >
+                {bookingButtonText}
+              </Button>
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
     </div>
   );

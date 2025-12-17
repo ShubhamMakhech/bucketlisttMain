@@ -1,14 +1,14 @@
+// @ts-nocheck
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExperienceCard } from "@/components/ExperienceCard";
 import { LazyImage } from "@/components/LazyImage";
 import { DetailedItinerary } from "@/components/DetailedItinerary";
 import { IoLocation } from "react-icons/io5";
-
+import "@/components/GlobalCss/itenary.css";
 // Helper function to detect media type from URL
 const getMediaType = (url: string): "video" | "image" => {
   const videoExtensions = [".mp4", ".webm", ".ogg", ".avi", ".mov"];
@@ -156,12 +156,16 @@ import {
   Users,
   Filter,
   ArrowUpDown,
+  ChevronRight,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import { DestinationImagesAndVideoData } from "@/components/DestinationImagesAndVideo";
+import "@/components/GlobalCss/DestinationsSlider.css";
+import "@/components/GlobalCss/TopExperiencesCards.css";
 import { useState, useEffect, useRef } from "react";
 import {
   Select,
@@ -188,6 +192,8 @@ const DestinationDetail = () => {
   const [sortBy, setSortBy] = useState<SortOption>("rating");
   const [isAnimated, setIsAnimated] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const swiperRef = useRef<any>(null);
+  const videoRefs = useRef<Record<number, HTMLVideoElement>>({});
 
   // Scroll to top and trigger animations when component mounts
   useEffect(() => {
@@ -217,6 +223,12 @@ const DestinationDetail = () => {
     staleTime: stateDestinationData ? 5 * 60 * 1000 : 0, // 5 minutes if we have state data
   });
 
+  // Get destination data from DestinationImagesAndVideoData
+  const getDestinationData = () => {
+    if (!destination?.title) return null;
+    return DestinationImagesAndVideoData[destination.title as keyof typeof DestinationImagesAndVideoData] || null;
+  };
+
   // Get all media items for the destination with type information
   const getDestinationMedia = (): MediaItem[] => {
     const staticMedia = staticDestinationImages[destination?.title || ""];
@@ -240,13 +252,94 @@ const DestinationDetail = () => {
     return getDestinationMedia().filter((item) => item.type === "video");
   };
 
+  // Helper function to get subtitle
+  const getDestinationSubtitle = (destinationTitle: string) => {
+    const destinationData = DestinationImagesAndVideoData[destinationTitle as keyof typeof DestinationImagesAndVideoData];
+    return destinationData?.subtitle || destination?.subtitle || "Explore";
+  };
+
+  // Handle button click - scroll to next section
+  const handleButtonClick = () => {
+    const container = document.querySelector('.destinations-slider-container');
+    if (container) {
+      let nextSection = container.nextElementSibling;
+      if (!nextSection) {
+        const allSections = document.querySelectorAll('section, .section-wrapper, [class*="section"]');
+        const containerIndex = Array.from(allSections).findIndex(el =>
+          el.contains(container) || container.contains(el)
+        );
+        if (containerIndex !== -1 && containerIndex < allSections.length - 1) {
+          nextSection = allSections[containerIndex + 1];
+        }
+      }
+      if (nextSection) {
+        nextSection.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }
+  };
+
+  // Handle video playback when slide changes
+  useEffect(() => {
+    const swiper = swiperRef.current;
+    if (!swiper) return;
+
+    const handleSlideChange = () => {
+      const activeIndex = swiper.activeIndex;
+      const realIndex = swiper.realIndex;
+      const currentIndex = realIndex !== undefined ? realIndex : activeIndex;
+
+      // Pause all videos except the current one
+      Object.values(videoRefs.current).forEach((video, idx) => {
+        if (video && idx !== currentIndex) {
+          if (video && !video.paused) {
+            video.pause();
+          }
+        }
+      });
+
+      // Play the video for the current slide
+      const currentVideo = videoRefs.current[currentIndex];
+      if (currentVideo) {
+        if (currentVideo.ended) {
+          currentVideo.currentTime = 0;
+        }
+        const playVideo = () => {
+          if (currentVideo.paused || currentVideo.ended) {
+            currentVideo.play().catch(() => {
+              setTimeout(() => {
+                if (currentVideo.paused || currentVideo.ended) {
+                  currentVideo.currentTime = 0;
+                  currentVideo.play().catch(() => { });
+                }
+              }, 200);
+            });
+          }
+        };
+        playVideo();
+        setTimeout(playVideo, 100);
+      }
+    };
+
+    swiper.on('slideChange', handleSlideChange);
+    setTimeout(() => {
+      handleSlideChange();
+    }, 300);
+
+    return () => {
+      swiper.off('slideChange', handleSlideChange);
+    };
+  }, [destination?.title]);
+
   // Ensure first video plays when ready (for video swiper)
   useEffect(() => {
     const video = videoRef.current;
     if (video && getVideos().length > 0) {
       const playVideo = () => {
         if (video && video.paused && !video.ended) {
-          video.play().catch(() => {});
+          video.play().catch(() => { });
         }
       };
 
@@ -369,10 +462,38 @@ const DestinationDetail = () => {
     enabled: !!id,
   });
 
+  // Fetch all activities for experiences to get discounted prices
+  const { data: allActivities } = useQuery({
+    queryKey: ["all-experiences-activities", experiences?.map(e => e.id)],
+    queryFn: async () => {
+      if (!experiences || experiences.length === 0) return {};
+
+      const experienceIds = experiences.map(e => e.id);
+      const { data, error } = await supabase
+        .from("activities")
+        .select("*")
+        .in("experience_id", experienceIds)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      // Group activities by experience_id and get first one for each
+      const activitiesMap: Record<string, any> = {};
+      data?.forEach((activity) => {
+        if (!activitiesMap[activity.experience_id]) {
+          activitiesMap[activity.experience_id] = activity;
+        }
+      });
+
+      return activitiesMap;
+    },
+    enabled: !!experiences && experiences.length > 0,
+  });
+
   if (destinationLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container py-16 px-4">
           <div className="text-center">
             <div className="animate-pulse space-y-4">
@@ -388,7 +509,6 @@ const DestinationDetail = () => {
   if (!destination) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container py-16 px-4">
           <div className="text-center">
             <div className="scroll-fade-in animate">
@@ -412,199 +532,231 @@ const DestinationDetail = () => {
     return firstImage?.src || destination.image_url;
   };
 
+  // Get destination data from DestinationImagesAndVideoData
+  const destinationData = getDestinationData();
+  const destinationTitle = destination?.title || "";
+  const destinationSubtitle = getDestinationSubtitle(destinationTitle);
+
+  // Get all media items (videos and photos) from DestinationImagesAndVideoData
+  const allMediaItems: Array<{ src: string; content?: string; type: "video" | "photo" }> = [];
+  if (destinationData) {
+    if (destinationData.videos && destinationData.videos.length > 0) {
+      destinationData.videos.forEach((video: any) => {
+        allMediaItems.push({ ...video, type: "video" });
+      });
+    }
+    if (destinationData.photos && destinationData.photos.length > 0) {
+      destinationData.photos.forEach((photo: any) => {
+        allMediaItems.push({ ...photo, type: "photo" });
+      });
+    }
+  }
+
+  // If no data in DestinationImagesAndVideoData, fallback to static data
+  const mediaItems = allMediaItems.length > 0 ? allMediaItems :
+    (getVideos().map(v => ({ src: v.src, type: "video" as const })).concat(
+      getImages().map(i => ({ src: i.src, type: "photo" as const }))
+    ));
+
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
-      {/* Full Screen Media Swipers - Videos and Images */}
-      <section
-        className="relative h-screen w-full"
-        id="DestinationDetailSwiper"
-      >
-        {getVideos().length > 0 ? (
-          // Video Swiper - Shows videos with full autoplay
-          <Swiper
-            modules={[Autoplay, Navigation, Pagination]}
-            spaceBetween={0}
-            slidesPerView={1}
-            autoplay={false} // Videos control their own timing
-            pagination={{
-              clickable: true,
-              bulletClass: "swiper-pagination-bullet",
-              bulletActiveClass: "swiper-pagination-bullet-active",
-            }}
-            loop={getVideos().length > 1}
-            className="h-full w-full"
-            onSlideChange={(swiper) => {
-              // Reset all videos
-              const allVideos = swiper.el.querySelectorAll("video");
-              allVideos.forEach((video: HTMLVideoElement) => {
-                video.currentTime = 0;
-                video.pause();
-              });
+      {/* New Design Swiper - Left Text, Right Media */}
+      <div className="destinations-slider-container">
+        <Swiper
+          modules={[Navigation, Pagination, Autoplay]}
+          spaceBetween={0}
+          slidesPerView={1}
+          initialSlide={0}
+          navigation={{
+            prevEl: ".destinations-swiper-button-prev",
+            nextEl: ".destinations-swiper-button-next",
+          }}
+          pagination={mediaItems.length > 1 ? {
+            clickable: true,
+            bulletClass: "destinations-pagination-bullet",
+            bulletActiveClass: "destinations-pagination-bullet-active",
+          } : false}
+          autoplay={mediaItems.length > 1 ? {
+            delay: 5000,
+            disableOnInteraction: false,
+          } : false}
+          loop={mediaItems.length > 1}
+          onSwiper={(swiper) => {
+            swiperRef.current = swiper;
+          }}
+          className="destinations-swiper"
+        >
+          {mediaItems.map((media, index) => {
+            const isVideo = media.type === "video";
+            const isPhoto = media.type === "photo";
 
-              // Play current video
-              const currentSlide = swiper.slides[swiper.activeIndex];
-              const video = currentSlide?.querySelector(
-                "video"
-              ) as HTMLVideoElement;
-              if (video) {
-                video.currentTime = 0;
-                video.play().catch(() => {});
-              }
-            }}
-            onSwiper={(swiper) => {
-              // Initialize first video
-              setTimeout(() => {
-                const currentSlide = swiper.slides[swiper.activeIndex];
-                const video = currentSlide?.querySelector(
-                  "video"
-                ) as HTMLVideoElement;
-                if (video) {
-                  video.currentTime = 0;
-                  video.play().catch(() => {});
-                }
-              }, 200);
-            }}
-          >
-            {getVideos().map((media, index) => (
-              <SwiperSlide key={`video-${index}`}>
-                <div className="relative h-full w-full SwiperSlideBorderRadius">
-                  <video
-                    ref={index === 0 ? videoRef : null}
-                    src={media.src}
-                    className="h-full w-full object-cover"
-                    muted
-                    autoPlay
-                    playsInline
-                    webkit-playsinline="true"
-                    preload="auto"
-                    loop={false}
-                    controls={false}
-                    disablePictureInPicture
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                    onLoadedData={(e) => {
-                      const video = e.currentTarget;
-                      video.play().catch(() => {});
-                    }}
-                    onCanPlay={(e) => {
-                      const video = e.currentTarget;
-                      if (video.paused) {
-                        video.play().catch(() => {});
-                      }
-                    }}
-                    onCanPlayThrough={(e) => {
-                      const video = e.currentTarget;
-                      if (video.paused) {
-                        video.play().catch(() => {});
-                      }
-                    }}
-                    onPlay={(e) => {
-                      // Stop Swiper autoplay when video starts
-                      const swiperElement = e.currentTarget.closest(
-                        ".swiper"
-                      ) as any;
-                      const swiper = swiperElement?.swiper;
-                      if (swiper) {
-                        swiper.autoplay.stop();
-                      }
-                    }}
-                    onPause={(e) => {
-                      // Prevent video from being paused - resume immediately
-                      const video = e.currentTarget;
-                      if (!video.ended && video.currentTime > 0) {
-                        // Only resume if not ended and has played some
-                        setTimeout(() => {
-                          if (video.paused && !video.ended) {
-                            video.play().catch(() => {});
-                          }
-                        }, 50);
-                      }
-                    }}
-                    onTimeUpdate={(e) => {
-                      // Monitor playback - if paused unexpectedly, resume
-                      const video = e.currentTarget;
-                      if (
-                        video.paused &&
-                        !video.ended &&
-                        video.currentTime > 0.1
-                      ) {
-                        // Video was playing but got paused - resume it
-                        video.play().catch(() => {});
-                      }
-                    }}
-                    onEnded={(e) => {
-                      // When video ends, wait 15 seconds then slide to next
-                      const swiperElement = e.currentTarget.closest(
-                        ".swiper"
-                      ) as any;
-                      const swiper = swiperElement?.swiper;
-                      if (swiper) {
-                        setTimeout(() => {
-                          swiper.slideNext();
-                        }, 15000); // 15 seconds delay after video ends
-                      }
-                    }}
-                    onError={(e) => {
-                      console.error("Video playback error:", e);
-                    }}
-                  />
+            return (
+              <SwiperSlide key={`media-${index}`}>
+                <div className="destinations-slide">
+                  <div className="destinations-slide-content MaxWidthContainer">
+                    {/* Left Side - Text Content */}
+                    <div className="destinations-text-section">
+                      <div className="destinations-text-wrapper">
+                        <h2 className="RairBigHeading textAlignStart ColorWhite">
+                          {destinationTitle}
+                        </h2>
+                        <p className="destinations-tagline textAlignStart ColorWhite">
+                          {destinationSubtitle}
+                        </p>
+                        {media.content && (
+                          <p className="destinations-media-content textAlignStart SecondaryColorText">
+                            <b>{media.content}</b>
+                          </p>
+                        )}
+                        <Button
+                          className="destinations-cta-button"
+                          onClick={handleButtonClick}
+                        >
+                          Explore {destinationTitle}
+                          <ChevronRight className="destinations-button-icon" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Right Side - Image/Video with Clip Path */}
+                    <div className="destinations-image-section">
+                      <div className="destinations-image-wrapper">
+                        {isVideo ? (
+                          <video
+                            ref={(el) => {
+                              if (el) {
+                                videoRefs.current[index] = el;
+                              }
+                            }}
+                            src={media.src}
+                            className="destinations-image"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            webkit-playsinline="true"
+                            preload="auto"
+                            onLoadedData={(e) => {
+                              const video = e.currentTarget;
+                              video.play().catch(() => { });
+                            }}
+                            onLoadedMetadata={(e) => {
+                              const video = e.currentTarget;
+                              video.play().catch(() => { });
+                            }}
+                            onCanPlay={(e) => {
+                              const video = e.currentTarget;
+                              video.play().catch(() => { });
+                            }}
+                            onCanPlayThrough={(e) => {
+                              const video = e.currentTarget;
+                              video.play().catch(() => { });
+                            }}
+                            onEnded={(e) => {
+                              const video = e.currentTarget;
+                              video.currentTime = 0;
+                              requestAnimationFrame(() => {
+                                video.play().catch(() => {
+                                  setTimeout(() => {
+                                    video.currentTime = 0;
+                                    video.play().catch(() => { });
+                                  }, 50);
+                                });
+                              });
+                            }}
+                            onError={(e) => {
+                              console.log("Video error:", e);
+                            }}
+                            onPlay={() => {
+                              // Video is playing - ensure it continues
+                            }}
+                            onPause={(e) => {
+                              const video = e.currentTarget;
+                              if (!video.ended && video.readyState >= 3) {
+                                setTimeout(() => {
+                                  if (video.paused && !video.ended) {
+                                    video.play().catch(() => { });
+                                  }
+                                }, 100);
+                              }
+                            }}
+                            onTimeUpdate={(e) => {
+                              const video = e.currentTarget;
+                              if (video.duration && video.currentTime >= video.duration - 0.1) {
+                                video.currentTime = 0;
+                              }
+                              if (video.paused && !video.ended && video.readyState >= 3) {
+                                video.play().catch(() => { });
+                              }
+                            }}
+                            onWaiting={(e) => {
+                              const video = e.currentTarget;
+                              const resumeWhenReady = () => {
+                                if (video.readyState >= 3) {
+                                  if (video.paused) {
+                                    video.play().catch(() => { });
+                                  }
+                                } else {
+                                  setTimeout(resumeWhenReady, 100);
+                                }
+                              };
+                              setTimeout(resumeWhenReady, 100);
+                            }}
+                            onStalled={(e) => {
+                              const video = e.currentTarget;
+                              setTimeout(() => {
+                                if (video.paused && !video.ended) {
+                                  video.currentTime = Math.max(0, video.currentTime - 0.1);
+                                  video.play().catch(() => { });
+                                }
+                              }, 200);
+                            }}
+                            onSeeking={(e) => {
+                              const video = e.currentTarget;
+                              if (video.paused && !video.ended) {
+                                video.play().catch(() => { });
+                              }
+                            }}
+                            onSeeked={(e) => {
+                              const video = e.currentTarget;
+                              if (video.paused && !video.ended) {
+                                video.play().catch(() => { });
+                              }
+                            }}
+                          />
+                        ) : isPhoto ? (
+                          <img
+                            src={media.src}
+                            alt={destinationTitle}
+                            className="destinations-image"
+                          />
+                        ) : (
+                          <div className="destinations-image-placeholder">
+                            No media available
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </SwiperSlide>
-            ))}
-          </Swiper>
-        ) : getImages().length > 0 ? (
-          // Image Swiper - Shows images with 3 second autoplay
-          <Swiper
-            modules={[Autoplay, Navigation, Pagination]}
-            spaceBetween={0}
-            slidesPerView={1}
-            autoplay={{
-              delay: 3000, // 3 seconds for images
-              disableOnInteraction: false,
-            }}
-            pagination={{
-              clickable: true,
-              bulletClass: "swiper-pagination-bullet",
-              bulletActiveClass: "swiper-pagination-bullet-active",
-            }}
-            loop={getImages().length > 1}
-            className="h-full w-full"
-          >
-            {getImages().map((media, index) => (
-              <SwiperSlide key={`image-${index}`}>
-                <div className="relative h-full w-full SwiperSlideBorderRadius">
-                  <LazyImage
-                    src={media.src}
-                    alt={`${destination?.title} - View ${index + 1}`}
-                    aspectRatio="aspect-auto"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        ) : (
-          <div className="h-full w-full bg-muted flex items-center justify-center">
-            <p className="text-muted-foreground">No media available</p>
-          </div>
+            );
+          })}
+        </Swiper>
+
+        {/* Navigation Buttons - Only show if multiple media items */}
+        {mediaItems.length > 1 && (
+          <>
+            <button className="destinations-swiper-button-prev destinations-nav-button">
+              <ChevronLeft />
+            </button>
+            <button className="destinations-swiper-button-next destinations-nav-button">
+              <ChevronRight />
+            </button>
+          </>
         )}
-        <div className="ShowcaseThisDescription">
-          <p
-            style={{
-              textAlign: "start",
-              fontSize: "14px",
-              marginTop: "-5px",
-            }}
-          >
-            Rishikesh - bungee jumping, rafting, yoga an a lot more...
-          </p>
-        </div>
-      </section>
+      </div>
 
       {/* Destination Info Section */}
 
@@ -665,11 +817,22 @@ const DestinationDetail = () => {
           )}
         </div>
       </div> */}
+
+
+
+
+
+
+
+
+
+      {/* ------------------------ Destination Activities To Do Section-------------------------------- */}
+
       <section
-        className="section-wrapper SecondaryBackground"
+        className="SecondaryBackground"
         id="TopActivitiesToDo"
       >
-        <div className="container">
+        <div className="MaxWidthContainer SectionPaddingTop SectionPaddingBottom">
           {/* Category Filters and Sorting */}
           <div
             className={`mb-2 scroll-fade-in ${isAnimated ? "animate" : ""}`}
@@ -679,50 +842,13 @@ const DestinationDetail = () => {
               <div className="flex items-center gap-4 HeadingADjustMargin">
                 {/* <Filter className="h-5 w-5 text-brand-primary" /> */}
                 <h2
-                  className="CommonH2"
-                  style={{ textTransform: "unset", margin: "10px 0px" }}
+                  className="SectionHeading"
                 >
                   Top activities to do in {destination.title}
                 </h2>
               </div>
-
-              {/* <div className="flex items-center gap-2">
-                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rating">Highest rated</SelectItem>
-                    <SelectItem value="price_low">Price: Low to High</SelectItem>
-                    <SelectItem value="price_high">Price: High to Low</SelectItem>
-                    <SelectItem value="newest">Newest first</SelectItem>
-                    <SelectItem value="name">Name A-Z</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div> */}
             </div>
 
-            {/* <div className="flex flex-wrap gap-3 mb-8">
-              <Button
-                variant={selectedCategory === null ? "default" : "outline"}
-                onClick={() => setSelectedCategory(null)}
-                className={selectedCategory === null ? "bg-brand-primary hover:bg-brand-primary-dark" : ""}
-              >
-                All
-              </Button>
-              {categories?.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={selectedCategory === category.id ? "bg-brand-primary hover:bg-brand-primary-dark" : ""}
-                >
-                  <span className="mr-2">{category.icon}</span>
-                  {category.name}
-                </Button>
-              ))}
-            </div> */}
           </div>
 
           {/* Experiences - Desktop Swiper / Mobile Static Grid */}
@@ -763,55 +889,155 @@ const DestinationDetail = () => {
                     }}
                     className="experiences-swiper"
                   >
-                    {experiences.map((experience, index) => (
-                      <SwiperSlide key={experience.id}>
-                        <div
-                          className={`scroll-scale-in ${
-                            isAnimated ? "animate" : ""
-                          }`}
-                          style={{ animationDelay: `${0.6 + index * 0.05}s` }}
-                        >
-                          <ExperienceCard
-                            id={experience.id}
-                            image={experience.image_url || ""}
-                            title={experience.title}
-                            categories={
-                              experience.experience_categories?.map(
-                                (ec) => ec.categories
-                              ) || []
-                            }
-                            rating={Number(experience.rating)}
-                            reviews={
-                              experience.reviews_count?.toString() || "0"
-                            }
-                            price={`${
-                              experience.currency === "USD"
-                                ? "₹"
-                                : experience.currency == "INR"
-                                ? "₹"
-                                : experience.currency
-                            } ${experience.price}`}
-                            originalPrice={
-                              experience.original_price
-                                ? `${
-                                    experience.currency === "USD"
-                                      ? "₹"
-                                      : experience.currency
-                                  } ${experience.original_price}`
-                                : undefined
-                            }
-                            duration={experience.duration || undefined}
-                            groupSize={experience.group_size || undefined}
-                            isSpecialOffer={
-                              experience.is_special_offer || false
-                            }
-                            index={index}
-                            description={experience.description || undefined}
-                            urlName={experience.url_name}
-                          />
-                        </div>
-                      </SwiperSlide>
-                    ))}
+                    {experiences.map((experience, index) => {
+                      const handleCardClick = () => {
+                        const experienceName = experience.url_name || experience.title
+                          .toLowerCase()
+                          .replace(/[^a-z0-9\s-]/g, "")
+                          .replace(/\s+/g, "-")
+                          .replace(/-+/g, "-")
+                          .trim();
+
+                        navigate(`/experience/${experienceName}`, {
+                          state: {
+                            experienceData: {
+                              id: experience.id,
+                              title: experience.title,
+                              image: experience.image_url,
+                            },
+                            fromPage: "destination-detail-card",
+                            timestamp: Date.now(),
+                          },
+                        });
+                      };
+
+                      // Get image
+                      const displayImage = experience.image_url || "/placeholder.svg";
+
+                      // Format currency helper function
+                      const formatCurrency = (amount: any) => {
+                        if (!amount || amount === 0 || isNaN(amount)) return "₹0";
+                        const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+                        if (isNaN(numAmount)) return "₹0";
+                        const currency = experience.currency || "INR";
+                        return currency === "USD"
+                          ? `$${numAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+                          : `₹${numAmount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                      };
+
+                      // Get activity data for this experience to check discounted price
+                      const activityData = allActivities?.[experience.id];
+                      const activityDiscountedPrice = activityData?.discounted_price;
+                      const activityPrice = activityData?.price;
+
+                      // Determine original and discounted prices
+                      const originalPrice = activityPrice || experience.price || 0;
+                      const experienceOriginalPrice = experience.original_price;
+                      const experiencePrice = experience.price;
+
+                      // Calculate discounted price (activity level takes priority)
+                      const discountedPrice = activityDiscountedPrice && activityDiscountedPrice !== activityPrice
+                        ? activityDiscountedPrice
+                        : experienceOriginalPrice && experienceOriginalPrice !== experiencePrice
+                          ? experiencePrice
+                          : null;
+
+                      // Final price to display
+                      const finalPrice = discountedPrice || originalPrice;
+
+                      // Calculate discount percentage
+                      const calculateDiscountPercentage = () => {
+                        if (!discountedPrice || discountedPrice === originalPrice) return 0;
+                        return Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+                      };
+
+                      const discountPercentage = calculateDiscountPercentage();
+                      const hasDiscount = discountPercentage > 0;
+
+                      // Format prices for display
+                      const displayPrice = formatCurrency(finalPrice);
+                      const displayOriginalPrice = hasDiscount ? formatCurrency(originalPrice) : null;
+
+                      // Get description overview
+                      const overview = experience.description
+                        ? experience.description.replace(/<[^>]*>/g, "").split(" ").slice(0, 10).join(" ") + "..."
+                        : "";
+
+                      return (
+                        <SwiperSlide key={experience.id}>
+                          <div
+                            className={`scroll-scale-in ${isAnimated ? "animate" : ""
+                              }`}
+                            style={{ animationDelay: `${0.6 + index * 0.05}s` }}
+                          >
+                            <div
+                              className="destination-card"
+                              onClick={handleCardClick}
+                              style={{ height: "100%", cursor: "pointer" }}
+                            >
+                              <div className="destination-card-image-wrapper">
+                                <img
+                                  src={displayImage}
+                                  alt={experience.title}
+                                  className="destination-card-image"
+                                />
+                                {/* Cinematic Shadow Overlay */}
+                                <div className="destination-card-shadow-overlay"></div>
+                                {/* Rating Badge */}
+                                {experience.rating && (
+                                  <div className="destination-card-rating">
+                                    <span className="rating-star">★</span>
+                                    <span className="rating-value">{Number(experience.rating).toFixed(1)}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="destination-card-content">
+                                <h3 className="destination-card-title">{experience.title}</h3>
+                                {overview && (
+                                  <p className="destination-card-overview">
+                                    Overview: {overview}
+                                  </p>
+                                )}
+                                <div className="destination-card-footer">
+                                  <div className="destination-card-price-container">
+                                    {hasDiscount ? (
+                                      <>
+                                        <div className="destination-card-price-header">
+                                          <div className="destination-card-price-label">From</div>
+                                          {discountPercentage > 0 && (
+                                            <div className="destination-card-discount-badge">
+                                              {discountPercentage}% OFF
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="destination-card-price-wrapper">
+                                          <div className="destination-card-original-price">
+                                            {displayOriginalPrice}
+                                          </div>
+                                          <div className="destination-card-discounted-price">
+                                            {displayPrice}
+                                          </div>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="destination-card-price-label">From</div>
+                                        <div className="destination-card-price">
+                                          {displayPrice}
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                  <Button className="destination-card-button">
+                                    EXPLORE
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </SwiperSlide>
+                      );
+                    })}
                   </Swiper>
 
                   {/* Custom Navigation Buttons for Desktop */}
@@ -853,52 +1079,154 @@ const DestinationDetail = () => {
 
                 {/* Mobile Static Grid - Hidden on desktop */}
                 <div className="lg:hidden grid grid-cols-1 gap-6">
-                  {experiences.map((experience, index) => (
-                    <div
-                      key={experience.id}
-                      className={`scroll-scale-in ${
-                        isAnimated ? "animate" : ""
-                      }`}
-                      style={{ animationDelay: `${0.6 + index * 0.05}s` }}
-                      id="ExperienceCardContainerSpecificDestinationDetail"
-                    >
-                      <ExperienceCard
-                        id={experience.id}
-                        image={experience.image_url || ""}
-                        title={experience.title}
-                        categories={
-                          experience.experience_categories?.map(
-                            (ec) => ec.categories
-                          ) || []
-                        }
-                        rating={Number(experience.rating)}
-                        reviews={experience.reviews_count?.toString() || "0"}
-                        price={`${
-                          experience.currency === "USD"
-                            ? "₹"
-                            : experience.currency == "INR"
-                            ? "₹"
-                            : experience.currency
-                        } ${experience.price}`}
-                        originalPrice={
-                          experience.original_price
-                            ? `${
-                                experience.currency === "USD"
-                                  ? "₹"
-                                  : experience.currency == "INR"
-                                  ? "₹"
-                                  : experience.currency
-                              } ${experience.original_price}`
-                            : undefined
-                        }
-                        duration={experience.duration || undefined}
-                        groupSize={experience.group_size || undefined}
-                        isSpecialOffer={experience.is_special_offer || false}
-                        index={index}
-                        description={experience.description || undefined}
-                      />
-                    </div>
-                  ))}
+                  {experiences.map((experience, index) => {
+                    const handleCardClick = () => {
+                      const experienceName = experience.url_name || experience.title
+                        .toLowerCase()
+                        .replace(/[^a-z0-9\s-]/g, "")
+                        .replace(/\s+/g, "-")
+                        .replace(/-+/g, "-")
+                        .trim();
+
+                      navigate(`/experience/${experienceName}`, {
+                        state: {
+                          experienceData: {
+                            id: experience.id,
+                            title: experience.title,
+                            image: experience.image_url,
+                          },
+                          fromPage: "destination-detail-card",
+                          timestamp: Date.now(),
+                        },
+                      });
+                    };
+
+                    // Get image
+                    const displayImage = experience.image_url || "/placeholder.svg";
+
+                    // Format currency helper function
+                    const formatCurrency = (amount: any) => {
+                      if (!amount || amount === 0 || isNaN(amount)) return "₹0";
+                      const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+                      if (isNaN(numAmount)) return "₹0";
+                      const currency = experience.currency || "INR";
+                      return currency === "USD"
+                        ? `$${numAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+                        : `₹${numAmount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                    };
+
+                    // Get activity data for this experience to check discounted price
+                    const activityData = allActivities?.[experience.id];
+                    const activityDiscountedPrice = activityData?.discounted_price;
+                    const activityPrice = activityData?.price;
+
+                    // Determine original and discounted prices
+                    const originalPrice = activityPrice || experience.price || 0;
+                    const experienceOriginalPrice = experience.original_price;
+                    const experiencePrice = experience.price;
+
+                    // Calculate discounted price (activity level takes priority)
+                    const discountedPrice = activityDiscountedPrice && activityDiscountedPrice !== activityPrice
+                      ? activityDiscountedPrice
+                      : experienceOriginalPrice && experienceOriginalPrice !== experiencePrice
+                        ? experiencePrice
+                        : null;
+
+                    // Final price to display
+                    const finalPrice = discountedPrice || originalPrice;
+
+                    // Calculate discount percentage
+                    const calculateDiscountPercentage = () => {
+                      if (!discountedPrice || discountedPrice === originalPrice) return 0;
+                      return Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+                    };
+
+                    const discountPercentage = calculateDiscountPercentage();
+                    const hasDiscount = discountPercentage > 0;
+
+                    // Format prices for display
+                    const displayPrice = formatCurrency(finalPrice);
+                    const displayOriginalPrice = hasDiscount ? formatCurrency(originalPrice) : null;
+
+                    // Get description overview
+                    const overview = experience.description
+                      ? experience.description.replace(/<[^>]*>/g, "").split(" ").slice(0, 10).join(" ") + "..."
+                      : "";
+
+                    return (
+                      <div
+                        key={experience.id}
+                        className={`scroll-scale-in ${isAnimated ? "animate" : ""
+                          }`}
+                        style={{ animationDelay: `${0.6 + index * 0.05}s` }}
+                      >
+                        <div
+                          className="destination-card"
+                          onClick={handleCardClick}
+                          style={{ height: "100%", cursor: "pointer" }}
+                        >
+                          <div className="destination-card-image-wrapper">
+                            <img
+                              src={displayImage}
+                              alt={experience.title}
+                              className="destination-card-image"
+                            />
+                            {/* Cinematic Shadow Overlay */}
+                            <div className="destination-card-shadow-overlay"></div>
+                            {/* Rating Badge */}
+                            {experience.rating && (
+                              <div className="destination-card-rating">
+                                <span className="rating-star">★</span>
+                                <span className="rating-value">{Number(experience.rating).toFixed(1)}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="destination-card-content">
+                            <h3 className="destination-card-title">{experience.title}</h3>
+                            {overview && (
+                              <p className="destination-card-overview">
+                                Overview: {overview}
+                              </p>
+                            )}
+                            <div className="destination-card-footer">
+                              <div className="destination-card-price-container">
+                                {hasDiscount ? (
+                                  <>
+                                    <div className="destination-card-price-header">
+                                      <div className="destination-card-price-label">From</div>
+                                      {discountPercentage > 0 && (
+                                        <div className="destination-card-discount-badge">
+                                          {discountPercentage}% OFF
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="destination-card-price-wrapper">
+                                      <div className="destination-card-original-price">
+                                        {displayOriginalPrice}
+                                      </div>
+                                      <div className="destination-card-discounted-price">
+                                        {displayPrice}
+                                      </div>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="destination-card-price-label">From</div>
+                                    <div className="destination-card-price">
+                                      {displayPrice}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              <Button className="destination-card-button">
+                                EXPLORE
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             ) : (
@@ -918,53 +1246,57 @@ const DestinationDetail = () => {
           </div>
         </div>
       </section>
-      <section className="IternarySectionContainer">
-        <div className="container">
-          <div
-            className={`scroll-fade-in ${isAnimated ? "animate" : ""}`}
-            style={{ animationDelay: "0.7s" }}
-          >
-            <h2 className="CommonH2 text-center mb-8">
-              Choose Your Perfect Itinerary
-            </h2>
-            <div className="itinerary-cards-grid">
-              {/* 1 Day Itinerary Card */}
-              <div className="itinerary-card itinerary-card-1day">
-                <div className="itinerary-card-overlay">
-                  <span className="itinerary-card-number">1</span>
-                </div>
-                <div className="itinerary-card-content">
-                  <h3 className="itinerary-card-title">1 Day Trip</h3>
-                  <p className="itinerary-card-description">
-                    Perfect for a quick getaway with essential experiences
-                  </p>
-                </div>
-              </div>
 
-              {/* 2 Days Itinerary Card */}
-              <div className="itinerary-card itinerary-card-2day">
-                <div className="itinerary-card-overlay">
-                  <span className="itinerary-card-number">2</span>
-                </div>
-                <div className="itinerary-card-content">
-                  <h3 className="itinerary-card-title">2 Days Trip</h3>
-                  <p className="itinerary-card-description">
-                    Ideal weekend escape with balanced activities
-                  </p>
-                </div>
-              </div>
 
-              {/* 5 Days Itinerary Card */}
-              <div className="itinerary-card itinerary-card-5day">
-                <div className="itinerary-card-overlay">
-                  <span className="itinerary-card-number">5</span>
-                </div>
-                <div className="itinerary-card-content">
-                  <h3 className="itinerary-card-title">5 Days Trip</h3>
-                  <p className="itinerary-card-description">
-                    Complete exploration with all major attractions
-                  </p>
-                </div>
+      {/* ------------------------ Destination Itinerary Section ends here-------------------------------- */}
+
+
+
+
+
+
+
+
+      <section className="destinations-itinerary-section  SectionPaddingTop SectionPaddingBottom">
+        <div className="destinations-itinerary-container MaxWidthContainer">
+          <div className="SectionHeading">
+            Choose Your Perfect Itinerary
+          </div>
+          <div className="destinations-itinerary-cards MarginTopLarge">
+            <div className="destinations-itinerary-card itinerary-card-day1">
+              <div className="itinerary-card-background"></div>
+              <div className="itinerary-card-overlay"></div>
+              <div className="itinerary-card-number">01</div>
+              <div className="itinerary-card-content">
+                <div className="itinerary-card-badge">1 Day</div>
+                <h3 className="itinerary-card-title">Quick Getaway</h3>
+                <p className="itinerary-card-description">
+                  Perfect for a quick getaway with essential experiences
+                </p>
+              </div>
+            </div>
+            <div className="destinations-itinerary-card itinerary-card-day2">
+              <div className="itinerary-card-background"></div>
+              <div className="itinerary-card-overlay"></div>
+              <div className="itinerary-card-number">02</div>
+              <div className="itinerary-card-content">
+                <div className="itinerary-card-badge">2 Days</div>
+                <h3 className="itinerary-card-title">Weekend Escape</h3>
+                <p className="itinerary-card-description">
+                  Ideal weekend escape with balanced activities
+                </p>
+              </div>
+            </div>
+            <div className="destinations-itinerary-card itinerary-card-day5">
+              <div className="itinerary-card-background"></div>
+              <div className="itinerary-card-overlay"></div>
+              <div className="itinerary-card-number">05</div>
+              <div className="itinerary-card-content">
+                <div className="itinerary-card-badge">5 Days</div>
+                <h3 className="itinerary-card-title">Complete Exploration</h3>
+                <p className="itinerary-card-description">
+                  Complete exploration with all major attractions
+                </p>
               </div>
             </div>
           </div>

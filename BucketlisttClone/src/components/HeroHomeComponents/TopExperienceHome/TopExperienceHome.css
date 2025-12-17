@@ -1,0 +1,193 @@
+.TopExperienceHomeGrid {
+    width: 100%;
+}
+
+.TopExperienceHomeGridContainer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    width: 100%;
+}
+
+@media (max-width: 1024px) {
+    .TopExperienceHomeGridContainer {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+}
+
+@media (max-width: 640px) {
+    .TopExperienceHomeGridContainer {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+.TopExperienceHomeGridItem {
+    /* display: grid; */
+    /* grid-template-columns: 40% 60%; */
+    /* background-color: #300d42; */
+    /* border-radius: 20px; */
+    border: 1px solid rgb(209, 209, 209);
+    /* border-left: 0px !important;
+    border-bottom: 0px !important; */
+    /* overflow: hidden; */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 100%;
+    min-height: 380px;
+    padding: 10px;
+    position: relative;
+}
+
+/* .TopExperienceHomeGridItem:nth-child(3n) {
+    border-right: 0px !important;
+} */
+
+
+/* .TopExperienceHomeGridItem:hover {
+    box-shadow: 0 8px 24px rgba(113, 16, 165, 0.15);
+    transform: translateY(-2px);
+} */
+
+.TopExperienceHomeGridItemImage {
+    width: 100%;
+    flex-shrink: 0;
+    height: 60%;
+    overflow: hidden;
+    position: absolute;
+    right: 0px;
+    left: 0px;
+    /* top: 0px; */
+    bottom: 0px;
+    z-index: 5;
+    /* border-radius: 20px; */
+}
+
+.TopExperienceHomeGridItem .TopExperienceHomeGridItemImage::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 500px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 30%, rgba(255, 255, 255, 0.4) 60%, rgba(255, 255, 255, 0) 100%);
+    z-index: 6;
+    pointer-events: none;
+    transition: .5s;
+}
+
+.TopExperienceHomeGridItem:hover .TopExperienceHomeGridItemImage::before {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 30%, rgba(255, 255, 255, 0.4) 60%, rgba(255, 255, 255, 0) 100%);
+    height: 350px;
+    transition: .5s;
+}
+
+.TopExperienceHomeGridItemImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.05);
+
+}
+
+.TopExperienceHomeGridItemContent {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    padding: 20px;
+    /* background-color: rgba(255, 255, 255, 0.828); */
+    border-radius: 10px;
+    padding-right: 70px;
+    /* z-index: 5; */
+}
+
+.TopExperienceHomeGridItemContent::after {
+    content: "";
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    background-color: rgba(255, 255, 255, 0.828);
+    border-radius: 10px;
+    padding-right: 70px;
+}
+
+.TopExperienceHomeGridItemDuration {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.TopExperienceHomeGridItemDurationValue {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.TopExperienceHomeGridItemPrice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.TopExperienceHomeGridItemOriginalPrice {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.TopExperienceHomeGridItemCurrentPrice {
+    font-weight: 600;
+    color: var(--brand-color-new);
+}
+
+.TopExperienceHomeGridItemButton {
+    display: flex;
+    background-color: white;
+    border: 1px solid rgb(227, 227, 227);
+    padding: 10px;
+    border-radius: 50%;
+    transition: .5s;
+}
+
+.TopExperienceHomeGridItem:hover .TopExperienceHomeGridItemButton {
+    background-color: #5a0d84;
+    /* transform: translateX(4px); */
+    transition: .5s;
+}
+
+.TopExperienceHomeGridItemButton span {
+    font-weight: 500;
+    transition: .5s;
+}
+
+.TopExperienceHomeGridItem .TopExperienceHomeGridItemButton svg {
+    transition: .5s;
+}
+
+.TopExperienceHomeGridItem:hover .TopExperienceHomeGridItemButton svg {
+    width: 20px;
+    height: 20px;
+    color: white;
+    transition: .5s;
+}
+
+.LocationIcon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    padding: 0px;
+    background-color: rgb(240, 240, 240);
+}
+
+.CardContentFlexContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 555;
+    position: relative;
+}

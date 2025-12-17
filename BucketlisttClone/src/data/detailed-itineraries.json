@@ -1,0 +1,890 @@
+{
+  "Mysore": {
+    "title": "Royal Heritage & Adventure in Mysore",
+    "duration": "3-4 Days",
+    "description": "Experience the royal grandeur of Mysore combined with thrilling adventures in nearby Coorg. This itinerary blends cultural exploration with adrenaline-pumping activities.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Royal Palace & Heritage Walk",
+        "activities": [
+          "Start early with a guided heritage walk around the magnificent Mysore Palace",
+          "Explore the intricate architecture and royal artifacts",
+          "Visit Chamundi Hills and climb the 1,000 steps to Chamundeshwari Temple",
+          "Evening boat ride at the serene Karanji Lake with bird watching",
+          "Night illumination of Mysore Palace (weekends and festivals)"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Adventure Day in Coorg",
+        "activities": [
+          "Early morning drive to Coorg (3 hours)",
+          "White water rafting on the thrilling Barapole River",
+          "Zip-lining through coffee plantations",
+          "Rock climbing and rappelling at Mandalpatti",
+          "Stay overnight in a coffee estate"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Nature & Local Culture",
+        "activities": [
+          "Trek to Abbey Falls and enjoy the cascading waters",
+          "Visit local coffee plantations and learn about coffee processing",
+          "ATV rides through forest trails",
+          "Return to Mysore and explore Devaraja Market",
+          "Traditional South Indian dinner"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "River Rafting",
+      "Zip-lining",
+      "Rock Climbing",
+      "ATV Rides",
+      "Trekking"
+    ],
+    "bestTime": "October to March",
+    "difficulty": "Moderate"
+  },
+  "Jaipur": {
+    "title": "Royal Rajasthan Adventure",
+    "duration": "4-5 Days",
+    "description": "Soar above the Pink City in hot air balloons, explore majestic forts, and experience desert adventures that will leave you breathless.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Sky High Royal Experience",
+        "activities": [
+          "Pre-dawn hot air balloon ride over Amer Fort at sunrise",
+          "Champagne breakfast in the sky with panoramic city views",
+          "Explore the magnificent Amer Fort and its mirror palace",
+          "Elephant ride up to the fort entrance",
+          "Evening at Nahargarh Fort for sunset views"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "City Palace & Local Bazaars",
+        "activities": [
+          "Guided tour of City Palace and its museums",
+          "Shopping spree at Johari Bazaar and Bapu Bazaar",
+          "Hawa Mahal photography session",
+          "Traditional Rajasthani lunch at a heritage hotel",
+          "Evening cultural show with folk dance and music"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Desert Adventure Day",
+        "activities": [
+          "ATV rides through desert terrain near Pushkar",
+          "Zip-lining at Nahargarh Biological Park",
+          "Camel safari in the Thar Desert outskirts",
+          "Desert camping with bonfire and stargazing",
+          "Traditional Rajasthani dinner under the stars"
+        ]
+      },
+      {
+        "day": 4,
+        "title": "Extreme Adventures",
+        "activities": [
+          "Bungee jumping at Rishikesh-style adventure park",
+          "Paragliding over Aravalli hills",
+          "Rock climbing at natural rock formations",
+          "Visit to Jantar Mantar observatory",
+          "Farewell dinner at a rooftop restaurant"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Hot Air Ballooning",
+      "Bungee Jumping",
+      "ATV Rides",
+      "Zip-lining",
+      "Paragliding",
+      "Desert Safari"
+    ],
+    "bestTime": "October to March",
+    "difficulty": "Moderate to High"
+  },
+  "Saputara": {
+    "title": "Hill Station Serenity & Forest Adventures",
+    "duration": "2-3 Days",
+    "description": "Gujarat's only hill station offers peaceful lake experiences combined with thrilling forest adventures and artistic cultural immersion.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Lake Serenity & Sunset Magic",
+        "activities": [
+          "Morning boat ride on the pristine Saputara Lake",
+          "Visit to the tribal museum and learn local culture",
+          "Trek to Sunset Point for breathtaking valley views",
+          "Explore Artist Village and interact with local artisans",
+          "Evening ropeway ride for panoramic hill views"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Forest Adventure in Waghai",
+        "activities": [
+          "Early morning drive to nearby Waghai forests",
+          "Zip-lining through dense forest canopy",
+          "Rappelling down natural rock faces",
+          "Forest trekking with wildlife spotting",
+          "River crossing and rope bridge challenges"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Cultural & Nature Immersion",
+        "activities": [
+          "Visit to Gira Waterfalls (seasonal)",
+          "Tribal dance performance and local handicraft shopping",
+          "Nature walk through rose gardens",
+          "Boating and paddle sports on the lake",
+          "Farewell dinner with local Gujarati cuisine"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Zip-lining",
+      "Rappelling",
+      "Forest Trekking",
+      "River Crossing",
+      "Boating"
+    ],
+    "bestTime": "June to February",
+    "difficulty": "Easy to Moderate"
+  },
+  "Varanasi": {
+    "title": "Spiritual Awakening & Aerial Adventures",
+    "duration": "3-4 Days",
+    "description": "Experience the spiritual heart of India with sacred Ganges rituals, ancient temples, and surprising aerial adventures in nearby regions.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Sacred Ganges Experience",
+        "activities": [
+          "Pre-dawn boat ride on the holy Ganges River",
+          "Witness sunrise from the ghats with morning prayers",
+          "Yoga and meditation session by the riverside",
+          "Explore the narrow lanes and ancient temples",
+          "Evening Ganga Aarti ceremony at Dashashwamedh Ghat"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Buddhist Heritage & Culture",
+        "activities": [
+          "Day trip to Sarnath - birthplace of Buddhism",
+          "Visit Dhamek Stupa and archaeological museum",
+          "Explore Banaras Hindu University campus",
+          "Traditional silk weaving workshop visit",
+          "Evening classical music performance"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Adventure & Aerial Thrills",
+        "activities": [
+          "Drive to Ghazipur for paragliding adventures",
+          "Soar above the Ganges plains with bird's eye views",
+          "River rafting on calmer sections of the Ganges",
+          "Visit to local villages and rural experiences",
+          "Sunset photography from elevated viewpoints"
+        ]
+      },
+      {
+        "day": 4,
+        "title": "Final Blessings & Departure",
+        "activities": [
+          "Morning temple visits and final prayers",
+          "Shopping for silk sarees and spiritual artifacts",
+          "Last boat ride with flower offerings to Ganga",
+          "Traditional Banarasi lunch",
+          "Departure with blessed memories"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Paragliding",
+      "River Rafting",
+      "Boat Rides",
+      "Cultural Immersion"
+    ],
+    "bestTime": "October to March",
+    "difficulty": "Easy to Moderate"
+  },
+  "Rishikesh": {
+    "title": "Adventure Capital of India",
+    "duration": "4-5 Days",
+    "description": "The ultimate adventure destination combining spiritual experiences with world-class extreme sports and white water thrills.",
+    "itinerary": [
+      {
+        "day": 1,
+        "image": "https://thetravelboat.com/wp-content/uploads/2022/12/bungee-jumping1.jpg",
+        "title": "Extreme Heights & Spiritual Depths",
+        "activities": [
+          "Morning bungee jump at Jumpin Heights (India's highest)",
+          "Giant swing and flying fox experiences",
+          "Afternoon visit to Beatles Ashram ruins",
+          "Meditation session by the Ganges",
+          "Evening Ganga Aarti at Triveni Ghat"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "White Water Rafting Adventure",
+        "image": "https://hillwaytravels.in/wp-content/uploads/About-02.jpg",
+        "activities": [
+          "Full day white water rafting from Shivpuri to Rishikesh",
+          "Navigate through Grade III and IV rapids",
+          "Cliff jumping and body surfing in calm pools",
+          "Riverside camping with bonfire",
+          "Stargazing and adventure stories sharing"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Aerial & Rock Adventures",
+        "image": "https://cdn.adventuremonk.com/cdn/site/media/images/450x150/898f50838fccce96292c2419c23084b6.webp",
+        "activities": [
+          "Paragliding over the Ganges valley",
+          "Rock climbing at natural cliff faces",
+          "Rappelling down waterfalls",
+          "Mountain biking through forest trails",
+          "Yoga session at sunset point"
+        ]
+      },
+      {
+        "day": 4,
+        "image": "https://www.agniyogaindia.com/wp-content/uploads/2021/11/Yoga-Rishikesh.jpg",
+        "title": "Spiritual & Cultural Immersion",
+        "activities": [
+          "Early morning yoga class with Himalayan views",
+          "Visit to ancient temples and ashrams",
+          "Ayurvedic massage and spa treatments",
+          "Local market exploration and souvenir shopping",
+          "Final Ganga Aarti participation"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Bungee Jumping",
+      "White Water Rafting",
+      "Paragliding",
+      "Rock Climbing",
+      "Rappelling",
+      "Mountain Biking"
+    ],
+    "bestTime": "September to June",
+    "difficulty": "High"
+  },
+  "Goa": {
+    "title": "Beach Paradise & Water Sports Extravaganza",
+    "duration": "5-6 Days",
+    "description": "Perfect blend of Portuguese heritage, pristine beaches, and thrilling water sports with extreme adventure activities.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Surf & Heritage",
+        "activities": [
+          "Morning surf lessons at Ashwem Beach",
+          "Explore Chapora Fort and its panoramic views",
+          "Visit to Se Cathedral and Basilica of Bom Jesus",
+          "Sunset at Anjuna Beach with flea market shopping",
+          "Beach shack dinner with live music"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Water Sports Bonanza",
+        "activities": [
+          "Parasailing over Calangute Beach",
+          "Jet skiing and banana boat rides",
+          "Scuba diving at Grande Island",
+          "Underwater walking experience",
+          "Beach volleyball and sunset cocktails"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Extreme Adventures",
+        "activities": [
+          "Bungee jumping at North Goa adventure park",
+          "ATV rides through forest trails",
+          "Zip-lining over rivers and valleys",
+          "Rock climbing at natural formations",
+          "Night beach camping with bonfire"
+        ]
+      },
+      {
+        "day": 4,
+        "title": "Island Hopping & Dolphin Watching",
+        "activities": [
+          "Boat trip to Butterfly Island",
+          "Dolphin watching cruise",
+          "Snorkeling and fishing experiences",
+          "Beach hopping - Palolem to Agonda",
+          "Sunset kayaking through backwaters"
+        ]
+      },
+      {
+        "day": 5,
+        "title": "Cultural & Culinary Journey",
+        "activities": [
+          "Spice plantation tour with traditional lunch",
+          "Portuguese architecture walking tour",
+          "Cooking class for Goan cuisine",
+          "Visit to local markets and cashew factories",
+          "Farewell beach party with live DJ"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Surfing",
+      "Bungee Jumping",
+      "Parasailing",
+      "Scuba Diving",
+      "Jet Skiing",
+      "ATV Rides",
+      "Zip-lining"
+    ],
+    "bestTime": "November to February",
+    "difficulty": "Moderate to High"
+  },
+  "Matheran": {
+    "title": "Vehicle-Free Hill Station Adventures",
+    "duration": "2-3 Days",
+    "description": "Asia's only vehicle-free hill station offering pristine nature, valley views, and unique eco-friendly adventure experiences.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Arrival & Valley Exploration",
+        "activities": [
+          "Toy train journey from Neral to Matheran",
+          "Horseback riding through forest trails",
+          "Trek to Panorama Point for 360-degree valley views",
+          "Visit Charlotte Lake and surrounding nature",
+          "Sunset viewing from Sunset Point"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Adventure & Thrills",
+        "activities": [
+          "Zip-lining across valleys at Echo Point",
+          "Valley crossing on rope bridges",
+          "Rock climbing at natural cliff faces",
+          "Nature photography walks",
+          "Evening bonfire with local folk music"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Nature Immersion & Departure",
+        "activities": [
+          "Early morning bird watching trek",
+          "Visit to Louisa Point and Hart Point",
+          "Horseback riding to remote viewpoints",
+          "Local handicraft shopping",
+          "Departure via scenic toy train journey"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Zip-lining",
+      "Valley Crossing",
+      "Rock Climbing",
+      "Horseback Riding",
+      "Trekking"
+    ],
+    "bestTime": "October to May",
+    "difficulty": "Easy to Moderate"
+  },
+  "Leh-Ladakh": {
+    "title": "High Altitude Adventure Paradise",
+    "duration": "7-10 Days",
+    "description": "Ultimate high-altitude adventure combining motorcycle expeditions, extreme sports, and breathtaking Himalayan landscapes.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Acclimatization & Local Exploration",
+        "activities": [
+          "Arrival and rest for altitude acclimatization",
+          "Visit Leh Palace and Shanti Stupa",
+          "Local market exploration",
+          "Light walking around Leh town",
+          "Traditional Ladakhi dinner"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Khardung La Pass Adventure",
+        "activities": [
+          "Motorcycle ride to world's highest motorable pass",
+          "Photography at 18,380 feet elevation",
+          "Descent to Nubra Valley",
+          "Camel safari on sand dunes at Hunder",
+          "Overnight camping under stars"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "White Water Rafting",
+        "activities": [
+          "Return journey to Leh",
+          "White water rafting on Zanskar River",
+          "Navigate through challenging rapids",
+          "Riverside camping and barbecue",
+          "Traditional Ladakhi cultural show"
+        ]
+      },
+      {
+        "day": 4,
+        "title": "Pangong Lake Expedition",
+        "activities": [
+          "Early morning drive to Pangong Tso",
+          "Photography at the changing colors lake",
+          "Camping by the lake shore",
+          "Stargazing in clear mountain skies",
+          "Sunrise photography session"
+        ]
+      },
+      {
+        "day": 5,
+        "title": "Extreme Winter Sports (Seasonal)",
+        "activities": [
+          "Ice climbing on frozen waterfalls",
+          "Snow biking adventures",
+          "Ice hockey on frozen lakes",
+          "Winter trekking experiences",
+          "Hot springs relaxation"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Motorcycle Expeditions",
+      "White Water Rafting",
+      "Ice Climbing",
+      "Snow Biking",
+      "High Altitude Trekking"
+    ],
+    "bestTime": "May to September (Summer), December to February (Winter Sports)",
+    "difficulty": "High to Extreme"
+  },
+  "Agra": {
+    "title": "Mughal Heritage & Rural Adventures",
+    "duration": "3-4 Days",
+    "description": "Experience the iconic Taj Mahal combined with thrilling rural adventures and wildlife safaris in the Chambal region.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Taj Mahal & Mughal Monuments",
+        "activities": [
+          "Pre-dawn arrival for Taj Mahal sunrise",
+          "Professional photography session",
+          "Explore Agra Fort and its palaces",
+          "Visit Mehtab Bagh for sunset Taj views",
+          "Traditional Mughlai dinner"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Chambal Safari Adventure",
+        "activities": [
+          "Drive to Chambal Valley (2 hours)",
+          "River safari spotting gharials and dolphins",
+          "Camel rides across rural landscapes",
+          "Village visits and cultural interactions",
+          "Overnight stay in eco-resort"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Rural Adventures & Wildlife",
+        "activities": [
+          "Early morning bird watching safari",
+          "Quad biking through countryside",
+          "Traditional pottery and craft workshops",
+          "Bullock cart rides through villages",
+          "Return to Agra for departure"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "River Safari",
+      "Camel Rides",
+      "Quad Biking",
+      "Wildlife Spotting",
+      "Cultural Immersion"
+    ],
+    "bestTime": "October to March",
+    "difficulty": "Easy to Moderate"
+  },
+  "Alleppey": {
+    "title": "Backwater Paradise & Coastal Adventures",
+    "duration": "3-4 Days",
+    "description": "Cruise through Kerala's famous backwaters while enjoying water sports, village experiences, and coastal adventures.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Houseboat Cruise Experience",
+        "activities": [
+          "Board traditional Kerala houseboat",
+          "Cruise through Vembanad Lake",
+          "Watch local fishing techniques",
+          "Sunset viewing from boat deck",
+          "Overnight on houseboat with traditional meals"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Kayaking & Village Life",
+        "activities": [
+          "Kayaking through narrow canals",
+          "Village visits and local interactions",
+          "Coconut farm tours and toddy tasting",
+          "Traditional Kerala cooking class",
+          "Canoe rides through mangrove forests"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Beach Adventures at Marari",
+        "activities": [
+          "Transfer to Marari Beach",
+          "Beach volleyball and water sports",
+          "Cycling through Kuttanad countryside",
+          "Ayurvedic spa treatments",
+          "Sunset fishing with local fishermen"
+        ]
+      },
+      {
+        "day": 4,
+        "title": "Cultural & Culinary Finale",
+        "activities": [
+          "Kathakali dance performance",
+          "Spice plantation visit",
+          "Traditional handicraft shopping",
+          "Farewell seafood feast",
+          "Departure with Kerala memories"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Kayaking",
+      "Cycling",
+      "Fishing",
+      "Water Sports",
+      "Cultural Immersion"
+    ],
+    "bestTime": "September to March",
+    "difficulty": "Easy"
+  },
+  "Darjeeling": {
+    "title": "Himalayan Tea Gardens & High Altitude Thrills",
+    "duration": "4-5 Days",
+    "description": "Experience the charm of hill stations with tea gardens, toy trains, and exciting high-altitude adventure sports.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Toy Train & Tea Gardens",
+        "activities": [
+          "Iconic Darjeeling Himalayan Railway ride",
+          "Visit to Happy Valley Tea Estate",
+          "Tea tasting and processing tour",
+          "Explore Darjeeling town and markets",
+          "Evening at Mall Road with mountain views"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Tiger Hill Sunrise & Adventure",
+        "activities": [
+          "Pre-dawn trek to Tiger Hill for Kanchenjunga sunrise",
+          "Visit Ghoom Monastery",
+          "Paragliding over tea gardens",
+          "Mountain biking through hill trails",
+          "Traditional Tibetan dinner"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "River Rafting & Nature",
+        "activities": [
+          "White water rafting on Teesta River",
+          "Visit to Padmaja Naidu Himalayan Zoological Park",
+          "Rock climbing at natural formations",
+          "Nature walks through rhododendron forests",
+          "Camping under Himalayan stars"
+        ]
+      },
+      {
+        "day": 4,
+        "title": "Cultural Immersion & Departure",
+        "activities": [
+          "Visit to Tibetan Refugee Self Help Centre",
+          "Traditional handicraft shopping",
+          "Final tea garden visit and photography",
+          "Farewell lunch with Himalayan views",
+          "Departure with mountain memories"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Paragliding",
+      "River Rafting",
+      "Rock Climbing",
+      "Mountain Biking",
+      "Trekking"
+    ],
+    "bestTime": "March to May, September to November",
+    "difficulty": "Moderate"
+  },
+  "Junagadh": {
+    "title": "Spiritual Peaks & Wildlife Safari",
+    "duration": "3-4 Days",
+    "description": "Combine spiritual mountain climbing with wildlife encounters and adventure sports in Gujarat's historic region.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Girnar Hills Spiritual Trek",
+        "activities": [
+          "Early morning start for Girnar Hills trek",
+          "Climb 10,000 steps to reach temples",
+          "Visit ancient Jain and Hindu temples",
+          "Panoramic views from mountain peaks",
+          "Overnight rest and recovery"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Gir National Park Safari",
+        "activities": [
+          "Early morning wildlife safari in Gir",
+          "Asiatic lion spotting and photography",
+          "Visit to Gir Interpretation Zone",
+          "Nature walks and bird watching",
+          "Camping near forest boundaries"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Adventure & History",
+        "activities": [
+          "Rock climbing at natural cliff faces",
+          "Rappelling down ancient fort walls",
+          "Explore Uparkot Fort and its stepwells",
+          "Adventure camping in forest zones",
+          "Bonfire with local folk stories"
+        ]
+      },
+      {
+        "day": 4,
+        "title": "Cultural & Departure",
+        "activities": [
+          "Visit to Mahabat Maqbara mausoleum",
+          "Local handicraft and textile shopping",
+          "Traditional Gujarati thali lunch",
+          "Final wildlife photography session",
+          "Departure with wildlife memories"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Mountain Trekking",
+      "Rock Climbing",
+      "Rappelling",
+      "Wildlife Safari",
+      "Camping"
+    ],
+    "bestTime": "November to February",
+    "difficulty": "Moderate to High"
+  },
+  "Ahmedabad": {
+    "title": "Heritage City & Modern Adventures",
+    "duration": "3-4 Days",
+    "description": "Explore UNESCO World Heritage sites combined with modern adventure parks and thrilling activities.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Heritage Walk & Culture",
+        "activities": [
+          "Guided heritage walk through old city pols",
+          "Visit Sabarmati Ashram and Gandhi's legacy",
+          "Explore Jama Masjid and Sidi Saiyyed Mosque",
+          "Traditional Gujarati lunch in heritage hotel",
+          "Evening at Sabarmati Riverfront"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Adventure Parks & Thrills",
+        "activities": [
+          "Full day at Maniar's Wonderland",
+          "Zip-lining over water bodies",
+          "Wall climbing and rope courses",
+          "ATV rides through adventure circuits",
+          "Bungee trampoline experiences"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Nature & Wildlife",
+        "activities": [
+          "Visit to Indroda Nature Park",
+          "Dinosaur fossil park exploration",
+          "River rafting on Sabarmati (seasonal)",
+          "Cycling tours through city heritage sites",
+          "Traditional kite flying experience"
+        ]
+      },
+      {
+        "day": 4,
+        "title": "Modern City & Departure",
+        "activities": [
+          "Visit to Science City and interactive exhibits",
+          "Shopping at Law Garden night market",
+          "Traditional Gujarati street food tour",
+          "Final heritage photography session",
+          "Departure with cultural memories"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Zip-lining",
+      "Wall Climbing",
+      "ATV Rides",
+      "Bungee Trampoline",
+      "River Rafting",
+      "Cycling"
+    ],
+    "bestTime": "November to February",
+    "difficulty": "Easy to Moderate"
+  },
+  "Udaipur": {
+    "title": "City of Lakes & Royal Adventures",
+    "duration": "4-5 Days",
+    "description": "Experience royal heritage with lake adventures, palace explorations, and thrilling outdoor activities in the Aravalli hills.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Lake Palace & City Exploration",
+        "activities": [
+          "Sunrise boat ride on Lake Pichola",
+          "Visit to City Palace complex",
+          "Explore Jagdish Temple and local markets",
+          "Sunset viewing from Sajjangarh Palace",
+          "Traditional Rajasthani dinner with cultural show"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Adventure in Aravalli Hills",
+        "activities": [
+          "Zip-lining at Sajjangarh Biological Park",
+          "Trekking through Aravalli hill ranges",
+          "Rock climbing at natural formations",
+          "Visit to Monsoon Palace for panoramic views",
+          "Camping under starlit skies"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Water Sports & Island Hopping",
+        "activities": [
+          "Kayaking on Lake Fateh Sagar",
+          "Jet skiing and speed boating",
+          "Visit to Jag Mandir island palace",
+          "Rope courses at adventure resorts",
+          "Sunset cocktails at lakeside restaurants"
+        ]
+      },
+      {
+        "day": 4,
+        "title": "Rural Adventures & Culture",
+        "activities": [
+          "Village safari to experience rural Rajasthan",
+          "Camel cart rides through countryside",
+          "Traditional pottery and painting workshops",
+          "Visit to Shilpgram craft village",
+          "Folk dance and music performances"
+        ]
+      },
+      {
+        "day": 5,
+        "title": "Final Royal Experience",
+        "activities": [
+          "Heritage hotel breakfast with lake views",
+          "Final shopping at Hathi Pol bazaar",
+          "Photography session at iconic locations",
+          "Farewell lunch at palace restaurant",
+          "Departure with royal memories"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Zip-lining",
+      "Kayaking",
+      "Jet Skiing",
+      "Rock Climbing",
+      "Trekking",
+      "Rope Courses"
+    ],
+    "bestTime": "October to March",
+    "difficulty": "Moderate"
+  },
+  "Dharoi": {
+    "title": "Dam Views & Forest Adventures",
+    "duration": "2-3 Days",
+    "description": "Peaceful dam-side experiences combined with forest adventures and nearby hill station thrills at Mount Abu.",
+    "itinerary": [
+      {
+        "day": 1,
+        "title": "Dharoi Dam & Nature",
+        "activities": [
+          "Morning visit to Dharoi Dam and reservoir",
+          "Boating and fishing experiences",
+          "Picnic by the water with scenic views",
+          "Bird watching and nature photography",
+          "Sunset viewing from dam viewpoints"
+        ]
+      },
+      {
+        "day": 2,
+        "title": "Polo Forest Adventure",
+        "activities": [
+          "Drive to historic Polo Forest",
+          "Trekking through ancient ruins",
+          "Rock climbing at natural cliff faces",
+          "Rappelling down forest waterfalls",
+          "Camping in forest clearings"
+        ]
+      },
+      {
+        "day": 3,
+        "title": "Mount Abu Hill Station",
+        "activities": [
+          "Day trip to Mount Abu hill station",
+          "Zip-lining over valley landscapes",
+          "Trekking to Guru Shikhar peak",
+          "Boat rides on Nakki Lake",
+          "Return journey with mountain memories"
+        ]
+      }
+    ],
+    "adventureActivities": [
+      "Trekking",
+      "Rock Climbing",
+      "Rappelling",
+      "Zip-lining",
+      "Boating",
+      "Camping"
+    ],
+    "bestTime": "October to March",
+    "difficulty": "Moderate"
+  }
+}

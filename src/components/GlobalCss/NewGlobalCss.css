@@ -1,0 +1,300 @@
+:root {
+    --brand-color-new: #7110a5;
+}
+
+.RairBigHeading {
+    font-size: 3rem !important;
+    font-size: 400 !important;
+    line-height: 1.2 !important;
+}
+
+.textAlignCenter {
+    text-align: center !important;
+}
+
+.textAlignStart {
+    text-align: start !important;
+}
+
+.textAlignEnd {
+    text-align: end !important;
+}
+
+.ColorWhite {
+    color: rgb(255, 255, 255) !important;
+}
+
+.ColorBlack {
+    color: black !important;
+}
+
+.MaxWidthContainer {
+    max-width: 1350px;
+    margin: 0 auto;
+}
+
+.SecondaryColorText {
+    color: rgba(255, 255, 255, 0.74) !important;
+}
+
+.SecondaryColorTextDark {
+    color: rgba(0, 0, 0, 0.6) !important;
+}
+
+p {
+    font-size: 14px !important;
+    transform: translate3d(0px, 0px, 0px) scale3d(1, 1, 1) rotateX(0deg) rotateY(0deg) rotateZ(0deg) skew(0deg, 0deg);
+    transform-style: preserve-3d !important;
+    font-weight: 300 !important;
+}
+
+.MarginTopSmall {
+    margin-top: 10px !important;
+}
+
+.MarginTopMedium {
+    margin-top: 20px !important;
+}
+
+.MarginTopLarge {
+    margin-top: 30px !important;
+}
+
+.SectionHeading {
+    font-size: 1.8rem;
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+.MediumHeading {
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.SmallHeading {
+    font-size: 1.1rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+/* .SectionHeading span {
+    background-color: var(--brand-color-new);
+    padding: 4px 10px;
+    border-radius: 20px;
+    color: white;
+} */
+
+.SectionPaddingTop {
+    padding-top: 60px;
+}
+
+.SectionPaddingBottom {
+    padding-bottom: 60px;
+}
+
+.MaxWidth600 {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.MaxWidth800 {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.MaxWidth1000 {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.MaxWidth600NoMargin {
+    max-width: 600px;
+}
+
+.MaxWidth800NoMargin {
+    max-width: 800px;
+}
+
+.MaxWidth1000NoMargin {
+    max-width: 1000px;
+}
+
+.SectionTagContainer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+}
+
+.SectionTagContainer.textAlignStart {
+    justify-content: flex-start;
+}
+
+.SectionTagContainer.textAlignCenter {
+    justify-content: center;
+}
+
+.SectionTagContainer>div:first-child {
+    background-color: var(--brand-color-new);
+    padding: 10px;
+    border-radius: 50%;
+
+}
+
+.SectionTagContainer>div:last-child {
+    background-color: rgb(241, 241, 241);
+    padding: 10px 20px;
+    border-radius: 20px;
+}
+
+.SectionTagContainer>div:first-child img {
+    width: 30px;
+    filter: invert(1);
+}
+
+/* White Circle Icon Style with Brand Color Fade Background */
+.SectionTagContainer .SectionIconWhiteCircle {
+    background: linear-gradient(135deg,
+            var(--brand-color-new) 0%,
+            rgba(113, 16, 165, 0.7) 50%,
+            rgba(113, 16, 165, 0.3) 100%);
+    padding: 10px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 2px 12px rgba(113, 16, 165, 0.2);
+}
+
+/* Gradient Border Effect */
+.SectionTagContainer .SectionIconWhiteCircle::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(135deg,
+            var(--brand-color-new) 0%,
+            rgba(113, 16, 165, 0.6) 50%,
+            rgba(113, 16, 165, 0.2) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.SectionTagContainer .SectionIconWhiteCircle:hover {
+    box-shadow: 0 4px 20px rgba(113, 16, 165, 0.3);
+    transform: scale(1.05);
+    background: linear-gradient(135deg,
+            var(--brand-color-new) 0%,
+            rgba(113, 16, 165, 0.85) 60%,
+            rgba(113, 16, 165, 0.4) 100%);
+}
+
+.SectionTagContainer .SectionIconWhiteCircle:hover::before {
+    opacity: 1;
+    background: linear-gradient(135deg,
+            var(--brand-color-new) 0%,
+            rgba(113, 16, 165, 0.8) 50%,
+            rgba(113, 16, 165, 0.4) 100%);
+}
+
+/* Explore Destinations cinematic tags */
+#ExploreIndiaTopDestinations #DestinationsSwiperCardStyles {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+}
+
+#ExploreIndiaTopDestinations #DestinationsSwiperCardStyles::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0.45) 100%);
+    opacity: 1;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+#ExploreIndiaTopDestinations #DestinationsSwiperCardStyles:hover::after {
+    opacity: 0.6;
+}
+
+#ExploreIndiaTopDestinations .DestinationCardTagOverlay {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+}
+
+#ExploreIndiaTopDestinations .DestinationCardTagPill {
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    backdrop-filter: blur(6px);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+#ExploreIndiaTopDestinations #DestinationsSwiperCardStyles:hover .DestinationCardTagPill {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+#ExploreIndiaTopDestinations #DestinationCardContentStyles {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 0;
+    z-index: 3;
+}
+
+.SectionTagContainer .SectionIconWhiteCircle img {
+    filter: brightness(0) invert(1) !important;
+    width: 30px;
+    position: relative;
+    z-index: 1;
+}
+
+.CardTitleCommon {
+    font-size: 1.2rem;
+    text-transform: capitalize;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+    .SectionPaddingTop {
+        padding-top: 30px;
+    }
+
+    .SectionPaddingBottom {
+        padding-bottom: 30px;
+    }
+
+    .MaxWidthContainer {
+        max-width: 1350px;
+        margin: 0 auto;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .SectionHeading {
+        font-size: 1.4rem;
+        font-weight: 500;
+        line-height: 1.3;
+    }
+    .RairBigHeading {
+        font-size: 3rem !important;
+        font-size: 400 !important;
+        line-height: 1.1 !important;
+    }
+    
+}

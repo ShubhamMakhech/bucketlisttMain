@@ -1,0 +1,185 @@
+#TestimonialsContainer {
+    background-color: white;
+    position: relative;
+}
+
+.TestimonialsScrollContainer {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    padding: 16px 0;
+}
+
+/* Fade shadows on both sides */
+.TestimonialsFadeLeft {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 150px;
+    background: linear-gradient(to right, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 100%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.TestimonialsFadeRight {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 150px;
+    background: linear-gradient(to left, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0) 100%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.TestimonialsRow {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.TestimonialsScrollContent {
+    display: flex;
+    gap: 16px;
+    will-change: transform;
+    transition: transform 0.1s linear;
+    align-items: stretch;
+}
+
+.TestimonialCard {
+    width: calc((100% - 300px - 60px) / 4);
+    /* 4 cards visible: 100% - fade areas (300px) - gaps (60px) / 4 */
+    min-width: 500px;
+    max-width: 500px;
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.TestimonialCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.TestimonialQuote {
+    font-size: 15px;
+    line-height: 1.5;
+    color: #333;
+    margin-bottom: 16px;
+    font-weight: 400;
+    flex-grow: 1;
+}
+
+.TestimonialInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: auto;
+}
+
+.TestimonialInfoContent {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.TestimonialRating {
+    display: flex;
+    gap: 2px;
+    margin-top: 6px;
+    margin-bottom: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+.TestimonialLocation {
+    font-size: 13px;
+    margin-top: 2px;
+    line-height: 1.4;
+}
+
+
+.TestimonialsSeeAllButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+}
+
+.TestimonialsSeeAllButton:hover {
+    border-color: var(--brand-color-new);
+    transform: translateX(4px);
+}
+
+.TestimonialsSeeAllButton svg {
+    transition: transform 0.3s ease;
+}
+
+.TestimonialsSeeAllButton:hover svg {
+    transform: translateX(4px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .TestimonialCard {
+        width: calc((100% - 300px - 48px) / 3);
+        /* 3 cards visible on medium screens */
+        min-width: 300px;
+        max-width: 340px;
+    }
+}
+
+@media (max-width: 768px) {
+    .TestimonialCard {
+        width: calc((100% - 160px - 32px) / 2);
+        /* 2 cards visible on tablet */
+        min-width: 280px;
+        max-width: 320px;
+        padding: 18px;
+    }
+
+    .TestimonialsFadeLeft,
+    .TestimonialsFadeRight {
+        width: 80px;
+    }
+
+    .TestimonialsScrollContent {
+        gap: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .TestimonialCard {
+        width: calc(100% - 120px);
+        /* 1 card visible on mobile */
+        min-width: 260px;
+        max-width: 100%;
+        padding: 16px;
+    }
+
+    .TestimonialQuote {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .TestimonialsFadeLeft,
+    .TestimonialsFadeRight {
+        width: 60px;
+    }
+}

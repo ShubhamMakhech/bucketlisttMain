@@ -14,6 +14,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { PageTransition } from "@/components/PageTransition";
 import { AIChatbot } from "@/components/AIChatbot";
 import { Layout } from "@/components/Layout";
+import { NavigationBar } from "@/components/NavigationBar";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import EmailConfirmation from "./pages/EmailConfirmation";
@@ -43,6 +44,7 @@ import ConfirmBooking from "./pages/ConfirmBooking";
 import WhatsAppButton from "./pages/whatsapp";
 import Users from "./pages/Users";
 import { AdminBlogPage } from "./components/AdminBlogPage";
+import "../src/components/GlobalCss/NewGlobalCss.css";
 const queryClient = new QueryClient();
 
 const WhatsappButtonConditional = () => {
@@ -169,6 +171,7 @@ const App: React.FC = () => {
           <Sonner />
           <BrowserRouter>
             <Layout>
+              <NavigationBar />
               <PageTransition>
                 <Routes>
                   <Route path="/" element={<Index />} />

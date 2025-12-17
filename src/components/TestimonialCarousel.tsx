@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -266,7 +267,7 @@ export function TestimonialCarousel() {
               {testimonials.map((testimonial) => (
                 <div
                   key={testimonial.id}
-                  className="bg-gray-800 rounded-2xl  flex flex-col flex-shrink-0 w-80 "
+                  className="TestimonialCardContainer"
 
                 >
                   {/* Image */}

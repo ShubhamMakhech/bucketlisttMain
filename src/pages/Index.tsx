@@ -1,5 +1,5 @@
-import { Header } from "@/components/Header";
-import { Hero } from "@/components/Hero";
+// @ts-nocheck
+import { HeroHome } from "@/components/HomeRoutes/HeroHomeFolder";
 import { DestinationCard } from "@/components/DestinationCard";
 import { ExperienceCard } from "@/components/ExperienceCard";
 import { TestimonialCarousel } from "@/components/TestimonialCarousel";
@@ -28,6 +28,8 @@ import { IoIosArrowRoundForward } from "react-icons/io";
 import "swiper/css";
 import "swiper/css/free-mode";
 import "../Styles/Index.css";
+import "../components/GlobalCss/WhyUsHome.css";
+import "@/components/GlobalCss/TopExperiencesCards.css";
 const Index = () => {
   const navigate = useNavigate();
   const experiencesSwiperRef = useRef<SwiperType | null>(null);
@@ -205,6 +207,35 @@ const Index = () => {
     },
   });
 
+  // Fetch all activities for experiences to get discounted prices
+  const { data: allActivities } = useQuery({
+    queryKey: ["all-experiences-activities", experiences?.map(e => e.id)],
+    queryFn: async () => {
+      if (!experiences || experiences.length === 0) return {};
+
+      const experienceIds = experiences.map(e => e.id);
+      const { data, error } = await supabase
+        .from("activities")
+        .select("*")
+        .in("experience_id", experienceIds)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      // Group activities by experience_id and get first one for each
+      const activitiesMap: Record<string, any> = {};
+      data?.forEach((activity) => {
+        if (!activitiesMap[activity.experience_id]) {
+          activitiesMap[activity.experience_id] = activity;
+        }
+      });
+
+      return activitiesMap;
+    },
+    enabled: !!experiences && experiences.length > 0,
+  });
+
   const getExperienceImage = (experience: any) => {
     // Use main image_url if available, otherwise use primary image from experience_images
     if (experience.image_url) {
@@ -261,6 +292,29 @@ const Index = () => {
     ],
   };
   const hideDestinations = ["Matheran", "Matheran", "Saputara", "Mysore"];
+
+  const WhyUsData = [
+    {
+      icon: "/Images/NewIcons/Icons/RiverRaftingImage.svg",
+      title: "Premium Adventures",
+      description: "Curated experiences with certified operators and safety-first approach.",
+    },
+    {
+      icon: "/Images/NewIcons/Icons/RiverRaftingImage.svg",
+      title: "Best Value Deals",
+      description: "Competitive pricing with exclusive offers and flexible booking options.",
+    },
+    {
+      icon: "/Images/NewIcons/Icons/RiverRaftingImage.svg",
+      title: "Seamless Booking",
+      description: "Instant confirmation with free cancellation and 24/7 support.",
+    },
+    {
+      icon: "/Images/NewIcons/Icons/RiverRaftingImage.svg",
+      title: "Trusted Platform",
+      description: "Verified reviews and ATOAI-certified partners for safe adventures.",
+    }
+  ]
   return (
     <div className="min-h-screen bg-background">
       <SEO
@@ -269,7 +323,6 @@ const Index = () => {
         keywords="adventure tours, travel experiences, India tourism, bungee jumping, rafting, trekking, ATOAI certified, bucket list adventures, adventure activities India"
         structuredData={homepageStructuredData}
       />
-      <Header />
       {/* <HomepageModal /> */}
 
       <BidirectionalAnimatedSection
@@ -277,8 +330,8 @@ const Index = () => {
         delay={100}
         duration={800}
       >
-        <div id="PaddingTopNewForOnlyMobile">
-          <Hero />
+        <div>
+          <HeroHome />
         </div>
       </BidirectionalAnimatedSection>
 
@@ -352,10 +405,10 @@ const Index = () => {
           </div>
         </section> */}
         <section
-          className="section-wrapper section-bg-primary SectionPaddingTop SectionPaddingBottom"
+          className="MaxWidthContainer section-bg-primary SectionPaddingTop  SectionPaddingBottom"
           id="ExploreIndiaTopDestinations"
         >
-          <div className="container">
+          <div>
             <BidirectionalAnimatedSection
               animation="fade-up"
               delay={100}
@@ -392,7 +445,7 @@ const Index = () => {
                     // }}
                     breakpoints={{
                       320: {
-                        slidesPerView: 2.3,
+                        slidesPerView: 1.9,
                         spaceBetween: 8,
                       },
                       640: {
@@ -418,6 +471,13 @@ const Index = () => {
                             className="card-hover"
                             id="DestinationsSwiperCardStyles"
                           >
+                            <div className="DestinationCardTagOverlay">
+                              <span className="DestinationCardTagPill">
+                                {destination.title === "Rishikesh"
+                                  ? "Available"
+                                  : "Coming Soon"}
+                              </span>
+                            </div>
                             <DestinationCard
                               id={destination.id}
                               image={destination.image_url || ""}
@@ -459,8 +519,8 @@ const Index = () => {
         delay={200}
         duration={700}
       >
-        <section className="section-wrapper SecondaryBackground SectionPaddingTop SectionPaddingBottom">
-          <div className="container">
+        <section id="TopExperiencesSection" className="SecondaryBackground SectionPaddingTop SectionPaddingBottom">
+          <div className="MaxWidthContainer">
             <BidirectionalAnimatedSection
               animation="fade-up"
               delay={100}
@@ -525,52 +585,149 @@ const Index = () => {
                     }}
                     className="mySwiper"
                   >
-                    {experiences?.map((experience) => (
-                      <SwiperSlide key={experience.id}>
-                        {/* console.log(experience.currency) */}
-                        <div
-                          className="card-hover"
-                          id="ExperienceCardStyles"
-                          style={{ height: "100%" }}
-                        >
-                          <ExperienceCard
-                            id={experience.id}
-                            image={getExperienceImage(experience)}
-                            title={experience.title}
-                            description={experience.description || undefined}
-                            category={experience.category}
-                            rating={Number(experience.rating)}
-                            reviews={
-                              experience.reviews_count?.toString() || "0"
-                            }
-                            price={`${
-                              experience.currency === "USD"
-                                ? "₹"
-                                : experience.currency == "INR"
-                                ? "₹"
-                                : experience.currency
-                            } ${experience.price}`}
-                            originalPrice={
-                              experience.original_price
-                                ? `${
-                                    experience.currency === "USD"
-                                      ? "₹"
-                                      : experience.currency == "INR"
-                                      ? "₹"
-                                      : experience.currency
-                                  } ${experience.original_price}`
-                                : undefined
-                            }
-                            duration={experience.duration || undefined}
-                            groupSize={experience.group_size || undefined}
-                            isSpecialOffer={
-                              experience.is_special_offer || false
-                            }
-                            urlName={experience.url_name}
-                          />
-                        </div>
-                      </SwiperSlide>
-                    ))}
+                    {experiences?.map((experience) => {
+                      const handleCardClick = () => {
+                        const experienceName = experience.url_name || experience.title
+                          .toLowerCase()
+                          .replace(/[^a-z0-9\s-]/g, "")
+                          .replace(/\s+/g, "-")
+                          .replace(/-+/g, "-")
+                          .trim();
+
+                        navigate(`/experience/${experienceName}`, {
+                          state: {
+                            experienceData: {
+                              id: experience.id,
+                              title: experience.title,
+                              image: getExperienceImage(experience),
+                            },
+                            fromPage: "home-experience-card",
+                            timestamp: Date.now(),
+                          },
+                        });
+                      };
+
+                      // Get image
+                      const displayImage = getExperienceImage(experience);
+
+                      // Format currency helper function
+                      const formatCurrency = (amount: any) => {
+                        if (!amount || amount === 0 || isNaN(amount)) return "₹0";
+                        const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+                        if (isNaN(numAmount)) return "₹0";
+                        const currency = experience.currency || "INR";
+                        return currency === "USD"
+                          ? `$${numAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+                          : `₹${numAmount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                      };
+
+                      // Get activity data for this experience to check discounted price
+                      const activityData = allActivities?.[experience.id];
+                      const activityDiscountedPrice = activityData?.discounted_price;
+                      const activityPrice = activityData?.price;
+
+                      // Determine original and discounted prices
+                      const originalPrice = activityPrice || experience.price || 0;
+                      const experienceOriginalPrice = experience.original_price;
+                      const experiencePrice = experience.price;
+
+                      // Calculate discounted price (activity level takes priority)
+                      const discountedPrice = activityDiscountedPrice && activityDiscountedPrice !== activityPrice
+                        ? activityDiscountedPrice
+                        : experienceOriginalPrice && experienceOriginalPrice !== experiencePrice
+                          ? experiencePrice
+                          : null;
+
+                      // Final price to display
+                      const finalPrice = discountedPrice || originalPrice;
+
+                      // Calculate discount percentage
+                      const calculateDiscountPercentage = () => {
+                        if (!discountedPrice || discountedPrice === originalPrice) return 0;
+                        return Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+                      };
+
+                      const discountPercentage = calculateDiscountPercentage();
+                      const hasDiscount = discountPercentage > 0;
+
+                      // Format prices for display
+                      const displayPrice = formatCurrency(finalPrice);
+                      const displayOriginalPrice = hasDiscount ? formatCurrency(originalPrice) : null;
+
+                      // Get description overview
+                      const overview = experience.description
+                        ? experience.description.replace(/<[^>]*>/g, "").split(" ").slice(0, 10).join(" ") + "..."
+                        : "";
+
+                      return (
+                        <SwiperSlide key={experience.id}>
+                          <div
+                            className="destination-card"
+                            onClick={handleCardClick}
+                            style={{ height: "100%", cursor: "pointer" }}
+                          >
+                            <div className="destination-card-image-wrapper">
+                              <img
+                                src={displayImage}
+                                alt={experience.title}
+                                className="destination-card-image"
+                              />
+                              {/* Cinematic Shadow Overlay */}
+                              <div className="destination-card-shadow-overlay"></div>
+                              {/* Rating Badge */}
+                              {experience.rating && (
+                                <div className="destination-card-rating">
+                                  <span className="rating-star">★</span>
+                                  <span className="rating-value">{Number(experience.rating).toFixed(1)}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="destination-card-content">
+                              <h3 className="destination-card-title">{experience.title}</h3>
+                              {overview && (
+                                <p className="destination-card-overview">
+                                  Overview: {overview}
+                                </p>
+                              )}
+                              <div className="destination-card-footer">
+                                <div className="destination-card-price-container">
+                                  {hasDiscount ? (
+                                    <>
+                                      <div className="destination-card-price-header">
+                                        <div className="destination-card-price-label">From</div>
+                                        {discountPercentage > 0 && (
+                                          <div className="destination-card-discount-badge">
+                                            {discountPercentage}% OFF
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="destination-card-price-wrapper">
+                                        <div className="destination-card-original-price">
+                                          {displayOriginalPrice}
+                                        </div>
+                                        <div className="destination-card-discounted-price">
+                                          {displayPrice}
+                                        </div>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="destination-card-price-label">From</div>
+                                      <div className="destination-card-price">
+                                        {displayPrice}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                                <Button className="destination-card-button">
+                                  EXPLORE
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </SwiperSlide>
+                      );
+                    })}
                   </Swiper>
                 </div>
               </>
@@ -597,6 +754,79 @@ const Index = () => {
         </section>
       </BidirectionalAnimatedSection>
 
+
+
+
+
+
+
+      {/* ---------------------------------Why Choose Us Section Starts Here --------------------------------- */}
+
+
+      <div className='BackgroundImageContainer  SectionPaddingTop SectionPaddingBottom'>
+        <div className='MaxWidthContainer'>
+          <div className='overlayImageContainer'>
+            <img src="/Images/SkyDivingBackGroundImage.jpeg" alt="" />
+          </div>
+          <div className='MaxWidthContainer'>
+            <div id='WhyChooseBucketListtHomeContainer'>
+              {/* <div className='WhyChooseBucketListtPointsContainer'>
+                    <div>
+                        <div className='MediumHeading textAlignStart'>
+                            And we are ATOAI certified
+                        </div>
+                        <div className='ATOAIContainer'>
+                            <img src="/Images/NewIcons/ATOAI_logo.jpg" alt="" />
+                        </div>
+                        <div>
+                            <p className='textAlignStart'>bucketlistt strictly adheres to the safety, ethical, and operational standards set by the Adventure Tour Operators Association of India (ATOAI). All activities offered on our platform comply with the Basic Minimum Standards prescribed for adventure tourism, ensuring responsible practices, trained staff, certified equipment, and a strong commitment to environmental sustainability. Your safety and experience are our top priorities.</p>
+                        </div>
+
+                    </div>
+                </div> */}
+              {/* <div className='WhyChooseBucketListtHomeImageContainer'>
+                    <div>
+                        <img src="https://images.unsplash.com/photo-1677464769678-1a152f183c05?q=80&w=1064&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="" />
+                    </div>
+                </div> */}
+              <div className='WhyChooseBucketListtHomeContent'>
+                <div>
+                  <h2 className='SectionHeading textAlignStart ColorWhite'>Why Choose bucketlistt?</h2>
+                  <p className='textAlignStart MarginTopSmall ColorWhite'>Our values shape every journey, every interaction, and every detail we design.</p>
+                </div>
+                <div className='MarginTopLarge'>
+                  {WhyUsData.map((item, index) => (
+                    <div key={index}>
+                      {/* <div>
+                                        <img src={item.icon} alt="" />
+                                    </div> */}
+                      <div className='WidthShort'>
+                        <h3 className='SmallHeading textAlignStart ColorWhite'>{item.title}</h3>
+                        <p className='textAlignStart MarginTopSmall ColorWhite'>{item.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className='WhyChooseBucketListtHomeImageContainer'>
+                  <img src="https://images.unsplash.com/photo-1659221876406-31a3746f41b9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+      {/* ---------------------------------Why Choose Us Section Ends Here --------------------------------- */}
+
+
+
+
+
+
       {/* Testimonials Section */}
       <BidirectionalAnimatedSection
         animation="fade-up"
@@ -609,166 +839,95 @@ const Index = () => {
       {/* App Download Banner */}
       {/* <AppDownloadBanner /> */}
 
-      {/* Why Choose Us */}
-      <BidirectionalAnimatedSection
-        animation="fade-up"
-        delay={200}
-        duration={700}
-      >
-        <section className="section-wrapper section-bg-primary PaddingSectionTop WhyChooseUsSection">
-          <div className="container">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <div className="ContainerDesinsPurposeOnly MaxWidth800">
+        <div className="mt-12 md:mt-16 md:space-y-5">
+          <BidirectionalAnimatedSection
+            animation="fade-up"
+            delay={100}
+            duration={600}
+          >
+            <h2 className="CommonH2 TextAlignment">
+              And we are ATOAI certified
+            </h2>
+            <img
+              className="LogoATOAIStyles"
+              src="/ATOAI_logo.jpg"
+              alt="ATOAI Logo"
+            // className="mx-auto w-32 md:w-48 h-auto rounded-lg"
+            />
+          </BidirectionalAnimatedSection>
+
+          <div className="WhyChooseFlexContainerColumnCenter">
             <BidirectionalAnimatedSection
               animation="fade-up"
               delay={100}
               duration={600}
             >
-              <h2 className="CommonH2">Why Choose bucketlistt?</h2>
-            </BidirectionalAnimatedSection>
-            {/* <br />
-<br /> */}
-            <div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-3 "
-              id="WhyChooseUsGrid"
-            >
-              {[
-                {
-                  icon: Star,
-                  gradient: "from-orange-400 to-red-500",
-                  title: "Premium Adventures",
-                  description:
-                    "Curated experiences with certified operators and safety-first approach.",
-                },
-                {
-                  icon: Gift,
-                  gradient: "from-blue-400 to-purple-500",
-                  title: "Best Value Deals",
-                  description:
-                    "Competitive pricing with exclusive offers and flexible booking options.",
-                },
-                {
-                  icon: ArrowRight,
-                  gradient: "from-green-400 to-teal-500",
-                  title: "Seamless Booking",
-                  description:
-                    "Instant confirmation with free cancellation and 24/7 support.",
-                },
-                {
-                  icon: Star,
-                  gradient: "from-pink-400 to-rose-500",
-                  title: "Trusted Platform",
-                  description:
-                    "Verified reviews and ATOAI-certified partners for safe adventures.",
-                },
-              ].map((feature, index) => {
-                const IconComponent = feature.icon;
-                return (
-                  <BidirectionalAnimatedSection
-                    key={index}
-                    animation="fade-up"
-                    delay={300 + index * 100}
-                    duration={600}
-                  >
-                    <div
-                      className="text-center group md:p-0"
-                      id="WhyChooseUsCard"
-                    >
-                      <div
-                        id="WhyChooseUsCardIcon"
-                        className={`w-10 BorderGrdientContainer h-10 md:w-13 md:h-13  mb-3 md:mb-4  ${feature.gradient} rounded-4xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
-                      >
-                        <IconComponent className="h-6 w-6 md:h-6 md:w-6 text-white" />
-                      </div>
-                      <h3
-                        className="CommonH3 text-start text_Adjust_For_Mobile
-                      "
-                      >
-                        {feature.title}
-                      </h3>
-                      <p className="text-start text-sm">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </BidirectionalAnimatedSection>
-                );
-              })}
-            </div>
-
-            <div className="ContainerDesinsPurposeOnly MaxWidth800">
-              <div className="mt-12 md:mt-16 md:space-y-5">
-                <BidirectionalAnimatedSection
-                  animation="fade-up"
-                  delay={100}
-                  duration={600}
+              <p className="TextAlignment text-sm">
+                <span className="font-bold">bucketlistt</span> strictly
+                adheres to the safety, ethical, and operational standards
+                set by the{" "}
+                <a
+                  href="https://www.atoai.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold hover:text-orange-500"
                 >
-                  <h2 className="CommonH2 TextAlignment">
-                    And we are ATOAI certified
-                  </h2>
-                  <img
-                    className="LogoATOAIStyles"
-                    src="/ATOAI_logo.jpg"
-                    alt="ATOAI Logo"
-                    // className="mx-auto w-32 md:w-48 h-auto rounded-lg"
+                  Adventure Tour Operators Association of India (ATOAI)
+                </a>
+                . All activities offered on our platform comply with the
+                Basic Minimum Standards prescribed for adventure tourism,
+                ensuring responsible practices, trained staff, certified
+                equipment, and a strong commitment to environmental
+                sustainability. Your safety and experience are our top
+                priorities.
+              </p>
+            </BidirectionalAnimatedSection>
+            <br />
+            <BidirectionalAnimatedSection
+              animation="fade-up"
+              delay={100}
+              duration={600}
+            >
+              <div className="FlexTestContainerEdit">
+                <h2 className="CommonH2">Proudly Made in</h2>
+                <div style={{ minWidth: "100px" }}>
+                  <RotatingText
+                    texts={["India", "भारत", "ભારત"]}
+                    className="text-2xl md:text-4xl font-bold BrandColor"
+                    rotationInterval={2000}
                   />
-                </BidirectionalAnimatedSection>
-
-                <div className="WhyChooseFlexContainerColumnCenter">
-                  <BidirectionalAnimatedSection
-                    animation="fade-up"
-                    delay={100}
-                    duration={600}
-                  >
-                    <p className="TextAlignment text-sm">
-                      <span className="font-bold">bucketlistt</span> strictly
-                      adheres to the safety, ethical, and operational standards
-                      set by the{" "}
-                      <a
-                        href="https://www.atoai.org/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold hover:text-orange-500"
-                      >
-                        Adventure Tour Operators Association of India (ATOAI)
-                      </a>
-                      . All activities offered on our platform comply with the
-                      Basic Minimum Standards prescribed for adventure tourism,
-                      ensuring responsible practices, trained staff, certified
-                      equipment, and a strong commitment to environmental
-                      sustainability. Your safety and experience are our top
-                      priorities.
-                    </p>
-                  </BidirectionalAnimatedSection>
-                  <br />
-                  <BidirectionalAnimatedSection
-                    animation="fade-up"
-                    delay={100}
-                    duration={600}
-                  >
-                    <div className="FlexTestContainerEdit">
-                      <h2 className="CommonH2">Proudly Made in</h2>
-                      <div style={{ minWidth: "100px" }}>
-                        <RotatingText
-                          texts={["India", "भारत", "ભારત"]}
-                          className="text-2xl md:text-4xl font-bold BrandColor"
-                          rotationInterval={2000}
-                        />
-                      </div>
-                    </div>
-                    <br />
-                    <div className="IndianFlagStyles">
-                      <img
-                        src="/indian_flag.gif"
-                        alt="Indian Flag"
-                        className="mx-auto w-32 md:w-48 h-auto rounded-lg"
-                        id="IndianFlagStyles"
-                      />
-                    </div>
-                  </BidirectionalAnimatedSection>
                 </div>
               </div>
-            </div>
+              <br />
+              <div className="IndianFlagStyles">
+                <img
+                  src="/indian_flag.gif"
+                  alt="Indian Flag"
+                  className="mx-auto w-32 md:w-48 h-auto rounded-lg"
+                  id="IndianFlagStyles"
+                />
+              </div>
+            </BidirectionalAnimatedSection>
           </div>
-        </section>
-      </BidirectionalAnimatedSection>
+        </div>
+      </div>
     </div>
   );
 };

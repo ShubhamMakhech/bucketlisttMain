@@ -1,0 +1,165 @@
+.destinations-itinerary-section {
+    background-color: #34084c;
+}
+
+
+.destinations-itinerary-container .SectionHeading {
+    color: white !important;
+}
+
+.destinations-itinerary-container {
+    width: 100%;
+}
+
+
+.destinations-itinerary-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    /* max-width: 1100px;
+    margin: 0 auto; */
+}
+
+.destinations-itinerary-card {
+    position: relative;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 0;
+    border: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    min-height: 380px;
+}
+
+.itinerary-card-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: transform 0.6s ease;
+    z-index: 0;
+}
+
+.itinerary-card-day1 .itinerary-card-background {
+    background-image: url('https://images.unsplash.com/photo-1629141334092-9f57a94b6686?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+}
+
+.itinerary-card-day2 .itinerary-card-background {
+    background-image: url('https://images.unsplash.com/photo-1637095222991-eadc948b6f29?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+}
+
+.itinerary-card-day5 .itinerary-card-background {
+    background-image: url('https://images.unsplash.com/photo-1549221360-456a9c197d5b?q=80&w=2074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+}
+
+.itinerary-card-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    background: rgba(26, 31, 113, 0.75);
+    z-index: 1;
+    transition: all 0.4s ease;
+}
+
+.destinations-itinerary-card:hover .itinerary-card-background {
+    transform: scale(1.05);
+}
+
+.destinations-itinerary-card:hover .itinerary-card-overlay {
+    width: 300px;
+    height: 300px;
+    background: rgba(26, 31, 113, 0.8);
+}
+
+.destinations-itinerary-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 40px rgba(26, 31, 113, 0.15);
+}
+
+.itinerary-card-number {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 6rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.12);
+    line-height: 1;
+    z-index: 2;
+    transition: all 0.4s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: -4px;
+    pointer-events: none;
+}
+
+.destinations-itinerary-card:hover .itinerary-card-number {
+    color: rgba(255, 255, 255, 0.18);
+    transform: translate(-50%, -50%) scale(1.05);
+}
+
+.itinerary-card-content {
+    position: relative;
+    z-index: 3;
+    padding: 48px 36px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.itinerary-card-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    padding: 8px 18px;
+    border-radius: 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    width: fit-content;
+    transition: all 0.3s ease;
+}
+
+.destinations-itinerary-card:hover .itinerary-card-badge {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.itinerary-card-title {
+    font-size: 1.85rem;
+    font-weight: 700;
+    margin-bottom: 14px;
+    color: #ffffff;
+    line-height: 1.2;
+    transition: transform 0.3s ease;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.destinations-itinerary-card:hover .itinerary-card-title {
+    transform: translateY(-2px);
+}
+
+.itinerary-card-description {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.95);
+    margin: 0;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+    max-width: 240px;
+}

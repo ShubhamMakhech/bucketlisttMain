@@ -78,8 +78,8 @@ export function DestinationCard({
 
   return (
     <Card
-    id="DestinationCardStylesCard"
-      className={`group cursor-pointer overflow-hidden border-0 hover:shadow-xl transition-all duration-300 
+      // id="DestinationCardStylesCard"
+      className={`group cursor-pointer overflow-hidden border-0 transition-all duration-300 
         }`}
       onClick={handleClick}
     >
@@ -91,7 +91,7 @@ export function DestinationCard({
           className="DestinationsImage"
         // aspectRatio="aspect-[4/3]"
         />
-        <div className=" bottom-0 left-0 right-0 p-4  from-black/60 to-transparent text-black" id="DestinationCardContentStyles">
+        <div id="DestinationCardContentStyles">
           <p className="text-sm opacity-90" style={{ textAlign: "start", color: "white" }}>
             {subtitle.length > 80 ? subtitle.substring(0, 80) + "..." : subtitle}
           </p>
