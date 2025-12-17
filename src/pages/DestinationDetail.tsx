@@ -145,6 +145,16 @@ const staticDestinationImages: Record<string, MediaItem[]> = {
       type: "image",
     },
   ],
+  Ujjain:[
+    {
+      src:"https://prepseed.s3.ap-south-1.amazonaws.com/ujjain(2).jpg",
+      type:"image"
+    },
+    {
+      src:"https://prepseed.s3.ap-south-1.amazonaws.com/ujjain(3).jpg",
+      type:"image"
+    }
+  ]
 };
 import {
   ArrowLeft,

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserBookings } from "@/components/UserBookings";
 import { VendorAnalytics } from "@/components/VendorAnalytics";
+import { VendorCalendar } from "@/components/VendorCalendar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -14,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
   Calendar,
+  CalendarDays,
   CreditCard,
   Eye,
   FileText,
@@ -102,6 +104,12 @@ const Profile = () => {
             icon: BarChart3,
             title: "Analytics",
             description: "View your business insights",
+          },
+          {
+            id: "calendar",
+            icon: CalendarDays,
+            title: "Calendar",
+            description: "Manage booking schedule",
           },
           {
             id: "my-experiences",
@@ -199,6 +207,8 @@ const Profile = () => {
     switch (activeSection) {
       case "analytics":
         return isVendor ? <VendorAnalytics /> : null;
+      case "calendar":
+        return isVendor ? <VendorCalendar /> : null;
       case "bookings":
         return <UserBookings />;
       default:
