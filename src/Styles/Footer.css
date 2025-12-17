@@ -247,6 +247,8 @@
         gap: 32px;
         padding-bottom: 32px;
         margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
     }
 
     .FooterLinksSection {

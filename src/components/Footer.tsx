@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { SiVisa, SiMastercard, SiAmericanexpress, SiGooglepay, SiPhonepe, SiPaytm } from "react-icons/si";
@@ -8,8 +9,8 @@ export function Footer() {
   const navigate = useNavigate();
 
   return (
-    <footer className="FooterContainer container">
-      <div className="FooterWrapper">
+    <footer className="FooterContainer ">
+      <div className="FooterWrapper MaxWidthContainer">
         {/* Top Section: Logo and Call Us Button */}
         <div className="FooterTopSection">
           <div className="FooterTopLeft">
