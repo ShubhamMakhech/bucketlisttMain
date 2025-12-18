@@ -8,6 +8,35 @@ import { ExperienceCard } from "@/components/ExperienceCard";
 import { LazyImage } from "@/components/LazyImage";
 import { DetailedItinerary } from "@/components/DetailedItinerary";
 import { IoLocation } from "react-icons/io5";
+import {
+  ArrowLeft,
+  Star,
+  MapPin,
+  Clock,
+  Thermometer,
+  Calendar,
+  Users,
+  Filter,
+  ArrowUpDown,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import { DestinationImagesAndVideoData } from "@/components/DestinationImagesAndVideo";
+import "@/components/GlobalCss/DestinationsSlider.css";
+import "@/components/GlobalCss/TopExperiencesCards.css";
+import { useState, useEffect, useRef } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import "@/components/GlobalCss/itenary.css";
 // Helper function to detect media type from URL
 const getMediaType = (url: string): "video" | "image" => {
@@ -145,45 +174,17 @@ const staticDestinationImages: Record<string, MediaItem[]> = {
       type: "image",
     },
   ],
-  Ujjain:[
+  Ujjain: [
     {
-      src:"https://prepseed.s3.ap-south-1.amazonaws.com/ujjain(2).jpg",
-      type:"image"
+      src: "https://prepseed.s3.ap-south-1.amazonaws.com/ujjain(2).jpg",
+      type: "image",
     },
     {
-      src:"https://prepseed.s3.ap-south-1.amazonaws.com/ujjain(3).jpg",
-      type:"image"
-    }
-  ]
+      src: "https://prepseed.s3.ap-south-1.amazonaws.com/ujjain(3).jpg",
+      type: "image",
+    },
+  ],
 };
-import {
-  ArrowLeft,
-  Star,
-  MapPin,
-  Clock,
-  Thermometer,
-  Calendar,
-  Users,
-  Filter,
-  ArrowUpDown,
-  ChevronRight,
-} from "lucide-react";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
-import { DestinationImagesAndVideoData } from "@/components/DestinationImagesAndVideo";
-import "@/components/GlobalCss/DestinationsSlider.css";
-import "@/components/GlobalCss/TopExperiencesCards.css";
-import { useState, useEffect, useRef } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 type SortOption = "rating" | "price_low" | "price_high" | "newest" | "name";
 
@@ -230,7 +231,9 @@ const DestinationDetail = () => {
     enabled: !!name,
     // Use state data as initial data if available and url_name matches
     initialData:
-      stateDestinationData?.url_name === name ? stateDestinationData : undefined,
+      stateDestinationData?.url_name === name
+        ? stateDestinationData
+        : undefined,
     // Only fetch if we don't have state data or if the data is stale
     staleTime: stateDestinationData?.url_name === name ? 5 * 60 * 1000 : 0, // 5 minutes if we have state data
   });
@@ -238,7 +241,11 @@ const DestinationDetail = () => {
   // Get destination data from DestinationImagesAndVideoData
   const getDestinationData = () => {
     if (!destination?.title) return null;
-    return DestinationImagesAndVideoData[destination.title as keyof typeof DestinationImagesAndVideoData] || null;
+    return (
+      DestinationImagesAndVideoData[
+        destination.title as keyof typeof DestinationImagesAndVideoData
+      ] || null
+    );
   };
 
   const id = destination?.id;
@@ -268,19 +275,24 @@ const DestinationDetail = () => {
 
   // Helper function to get subtitle
   const getDestinationSubtitle = (destinationTitle: string) => {
-    const destinationData = DestinationImagesAndVideoData[destinationTitle as keyof typeof DestinationImagesAndVideoData];
+    const destinationData =
+      DestinationImagesAndVideoData[
+        destinationTitle as keyof typeof DestinationImagesAndVideoData
+      ];
     return destinationData?.subtitle || destination?.subtitle || "Explore";
   };
 
   // Handle button click - scroll to next section
   const handleButtonClick = () => {
-    const container = document.querySelector('.destinations-slider-container');
+    const container = document.querySelector(".destinations-slider-container");
     if (container) {
       let nextSection = container.nextElementSibling;
       if (!nextSection) {
-        const allSections = document.querySelectorAll('section, .section-wrapper, [class*="section"]');
-        const containerIndex = Array.from(allSections).findIndex(el =>
-          el.contains(container) || container.contains(el)
+        const allSections = document.querySelectorAll(
+          'section, .section-wrapper, [class*="section"]'
+        );
+        const containerIndex = Array.from(allSections).findIndex(
+          (el) => el.contains(container) || container.contains(el)
         );
         if (containerIndex !== -1 && containerIndex < allSections.length - 1) {
           nextSection = allSections[containerIndex + 1];
@@ -288,8 +300,8 @@ const DestinationDetail = () => {
       }
       if (nextSection) {
         nextSection.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
+          behavior: "smooth",
+          block: "start",
         });
       }
     }
@@ -326,7 +338,7 @@ const DestinationDetail = () => {
               setTimeout(() => {
                 if (currentVideo.paused || currentVideo.ended) {
                   currentVideo.currentTime = 0;
-                  currentVideo.play().catch(() => { });
+                  currentVideo.play().catch(() => {});
                 }
               }, 200);
             });
@@ -337,13 +349,13 @@ const DestinationDetail = () => {
       }
     };
 
-    swiper.on('slideChange', handleSlideChange);
+    swiper.on("slideChange", handleSlideChange);
     setTimeout(() => {
       handleSlideChange();
     }, 300);
 
     return () => {
-      swiper.off('slideChange', handleSlideChange);
+      swiper.off("slideChange", handleSlideChange);
     };
   }, [destination?.title]);
 
@@ -353,7 +365,7 @@ const DestinationDetail = () => {
     if (video && getVideos().length > 0) {
       const playVideo = () => {
         if (video && video.paused && !video.ended) {
-          video.play().catch(() => { });
+          video.play().catch(() => {});
         }
       };
 
@@ -478,11 +490,11 @@ const DestinationDetail = () => {
 
   // Fetch all activities for experiences to get discounted prices
   const { data: allActivities } = useQuery({
-    queryKey: ["all-experiences-activities", experiences?.map(e => e.id)],
+    queryKey: ["all-experiences-activities", experiences?.map((e) => e.id)],
     queryFn: async () => {
       if (!experiences || experiences.length === 0) return {};
 
-      const experienceIds = experiences.map(e => e.id);
+      const experienceIds = experiences.map((e) => e.id);
       const { data, error } = await supabase
         .from("activities")
         .select("*")
@@ -552,7 +564,11 @@ const DestinationDetail = () => {
   const destinationSubtitle = getDestinationSubtitle(destinationTitle);
 
   // Get all media items (videos and photos) from DestinationImagesAndVideoData
-  const allMediaItems: Array<{ src: string; content?: string; type: "video" | "photo" }> = [];
+  const allMediaItems: Array<{
+    src: string;
+    content?: string;
+    type: "video" | "photo";
+  }> = [];
   if (destinationData) {
     if (destinationData.videos && destinationData.videos.length > 0) {
       destinationData.videos.forEach((video: any) => {
@@ -567,14 +583,17 @@ const DestinationDetail = () => {
   }
 
   // If no data in DestinationImagesAndVideoData, fallback to static data
-  const mediaItems = allMediaItems.length > 0 ? allMediaItems :
-    (getVideos().map(v => ({ src: v.src, type: "video" as const })).concat(
-      getImages().map(i => ({ src: i.src, type: "photo" as const }))
-    ));
+  const mediaItems =
+    allMediaItems.length > 0
+      ? allMediaItems
+      : getVideos()
+          .map((v) => ({ src: v.src, type: "video" as const }))
+          .concat(
+            getImages().map((i) => ({ src: i.src, type: "photo" as const }))
+          );
 
   return (
     <div className="min-h-screen bg-background">
-
       {/* New Design Swiper - Left Text, Right Media */}
       <div className="destinations-slider-container">
         <Swiper
@@ -586,15 +605,23 @@ const DestinationDetail = () => {
             prevEl: ".destinations-swiper-button-prev",
             nextEl: ".destinations-swiper-button-next",
           }}
-          pagination={mediaItems.length > 1 ? {
-            clickable: true,
-            bulletClass: "destinations-pagination-bullet",
-            bulletActiveClass: "destinations-pagination-bullet-active",
-          } : false}
-          autoplay={mediaItems.length > 1 ? {
-            delay: 5000,
-            disableOnInteraction: false,
-          } : false}
+          pagination={
+            mediaItems.length > 1
+              ? {
+                  clickable: true,
+                  bulletClass: "destinations-pagination-bullet",
+                  bulletActiveClass: "destinations-pagination-bullet-active",
+                }
+              : false
+          }
+          autoplay={
+            mediaItems.length > 1
+              ? {
+                  delay: 5000,
+                  disableOnInteraction: false,
+                }
+              : false
+          }
           loop={mediaItems.length > 1}
           onSwiper={(swiper) => {
             swiperRef.current = swiper;
@@ -653,19 +680,19 @@ const DestinationDetail = () => {
                             preload="auto"
                             onLoadedData={(e) => {
                               const video = e.currentTarget;
-                              video.play().catch(() => { });
+                              video.play().catch(() => {});
                             }}
                             onLoadedMetadata={(e) => {
                               const video = e.currentTarget;
-                              video.play().catch(() => { });
+                              video.play().catch(() => {});
                             }}
                             onCanPlay={(e) => {
                               const video = e.currentTarget;
-                              video.play().catch(() => { });
+                              video.play().catch(() => {});
                             }}
                             onCanPlayThrough={(e) => {
                               const video = e.currentTarget;
-                              video.play().catch(() => { });
+                              video.play().catch(() => {});
                             }}
                             onEnded={(e) => {
                               const video = e.currentTarget;
@@ -674,7 +701,7 @@ const DestinationDetail = () => {
                                 video.play().catch(() => {
                                   setTimeout(() => {
                                     video.currentTime = 0;
-                                    video.play().catch(() => { });
+                                    video.play().catch(() => {});
                                   }, 50);
                                 });
                               });
@@ -690,18 +717,25 @@ const DestinationDetail = () => {
                               if (!video.ended && video.readyState >= 3) {
                                 setTimeout(() => {
                                   if (video.paused && !video.ended) {
-                                    video.play().catch(() => { });
+                                    video.play().catch(() => {});
                                   }
                                 }, 100);
                               }
                             }}
                             onTimeUpdate={(e) => {
                               const video = e.currentTarget;
-                              if (video.duration && video.currentTime >= video.duration - 0.1) {
+                              if (
+                                video.duration &&
+                                video.currentTime >= video.duration - 0.1
+                              ) {
                                 video.currentTime = 0;
                               }
-                              if (video.paused && !video.ended && video.readyState >= 3) {
-                                video.play().catch(() => { });
+                              if (
+                                video.paused &&
+                                !video.ended &&
+                                video.readyState >= 3
+                              ) {
+                                video.play().catch(() => {});
                               }
                             }}
                             onWaiting={(e) => {
@@ -709,7 +743,7 @@ const DestinationDetail = () => {
                               const resumeWhenReady = () => {
                                 if (video.readyState >= 3) {
                                   if (video.paused) {
-                                    video.play().catch(() => { });
+                                    video.play().catch(() => {});
                                   }
                                 } else {
                                   setTimeout(resumeWhenReady, 100);
@@ -721,21 +755,24 @@ const DestinationDetail = () => {
                               const video = e.currentTarget;
                               setTimeout(() => {
                                 if (video.paused && !video.ended) {
-                                  video.currentTime = Math.max(0, video.currentTime - 0.1);
-                                  video.play().catch(() => { });
+                                  video.currentTime = Math.max(
+                                    0,
+                                    video.currentTime - 0.1
+                                  );
+                                  video.play().catch(() => {});
                                 }
                               }, 200);
                             }}
                             onSeeking={(e) => {
                               const video = e.currentTarget;
                               if (video.paused && !video.ended) {
-                                video.play().catch(() => { });
+                                video.play().catch(() => {});
                               }
                             }}
                             onSeeked={(e) => {
                               const video = e.currentTarget;
                               if (video.paused && !video.ended) {
-                                video.play().catch(() => { });
+                                video.play().catch(() => {});
                               }
                             }}
                           />
@@ -832,20 +869,9 @@ const DestinationDetail = () => {
         </div>
       </div> */}
 
-
-
-
-
-
-
-
-
       {/* ------------------------ Destination Activities To Do Section-------------------------------- */}
 
-      <section
-        className="SecondaryBackground"
-        id="TopActivitiesToDo"
-      >
+      <section className="SecondaryBackground" id="TopActivitiesToDo">
         <div className="MaxWidthContainer SectionPaddingTop SectionPaddingBottom">
           {/* Category Filters and Sorting */}
           <div
@@ -855,19 +881,18 @@ const DestinationDetail = () => {
             <div className="FlexContainerChange ">
               <div className="flex items-center gap-4 HeadingADjustMargin">
                 {/* <Filter className="h-5 w-5 text-brand-primary" /> */}
-                <div
-                  className="SectionHeading"
-                >
+                <div className="SectionHeading">
                   Top activities to do in {destination.title}
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* Experiences - Desktop Swiper / Mobile Static Grid */}
           <div
-            className={`scroll-fade-in ${isAnimated ? "animate" : ""} MarginTopLarge`}
+            className={`scroll-fade-in ${
+              isAnimated ? "animate" : ""
+            } MarginTopLarge`}
             style={{ animationDelay: "0.5s" }}
           >
             {experiencesLoading ? (
@@ -905,12 +930,14 @@ const DestinationDetail = () => {
                   >
                     {experiences.map((experience, index) => {
                       const handleCardClick = () => {
-                        const experienceName = experience.url_name || experience.title
-                          .toLowerCase()
-                          .replace(/[^a-z0-9\s-]/g, "")
-                          .replace(/\s+/g, "-")
-                          .replace(/-+/g, "-")
-                          .trim();
+                        const experienceName =
+                          experience.url_name ||
+                          experience.title
+                            .toLowerCase()
+                            .replace(/[^a-z0-9\s-]/g, "")
+                            .replace(/\s+/g, "-")
+                            .replace(/-+/g, "-")
+                            .trim();
 
                         navigate(`/experience/${experienceName}`, {
                           state: {
@@ -926,33 +953,49 @@ const DestinationDetail = () => {
                       };
 
                       // Get image
-                      const displayImage = experience.image_url || "/placeholder.svg";
+                      const displayImage =
+                        experience.image_url || "/placeholder.svg";
 
                       // Format currency helper function
                       const formatCurrency = (amount: any) => {
-                        if (!amount || amount === 0 || isNaN(amount)) return "₹0";
-                        const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+                        if (!amount || amount === 0 || isNaN(amount))
+                          return "₹0";
+                        const numAmount =
+                          typeof amount === "number"
+                            ? amount
+                            : parseFloat(amount);
                         if (isNaN(numAmount)) return "₹0";
                         const currency = experience.currency || "INR";
                         return currency === "USD"
-                          ? `$${numAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
-                          : `₹${numAmount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                          ? `$${numAmount.toLocaleString("en-US", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 2,
+                            })}`
+                          : `₹${numAmount.toLocaleString("en-IN", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}`;
                       };
 
                       // Get activity data for this experience to check discounted price
                       const activityData = allActivities?.[experience.id];
-                      const activityDiscountedPrice = activityData?.discounted_price;
+                      const activityDiscountedPrice =
+                        activityData?.discounted_price;
                       const activityPrice = activityData?.price;
 
                       // Determine original and discounted prices
-                      const originalPrice = activityPrice || experience.price || 0;
+                      const originalPrice =
+                        activityPrice || experience.price || 0;
                       const experienceOriginalPrice = experience.original_price;
                       const experiencePrice = experience.price;
 
                       // Calculate discounted price (activity level takes priority)
-                      const discountedPrice = activityDiscountedPrice && activityDiscountedPrice !== activityPrice
-                        ? activityDiscountedPrice
-                        : experienceOriginalPrice && experienceOriginalPrice !== experiencePrice
+                      const discountedPrice =
+                        activityDiscountedPrice &&
+                        activityDiscountedPrice !== activityPrice
+                          ? activityDiscountedPrice
+                          : experienceOriginalPrice &&
+                            experienceOriginalPrice !== experiencePrice
                           ? experiencePrice
                           : null;
 
@@ -961,8 +1004,15 @@ const DestinationDetail = () => {
 
                       // Calculate discount percentage
                       const calculateDiscountPercentage = () => {
-                        if (!discountedPrice || discountedPrice === originalPrice) return 0;
-                        return Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+                        if (
+                          !discountedPrice ||
+                          discountedPrice === originalPrice
+                        )
+                          return 0;
+                        return Math.round(
+                          ((originalPrice - discountedPrice) / originalPrice) *
+                            100
+                        );
                       };
 
                       const discountPercentage = calculateDiscountPercentage();
@@ -970,18 +1020,25 @@ const DestinationDetail = () => {
 
                       // Format prices for display
                       const displayPrice = formatCurrency(finalPrice);
-                      const displayOriginalPrice = hasDiscount ? formatCurrency(originalPrice) : null;
+                      const displayOriginalPrice = hasDiscount
+                        ? formatCurrency(originalPrice)
+                        : null;
 
                       // Get description overview
                       const overview = experience.description
-                        ? experience.description.replace(/<[^>]*>/g, "").split(" ").slice(0, 10).join(" ") + "..."
+                        ? experience.description
+                            .replace(/<[^>]*>/g, "")
+                            .split(" ")
+                            .slice(0, 10)
+                            .join(" ") + "..."
                         : "";
 
                       return (
                         <SwiperSlide key={experience.id}>
                           <div
-                            className={`scroll-scale-in ${isAnimated ? "animate" : ""
-                              }`}
+                            className={`scroll-scale-in ${
+                              isAnimated ? "animate" : ""
+                            }`}
                             style={{ animationDelay: `${0.6 + index * 0.05}s` }}
                           >
                             <div
@@ -1001,12 +1058,16 @@ const DestinationDetail = () => {
                                 {experience.rating && (
                                   <div className="destination-card-rating">
                                     <span className="rating-star">★</span>
-                                    <span className="rating-value">{Number(experience.rating).toFixed(1)}</span>
+                                    <span className="rating-value">
+                                      {Number(experience.rating).toFixed(1)}
+                                    </span>
                                   </div>
                                 )}
                               </div>
                               <div className="destination-card-content">
-                                <h3 className="destination-card-title">{experience.title}</h3>
+                                <h3 className="destination-card-title">
+                                  {experience.title}
+                                </h3>
                                 {overview && (
                                   <p className="destination-card-overview">
                                     Overview: {overview}
@@ -1017,7 +1078,9 @@ const DestinationDetail = () => {
                                     {hasDiscount ? (
                                       <>
                                         <div className="destination-card-price-header">
-                                          <div className="destination-card-price-label">From</div>
+                                          <div className="destination-card-price-label">
+                                            From
+                                          </div>
                                           {discountPercentage > 0 && (
                                             <div className="destination-card-discount-badge">
                                               {discountPercentage}% OFF
@@ -1035,7 +1098,9 @@ const DestinationDetail = () => {
                                       </>
                                     ) : (
                                       <>
-                                        <div className="destination-card-price-label">From</div>
+                                        <div className="destination-card-price-label">
+                                          From
+                                        </div>
                                         <div className="destination-card-price">
                                           {displayPrice}
                                         </div>
@@ -1095,12 +1160,14 @@ const DestinationDetail = () => {
                 <div className="lg:hidden grid grid-cols-1 gap-6">
                   {experiences.map((experience, index) => {
                     const handleCardClick = () => {
-                      const experienceName = experience.url_name || experience.title
-                        .toLowerCase()
-                        .replace(/[^a-z0-9\s-]/g, "")
-                        .replace(/\s+/g, "-")
-                        .replace(/-+/g, "-")
-                        .trim();
+                      const experienceName =
+                        experience.url_name ||
+                        experience.title
+                          .toLowerCase()
+                          .replace(/[^a-z0-9\s-]/g, "")
+                          .replace(/\s+/g, "-")
+                          .replace(/-+/g, "-")
+                          .trim();
 
                       navigate(`/experience/${experienceName}`, {
                         state: {
@@ -1116,33 +1183,48 @@ const DestinationDetail = () => {
                     };
 
                     // Get image
-                    const displayImage = experience.image_url || "/placeholder.svg";
+                    const displayImage =
+                      experience.image_url || "/placeholder.svg";
 
                     // Format currency helper function
                     const formatCurrency = (amount: any) => {
                       if (!amount || amount === 0 || isNaN(amount)) return "₹0";
-                      const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
+                      const numAmount =
+                        typeof amount === "number"
+                          ? amount
+                          : parseFloat(amount);
                       if (isNaN(numAmount)) return "₹0";
                       const currency = experience.currency || "INR";
                       return currency === "USD"
-                        ? `$${numAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
-                        : `₹${numAmount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                        ? `$${numAmount.toLocaleString("en-US", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2,
+                          })}`
+                        : `₹${numAmount.toLocaleString("en-IN", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}`;
                     };
 
                     // Get activity data for this experience to check discounted price
                     const activityData = allActivities?.[experience.id];
-                    const activityDiscountedPrice = activityData?.discounted_price;
+                    const activityDiscountedPrice =
+                      activityData?.discounted_price;
                     const activityPrice = activityData?.price;
 
                     // Determine original and discounted prices
-                    const originalPrice = activityPrice || experience.price || 0;
+                    const originalPrice =
+                      activityPrice || experience.price || 0;
                     const experienceOriginalPrice = experience.original_price;
                     const experiencePrice = experience.price;
 
                     // Calculate discounted price (activity level takes priority)
-                    const discountedPrice = activityDiscountedPrice && activityDiscountedPrice !== activityPrice
-                      ? activityDiscountedPrice
-                      : experienceOriginalPrice && experienceOriginalPrice !== experiencePrice
+                    const discountedPrice =
+                      activityDiscountedPrice &&
+                      activityDiscountedPrice !== activityPrice
+                        ? activityDiscountedPrice
+                        : experienceOriginalPrice &&
+                          experienceOriginalPrice !== experiencePrice
                         ? experiencePrice
                         : null;
 
@@ -1151,8 +1233,12 @@ const DestinationDetail = () => {
 
                     // Calculate discount percentage
                     const calculateDiscountPercentage = () => {
-                      if (!discountedPrice || discountedPrice === originalPrice) return 0;
-                      return Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+                      if (!discountedPrice || discountedPrice === originalPrice)
+                        return 0;
+                      return Math.round(
+                        ((originalPrice - discountedPrice) / originalPrice) *
+                          100
+                      );
                     };
 
                     const discountPercentage = calculateDiscountPercentage();
@@ -1160,18 +1246,25 @@ const DestinationDetail = () => {
 
                     // Format prices for display
                     const displayPrice = formatCurrency(finalPrice);
-                    const displayOriginalPrice = hasDiscount ? formatCurrency(originalPrice) : null;
+                    const displayOriginalPrice = hasDiscount
+                      ? formatCurrency(originalPrice)
+                      : null;
 
                     // Get description overview
                     const overview = experience.description
-                      ? experience.description.replace(/<[^>]*>/g, "").split(" ").slice(0, 10).join(" ") + "..."
+                      ? experience.description
+                          .replace(/<[^>]*>/g, "")
+                          .split(" ")
+                          .slice(0, 10)
+                          .join(" ") + "..."
                       : "";
 
                     return (
                       <div
                         key={experience.id}
-                        className={`scroll-scale-in ${isAnimated ? "animate" : ""
-                          }`}
+                        className={`scroll-scale-in ${
+                          isAnimated ? "animate" : ""
+                        }`}
                         style={{ animationDelay: `${0.6 + index * 0.05}s` }}
                       >
                         <div
@@ -1191,12 +1284,16 @@ const DestinationDetail = () => {
                             {experience.rating && (
                               <div className="destination-card-rating">
                                 <span className="rating-star">★</span>
-                                <span className="rating-value">{Number(experience.rating).toFixed(1)}</span>
+                                <span className="rating-value">
+                                  {Number(experience.rating).toFixed(1)}
+                                </span>
                               </div>
                             )}
                           </div>
                           <div className="destination-card-content">
-                            <h3 className="destination-card-title">{experience.title}</h3>
+                            <h3 className="destination-card-title">
+                              {experience.title}
+                            </h3>
                             {overview && (
                               <p className="destination-card-overview">
                                 Overview: {overview}
@@ -1207,7 +1304,9 @@ const DestinationDetail = () => {
                                 {hasDiscount ? (
                                   <>
                                     <div className="destination-card-price-header">
-                                      <div className="destination-card-price-label">From</div>
+                                      <div className="destination-card-price-label">
+                                        From
+                                      </div>
                                       {discountPercentage > 0 && (
                                         <div className="destination-card-discount-badge">
                                           {discountPercentage}% OFF
@@ -1225,7 +1324,9 @@ const DestinationDetail = () => {
                                   </>
                                 ) : (
                                   <>
-                                    <div className="destination-card-price-label">From</div>
+                                    <div className="destination-card-price-label">
+                                      From
+                                    </div>
                                     <div className="destination-card-price">
                                       {displayPrice}
                                     </div>
@@ -1261,21 +1362,11 @@ const DestinationDetail = () => {
         </div>
       </section>
 
-
       {/* ------------------------ Destination Itinerary Section ends here-------------------------------- */}
-
-
-
-
-
-
-
 
       <section className="destinations-itinerary-section  SectionPaddingTop SectionPaddingBottom">
         <div className="destinations-itinerary-container MaxWidthContainer">
-          <div className="SectionHeading">
-            Choose Your Perfect Itinerary
-          </div>
+          <div className="SectionHeading">Choose Your Perfect Itinerary</div>
           <div className="destinations-itinerary-cards MarginTopLarge">
             <div className="destinations-itinerary-card itinerary-card-day1">
               <div className="itinerary-card-background"></div>
