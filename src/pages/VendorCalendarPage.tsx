@@ -1,5 +1,5 @@
 import { VendorCalendar } from "@/components/VendorCalendar";
-import { Header } from "@/components/Header";
+// import { Header } from "@/components/Header";x
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -36,7 +36,7 @@ const VendorCalendarPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {/* <Header /> */}
       <div className="w-full px-3 sm:px-6 py-4 sm:py-6">
         <div className="flex items-center justify-between gap-3 mb-4">
           <Button
