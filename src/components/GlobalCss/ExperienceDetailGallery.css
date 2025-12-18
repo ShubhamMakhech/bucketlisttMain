@@ -225,7 +225,7 @@
 
 @media (max-width: 768px) {
     #ExperienceDetail .experience-detail-top-section {
- padding-top: 5rem;
+        padding-top: 2rem;
     }
 
     #ExperienceDetail .experience-detail-title {
@@ -393,10 +393,13 @@
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
         transform: scale(1);
     }
+
     50% {
         opacity: 0.8;
         transform: scale(0.98);
@@ -710,7 +713,17 @@
     }
 
     #ExperienceDetail .experience-detail-grid {
-        gap: 24px;
+        display: block;
+        gap: 0;
+    }
+
+    #ExperienceDetail a,
+    #ExperienceDetail p,
+    #ExperienceDetail li,
+    #ExperienceDetail span {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        font-size: 14px !important;
     }
 
     #ExperienceDetail .experience-unified-card {
@@ -744,6 +757,7 @@
 
 /* Mobile Fixed Bottom Bar - Rendered via Portal (outside #ExperienceDetail) */
 @media (max-width: 768px) {
+
     /* Show mobile fixed bottom bar */
     .mobile-fixed-bottom-bar {
         display: flex !important;
@@ -896,6 +910,7 @@
     .mobile-fixed-bottom-bar {
         padding: 10px 12px !important;
         padding-bottom: max(10px, calc(10px + env(safe-area-inset-bottom, 0px))) !important;
+        z-index: 9 !important;
     }
 
     .mobile-bottom-bar-content {
@@ -1026,7 +1041,7 @@
 @media (max-width: 768px) {
     .booking-breadcrumb {
         padding: 12px 14px;
-        gap: 8px;
+        gap: 0px;
     }
 
     .breadcrumb-back-button {
@@ -1401,9 +1416,9 @@
 /* ========== MOBILE ACTIVITY CARDS ========== */
 
 .mobile-activity-list-new {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
 
 .activity-card-mobile-new {
@@ -1595,7 +1610,7 @@
 
 .activity-card-mobile-new__title {
     font-size: 15px;
-    font-weight: 600;
+    /* font-weight: 600; */
     color: #1a1a1a;
     margin: 0 0 6px 0;
     line-height: 1.3;
@@ -1613,7 +1628,7 @@
 .read-more-btn {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: start;
     gap: 3px;
     background: none;
     border: none;
@@ -1621,7 +1636,7 @@
     font-size: 11px;
     cursor: pointer;
     padding: 0;
-    margin: 0 auto 10px;
+    margin: 10px 0px;
     font-weight: 400;
     width: 100%;
 }
@@ -1954,8 +1969,30 @@
 /* ========== RESPONSIVE ========== */
 
 @media (max-width: 768px) {
+
+    .activity-card-mobile-new__footer {
+        flex-direction: column;
+        align-items: start;
+        justify-content: start;
+        gap: 7px;
+    }
+
+    .activity-card-mobile-new__cta {
+        white-space: wrap;
+    }
+
+    .mobile-activity-list-new {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+
+    .activity-card-mobile-new__title {
+        font-size: 12px;
+    }
+
     .activity-selection-container {
-        padding: 14px;
+        padding: 14px 10px;
         border-radius: 10px;
     }
 
@@ -1983,19 +2020,35 @@
 
     .date-grid {
         grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
+        gap: 6px;
     }
 
     .date-cube {
-        padding: 10px 6px;
+        padding: 10px 4px;
+        min-height: 64px;
+        gap: 4px;
+        border-width: 1.5px;
     }
 
     .date-cube__day {
-        font-size: 11px;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
     }
 
     .date-cube__date {
         font-size: 14px;
+        margin-top: 2px;
+        font-weight: 700;
+    }
+
+    .date-cube.more-dates {
+        min-height: 64px;
+        gap: 6px;
+    }
+
+    .more-dates__text {
+        font-size: 10px;
     }
 
     .time-slot-grid-new {
@@ -2004,8 +2057,8 @@
     }
 
     .time-slot-cube {
-        padding: 12px 10px;
-        font-size: 13px;
+        padding: 10px 8px;
+        font-size: 12px;
     }
 
     .activity-slide-new {
@@ -2021,7 +2074,16 @@
     }
 
     .activity-card-mobile-new__image {
-        height: 140px;
+        height: 100%;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .activity-card-mobile-new__footer .price-section {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
     }
 }
 
@@ -2032,30 +2094,66 @@
 
     .date-selection-column,
     .timeslot-selection-column {
-        padding: 10px;
+        padding: 14px;
+        border-radius: 14px;
     }
 
     .selection-title {
-        font-size: 14px;
-        margin-bottom: 10px;
-        padding-bottom: 8px;
+        font-size: 15px;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        font-weight: 700;
     }
 
     .date-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
     }
 
     .date-cube {
-        padding: 8px 4px;
+        padding: 10px 4px;
+        min-height: 62px;
+        gap: 4px;
+        border-radius: 10px;
+        border-width: 1.5px;
+    }
+
+    .date-cube:hover:not(.disabled) {
+        transform: translateY(-1px);
+    }
+
+    .date-cube.selected {
+        border-width: 2px;
+        box-shadow: 0 2px 8px rgba(113, 16, 165, 0.2);
     }
 
     .date-cube__day {
         font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
 
     .date-cube__date {
-        font-size: 12px;
+        font-size: 14px;
+        margin-top: 2px;
+        font-weight: 700;
+    }
+
+    .date-cube.more-dates {
+        min-height: 62px;
+        gap: 5px;
+    }
+
+    .more-dates__text {
+        font-size: 9px;
+        line-height: 1.3;
+        font-weight: 600;
+    }
+
+    .date-cube.more-dates svg {
+        width: 18px;
+        height: 18px;
     }
 
     .time-slot-grid-new {
@@ -2071,6 +2169,53 @@
     .time-slot-cube svg {
         width: 14px;
         height: 14px;
+    }
+
+    .activity-card-mobile-new__content {
+        padding: 10px 8px;
+        text-align: start;
+    }
+
+    .activity-card-mobile-new__cta {
+        padding: 8px 12px;
+        height: 38px;
+        font-size: 12px;
+    }
+
+    .activity-card-mobile-new__meta {
+        justify-content: start;
+    }
+
+    .activity-card-mobile-new__desc {
+        text-align: start;
+        font-size: 12px !important;
+    }
+
+    .read-more-btn {
+        font-size: 11px;
+    }
+
+    .activity-card-mobile-new__title {
+        font-size: 14px;
+    }
+
+    .activity-card-mobile-new__image img {
+        height: 140px;
+    }
+
+    .price-discounted,
+    .price {
+        font-size: 14px;
+    }
+
+    .price-original {
+        font-size: 10px;
+    }
+
+    .activity-card-mobile-new__arrow {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
     }
 }
 
@@ -2643,7 +2788,8 @@
 
 @media (max-width: 480px) {
     #BookingDialog {
-        padding: 10px;
+        padding: 0px;
+        padding-bottom: 10px !important;
     }
 
     #BookingDialog .booking-dialog-form {
@@ -2667,5 +2813,368 @@
     #BookingDialog .confirm-pay-button {
         padding: 14px;
         font-size: 15px;
+    }
+}
+
+/* ========= Mobile Activity Cards (Clean UI) ========= */
+
+.activity-selection-container {
+    width: 100%;
+}
+
+.mobile-activity-list-new {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Card */
+.activity-card-mobile-new {
+    background: #fff;
+    border: 1px solid #e9e9ee;
+    border-radius: 14px;
+    padding: 12px 12px 10px;
+    box-shadow: 0 2px 10px rgba(10, 10, 10, 0.04);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    cursor: pointer;
+}
+
+.activity-card-mobile-new:active {
+    transform: scale(0.99);
+}
+
+.activity-card-mobile-new.selected {
+    border-color: #7c3aed;
+    /* violet */
+    box-shadow: 0 8px 18px rgba(124, 58, 237, 0.10);
+}
+
+/* Top row - Fixed alignment */
+.activity-card-mobile-new__top {
+    display: flex;
+    align-items: center;
+    /* Changed from flex-start to center for proper vertical alignment */
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.activity-card-mobile-new__title {
+    font-size: 15px;
+    line-height: 1.3;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+
+    /* Allow wrapping for long titles */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-break: break-word;
+}
+
+.activity-card-mobile-new__right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Price */
+.price-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: right;
+}
+
+.price-original {
+    font-size: 11px;
+    color: #9ca3af;
+    text-decoration: line-through;
+    line-height: 1.2;
+}
+
+.price-discounted {
+    font-size: 16px;
+    font-weight: 800;
+    color: #16a34a;
+    line-height: 1.1;
+}
+
+.price {
+    font-size: 16px;
+    font-weight: 800;
+    color: #16a34a;
+    line-height: 1.1;
+}
+
+/* Arrow button (Select / Selected) - Fixed height to match price section */
+.activity-card-mobile-new__arrow {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    color: #111827;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+    flex-shrink: 0;
+}
+
+.activity-card-mobile-new__arrow:hover {
+    background: #f3f4f6;
+}
+
+.activity-card-mobile-new__arrow.selected {
+    background: rgba(124, 58, 237, 0.10);
+    border-color: rgba(124, 58, 237, 0.35);
+    color: #7c3aed;
+}
+
+/* Description row - Fixed wrapping */
+.activity-card-mobile-new__descRow {
+    display: block !important;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.activity-card-mobile-new__desc {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.4;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+
+    /* When not expanded, show ellipsis */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+}
+
+.read-more-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: start;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #7c3aed;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.read-more-btn:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+/* Accordion wrapper */
+.activity-card-mobile-new__accordion {
+    margin-top: 0;
+    overflow: hidden;
+}
+
+.activity-card-mobile-new__accordionBody {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Image block - Compact size */
+.activity-card-mobile-new__image {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+}
+
+.activity-card-mobile-new__image img {
+    width: 100%;
+    height: 160px;
+    /* Reduced from 190px for more compact layout */
+    object-fit: cover;
+    display: block;
+}
+
+/* Date badge - Compact */
+.activity-card-mobile-new__date-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    border-radius: 10px;
+    padding: 6px 8px;
+    background: rgba(17, 24, 39, 0.85);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 56px;
+    text-align: center;
+    backdrop-filter: blur(8px);
+}
+
+.activity-card-mobile-new__date-badge .month {
+    font-size: 9px;
+    font-weight: 800;
+    opacity: 0.9;
+    letter-spacing: 0.5px;
+}
+
+.activity-card-mobile-new__date-badge .day {
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.activity-card-mobile-new__date-badge .dow {
+    font-size: 9px;
+    font-weight: 700;
+    opacity: 0.9;
+    letter-spacing: 0.3px;
+}
+
+/* Bookmark button - Compact */
+.activity-card-mobile-new__bookmark {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+    backdrop-filter: blur(4px);
+}
+
+.activity-card-mobile-new__bookmark:active {
+    transform: scale(0.95);
+}
+
+/* Meta row - Compact */
+.activity-card-mobile-new__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.activity-card-mobile-new__meta .rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #111827;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #f3f4f6;
+}
+
+.activity-card-mobile-new__meta .avatars {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.activity-card-mobile-new__meta .avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.activity-card-mobile-new__meta .avatar.pill {
+    width: auto;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #111827;
+    color: #fff;
+    border-color: #111827;
+}
+
+.activity-card-mobile-new__meta .joined {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+/* CTA button - Compact */
+.activity-card-mobile-new__cta {
+    width: 100%;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #111827;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.activity-card-mobile-new__cta:active {
+    transform: scale(0.99);
+}
+
+.activity-card-mobile-new__cta.selected {
+    background: #7c3aed;
+    border-color: #7c3aed;
+}
+
+/* Show more/less button */
+.show-more-btn {
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #111827;
+    cursor: pointer;
+}
+
+/* Small screens tweaks */
+@media (max-width: 380px) {
+    .activity-card-mobile-new__image img {
+        height: 170px;
+    }
+
+    .activity-card-mobile-new__title {
+        font-size: 14px;
     }
 }

@@ -63,22 +63,24 @@ export function NavigationBar() {
 
   // Check if we're on the landing page
   const isLandingPage = location.pathname === "/";
-  
+
   // Check if we're on destination routes (should show white by default, like homepage)
-  const isDestinationRoute = 
-    location.pathname === "/destination" || 
+  const isDestinationRoute =
+    location.pathname === "/destination" ||
     location.pathname.startsWith("/destination/");
-  
+
   // Check if we're on experience routes (should show colored from start)
-  const isExperienceRoute = 
+  const isExperienceRoute =
     location.pathname.startsWith("/experience/");
 
   useEffect(() => {
     const handleScroll = () => {
       const isActivityRoute =
         location.pathname.startsWith("/activity/") ||
-        location.pathname.startsWith("/booking/");
-
+        location.pathname.startsWith("/booking/") ||
+        location.pathname.startsWith("/bookings")||
+        location.pathname.startsWith("/favorites")||
+        location.pathname.startsWith("/experiences");
       // If on experience route, always show colored (set to max height)
       if (isExperienceRoute) {
         setContainerHeight(maxScroll);
@@ -213,7 +215,7 @@ export function NavigationBar() {
         return "text-white hover:bg-white/20";
       }
     }
-    
+
     // On landing page and destination routes, show white when not scrolled
     if ((isLandingPage || isDestinationRoute) && containerHeight === 0)
       return "text-white hover:bg-white/20";
@@ -228,7 +230,7 @@ export function NavigationBar() {
   return (
     <>
       <header
-        className={`navigation-bar z-[3]  top-0 left-0 right-0 z-[9998] w-full transition-all duration-300`}
+        className={`navigation-bar z-[3]  top-0 left-0 right-0  w-full transition-all duration-300`}
       >
         <div
           className="navigation-scroll-container "

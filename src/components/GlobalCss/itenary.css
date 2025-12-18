@@ -28,7 +28,7 @@
     z-index: 1;
   }
   
-  .SectionHeading {
+  /* .SectionHeading {
     font-size: clamp(2.75rem, 5.5vw, 4.5rem);
     font-weight: 700;
     text-align: center;
@@ -38,7 +38,7 @@
     background-clip: text;
     margin-bottom: 5rem;
     letter-spacing: -0.025em;
-  }
+  } */
   
   .destinations-itinerary-cards {
     display: grid;
@@ -222,10 +222,7 @@
     .itinerary-card-content {
       padding: 2.5rem 2rem 2rem;
     }
-    
-    .SectionHeading {
-      margin-bottom: 3.5rem;
-    }
+  
   }
   
   @media (max-width: 480px) {

@@ -520,17 +520,21 @@ export const SlotSelector = ({
               </div>
             </div>
 
-            {/* Mobile Activity Cards */}
-            <div className="md:hidden activity-selection-container">
-              <h3 className="activity-selection-title">Select Activity</h3>
-              <div className="mobile-activity-list-new">
-                {(showAllActivities ? activities : activities?.slice(0, 3))?.map(
-                  (activity) => {
+            <div id="MobileActivityCardsContainer">
+              {/* Mobile Activity Cards */}
+              <div className="md:hidden activity-selection-container">
+                <h3 className="activity-selection-title">Select Activity</h3>
+
+                <div className="mobile-activity-list-new">
+                  {(showAllActivities ? activities : activities?.slice(0, 3))?.map((activity) => {
                     const isExpanded = expandedActivities.has(activity.id);
                     const isSelected = selectedActivityId === activity.id;
-                    const hasDiscount = activity.discounted_price && activity.discounted_price !== activity.price;
+                    const hasDiscount =
+                      activity.discounted_price && activity.discounted_price !== activity.price;
+
                     const displayPrice = hasDiscount ? activity.discounted_price : activity.price;
                     const rating = activity.rating || 4.71;
+
                     const descriptionWords = activity.distance ? activity.distance.split(" ") : [];
                     const shouldShowReadMore = descriptionWords.length > 12;
 
@@ -543,73 +547,11 @@ export const SlotSelector = ({
                           onSlotChange(undefined);
                         }}
                       >
-                        {/* Image Section */}
-                        <div className="activity-card-mobile-new__image">
-                          <img
-                            src={getActivityImage(activity)}
-                            alt={activity.name}
-                            loading="lazy"
-                          />
-                          {/* Date Badge */}
-                          {selectedDate && (
-                            <div className="activity-card-mobile-new__date-badge">
-                              <span className="month">{format(selectedDate, "MMM").toUpperCase()}</span>
-                              <span className="day">{format(selectedDate, "d")}</span>
-                              <span className="dow">{format(selectedDate, "EEE").toUpperCase()}</span>
-                            </div>
-                          )}
-                          {/* Bookmark */}
-                          <button
-                            className="activity-card-mobile-new__bookmark"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Bookmark size={16} />
-                          </button>
-                        </div>
-
-                        {/* Content Section */}
-                        <div className="activity-card-mobile-new__content">
-                          {/* Rating & Avatars */}
-                          <div className="activity-card-mobile-new__meta">
-                            <div className="rating">
-                              <Star size={11} fill="#000" />
-                              <span>{rating.toFixed(2)}</span>
-                            </div>
-                            <div className="avatars">
-                              <div className="avatar">A</div>
-                              <div className="avatar">B</div>
-                              <div className="avatar pill">+5</div>
-                            </div>
-                            <span className="joined">joined</span>
-                          </div>
-
-                          {/* Title */}
+                        {/* ===== TOP ROW (Title left | Price + Arrow button right) ===== */}
+                        <div className="activity-card-mobile-new__top">
                           <h4 className="activity-card-mobile-new__title">{activity.name}</h4>
 
-                          {/* Description */}
-                          <p className="activity-card-mobile-new__desc">
-                            {isExpanded
-                              ? activity.distance || "Experience the thrill with trusted guides."
-                              : activity.distance
-                                ? `${descriptionWords.slice(0, 12).join(" ")}${shouldShowReadMore ? "..." : ""}`
-                                : "Experience the thrill with trusted guides."}
-                          </p>
-
-                          {shouldShowReadMore && (
-                            <button
-                              className="read-more-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExpanded(activity.id);
-                              }}
-                            >
-                              {isExpanded ? "Read less" : "Read more"}
-                              {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                            </button>
-                          )}
-
-                          {/* Price & CTA Row */}
-                          <div className="activity-card-mobile-new__footer">
+                          <div className="activity-card-mobile-new__right">
                             <div className="price-section">
                               {hasDiscount ? (
                                 <>
@@ -626,43 +568,133 @@ export const SlotSelector = ({
                                 </div>
                               )}
                             </div>
+
+                            {/* Arrow / Selected button (no text) */}
                             <button
-                              className={`activity-card-mobile-new__cta ${isSelected ? "selected" : ""}`}
+                              className={`activity-card-mobile-new__arrow ${isSelected ? "selected" : ""}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onActivityChange(activity.id);
                                 onSlotChange(undefined);
                               }}
+                              aria-label={isSelected ? "Selected" : "Select"}
+                              type="button"
                             >
-                              {isSelected ? "✓ Selected" : "Reserve your booking"}
+                              {isSelected ? "✓" : "›"}
                             </button>
                           </div>
                         </div>
+
+                        {/* ===== DESCRIPTION ROW (1 line + ... + Read more) ===== */}
+                        <div>
+                          <p className="activity-card-mobile-new__desc">
+                            {isExpanded
+                              ? activity.distance || "Experience the thrill with trusted guides."
+                              : activity.distance
+                                ? `${descriptionWords.slice(0, 12).join(" ")}${shouldShowReadMore ? "..." : ""}`
+                                : "Experience the thrill with trusted guides."}
+                          </p>
+
+                          {shouldShowReadMore && (
+                            <button
+                              className="read-more-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleExpanded(activity.id);
+                              }}
+                              type="button"
+                            >
+                              {isExpanded ? "Read less" : "Read more"}
+                              {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* ===== ACCORDION (put image + other details inside) ===== */}
+                        <div className="activity-card-mobile-new__accordion">
+                          {isExpanded && (
+                            <div className="activity-card-mobile-new__accordionBody">
+                              {/* Image */}
+                              <div className="activity-card-mobile-new__image">
+                                <img
+                                  src={getActivityImage(activity)}
+                                  alt={activity.name}
+                                  loading="lazy"
+                                />
+
+                                {/* Date Badge */}
+                                {selectedDate && (
+                                  <div className="activity-card-mobile-new__date-badge">
+                                    <span className="month">
+                                      {format(selectedDate, "MMM").toUpperCase()}
+                                    </span>
+                                    <span className="day">{format(selectedDate, "d")}</span>
+                                    <span className="dow">
+                                      {format(selectedDate, "EEE").toUpperCase()}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Bookmark */}
+                                <button
+                                  className="activity-card-mobile-new__bookmark"
+                                  onClick={(e) => e.stopPropagation()}
+                                  type="button"
+                                >
+                                  <Bookmark size={16} />
+                                </button>
+                              </div>
+
+                              {/* Rating & Avatars (same as your code) */}
+                              <div className="activity-card-mobile-new__meta">
+                                <div className="rating">
+                                  <Star size={11} fill="#000" />
+                                  <span>{rating.toFixed(2)}</span>
+                                </div>
+                                <div className="avatars">
+                                  <div className="avatar">A</div>
+                                  <div className="avatar">B</div>
+                                  <div className="avatar pill">+5</div>
+                                </div>
+                                <span className="joined">joined</span>
+                              </div>
+
+                              {/* (Optional) keep your old CTA button here if you still want it,
+                    but not removing it—just moving it inside accordion */}
+                              <button
+                                className={`activity-card-mobile-new__cta ${isSelected ? "selected" : ""}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onActivityChange(activity.id);
+                                  onSlotChange(undefined);
+                                }}
+                                type="button"
+                              >
+                                {isSelected ? "✓ Selected" : "Reserve your booking"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
-                  }
-                )}
+                  })}
 
-                {/* Show More Activities Button */}
-                {activities && activities.length > 3 && !showAllActivities && (
-                  <button
-                    className="show-more-btn"
-                    onClick={() => setShowAllActivities(true)}
-                  >
-                    Show more activities ({activities.length - 3} more)
-                  </button>
-                )}
+                  {/* Show More Activities Button */}
+                  {activities && activities.length > 3 && !showAllActivities && (
+                    <button className="show-more-btn" onClick={() => setShowAllActivities(true)} type="button">
+                      Show more activities ({activities.length - 3} more)
+                    </button>
+                  )}
 
-                {/* Show Less Button */}
-                {showAllActivities && activities && activities.length > 3 && (
-                  <button
-                    className="show-more-btn"
-                    onClick={() => setShowAllActivities(false)}
-                  >
-                    Show less
-                  </button>
-                )}
+                  {/* Show Less Button */}
+                  {showAllActivities && activities && activities.length > 3 && (
+                    <button className="show-more-btn" onClick={() => setShowAllActivities(false)} type="button">
+                      Show less
+                    </button>
+                  )}
+                </div>
               </div>
+
             </div>
           </div>
         </>

@@ -272,6 +272,245 @@ p {
     line-height: 1.2;
 }
 
+.BookingDetailSection{
+    padding-top: 2rem !important;
+}
+
+/* Parent wrapper */
+.nav-notification-group {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  /* Bell button */
+  .nav-notification-group .nav-button {
+    height: 40px;
+    width: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(59, 130, 246, 0.18);
+    background: rgba(59, 130, 246, 0.08);
+    color: #1f2937;
+    transition: all 180ms ease;
+  }
+  
+  .nav-notification-group .nav-button:hover {
+    background: rgba(59, 130, 246, 0.14);
+    border-color: rgba(59, 130, 246, 0.28);
+    transform: translateY(-1px);
+  }
+  
+  .nav-notification-group .nav-button:active {
+    transform: translateY(0px);
+  }
+  
+  /* Badge */
+  .nav-notification-group .nav-badge {
+    height: 18px;
+    width: 18px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    border: 2px solid #fff; /* crisp on light bg */
+    box-shadow: 0 6px 14px rgba(59, 130, 246, 0.25);
+  }
+  
+  .nav-notification-group .nav-notification-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+  
+    /* ✅ Best for top-right nav icons */
+    right: 0;
+    left: auto;
+  
+    width: 360px;
+    max-width: calc(100vw - 24px);
+  
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    box-shadow: 0 18px 48px rgba(17, 24, 39, 0.14);
+  
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: all 180ms ease;
+    z-index: 50;
+  }
+  
+  .nav-notification-group:hover .nav-notification-dropdown {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  
+  .nav-notification-group .nav-notification-dropdown::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+  
+    /* ✅ arrow under the bell (right side) */
+    right: 18px;
+    left: auto;
+  
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-left: 1px solid rgba(17, 24, 39, 0.08);
+    border-top: 1px solid rgba(17, 24, 39, 0.08);
+    transform: rotate(45deg);
+  }
+  
+  /* Content padding */
+  .nav-notification-group .nav-notification-content {
+    padding: 14px 14px 12px;
+  }
+  
+  /* Row alignment */
+  .nav-notification-group .nav-notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  /* Minimal icon container */
+  .nav-notification-group .nav-notification-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.18);
+  }
+  
+  /* Title / text spacing */
+  .nav-notification-group .nav-notification-title {
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 700;
+    margin: 0 0 6px;
+    color: #111827;
+  }
+  
+  .nav-notification-group .nav-notification-desc {
+    font-size: 13px;
+    line-height: 1.35;
+    margin: 0 0 8px;
+    color: #374151;
+  }
+  
+  .nav-notification-group .nav-notification-desc strong {
+    font-weight: 700;
+    color: #111827;
+  }
+  
+  .nav-notification-group .nav-notification-date {
+    font-size: 12px;
+    line-height: 1.3;
+    margin: 0;
+    color: #6b7280;
+  }
+  
+  /* Footer + button */
+  .nav-notification-group .nav-notification-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(17, 24, 39, 0.08);
+  }
+  
+  .nav-notification-group .nav-notification-button {
+    height: 44px;
+    border-radius: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  
+    /* ✅ Brand color */
+    background: #940fdb;
+  
+    color: hsl(var(--brand-secondary-foreground, 0 0% 100%));
+    border: 1px solid hsl(var(--brand-secondary) / 0.35);
+  
+    box-shadow:
+      0 12px 28px hsl(var(--brand-secondary) / 0.28),
+      inset 0 1px 0 hsl(0 0% 100% / 0.18);
+  
+    transition: all 160ms ease;
+  }
+  
+  .nav-notification-group .nav-notification-button:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+  }
+  
+  .nav-notification-group .nav-notification-button:active {
+    transform: translateY(0px);
+  }
+  
+  /* Dark mode support (works with your dark classes) */
+  .dark .nav-notification-group .nav-button {
+    background: rgba(59, 130, 246, 0.14);
+    border-color: rgba(59, 130, 246, 0.22);
+    color: #e5e7eb;
+  }
+  
+  .dark .nav-notification-group .nav-notification-dropdown {
+    background: #0b1220;
+    border-color: rgba(148, 163, 184, 0.14);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  }
+  
+  .dark .nav-notification-group .nav-notification-dropdown::before {
+    background: #0b1220;
+    border-left-color: rgba(148, 163, 184, 0.14);
+    border-top-color: rgba(148, 163, 184, 0.14);
+  }
+  
+  .dark .nav-notification-group .nav-notification-title {
+    color: #ffffff;
+  }
+  
+  .dark .nav-notification-group .nav-notification-desc {
+    color: #cbd5e1;
+  }
+  
+  .dark .nav-notification-group .nav-notification-date {
+    color: #94a3b8;
+  }
+  
+  .dark .nav-notification-group .nav-notification-footer {
+    border-top-color: rgba(148, 163, 184, 0.14);
+  }
+  
+  .dark .nav-notification-group .nav-badge {
+    border-color: #0b1220; /* badge border matches dark dropdown */
+  }
+  .nav-notification-group .nav-notification-text {
+    text-align: left;
+  }
+  
+  .nav-notification-group .nav-notification-title,
+  .nav-notification-group .nav-notification-desc,
+  .nav-notification-group .nav-notification-date {
+    text-align: left;
+  }
+
+  .FavoritesSection{
+    padding-top: 2rem !important;
+  }
+
+  .ExtraPaddingSet{
+    padding-top: 2rem !important;
+  }
+  
+  
+
 @media (max-width: 768px) {
     .SectionPaddingTop {
         padding-top: 30px;

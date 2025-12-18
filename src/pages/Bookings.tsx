@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { UserBookings } from "@/components/UserBookings";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -239,9 +240,9 @@ const Bookings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="BookingDetailSection">
 
-      <div className="container mx-auto px-4 py-2">
+      <div className="MaxWidthContainer SectionPaddingTop">
         <div className="mb-0">
           {/* <Button
             variant="ghost"
@@ -255,7 +256,7 @@ const Bookings = () => {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <Calendar className="w-6 text-brand-primary" />
-              <h1 className="text-1xl font-bold">My Bookings</h1>
+              <div className="SectionHeading">My Bookings</div>
             </div>
             {user?.user_metadata?.role === "vendor" && (
               <Button

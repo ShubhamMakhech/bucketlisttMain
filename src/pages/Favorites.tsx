@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { ExperienceCard } from "@/components/ExperienceCard"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
@@ -51,8 +51,8 @@ const Favorites = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <div className="FavoritesSection">
+      <div className=" MaxWidthContainer SectionPaddingTop">
         <div className="flex items-center gap-3 mb-8">
           <Heart className="h-6 w-6 text-red-500 fill-red-500" />
           <h1 className="text-3xl font-bold">Whish List</h1>

@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Color } from "antd/es/color-picker";
 
 interface Testimonial {
   id: string;
@@ -228,7 +229,7 @@ export function TestimonialCarousel() {
         <div>
           {/* Left Side - Title and Navigation */}
           <div>
-            <div className="text-white SectionHeading">
+            <div className="ColorWhite SectionHeading" >
               {/* <br /> */}
               People's experience with us &nbsp;💜
             </div>
@@ -255,7 +256,7 @@ export function TestimonialCarousel() {
           </div>
 
           {/* Right Side - Horizontal Scrollable Testimonials */}
-          <div className="flex-1 relative w-full overflow-x-auto mt-4 PaddingTopSet">
+          <div className="flex-1 relative w-full overflow-x-auto mt-2 PaddingTopSet">
             <div
               ref={scrollContainerRef}
               className="flex gap-4  scrollbar-hide pb-4"
