@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
   Calendar,
+  CalendarDays,
   CreditCard,
   Eye,
   FileText,
@@ -94,13 +95,19 @@ const Profile = () => {
   };
 
   const sidebarItems = [
-    ...(isVendor || isAdmin
+    ...(isVendor
       ? [
           {
             id: "analytics",
             icon: BarChart3,
             title: "Analytics",
             description: "View your business insights",
+          },
+          {
+            id: "calendar",
+            icon: CalendarDays,
+            title: "Calendar",
+            description: "Manage booking schedule",
           },
           {
             id: "my-experiences",
@@ -177,6 +184,10 @@ const Profile = () => {
     }
     if (sectionId === "my-experiences") {
       navigate("/vendor/experiences");
+      return;
+    }
+    if (sectionId === "calendar") {
+      navigate("/profile/calendar");
       return;
     }
     if (
