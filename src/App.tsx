@@ -43,6 +43,7 @@ import ConfirmBooking from "./pages/ConfirmBooking";
 import WhatsAppButton from "./pages/whatsapp";
 import Users from "./pages/Users";
 import { AdminBlogPage } from "./components/AdminBlogPage";
+import VendorCalendarPage from "./pages/VendorCalendarPage";
 const queryClient = new QueryClient();
 
 const WhatsappButtonConditional = () => {
@@ -185,6 +186,7 @@ const App: React.FC = () => {
                   <Route path="/destinations" element={<Destinations />} />
                   <Route path="/favorites" element={<Favorites />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile/calendar" element={<VendorCalendarPage />} />
                   <Route path="/bookings" element={<Bookings />} />
                   <Route path="/confirm-booking" element={<ConfirmBooking />} />
                   <Route

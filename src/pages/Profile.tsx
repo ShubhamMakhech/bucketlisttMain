@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserBookings } from "@/components/UserBookings";
 import { VendorAnalytics } from "@/components/VendorAnalytics";
-import { VendorCalendar } from "@/components/VendorCalendar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -97,7 +96,7 @@ const Profile = () => {
   };
 
   const sidebarItems = [
-    ...(isVendor || isAdmin
+    ...(isVendor
       ? [
           {
             id: "analytics",
@@ -188,6 +187,10 @@ const Profile = () => {
       navigate("/vendor/experiences");
       return;
     }
+    if (sectionId === "calendar") {
+      navigate("/profile/calendar");
+      return;
+    }
     if (
       [
         "rewards",
@@ -207,8 +210,6 @@ const Profile = () => {
     switch (activeSection) {
       case "analytics":
         return isVendor ? <VendorAnalytics /> : null;
-      case "calendar":
-        return isVendor ? <VendorCalendar /> : null;
       case "bookings":
         return <UserBookings />;
       default:
