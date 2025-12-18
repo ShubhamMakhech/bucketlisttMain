@@ -62,6 +62,7 @@ interface ExperienceData {
   duration: string;
   group_size: string;
   location: string;
+  location2: string;
   start_point: string;
   end_point: string;
   distance_km: number;
@@ -111,6 +112,7 @@ export function CreateExperienceForm({
     description: initialData?.description || "",
     category_ids: initialData?.category_ids || [],
     location: initialData?.location || "",
+    location2: initialData?.location2 || "",
     start_point: initialData?.start_point || "",
     end_point: initialData?.end_point || "",
     days_open: initialData?.days_open || [],
@@ -774,6 +776,49 @@ export function CreateExperienceForm({
     await createExperienceCategories(experienceId, categoryIds);
   };
 
+  // Helper function to generate URL-friendly name from title
+  const generateUrlName = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .trim();
+  };
+
+  // Helper function to ensure unique url_name
+  const ensureUniqueUrlName = async (
+    baseUrlName: string,
+    excludeId?: string
+  ): Promise<string> => {
+    let urlName = baseUrlName;
+    let counter = 1;
+
+    while (true) {
+      let query = supabase
+        .from("experiences")
+        .select("id")
+        .eq("url_name", urlName)
+        .limit(1);
+
+      // If editing, exclude current experience from check
+      if (excludeId) {
+        query = query.neq("id", excludeId);
+      }
+
+      const { data } = await query;
+
+      if (!data || data.length === 0) {
+        // URL name is unique
+        return urlName;
+      }
+
+      // URL name exists, append counter
+      urlName = `${baseUrlName}-${counter}`;
+      counter++;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -866,6 +911,13 @@ export function CreateExperienceForm({
           ? Math.min(...activities.map((a) => a.discount_percentage))
           : 0;
 
+      // Generate unique url_name from title
+      const baseUrlName = generateUrlName(formData.title);
+      const uniqueUrlName = await ensureUniqueUrlName(
+        baseUrlName,
+        isEditing ? initialData?.id : undefined
+      );
+
       const experienceData = {
         title: formData.title,
         description: formData.description,
@@ -877,12 +929,14 @@ export function CreateExperienceForm({
         duration: null, // Legacy field - no longer used
         group_size: null, // Legacy field - no longer used
         location: formData.location,
+        location2: formData.location2,
         start_point: formData.start_point,
         end_point: formData.end_point,
         distance_km: 0, // Legacy field - kept for compatibility
         days_open: formData.days_open,
         vendor_id: user.id,
         destination_id: formData.destination_id,
+        url_name: uniqueUrlName, // Add url_name field
       };
 
       console.log("experienceData", experienceData);

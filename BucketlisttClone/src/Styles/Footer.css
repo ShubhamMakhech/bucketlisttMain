@@ -1,0 +1,439 @@
+/* Footer Container with Skyline Background */
+.FooterContainer {
+    position: relative;
+    background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+    color: #000000;
+    overflow: hidden;
+}
+
+.FooterBackgroundOverlay {
+    position: relative;
+    width: 100%;
+    min-height: 100%;
+}
+
+/* Adventure Activities Background Image - Skydiving */
+.FooterSkylineBackground {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/FooterBackground.jpeg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    opacity: 0.12;
+    z-index: 0;
+}
+
+/* Overlay with Brand Color Gradient */
+.FooterSkylineBackground::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg,
+            rgba(113, 16, 165, 0.03) 0%,
+            rgba(113, 16, 165, 0.05) 50%,
+            rgba(113, 16, 165, 0.08) 100%);
+    z-index: 1;
+}
+
+.FooterContentWrapper {
+    position: relative;
+    z-index: 2;
+    padding: 30px 20px 20px;
+}
+
+/* Main Content Section */
+.FooterMainSection {
+    padding-bottom: 0;
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+/* Links Section */
+.FooterLinksSection {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+}
+
+/* Logo Column */
+.FooterLogoColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.FooterLogoColumn .FooterCopyright {
+    color: #525252;
+    font-size: 12px;
+    font-weight: 400;
+    margin-top: 4px;
+    text-align: left;
+}
+
+.FooterLogo {
+    width: 160px;
+    height: auto;
+    display: block;
+    margin-top: -24px;
+}
+
+/* Links Columns */
+.FooterLinksColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.FooterColumnHeader {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    text-align: start;
+    padding-bottom: 4px;
+    border-bottom: 2px solid rgba(113, 16, 165, 0.2);
+    position: relative;
+}
+
+.FooterColumnHeader::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(113, 16, 165, 0.8), rgba(113, 16, 165, 0.3));
+}
+
+.FooterLinksList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.FooterLinksList li {
+    margin: 0;
+    text-align: start;
+}
+
+.FooterLinksList li .FooterCopyright {
+    color: #525252;
+    font-size: 12px;
+    font-weight: 400;
+    display: block;
+    padding: 2px 0;
+}
+
+.FooterLink {
+    color: #525252 !important;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 0;
+    height: auto;
+    font-weight: 400;
+    transition: all 0.3s ease;
+    position: relative;
+    display: inline-block;
+    line-height: 1.3;
+}
+
+.FooterLink::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    background: rgba(113, 16, 165, 0.3);
+    border-radius: 50%;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.FooterLink:hover {
+    color: #7110a5 !important;
+    text-decoration: none;
+    padding-left: 8px;
+}
+
+.FooterLink:hover::before {
+    opacity: 1;
+    left: -8px;
+}
+
+/* Payment Methods */
+.FooterPaymentMethods {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(113, 16, 165, 0.15);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(113, 16, 165, 0.08);
+}
+
+.FooterPaymentIcon {
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(113, 16, 165, 0.1);
+    border-radius: 8px;
+    padding: 6px;
+    transition: all 0.3s ease;
+}
+
+.FooterPaymentIcon:hover {
+    background: rgba(113, 16, 165, 0.05);
+    border-color: rgba(113, 16, 165, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(113, 16, 165, 0.15);
+}
+
+/* Bottom Section */
+.FooterBottomSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-top: 10px;
+}
+
+.FooterBottomLeft {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #525252;
+    flex: 1;
+}
+
+.FooterBottomRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.FooterContactSection {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.FooterContactHeader {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #1a1a1a;
+    margin: 0;
+    padding-bottom: 6px;
+    border-bottom: 2px solid rgba(113, 16, 165, 0.2);
+    position: relative;
+    width: 100%;
+    text-align: right;
+}
+
+.FooterContactHeader::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    right: 0;
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(113, 16, 165, 0.3), rgba(113, 16, 165, 0.8));
+}
+
+.FooterContactList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+}
+
+.FooterContactList li {
+    margin: 0;
+    text-align: right;
+}
+
+.FooterContactLink {
+    color: #525252 !important;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 0;
+    height: auto;
+    font-weight: 400;
+    transition: all 0.3s ease;
+    position: relative;
+    display: inline-block;
+}
+
+.FooterContactLink:hover {
+    color: #7110a5 !important;
+    text-decoration: none;
+}
+
+.FooterCopyright {
+    color: #525252;
+    font-weight: 400;
+}
+
+.FooterBottomLink {
+    color: #525252 !important;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 0;
+    height: auto;
+    font-weight: 400;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.FooterBottomLink::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: #7110a5;
+    transition: width 0.3s ease;
+}
+
+.FooterBottomLink:hover {
+    color: #7110a5 !important;
+    text-decoration: none;
+}
+
+.FooterBottomLink:hover::after {
+    width: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .FooterLinksSection {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 24px;
+    }
+
+    .FooterPaymentMethods {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .FooterContentWrapper {
+        padding: 24px 20px 16px;
+    }
+
+    .FooterMainSection {
+        padding-bottom: 16px;
+        margin-bottom: 12px;
+    }
+
+    .FooterLinksSection {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .FooterLogoContainer {
+        padding: 10px;
+    }
+
+    .FooterLogo {
+        width: 140px;
+    }
+
+    .FooterPaymentMethods {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 10px;
+        gap: 6px;
+    }
+
+    .FooterBottomSection {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding-top: 8px;
+    }
+
+    .FooterBottomLeft {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .FooterBottomRight {
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .FooterContactSection {
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .FooterContactHeader {
+        text-align: left;
+    }
+
+    .FooterContactHeader::after {
+        right: auto;
+        left: 0;
+        background: linear-gradient(90deg, rgba(113, 16, 165, 0.8), rgba(113, 16, 165, 0.3));
+    }
+
+    .FooterContactList {
+        align-items: flex-start;
+    }
+
+    .FooterContactList li {
+        text-align: left;
+    }
+}
+
+@media (max-width: 640px) {
+    .FooterLinksSection {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+
+    .FooterPaymentMethods {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .FooterPaymentIcon {
+        height: 35px;
+    }
+
+    .FooterLogo {
+        width: 120px;
+    }
+}

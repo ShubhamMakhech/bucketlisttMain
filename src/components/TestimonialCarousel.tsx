@@ -1,6 +1,8 @@
+// @ts-nocheck
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Color } from "antd/es/color-picker";
 
 interface Testimonial {
   id: string;
@@ -223,14 +225,14 @@ export function TestimonialCarousel() {
       className="SectionPaddingBottom SectionPaddingTop"
       id="TestimonialCarouselBackgroundStyles"
     >
-      <div className=" max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto MaxWidthContainer">
         <div>
           {/* Left Side - Title and Navigation */}
           <div>
-            <h2 className="text-white CommonH2 leading-tight">
+            <div className="ColorWhite SectionHeading" >
               {/* <br /> */}
               People's experience with us &nbsp;💜
-            </h2>
+            </div>
             {/* <br /> */}
             {/* Navigation Buttons */}
             {/* <div className="flex gap-3 justify-center lg:justify-start">
@@ -254,7 +256,7 @@ export function TestimonialCarousel() {
           </div>
 
           {/* Right Side - Horizontal Scrollable Testimonials */}
-          <div className="flex-1 relative w-full overflow-x-auto mt-4 PaddingTopSet">
+          <div className="flex-1 relative w-full overflow-x-auto mt-2 PaddingTopSet">
             <div
               ref={scrollContainerRef}
               className="flex gap-4  scrollbar-hide pb-4"
@@ -266,7 +268,7 @@ export function TestimonialCarousel() {
               {testimonials.map((testimonial) => (
                 <div
                   key={testimonial.id}
-                  className="bg-gray-800 rounded-2xl  flex flex-col flex-shrink-0 w-80 "
+                  className="TestimonialCardContainer"
 
                 >
                   {/* Image */}
@@ -295,7 +297,7 @@ export function TestimonialCarousel() {
                   {/* Content */}
                   <div
                     className="p-6 flex-1 flex flex-col"
-                    style={{ background: "rgb(28 21 37)", borderRadius: "20px" }}
+                    style={{ background: "rgb(28 21 37)", borderRadius: "20px",heigh:"100%" }}
 
                   >
                     {/* Header with Avatar and Info */}

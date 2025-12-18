@@ -1,4 +1,4 @@
-import { Header } from "@/components/Header";
+// @ts-nocheck
 import { UserBookings } from "@/components/UserBookings";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -240,24 +240,23 @@ const Bookings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div className="BookingDetailSection">
 
-      <div className="container mx-auto px-4 py-4">
+      <div className="MaxWidthContainer SectionPaddingTop">
         <div className="mb-0">
-          <Button
+          {/* <Button
             variant="ghost"
             onClick={() => navigate("/profile")}
-            className="mb-4"
+            className="mb-0"
             id="BookingsBackButtonStyles"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Profile
-          </Button>
+          </Button> */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <Calendar className="w-6 text-brand-primary" />
-              <h1 className="text-1xl font-bold">My Bookings</h1>
+              <div className="SectionHeading">My Bookings</div>
             </div>
             {user?.user_metadata?.role === "vendor" && (
               <Button

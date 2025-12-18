@@ -53,6 +53,8 @@ interface Activity {
   discounted_price: number;
   currency: string;
   timeSlots: TimeSlot[];
+  discount_type?: "flat" | "percentage";
+  discount_amount?: number;
 }
 
 interface AutoGenerateConfig {
@@ -205,6 +207,8 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
       discounted_price: 0,
       currency: "INR",
       timeSlots: [],
+      discount_type: "percentage", // Default to percentage
+      discount_amount: 0,
     };
     setActivities((prev) => [...prev, newActivity]);
   };
@@ -218,23 +222,70 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
   const updateActivity = (
     activityId: string,
     field: keyof Activity,
-    value: string | number | TimeSlot[]
+    value: string | number | TimeSlot[] | "flat" | "percentage"
   ) => {
     setActivities((prev) =>
       prev.map((activity) => {
         if (activity.id === activityId) {
           const updated = { ...activity, [field]: value };
-          // Auto-calculate discounted price when discount percentage changes
-          if (field === "discount_percentage" || field === "price") {
-            const discount =
-              typeof value === "number" && field === "discount_percentage"
-                ? value
-                : activity.discount_percentage;
+          // Auto-calculate discounted price when discount changes
+          if (
+            field === "discount_percentage" ||
+            field === "price" ||
+            field === "discount_amount" ||
+            field === "discount_type"
+          ) {
+            const discountType =
+              field === "discount_type"
+                ? (value as "flat" | "percentage")
+                : activity.discount_type || "percentage";
             const price =
               typeof value === "number" && field === "price"
                 ? value
                 : activity.price;
-            updated.discounted_price = price - (price * discount) / 100;
+
+            if (discountType === "flat") {
+              let discountAmount: number;
+              if (field === "discount_amount" && typeof value === "number") {
+                discountAmount = value;
+              } else if (
+                field === "discount_type" &&
+                (activity.discount_amount === undefined ||
+                  activity.discount_amount === 0) &&
+                activity.discount_percentage
+              ) {
+                // Switching to flat: calculate amount from percentage
+                discountAmount = (price * activity.discount_percentage) / 100;
+                updated.discount_amount = discountAmount;
+              } else {
+                discountAmount = activity.discount_amount || 0;
+              }
+              updated.discounted_price = Math.max(0, price - discountAmount);
+              // Convert flat discount to percentage for storage
+              updated.discount_percentage =
+                price > 0 ? (discountAmount / price) * 100 : 0;
+            } else {
+              let discount: number;
+              if (
+                field === "discount_percentage" &&
+                typeof value === "number"
+              ) {
+                discount = value;
+              } else if (
+                field === "discount_type" &&
+                (!activity.discount_percentage ||
+                  activity.discount_percentage === 0) &&
+                activity.discount_amount
+              ) {
+                // Switching to percentage: calculate percentage from amount
+                discount =
+                  price > 0 ? (activity.discount_amount / price) * 100 : 0;
+                updated.discount_percentage = discount;
+              } else {
+                discount = activity.discount_percentage || 0;
+              }
+              updated.discounted_price = price - (price * discount) / 100;
+            }
           }
           return updated;
         }
@@ -797,6 +848,49 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     }
   };
 
+  // Helper function to generate URL-friendly name from title
+  const generateUrlName = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .trim();
+  };
+
+  // Helper function to ensure unique url_name
+  const ensureUniqueUrlName = async (
+    baseUrlName: string,
+    excludeId?: string
+  ): Promise<string> => {
+    let urlName = baseUrlName;
+    let counter = 1;
+
+    while (true) {
+      let query = supabase
+        .from("experiences")
+        .select("id")
+        .eq("url_name", urlName)
+        .limit(1);
+
+      // If editing, exclude current experience from check
+      if (excludeId) {
+        query = query.neq("id", excludeId);
+      }
+
+      const { data } = await query;
+
+      if (!data || data.length === 0) {
+        // URL name is unique
+        return urlName;
+      }
+
+      // URL name exists, append counter
+      urlName = `${baseUrlName}-${counter}`;
+      counter++;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -877,6 +971,13 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
           ? Math.min(...activities.map((a) => a.discount_percentage))
           : 0;
 
+      // Generate unique url_name from title (update if title changed)
+      const baseUrlName = generateUrlName(formData.title);
+      const uniqueUrlName = await ensureUniqueUrlName(
+        baseUrlName,
+        initialData.id
+      );
+
       const experienceData = {
         title: formData.title,
         description: formData.description,
@@ -889,6 +990,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
         end_point: formData.end_point,
         days_open: formData.days_open,
         destination_id: formData.destination_id,
+        url_name: uniqueUrlName, // Add url_name field
       };
 
       // Update experience
@@ -1206,24 +1308,71 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
                   </div>
 
                   <div className="space-y-2 text-start">
-                    <Label htmlFor={`activity-discount-${activity.id}`}>
-                      Discount %
+                    <Label htmlFor={`activity-discount-type-${activity.id}`}>
+                      Discount Type
                     </Label>
-                    <Input
-                      id={`activity-discount-${activity.id}`}
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={activity.discount_percentage}
-                      onChange={(e) =>
+                    <Select
+                      value={activity.discount_type || "percentage"}
+                      onValueChange={(value) =>
                         updateActivity(
                           activity.id,
-                          "discount_percentage",
-                          parseFloat(e.target.value) || 0
+                          "discount_type",
+                          value as "flat" | "percentage"
                         )
                       }
-                      placeholder="0"
-                    />
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">
+                          Percentage (%)
+                        </SelectItem>
+                        <SelectItem value="flat">Flat Amount</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor={`activity-discount-${activity.id}`}>
+                      {activity.discount_type === "flat"
+                        ? "Discount Amount"
+                        : "Discount Percentage"}
+                    </Label>
+                    {activity.discount_type === "flat" ? (
+                      <Input
+                        id={`activity-discount-${activity.id}`}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={activity.price}
+                        value={activity.discount_amount || 0}
+                        onChange={(e) => {
+                          updateActivity(
+                            activity.id,
+                            "discount_amount",
+                            parseFloat(e.target.value) || 0
+                          );
+                        }}
+                        placeholder="0.00"
+                      />
+                    ) : (
+                      <Input
+                        id={`activity-discount-${activity.id}`}
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={activity.discount_percentage || 0}
+                        onChange={(e) => {
+                          updateActivity(
+                            activity.id,
+                            "discount_percentage",
+                            parseFloat(e.target.value) || 0
+                          );
+                        }}
+                        placeholder="0.00"
+                      />
+                    )}
                   </div>
 
                   <div className="space-y-2 text-start">

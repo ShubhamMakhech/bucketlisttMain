@@ -182,7 +182,6 @@ export function Hero() {
       <div className="absolute inset-0 w-full h-full z-0 overflow-hidden parallax-container" >
         {/* YouTube Video Background for all devices */}
         <div
-
           className="absolute inset-0 w-full h-full"
           style={{
             background: "linear-gradient(135deg, hsl(var(--gradient-secondary-start)) 0%, hsl(var(--gradient-secondary-end)) 100%)", // Fallback gradient

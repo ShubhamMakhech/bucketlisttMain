@@ -365,8 +365,8 @@ export function AIChatbot() {
         }
 
         if (experienceData) {
-          // Create slug from title (same pattern as ExperienceCard)
-          const experienceName = (experienceData.title || item.title || "")
+          // Use url_name if available, otherwise fall back to generating slug from title
+          const experienceName = experienceData.url_name || (experienceData.title || item.title || "")
             .toLowerCase()
             .replace(/[^a-z0-9\s-]/g, "")
             .replace(/\s+/g, "-")
@@ -388,6 +388,7 @@ export function AIChatbot() {
                 location: experienceData.location,
                 rating: experienceData.rating,
                 reviews_count: experienceData.reviews_count,
+                url_name: experienceData.url_name,
               },
               fromPage: "ai-chatbot",
               timestamp: Date.now(),

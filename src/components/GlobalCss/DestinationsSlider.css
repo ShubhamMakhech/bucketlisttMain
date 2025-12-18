@@ -1,0 +1,324 @@
+.destinations-slider-container {
+    position: relative;
+    width: 100%;
+    min-height: 600px;
+    overflow: hidden;
+}
+
+.destinations-swiper {
+    width: 100%;
+    height: 100%;
+}
+
+.destinations-slide {
+    width: 100%;
+    height: 600px;
+    position: relative;
+    padding-top: 5rem;
+    padding-bottom: 3rem;
+}
+
+.destinations-slide-content {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    height: 100%;
+    position: relative;
+}
+
+/* Background Image with Blur and Cinematic Overlay */
+.destinations-slide::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        /* Cinematic Shadow Overlay */
+        linear-gradient(180deg,
+            rgba(0, 0, 0, 0.6) 0%,
+            rgba(0, 0, 0, 0.3) 30%,
+            rgba(0, 0, 0, 0.2) 50%,
+            rgba(0, 0, 0, 0.4) 70%,
+            rgba(0, 0, 0, 0.7) 100%),
+        linear-gradient(90deg,
+            rgba(0, 0, 0, 0.5) 0%,
+            transparent 20%,
+            transparent 80%,
+            rgba(0, 0, 0, 0.5) 100%),
+        radial-gradient(ellipse at top left, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse at top right, rgba(0, 0, 0, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom left, rgba(0, 0, 0, 0.5) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(0, 0, 0, 0.5) 0%, transparent 50%),
+        /* Background Image */
+        url('https://img.freepik.com/free-photo/tourists-take-boat-ban-rak-thai-village-mae-hong-son-province-thailand_335224-1304.jpg?t=st=1765740127~exp=1765743727~hmac=6eabd0c084462f00d5552d80e88a92ad0a0fcc8d355f37dede46048db752ca7b&w=2000');
+    background-size: cover, cover, cover, cover, cover, cover, cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    filter: blur(3px);
+    transform: scale(1.05);
+    z-index: 0;
+}
+
+/* Left Side - Text Section */
+.destinations-text-section {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    color: #ffffff;
+}
+
+.destinations-text-wrapper {
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.destinations-tagline {
+    font-size: 1.2rem;
+    font-weight: 400;
+    line-height: 1.5;
+    margin-top: 12px;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.destinations-description {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    font-weight: 300;
+}
+
+.destinations-media-content {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    /* margin-bottom: 32px; */
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 300;
+    font-style: italic;
+}
+
+.destinations-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+}
+
+.destinations-cta-button {
+    background-color: #ffffff;
+    color: #7110a5;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 14px 32px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 24px;
+}
+
+.destinations-cta-button:hover {
+    background-color: rgba(255, 255, 255, 0.95);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.destinations-button-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Right Side - Image Section with Clip Path */
+.destinations-image-section {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.destinations-image-wrapper {
+    width: 100%;
+    height: 100%;
+    max-width: 800px;
+    max-height: 600px;
+    position: relative;
+    border-radius: 200px 20px 200px 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.destinations-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Navigation Buttons */
+.destinations-nav-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.destinations-nav-button:hover {
+    background-color: #ffffff;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.destinations-nav-button svg {
+    width: 24px;
+    height: 24px;
+    color: #7110a5;
+}
+
+.destinations-swiper-button-prev {
+    left: 20px;
+}
+
+.destinations-swiper-button-next {
+    right: 20px;
+}
+
+.destinations-nav-button.swiper-button-disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.destinations-nav-button.swiper-button-disabled:hover {
+    transform: translateY(-50%);
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Pagination Dots */
+.destinations-swiper :global(.swiper-pagination) {
+    bottom: 30px !important;
+    left: 50% !important;
+    transform: translateX(-50%);
+    width: auto !important;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+.destinations-pagination-bullet {
+    width: 12px !important;
+    height: 12px !important;
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    opacity: 1 !important;
+    border-radius: 50% !important;
+    cursor: pointer;
+    transition: all 0.3s ease !important;
+}
+
+.destinations-pagination-bullet-active {
+    background-color: #ffffff !important;
+    width: 32px !important;
+    border-radius: 6px !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .destinations-slide-content {
+        grid-template-columns: 1fr;
+    }
+
+    .destinations-text-section {
+        order: 2;
+    }
+
+    .destinations-image-section {
+        order: 1;
+    }
+
+    .destinations-tagline {
+        font-size: 1.1rem;
+    }
+
+    .destinations-image-wrapper {
+        max-height: 300px;
+        border-radius: 10px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .destinations-slider-container{
+        min-height: 100%;
+    }
+    .destinations-slide {
+        height: 100%;
+    }
+
+    .destinations-tagline {
+        font-size: 1rem;
+        margin-top: 8px;
+        margin-bottom: 16px;
+    }
+
+    .destinations-description {
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+    }
+
+    .destinations-cta-button {
+        padding: 12px 24px;
+        font-size: 0.9rem;
+    }
+
+    .destinations-image-section {
+        padding:  0;
+        margin-bottom: 20px;
+    }
+
+    .destinations-image-wrapper {
+        max-height: 250px;
+    }
+
+    .destinations-nav-button {
+        width: 40px;
+        height: 40px;
+    }
+
+    .destinations-nav-button svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .destinations-swiper-button-prev {
+        left: 10px;
+    }
+
+    .destinations-swiper-button-next {
+        right: 10px;
+    }
+}
+

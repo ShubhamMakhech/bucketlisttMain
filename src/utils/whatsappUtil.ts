@@ -1,18 +1,18 @@
-export const SendWhatsappMessage = async (body: any) => {
-  // Get the WhatsApp auth key from Supabase Edge Function
-const authKey = import.meta.env.VITE_WHATSAPP_AUTH;
+import { supabase } from "@/integrations/supabase/client";
 
-  const response = await fetch(
-    "https://console.authkey.io/restapi/requestjson_v2.0.php",
+export const SendWhatsappMessage = async (body: any) => {
+  // Call Supabase Edge Function to avoid CORS issues
+  const { data, error } = await supabase.functions.invoke(
+    "send-whatsapp-message",
     {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${authKey}`,
-      },
-      body: JSON.stringify(body),
+      body: body,
     }
   );
 
-  return response.json();
+  if (error) {
+    console.error("Error calling WhatsApp function:", error);
+    throw error;
+  }
+
+  return data;
 };

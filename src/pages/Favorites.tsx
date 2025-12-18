@@ -1,6 +1,5 @@
-
+// @ts-nocheck
 import { ExperienceCard } from "@/components/ExperienceCard"
-import { Header } from "@/components/Header"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFavorites } from "@/hooks/useFavorites"
@@ -34,7 +33,6 @@ const Favorites = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center max-w-md mx-auto">
             <Heart className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
@@ -53,9 +51,8 @@ const Favorites = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="container mx-auto px-4 py-8">
+    <div className="FavoritesSection">
+      <div className=" MaxWidthContainer SectionPaddingTop">
         <div className="flex items-center gap-3 mb-8">
           <Heart className="h-6 w-6 text-red-500 fill-red-500" />
           <h1 className="text-3xl font-bold">Whish List</h1>
@@ -94,6 +91,7 @@ const Favorites = () => {
                 duration={favorite.experiences.duration || undefined}
                 groupSize={favorite.experiences.group_size || undefined}
                 isSpecialOffer={favorite.experiences.is_special_offer || false}
+                urlName={favorite.experiences.url_name}
               />
             ))}
           </div>

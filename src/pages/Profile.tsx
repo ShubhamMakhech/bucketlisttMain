@@ -1,5 +1,4 @@
 import { EditProfileDialog } from "@/components/EditProfileDialog";
-import { Header } from "@/components/Header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
   Calendar,
+  CalendarDays,
   CreditCard,
   Eye,
   FileText,
@@ -28,7 +28,7 @@ import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const { user, loading } = useAuth();
-  const { isVendor, loading: roleLoading } = useUserRole();
+  const { isVendor, isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [activeSection, setActiveSection] = useState("bookings"); // Default to bookings initially
@@ -102,6 +102,12 @@ const Profile = () => {
             icon: BarChart3,
             title: "Analytics",
             description: "View your business insights",
+          },
+          {
+            id: "calendar",
+            icon: CalendarDays,
+            title: "Calendar",
+            description: "Manage booking schedule",
           },
           {
             id: "my-experiences",
@@ -180,6 +186,10 @@ const Profile = () => {
       navigate("/vendor/experiences");
       return;
     }
+    if (sectionId === "calendar") {
+      navigate("/profile/calendar");
+      return;
+    }
     if (
       [
         "rewards",
@@ -208,7 +218,6 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div
