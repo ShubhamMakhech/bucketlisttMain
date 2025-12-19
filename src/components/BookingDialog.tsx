@@ -416,7 +416,7 @@ export const BookingDialog = ({
       const { data: timeSlot } = await supabase
         .from("time_slots")
         .select(
-          "start_time, end_time,experiences(title,vendor_id,location),activities(name)"
+          "start_time, end_time,experiences(title,vendor_id,location,location2),activities(name)"
         )
         .eq("id", selectedSlotId)
         .single();
@@ -429,68 +429,144 @@ export const BookingDialog = ({
       // console.log(vendor
       // console.log(data);
       // console.log(vendor);
-
-      const whatsappBody = {
-        integrated_number: "919274046332",
-        content_type: "template",
-        payload: {
-          messaging_product: "whatsapp",
-          type: "template",
-          template: {
-            name: "booking_confirmation_user_v2",
-            language: {
-              code: "en",
-              policy: "deterministic",
-            },
-            namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
-            to_and_components: [
-              {
-                to: [
-                  data.participant.phone_number.toString().length !== 10
-                    ? data.participant.phone_number
-                    : "+91" + data.participant.phone_number.toString(),
-                ],
-                components: {
-                  body_1: {
-                    type: "text",
-                    value: data.participant.name,
-                  },
-                  body_2: {
-                    type: "text",
-                    value: timeSlot?.activities.name || "",
-                  },
-                  body_3: {
-                    type: "text",
-                    value: `${moment(selectedDate).format(
-                      "DD/MM/YYYY"
-                    )} - ${moment(timeSlot?.start_time, "HH:mm").format(
-                      "hh:mm A"
-                    )} - ${moment(timeSlot?.end_time, "HH:mm").format(
-                      "hh:mm A"
-                    )}`,
-                  },
-                  body_4: {
-                    type: "text",
-                    value: timeSlot?.experiences?.location || "",
-                  },
-                  body_5: {
-                    type: "text",
-                    value: data?.participant_count?.toString() || "0",
-                  },
-                  body_6: {
-                    type: "text",
-                    value: upfrontAmount.toFixed(2).toString(),
-                  },
-                  body_7: {
-                    type: "text",
-                    value: dueAmount || "0",
+      let whatsappBody = {};
+      console.log(
+        "timeSlot?.experiences?.location2",
+        timeSlot?.experiences?.location2
+      );
+      if (
+        timeSlot?.experiences?.location !== null &&
+        timeSlot?.experiences?.location2 !== null
+      ) {
+        whatsappBody = {
+          integrated_number: "919274046332",
+          content_type: "template",
+          payload: {
+            messaging_product: "whatsapp",
+            type: "template",
+            template: {
+              name: "booking_confirmation_two_location",
+              language: {
+                code: "en",
+                policy: "deterministic",
+              },
+              namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+              to_and_components: [
+                {
+                  to: [
+                    data.participant.phone_number.toString().length !== 10
+                      ? data.participant.phone_number
+                      : "+91" + data.participant.phone_number.toString(),
+                  ],
+                  components: {
+                    body_1: {
+                      type: "text",
+                      value: data.participant.name,
+                    },
+                    body_2: {
+                      type: "text",
+                      value: timeSlot?.activities.name || "",
+                    },
+                    body_3: {
+                      type: "text",
+                      value: `${moment(selectedDate).format(
+                        "DD/MM/YYYY"
+                      )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+                        "hh:mm A"
+                      )} - ${moment(timeSlot?.end_time, "HH:mm").format(
+                        "hh:mm A"
+                      )}`,
+                    },
+                    body_4: {
+                      type: "text",
+                      value: timeSlot?.experiences?.location || "",
+                    },
+                    body_5: {
+                      type: "text",
+                      value: timeSlot?.experiences?.location2 || "",
+                    },
+                    body_6: {
+                      type: "text",
+                      value: data?.participant_count?.toString() || "0",
+                    },
+                    body_7: {
+                      type: "text",
+                      value: upfrontAmount.toFixed(2).toString(),
+                    },
+                    body_8: {
+                      type: "text",
+                      value: dueAmount || "0",
+                    },
                   },
                 },
-              },
-            ],
+              ],
+            },
           },
-        },
-      };
+        };
+      } else {
+        whatsappBody = {
+          integrated_number: "919274046332",
+          content_type: "template",
+          payload: {
+            messaging_product: "whatsapp",
+            type: "template",
+            template: {
+              name: "booking_confirmation_user_v2",
+              language: {
+                code: "en",
+                policy: "deterministic",
+              },
+              namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+              to_and_components: [
+                {
+                  to: [
+                    data.participant.phone_number.toString().length !== 10
+                      ? data.participant.phone_number
+                      : "+91" + data.participant.phone_number.toString(),
+                  ],
+                  components: {
+                    body_1: {
+                      type: "text",
+                      value: data.participant.name,
+                    },
+                    body_2: {
+                      type: "text",
+                      value: timeSlot?.activities.name || "",
+                    },
+                    body_3: {
+                      type: "text",
+                      value: `${moment(selectedDate).format(
+                        "DD/MM/YYYY"
+                      )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+                        "hh:mm A"
+                      )} - ${moment(timeSlot?.end_time, "HH:mm").format(
+                        "hh:mm A"
+                      )}`,
+                    },
+                    body_4: {
+                      type: "text",
+                      value: timeSlot?.experiences?.location || "",
+                    },
+                    body_5: {
+                      type: "text",
+                      value: data?.participant_count?.toString() || "0",
+                    },
+                    body_6: {
+                      type: "text",
+                      value: upfrontAmount.toFixed(2).toString(),
+                    },
+                    body_7: {
+                      type: "text",
+                      value: dueAmount || "0",
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        };
+      }
+
       // const whatsappBody = {
       //   version: "2.0",
       //   country_code: "91",

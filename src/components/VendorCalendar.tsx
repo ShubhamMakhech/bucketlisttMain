@@ -30,8 +30,14 @@ interface TimeSlot {
 interface Booking {
   id: string;
   booking_date: string;
-  time_slot_id: string;
+  time_slot_id: string | null;
   total_participants: number;
+  time_slots?: {
+    id: string;
+    activity_id: string | null;
+    start_time: string;
+    end_time: string;
+  } | null;
 }
 
 interface Activity {
@@ -138,18 +144,44 @@ export const VendorCalendar = () => {
       if (!user?.id || !experiences || experiences.length === 0) return [];
 
       const experienceIds = experiences.map((exp) => exp.id);
-      const startDate = format(currentWeekStart, "yyyy-MM-dd");
-      const endDate = format(addDays(currentWeekStart, 6), "yyyy-MM-dd");
+      // Use start and end of day for proper TIMESTAMP comparison
+      const startDate = format(currentWeekStart, "yyyy-MM-dd") + "T00:00:00";
+      const endDate =
+        format(addDays(currentWeekStart, 6), "yyyy-MM-dd") + "T23:59:59";
 
       const { data, error } = await supabase
         .from("bookings")
-        .select("id, booking_date, time_slot_id, total_participants")
+        .select(
+          `
+          id, 
+          booking_date, 
+          time_slot_id, 
+          total_participants,
+          time_slots (
+            id,
+            activity_id,
+            start_time,
+            end_time
+          )
+        `
+        )
         .in("experience_id", experienceIds)
         .gte("booking_date", startDate)
         .lte("booking_date", endDate)
         .neq("status", "cancelled");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching bookings for calendar:", error);
+        throw error;
+      }
+
+      console.log("Calendar bookings fetched:", {
+        count: data?.length || 0,
+        startDate,
+        endDate,
+        bookings: data,
+      });
+
       return (data as Booking[]) || [];
     },
     enabled: !!user?.id && !!experiences && experiences.length > 0,
@@ -228,9 +260,32 @@ export const VendorCalendar = () => {
       // Find bookings for this slot on this date
       const slotBookings =
         bookings?.filter((booking) => {
+          if (!booking.time_slot_id || booking.time_slot_id !== slot.id) {
+            return false;
+          }
+
           // Handle both date formats: "yyyy-MM-dd" and potential timestamp
-          const bookingDate = booking.booking_date.split("T")[0]; // Extract date part if it's a timestamp
-          return booking.time_slot_id === slot.id && bookingDate === dateStr;
+          let bookingDate: string;
+          if (booking.booking_date.includes("T")) {
+            bookingDate = booking.booking_date.split("T")[0]; // Extract date part if it's a timestamp
+          } else {
+            bookingDate = booking.booking_date.substring(0, 10); // Take first 10 chars for date
+          }
+
+          const matches = bookingDate === dateStr;
+
+          if (matches) {
+            console.log("Matched booking:", {
+              bookingId: booking.id,
+              bookingDate,
+              dateStr,
+              timeSlotId: booking.time_slot_id,
+              slotId: slot.id,
+              participants: booking.total_participants,
+            });
+          }
+
+          return matches;
         }) || [];
 
       totalBooked += slotBookings.reduce(

@@ -442,6 +442,7 @@ export type Database = {
           is_special_offer: boolean | null;
           latitude: number | null;
           location: string | null;
+          location2: string | null;
           longitude: number | null;
           original_price: number | null;
           place_id: string | null;
@@ -472,6 +473,7 @@ export type Database = {
           is_special_offer?: boolean | null;
           latitude?: number | null;
           location?: string | null;
+          location2?: string | null;
           longitude?: number | null;
           original_price?: number | null;
           place_id?: string | null;
@@ -502,6 +504,7 @@ export type Database = {
           is_special_offer?: boolean | null;
           latitude?: number | null;
           location?: string | null;
+          location2?: string | null;
           longitude?: number | null;
           original_price?: number | null;
           place_id?: string | null;
