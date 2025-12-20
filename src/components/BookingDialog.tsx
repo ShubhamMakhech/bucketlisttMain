@@ -423,7 +423,7 @@ export const BookingDialog = ({
       const { data: vendor, error: vendorError } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", timeSlot?.experiences.vendor_id)
+        .eq("id", timeSlot?.experiences?.vendor_id)
         .single();
 
       // console.log(vendor

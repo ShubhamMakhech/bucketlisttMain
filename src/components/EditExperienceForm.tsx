@@ -70,6 +70,7 @@ interface ExperienceData {
   description: string;
   category_ids: string[];
   location: string;
+  location2?: string;
   start_point: string;
   end_point: string;
   days_open: string[];
@@ -120,6 +121,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     description: initialData.description,
     category_ids: initialData.category_ids,
     location: initialData.location,
+    location2: initialData.location2 || "",
     start_point: initialData.start_point,
     end_point: initialData.end_point,
     days_open: initialData.days_open,
@@ -986,6 +988,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
         discount_percentage: minDiscountPercentage,
         currency: activities.length > 0 ? activities[0].currency : "INR",
         location: formData.location,
+        location2: formData.location2,
         start_point: formData.start_point,
         end_point: formData.end_point,
         days_open: formData.days_open,
@@ -1175,6 +1178,20 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
               required
               placeholder="Paste Google Maps link to meeting point/location"
             />
+          </div>
+
+          {/* Location 2 */}
+          <div className="space-y-2 text-start">
+            <Label htmlFor="location2">Google Maps Link 2 (Optional)</Label>
+            <Input
+              id="location2"
+              value={formData.location2}
+              onChange={(e) => handleInputChange("location2", e.target.value)}
+              placeholder="Paste second Google Maps link (e.g., end point/drop-off location)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional: Add a second location (e.g., end point or drop-off location)
+            </p>
           </div>
 
           {/* Destination */}

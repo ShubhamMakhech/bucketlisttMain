@@ -1182,6 +1182,19 @@ export function CreateExperienceForm({
               )} */}
           </div>
 
+          <div className="space-y-2 text-start">
+            <Label htmlFor="location2">Google Maps Link 2 (Optional)</Label>
+            <Input
+              id="location2"
+              value={formData.location2}
+              onChange={(e) => handleInputChange("location2", e.target.value)}
+              placeholder="Paste second Google Maps link (e.g., end point/drop-off location)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional: Add a second location (e.g., end point or drop-off location)
+            </p>
+          </div>
+
           <div className="text-start">
             <DestinationDropdown
               value={formData.destination_id}
