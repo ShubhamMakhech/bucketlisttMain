@@ -7,6 +7,7 @@ import { SignInForm } from '@/components/auth/SignInForm'
 import { SignUpForm } from '@/components/auth/SignUpForm'
 import { VendorSignUpForm } from '@/components/auth/VendorSignUpForm'
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm'
+import { OTPAuthForm } from '@/components/auth/OTPAuthForm'
 
 
 // Helper function to parse URL parameters from both hash and search params
@@ -26,6 +27,7 @@ const getUrlParams = () => {
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false)
+  const [authMode, setAuthMode] = useState<'otp' | 'password'>('otp') // Default to OTP
   const [searchParams] = useSearchParams()
   const { user, loading } = useAuth()
   const { isVendor, loading: roleLoading } = useUserRole()
@@ -89,12 +91,12 @@ export default function Auth() {
 
         {isResetMode ? (
           <ResetPasswordForm />
+        ) : isVendorMode ? (
+          <VendorSignUpForm onToggleMode={() => setIsSignUp(false)} />
+        ) : authMode === 'otp' ? (
+          <OTPAuthForm onToggleMode={() => setAuthMode('password')} />
         ) : isSignUp ? (
-          isVendorMode ? (
-            <VendorSignUpForm onToggleMode={() => setIsSignUp(false)} />
-          ) : (
-            <SignUpForm onToggleMode={() => setIsSignUp(false)} />
-          )
+          <SignUpForm onToggleMode={() => setIsSignUp(false)} />
         ) : (
           <SignInForm onToggleMode={() => setIsSignUp(true)} />
         )}
