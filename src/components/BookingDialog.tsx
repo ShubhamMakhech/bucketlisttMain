@@ -430,10 +430,6 @@ export const BookingDialog = ({
       // console.log(data);
       // console.log(vendor);
       let whatsappBody = {};
-      console.log(
-        "timeSlot?.experiences?.location2",
-        timeSlot?.experiences?.location2
-      );
       if (
         timeSlot?.experiences?.location !== null &&
         timeSlot?.experiences?.location2 !== null
@@ -759,10 +755,18 @@ export const BookingDialog = ({
             customerEmail: data.participant.email,
             customerName: data.participant.name,
             experienceTitle: experience.title,
+            activityName: timeSlot?.activities.name || "",
             bookingDate: selectedDate?.toISOString(),
+            formattedDateTime: `${moment(selectedDate).format(
+              "DD/MM/YYYY"
+            )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+              "hh:mm A"
+            )} - ${moment(timeSlot?.end_time, "HH:mm").format("hh:mm A")}`,
             timeSlot: timeSlot
               ? `${timeSlot.start_time} - ${timeSlot.end_time}`
               : "Time slot details unavailable",
+            location: timeSlot?.experiences?.location || "",
+            location2: timeSlot?.experiences?.location2 || null,
             totalParticipants: data.participant_count,
             totalAmount: finalPrice,
             upfrontAmount: upfrontAmount,
