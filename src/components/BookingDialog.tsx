@@ -1822,13 +1822,14 @@ export const BookingDialog = ({
                                   <FormLabel>Number of Participants</FormLabel>
                                   {selectedSlotId &&
                                     availableSpots !== undefined && (
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        {availableSpots > 0
-                                          ? `${availableSpots} spot${
-                                              availableSpots !== 1 ? "s" : ""
-                                            } available`
-                                          : "No spots available"}
-                                      </p>
+                                      // <p className="text-xs text-muted-foreground mt-1">
+                                      //   {availableSpots > 0
+                                      //     ? `${availableSpots} spot${
+                                      //         availableSpots !== 1 ? "s" : ""
+                                      //       } available`
+                                      //     : "No spots available"}
+                                      // </p>
+                                      <></>
                                     )}
                                 </div>
                                 <div>

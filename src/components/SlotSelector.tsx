@@ -744,13 +744,13 @@ export const SlotSelector = ({
                                     {formatTime(slot.start_time)} 
                                   </div>
                                   <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-500">
-                                    <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                                    <span className="truncate">
+                                    {/* <Users className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" /> */}
+                                    {/* <span className="truncate">
                                       {slot.available_spots} of {slot.capacity}{" "}
                                       spots
                                       {slot.booked_count > 0 &&
                                         ` (${slot.booked_count} booked)`}
-                                    </span>
+                                    </span> */}
                                   </div>
                                 </div>
                               </div>
@@ -768,12 +768,12 @@ export const SlotSelector = ({
                               </div> */}
                             </div>
 
-                            {!available && slot.available_spots > 0 && (
+                            {/* {!available && slot.available_spots > 0 && (
                               <div className="px-3 md:px-4 pb-3 md:pb-4 text-xs md:text-sm text-red-500">
                                 Only {slot.available_spots} spots left, but you
                                 need {participantCount}
                               </div>
-                            )}
+                            )} */}
                           </Card>
                         );
                       })}
