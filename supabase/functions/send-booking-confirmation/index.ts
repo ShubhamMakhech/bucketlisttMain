@@ -60,6 +60,18 @@ const handler = async (req: Request): Promise<Response> => {
       noteForGuide,
     }: BookingConfirmationRequest = await req.json();
 
+    // Ensure numeric values are numbers (they might come as strings from JSON)
+    const totalAmountNum =
+      typeof totalAmount === "number"
+        ? totalAmount
+        : parseFloat(totalAmount) || 0;
+    const upfrontAmountNum =
+      typeof upfrontAmount === "number"
+        ? upfrontAmount
+        : parseFloat(upfrontAmount) || 0;
+    const dueAmountNum =
+      typeof dueAmount === "number" ? dueAmount : parseFloat(dueAmount) || 0;
+
     const formattedDate = new Date(bookingDate).toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
@@ -131,19 +143,19 @@ const handler = async (req: Request): Promise<Response> => {
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Total Amount:</td>
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-weight: bold; font-size: 18px;">${
                   currency === "USD" ? "$" : currency
-                }${totalAmount.toFixed(2)}</td>
+                }${totalAmountNum.toFixed(2)}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Upfront Amount:</td>
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${
                   currency === "USD" ? "$" : currency
-                }${upfrontAmount.toFixed(2)}</td>
+                }${upfrontAmountNum.toFixed(2)}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Due Amount:</td>
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${
                   currency === "USD" ? "$" : currency
-                }${dueAmount.toFixed(2)}</td>
+                }${dueAmountNum.toFixed(2)}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; font-weight: bold; color: #374151;">Booking ID:</td>
@@ -197,11 +209,28 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Experience Booking <onboarding@resend.dev>",
+      from: "bucketlistt <noreply@bucketlistt.com>",
       to: [customerEmail],
       subject: `Booking Confirmed: ${experienceTitle}`,
       html: emailHtml,
     });
+
+    if (emailResponse.error) {
+      console.error("Resend email error:", emailResponse.error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: emailResponse.error.message || "Failed to send email",
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
 
     console.log("Booking confirmation email sent successfully:", emailResponse);
 
