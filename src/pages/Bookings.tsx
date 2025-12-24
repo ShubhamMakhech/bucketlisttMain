@@ -1,19 +1,26 @@
 import { Header } from "@/components/Header";
 import { UserBookings } from "@/components/UserBookings";
+import { OfflineBookingDialog } from "@/components/OfflineBookingDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, Download } from "lucide-react";
+import { Calendar, Download, Plus, BookOpen } from "lucide-react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Bookings = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isVendor } = useUserRole();
+  const queryClient = useQueryClient();
   const [isExporting, setIsExporting] = useState(false);
+  const [isOfflineBookingDialogOpen, setIsOfflineBookingDialogOpen] =
+    useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -52,6 +59,12 @@ const Bookings = () => {
               currency
             )
           ),
+          activities (
+            id,
+            name,
+            price,
+            currency
+          ),
           booking_participants (
             name,
             email,
@@ -66,28 +79,47 @@ const Bookings = () => {
 
       // Prepare data for Excel
       const excelData =
-        bookings?.map((booking) => {
+        bookings?.map((booking: any) => {
           const customer = booking.booking_participants?.[0]; // Primary customer
           const activity = booking.time_slots?.activities;
+          // For offline bookings, try to get activity from direct reference
+          const offlineActivity = booking.activities;
 
           return {
             "Booking ID": booking.id,
+            "Booking Type": booking.type || "online",
             "Experience Title": booking.experiences?.title || "N/A",
-            "Customer Name": customer?.name || "N/A",
-            "Customer Email": customer?.email || "N/A",
-            "Customer Phone": customer?.phone_number || "N/A",
+            "Customer Name":
+              booking.contact_person_name || customer?.name || "N/A",
+            "Customer Email":
+              booking.contact_person_email || customer?.email || "N/A",
+            "Customer Phone":
+              booking.contact_person_number || customer?.phone_number || "N/A",
             "Booking Date": new Date(booking.booking_date).toLocaleDateString(),
             "Time Slot": booking.time_slots
               ? `${booking.time_slots.start_time} - ${booking.time_slots.end_time}`
+              : booking.type === "offline"
+              ? "Offline Booking"
               : "N/A",
-            Activity: activity?.name || "N/A",
+            Activity: activity?.name || offlineActivity?.name || "N/A",
             "Total Participants": booking.total_participants || 0,
-            Price: activity?.price || booking.experiences?.price || 0,
+            "Booking Amount": booking.booking_amount || 0,
+            Price:
+              activity?.price ||
+              offlineActivity?.price ||
+              booking.experiences?.price ||
+              0,
             Currency:
-              activity?.currency || booking.experiences?.currency || "INR",
+              activity?.currency ||
+              offlineActivity?.currency ||
+              booking.experiences?.currency ||
+              "INR",
             Status: booking.status || "N/A",
             Location: booking.experiences?.location || "N/A",
             "Note for Guide": booking.note_for_guide || "N/A",
+            "Booked By": booking.booked_by
+              ? "Vendor (Offline)"
+              : "Customer (Online)",
             "Created At": new Date(booking.created_at).toLocaleString(),
           };
         }) || [];
@@ -184,6 +216,7 @@ const Bookings = () => {
       // Set column widths
       const colWidths = [
         { wch: 15 }, // Booking ID
+        { wch: 12 }, // Booking Type
         { wch: 30 }, // Experience Title
         { wch: 25 }, // Customer Name
         { wch: 30 }, // Customer Email
@@ -192,11 +225,13 @@ const Bookings = () => {
         { wch: 20 }, // Time Slot
         { wch: 25 }, // Activity
         { wch: 18 }, // Total Participants
+        { wch: 15 }, // Booking Amount
         { wch: 12 }, // Price
         { wch: 10 }, // Currency
         { wch: 12 }, // Status
         { wch: 30 }, // Location
         { wch: 30 }, // Note for Guide
+        { wch: 20 }, // Booked By
         { wch: 20 }, // Created At
       ];
       worksheet["!cols"] = colWidths;
@@ -205,8 +240,9 @@ const Bookings = () => {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Bookings Data");
 
       // Generate filename
-      const fileName = `bookings_export_${new Date().toISOString().split("T")[0]
-        }.xlsx`;
+      const fileName = `bookings_export_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
 
       // Generate and download file
       XLSX.writeFile(workbook, fileName);
@@ -254,26 +290,81 @@ const Bookings = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Profile
           </Button> */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-6 text-brand-primary" />
-              <h1 className="text-1xl font-bold">My Bookings</h1>
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-brand-primary/10">
+                  <Calendar className="w-6 h-6 text-brand-primary" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">
+                    My Bookings
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    {isVendor
+                      ? "Manage all bookings for your experiences"
+                      : "View and manage your bookings"}
+                  </p>
+                </div>
+              </div>
+              {isVendor && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setIsOfflineBookingDialogOpen(true)}
+                    className="bg-brand-primary hover:bg-brand-primary/90 text-white"
+                    size="default"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Offline Booking
+                  </Button>
+                  <Button
+                    onClick={exportToExcel}
+                    disabled={isExporting}
+                    variant="outline"
+                    className="border-brand-primary text-brand-primary hover:bg-brand-primary/10"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {isExporting ? "Exporting..." : "Export to Excel"}
+                  </Button>
+                </div>
+              )}
             </div>
-            {user?.user_metadata?.role === "vendor" && (
-              <Button
-                onClick={exportToExcel}
-                disabled={isExporting}
-                id="BookingsExportButtonStyles"
-                className="bg-gradient-to-r from-brand-primary to-brand-secondary hover:from-brand-primary/90 hover:to-brand-secondary/90"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {isExporting ? "Exporting..." : "Export to Excel"}
-              </Button>
-            )}
+
+            {/* Info Banner for Vendors */}
+            {/* {isVendor && (
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                      Offline Bookings
+                    </h3>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Create offline bookings for customers who book directly
+                      with you. These bookings will appear in your bookings list
+                      alongside online bookings.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )} */}
           </div>
         </div>
 
         <UserBookings />
+
+        {/* Offline Booking Dialog */}
+        {isVendor && (
+          <OfflineBookingDialog
+            isOpen={isOfflineBookingDialogOpen}
+            onClose={() => setIsOfflineBookingDialogOpen(false)}
+            onBookingSuccess={() => {
+              // Refresh bookings data
+              queryClient.invalidateQueries({ queryKey: ["user-bookings"] });
+              setIsOfflineBookingDialogOpen(false);
+            }}
+          />
+        )}
       </div>
     </div>
   );

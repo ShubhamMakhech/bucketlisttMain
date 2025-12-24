@@ -28,7 +28,6 @@ export function useUserRole() {
           console.error("Error fetching user role:", error);
           return;
         }
-
         setRole(data?.role || "customer");
       } catch (error) {
         console.error("Error fetching user role:", error);
@@ -44,10 +43,10 @@ export function useUserRole() {
   return {
     role,
     loading,
-    isVendor: role === "vendor",
-    isAgent: role === "agent",
-    isVendorOrAgent: role === "vendor" || role === "agent",
-    isAdmin: role === "admin",
-    isCustomer: role === "customer",
+    isVendor: role == "vendor",
+    isAgent: role == "agent",
+    isVendorOrAgent: role == "vendor" || role == "agent",
+    isAdmin: role == "admin",
+    isCustomer: role == "customer",
   };
 }

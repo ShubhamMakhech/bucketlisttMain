@@ -12,7 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Filter, X, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import {
+  Filter,
+  X,
+  Search,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface BookingWithDueAmount {
@@ -26,7 +33,9 @@ export const UserBookings = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [sortBy, setSortBy] = React.useState<number | "booking_date" | "title" | "status">(7); // Default to Date column (index 7)
+  const [sortBy, setSortBy] = React.useState<
+    number | "booking_date" | "title" | "status"
+  >(7); // Default to Date column (index 7)
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [showTodayOnly, setShowTodayOnly] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState<string>("");
@@ -54,44 +63,59 @@ export const UserBookings = () => {
   const [showVendorFilter, setShowVendorFilter] = React.useState(false);
 
   // Excel-like column filters state
-  const [columnFilters, setColumnFilters] = React.useState<Record<number, string[]>>({});
-  const [openFilterDropdown, setOpenFilterDropdown] = React.useState<number | null>(null);
-  const [filterDropdownPosition, setFilterDropdownPosition] = React.useState<{ top: number; left: number } | null>(null);
-  const [filterSearchQueries, setFilterSearchQueries] = React.useState<Record<number, string>>({});
-  const filterDropdownRefs = React.useRef<Record<number, HTMLDivElement | null>>({});
-  const headerRefs = React.useRef<Record<number, HTMLTableCellElement | null>>({});
+  const [columnFilters, setColumnFilters] = React.useState<
+    Record<number, string[]>
+  >({});
+  const [openFilterDropdown, setOpenFilterDropdown] = React.useState<
+    number | null
+  >(null);
+  const [filterDropdownPosition, setFilterDropdownPosition] = React.useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+  const [filterSearchQueries, setFilterSearchQueries] = React.useState<
+    Record<number, string>
+  >({});
+  const filterDropdownRefs = React.useRef<
+    Record<number, HTMLDivElement | null>
+  >({});
+  const headerRefs = React.useRef<Record<number, HTMLTableCellElement | null>>(
+    {}
+  );
 
   // Column width state for resizable columns
-  const columnCount = 20; // Total number of columns
+  const columnCount = 22; // Total number of columns (added Booking Type)
   const [columnWidths, setColumnWidths] = React.useState<number[]>(
     Array(columnCount).fill(100) // Default width 100px for each column (compact)
   );
 
   // Column visibility state - default visible columns only
-  // Default visible: Activity (1), Contact Name (3), Contact Number (2), 
-  // No. Of Participants (8), Payment to be collected by vendor (17), 
-  // Timeslot (6), Amount to be collected from vendor (19)
-  // Index 10: "Official Price/ Original Price" (expectedFullPrice)
-  // Index 12: "Commission as per vendor" (commissionTotal/commissionPerVendor)
-  // Index 13: "Website Price" (discountedPrice)
-  // Index 14: "Discount Coupon"
+  // Default visible: Activity (1), Contact Name (3), Contact Number (2),
+  // No. Of Participants (8), Payment to be collected by vendor (18),
+  // Timeslot (6), Amount to be collected from vendor (20), Booking Type (10)
+  // Index 11: "Official Price/ Original Price" (expectedFullPrice) - shifted by 1
+  // Index 13: "Commission as per vendor" (commissionTotal/commissionPerVendor) - shifted by 1
+  // Index 14: "Website Price" (discountedPrice) - shifted by 1
+  // Index 15: "Discount Coupon" - shifted by 1
   const initialVisibility = React.useMemo(() => {
     const visibility = Array(columnCount).fill(false); // Start with all hidden
     // Set default visible columns
-    visibility[1] = true;  // Activity
-    visibility[2] = true;  // Contact Number
-    visibility[3] = true;  // Contact Name
-    visibility[6] = true;  // Timeslot
-    visibility[8] = true;  // No. Of Participants
-    visibility[17] = true; // Payment to be collected by vendor
-    visibility[19] = true; // Amount to be collected from vendor/ '- to be paid'
+    visibility[1] = true; // Activity
+    visibility[2] = true; // Contact Number
+    visibility[3] = true; // Contact Name
+    visibility[6] = true; // Timeslot
+    visibility[8] = true; // No. Of Participants
+    visibility[10] = true; // Booking Type
+    visibility[16] = true; // Advance paid to bucketlistt (10%)
+    visibility[18] = true; // Payment to be collected by vendor (shifted by 1)
+    visibility[20] = true; // Amount to be collected from vendor/ '- to be paid' (shifted by 1)
 
     // Ensure agent restrictions are applied
     if (isAgent) {
-      visibility[10] = false; // Official Price/ Original Price
-      visibility[12] = false; // Commission as per vendor
-      visibility[13] = false; // Website Price
-      visibility[14] = false; // Discount Coupon
+      visibility[11] = false; // Official Price/ Original Price (shifted by 1)
+      visibility[13] = false; // Commission as per vendor (shifted by 1)
+      visibility[14] = false; // Website Price (shifted by 1)
+      visibility[15] = false; // Discount Coupon (shifted by 1)
     }
     return visibility;
   }, [isAgent, columnCount]);
@@ -105,10 +129,10 @@ export const UserBookings = () => {
       const newVisibility = [...prev];
       // Ensure agent restrictions are applied
       if (isAgent) {
-        newVisibility[10] = false; // Official Price/ Original Price
-        newVisibility[12] = false; // Commission as per vendor
-        newVisibility[13] = false; // Website Price
-        newVisibility[14] = false; // Discount Coupon
+        newVisibility[11] = false; // Official Price/ Original Price (shifted by 1)
+        newVisibility[13] = false; // Commission as per vendor (shifted by 1)
+        newVisibility[14] = false; // Website Price (shifted by 1)
+        newVisibility[15] = false; // Discount Coupon (shifted by 1)
       }
       return newVisibility;
     });
@@ -140,6 +164,7 @@ export const UserBookings = () => {
     "Date",
     "No. Of Participants",
     "Notes for guides",
+    "Booking Type",
     "Official Price/ Original Price",
     "B2B Price",
     "Commission as per vendor",
@@ -227,8 +252,11 @@ export const UserBookings = () => {
     amountToCollectFromVendor: number,
     advancePlusDiscount: number
   ) => {
+    // Check if this is an offline booking
+    const isOfflineBooking = (booking as any)?.type === "offline";
+
     // If user is not an agent but booking is an agent booking, hide sensitive columns
-    const hiddenColumnsForAgentBookings = [10, 12, 13, 14]; // Official Price, Commission, Website Price, Discount Coupon
+    const hiddenColumnsForAgentBookings = [11, 13, 14, 15]; // Official Price, Commission, Website Price, Discount Coupon (shifted by 1)
     if (
       !isAgent &&
       (booking as any)?.isAgentBooking === true &&
@@ -237,18 +265,25 @@ export const UserBookings = () => {
       return "-";
     }
 
+    // For offline bookings, show "-" for calculation columns except ticket price
+    const calculationColumns = [11, 12, 13, 14, 15, 17, 18, 19, 20, 21]; // Official Price, B2B Price, Commission, Website Price, Discount Coupon, Advance, Payment to collect, Commission Net, Amount to collect, Advance+Discount
+    if (isOfflineBooking && calculationColumns.includes(columnIndex)) {
+      return "-";
+    }
+
     const cells = [
       () => experience?.title || "N/A",
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-          profile?.phone_number ||
-          booking?.booking_participants?.[0]?.phone_number ? (
+        profile?.phone_number ||
+        booking?.booking_participants?.[0]?.phone_number ? (
           <a
-            href={`tel:${booking.contact_person_number ||
+            href={`tel:${
+              booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-              }`}
+            }`}
             className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
@@ -272,12 +307,28 @@ export const UserBookings = () => {
       () =>
         timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-            timeslot.end_time
-          )}`
+              timeslot.end_time
+            )}`
+          : isOfflineBooking
+          ? "Offline"
           : "N/A",
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
       () => booking.note_for_guide || "-",
+      () => {
+        const bookingType = (booking as any)?.type || "online";
+        return (
+          <span
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              bookingType === "offline"
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+            }`}
+          >
+            {bookingType === "offline" ? "Offline" : "Online"}
+          </span>
+        );
+      },
       () => formatCurrency(currency, officialPrice),
       () => formatCurrency(currency, b2bPriceTotal),
       () => formatCurrency(currency, commissionTotal),
@@ -392,6 +443,15 @@ export const UserBookings = () => {
                 discount_percentage,
                 currency
               )
+            ),
+            activities (
+              id,
+              name,
+              price,
+              b2bPrice,
+              discounted_price,
+              discount_percentage,
+              currency
             ),
             booking_participants (
               name,
@@ -557,9 +617,9 @@ export const UserBookings = () => {
     // Apply activity filter
     if (selectedActivityId) {
       filtered = filtered.filter((booking) => {
-        return (
-          (booking.time_slots?.activities as any)?.id === selectedActivityId
-        );
+        const activity = (booking.time_slots?.activities ||
+          (booking as any).activities) as any;
+        return activity?.id === selectedActivityId;
       });
     }
 
@@ -591,10 +651,13 @@ export const UserBookings = () => {
       if (selectedValues && selectedValues.length > 0) {
         filtered = filtered.filter((booking) => {
           const profile = profileMap[booking.user_id];
-          const activity = booking.time_slots?.activities as any;
+          // For offline bookings, activities are directly linked; for online, through time_slots
+          const activity = (booking.time_slots?.activities ||
+            (booking as any).activities) as any;
           const timeslot = booking.time_slots;
           const experience = booking.experiences;
-          const currency = activity?.currency || booking?.experiences?.currency || "INR";
+          const currency =
+            activity?.currency || booking?.experiences?.currency || "INR";
 
           // Get cell value for this column
           const getCellValue = (colIdx: number): string => {
@@ -604,16 +667,42 @@ export const UserBookings = () => {
               case 1: // Activity
                 return activity?.name || "";
               case 2: // Contact Number
-                return booking.contact_person_number || profile?.phone_number || booking?.booking_participants?.[0]?.phone_number || "";
+                return (
+                  (booking as any).contact_person_number ||
+                  profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ||
+                  ""
+                );
               case 3: // Contact Name
-                return booking.contact_person_name || (profile ? `${profile.first_name} ${profile.last_name}`.trim() : "") || booking?.booking_participants?.[0]?.name || "";
+                return (
+                  (booking as any).contact_person_name ||
+                  (profile
+                    ? `${profile.first_name} ${profile.last_name}`.trim()
+                    : "") ||
+                  booking?.booking_participants?.[0]?.name ||
+                  ""
+                );
               case 4: // Email
-                return booking.contact_person_email || profile?.email || booking?.booking_participants?.[0]?.email || "";
+                return (
+                  (booking as any).contact_person_email ||
+                  profile?.email ||
+                  booking?.booking_participants?.[0]?.email ||
+                  ""
+                );
               case 5: // Referred by
-                return (booking as any)?.referral_code || (booking as any)?.referred_by || "";
+                return (
+                  (booking as any)?.referral_code ||
+                  (booking as any)?.referred_by ||
+                  ""
+                );
               case 6: // Timeslot
+                const isOfflineFilter = (booking as any)?.type === "offline";
                 return timeslot?.start_time && timeslot?.end_time
-                  ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(timeslot.end_time)}`
+                  ? `${formatTime12Hour(
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
+                  : isOfflineFilter
+                  ? "Offline"
                   : "";
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
@@ -621,51 +710,109 @@ export const UserBookings = () => {
                 return String(booking?.total_participants || "");
               case 9: // Notes for guides
                 return booking.note_for_guide || "";
-              case 10: // Official Price/ Original Price
+              case 10: // Booking Type
+                return (booking as any)?.type === "offline"
+                  ? "Offline"
+                  : "Online";
+              case 11: // Official Price/ Original Price
+                if ((booking as any)?.type === "offline") return "-";
                 const originalPrice = activity?.price || experience?.price || 0;
-                return formatCurrency(currency, originalPrice * booking.total_participants);
-              case 11: // B2B Price
-                const b2bPrice = booking.b2bPrice || activity?.b2bPrice || 0;
-                return formatCurrency(currency, b2bPrice * booking.total_participants);
-              case 12: // Commission as per vendor
-                const originalPrice2 = activity?.price || experience?.price || 0;
-                const b2bPrice2 = booking.b2bPrice || activity?.b2bPrice || 0;
-                return formatCurrency(currency, (originalPrice2 - b2bPrice2) * booking.total_participants);
-              case 13: // Website Price
+                return formatCurrency(
+                  currency,
+                  originalPrice * booking.total_participants
+                );
+              case 12: // B2B Price
+                if ((booking as any)?.type === "offline") return "-";
+                const b2bPrice =
+                  (booking as any).b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(
+                  currency,
+                  b2bPrice * booking.total_participants
+                );
+              case 13: // Commission as per vendor
+                if ((booking as any)?.type === "offline") return "-";
+                const originalPrice2 =
+                  activity?.price || experience?.price || 0;
+                const b2bPrice2 =
+                  (booking as any).b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(
+                  currency,
+                  (originalPrice2 - b2bPrice2) * booking.total_participants
+                );
+              case 14: // Website Price
+                if ((booking as any)?.type === "offline") return "-";
                 const discountedPrice = activity?.discounted_price || 0;
-                return formatCurrency(currency, discountedPrice * booking.total_participants);
-              case 14: // Discount Coupon
-                const originalPrice3 = activity?.price || experience?.price || 0;
-                const officialPrice = originalPrice3 * booking.total_participants;
+                return formatCurrency(
+                  currency,
+                  discountedPrice * booking.total_participants
+                );
+              case 15: // Discount Coupon
+                if ((booking as any)?.type === "offline") return "-";
+                const originalPrice3 =
+                  activity?.price || experience?.price || 0;
+                const officialPrice =
+                  originalPrice3 * booking.total_participants;
                 const bookingAmount = (booking as any)?.booking_amount || 0;
-                const discountCoupon = officialPrice - bookingAmount > 0 ? officialPrice - bookingAmount : 0;
+                const discountCoupon =
+                  officialPrice - bookingAmount > 0
+                    ? officialPrice - bookingAmount
+                    : 0;
                 return formatCurrency(currency, discountCoupon);
-              case 15: // Ticket Price (customer cost)
-                return formatCurrency(currency, (booking as any)?.booking_amount || 0);
-              case 16: // Advance paid to bucketlistt (10%)
+              case 16: // Ticket Price (customer cost)
+                return formatCurrency(
+                  currency,
+                  (booking as any)?.booking_amount || 0
+                );
+              case 17: // Advance paid to bucketlistt (10%)
+                if ((booking as any)?.type === "offline") return "-";
                 const bookingAmount2 = (booking as any)?.booking_amount || 0;
-                const dueAmount = booking?.due_amount || 0;
+                const dueAmount = (booking as any)?.due_amount || 0;
                 return formatCurrency(currency, bookingAmount2 - dueAmount);
-              case 17: // Payment to be collected by vendor
+              case 18: // Payment to be collected by vendor
+                if ((booking as any)?.type === "offline") return "-";
                 const bookingAmount3 = (booking as any)?.booking_amount || 0;
-                const dueAmount2 = booking?.due_amount || 0;
-                return formatCurrency(currency, bookingAmount3 - (bookingAmount3 - dueAmount2));
-              case 18: // Actual Commission to bucketlistt (Net profit)
+                const dueAmount2 = (booking as any)?.due_amount || 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount3 - (bookingAmount3 - dueAmount2)
+                );
+              case 19: // Actual Commission to bucketlistt (Net profit)
+                if ((booking as any)?.type === "offline") return "-";
                 const bookingAmount4 = (booking as any)?.booking_amount || 0;
-                const b2bPrice3 = booking.b2bPrice || activity?.b2bPrice || 0;
-                return formatCurrency(currency, bookingAmount4 - (b2bPrice3 * booking.total_participants));
-              case 19: // Amount to be collected from vendor/ '- to be paid'
+                const b2bPrice3 =
+                  (booking as any).b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount4 - b2bPrice3 * booking.total_participants
+                );
+              case 20: // Amount to be collected from vendor/ '- to be paid'
+                if ((booking as any)?.type === "offline") return "-";
                 const bookingAmount5 = (booking as any)?.booking_amount || 0;
-                const b2bPrice4 = booking.b2bPrice || activity?.b2bPrice || 0;
-                const dueAmount3 = booking?.due_amount || 0;
-                return formatCurrency(currency, bookingAmount5 - (b2bPrice4 * booking.total_participants) - (bookingAmount5 - dueAmount3));
-              case 20: // Advance + discount (vendor needs this)
+                const b2bPrice4 =
+                  (booking as any).b2bPrice || activity?.b2bPrice || 0;
+                const dueAmount3 = (booking as any)?.due_amount || 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount5 -
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
+                );
+              case 21: // Advance + discount (vendor needs this)
+                if ((booking as any)?.type === "offline") return "-";
                 const bookingAmount6 = (booking as any)?.booking_amount || 0;
-                const dueAmount4 = booking?.due_amount || 0;
-                const originalPrice4 = activity?.price || experience?.price || 0;
-                const officialPrice2 = originalPrice4 * booking.total_participants;
-                const discountCoupon2 = officialPrice2 - bookingAmount6 > 0 ? officialPrice2 - bookingAmount6 : 0;
-                return formatCurrency(currency, (bookingAmount6 - dueAmount4) + discountCoupon2);
+                const dueAmount4 = (booking as any)?.due_amount || 0;
+                const originalPrice4 =
+                  activity?.price || experience?.price || 0;
+                const officialPrice2 =
+                  originalPrice4 * booking.total_participants;
+                const discountCoupon2 =
+                  officialPrice2 - bookingAmount6 > 0
+                    ? officialPrice2 - bookingAmount6
+                    : 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount6 - dueAmount4 + discountCoupon2
+                );
               default:
                 return "";
             }
@@ -683,7 +830,10 @@ export const UserBookings = () => {
         const searchTerm = globalFilter.toLowerCase();
         return (
           booking.experiences?.title?.toLowerCase().includes(searchTerm) ||
-          (booking.time_slots?.activities as any)?.name
+          (
+            (booking.time_slots?.activities ||
+              (booking as any).activities) as any
+          )?.name
             ?.toLowerCase()
             .includes(searchTerm) ||
           booking.status?.toLowerCase().includes(searchTerm) ||
@@ -706,32 +856,66 @@ export const UserBookings = () => {
       if (typeof sortBy === "number") {
         const profileA = profileMap[a.user_id];
         const profileB = profileMap[b.user_id];
-        const activityA = a.time_slots?.activities as any;
-        const activityB = b.time_slots?.activities as any;
+        // For offline bookings, activities are directly linked; for online, through time_slots
+        const activityA = (a.time_slots?.activities ||
+          (a as any).activities) as any;
+        const activityB = (b.time_slots?.activities ||
+          (b as any).activities) as any;
         const timeslotA = a.time_slots;
         const timeslotB = b.time_slots;
         const experienceA = a.experiences;
         const experienceB = b.experiences;
-        const currency = activityA?.currency || a.experiences?.currency || "INR";
+        const currency =
+          activityA?.currency || a.experiences?.currency || "INR";
 
         // Calculate values for all columns
-        const getCellValue = (booking: any, profile: any, activity: any, timeslot: any, experience: any, colIndex: number) => {
+        const getCellValue = (
+          booking: any,
+          profile: any,
+          activity: any,
+          timeslot: any,
+          experience: any,
+          colIndex: number
+        ) => {
           switch (colIndex) {
             case 0: // Title
               return experience?.title || "";
             case 1: // Activity
               return activity?.name || "";
             case 2: // Contact Number
-              return booking.contact_person_number || profile?.phone_number || booking?.booking_participants?.[0]?.phone_number || "";
+              return (
+                booking.contact_person_number ||
+                profile?.phone_number ||
+                booking?.booking_participants?.[0]?.phone_number ||
+                ""
+              );
             case 3: // Contact Name
-              return booking.contact_person_name || (profile ? `${profile.first_name} ${profile.last_name}`.trim() : "") || booking?.booking_participants?.[0]?.name || "";
+              return (
+                booking.contact_person_name ||
+                (profile
+                  ? `${profile.first_name} ${profile.last_name}`.trim()
+                  : "") ||
+                booking?.booking_participants?.[0]?.name ||
+                ""
+              );
             case 4: // Email
-              return booking.contact_person_email || profile?.email || booking?.booking_participants?.[0]?.email || "";
+              return (
+                booking.contact_person_email ||
+                profile?.email ||
+                booking?.booking_participants?.[0]?.email ||
+                ""
+              );
             case 5: // Referred by
-              return (booking as any)?.referral_code || (booking as any)?.referred_by || "";
+              return (
+                (booking as any)?.referral_code ||
+                (booking as any)?.referred_by ||
+                ""
+              );
             case 6: // Timeslot
               return timeslot?.start_time && timeslot?.end_time
-                ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(timeslot.end_time)}`
+                ? `${formatTime12Hour(
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : "";
             case 7: // Date
               return new Date(booking.booking_date).getTime();
@@ -739,61 +923,115 @@ export const UserBookings = () => {
               return booking?.total_participants || 0;
             case 9: // Notes for guides
               return booking.note_for_guide || "";
-            case 10: // Official Price/ Original Price
+            case 10: // Booking Type
+              const bookingTypeA = (booking as any)?.type || "online";
+              return bookingTypeA === "offline" ? "Offline" : "Online";
+            case 11: // Official Price/ Original Price
+              if ((booking as any)?.type === "offline") return "";
               const originalPriceA = activity?.price || experience?.price || 0;
               return originalPriceA * booking.total_participants;
-            case 11: // B2B Price
+            case 12: // B2B Price
+              if ((booking as any)?.type === "offline") return "";
               const b2bPriceA = booking.b2bPrice || activity?.b2bPrice || 0;
               return b2bPriceA * booking.total_participants;
-            case 12: // Commission as per vendor
+            case 13: // Commission as per vendor
+              if ((booking as any)?.type === "offline") return "";
               const originalPriceA2 = activity?.price || experience?.price || 0;
               const b2bPriceA2 = booking.b2bPrice || activity?.b2bPrice || 0;
-              return (originalPriceA2 - b2bPriceA2) * booking.total_participants;
-            case 13: // Website Price
+              return (
+                (originalPriceA2 - b2bPriceA2) * booking.total_participants
+              );
+            case 14: // Website Price
+              if ((booking as any)?.type === "offline") return "";
               const discountedPriceA = activity?.discounted_price || 0;
               return discountedPriceA * booking.total_participants;
-            case 14: // Discount Coupon
+            case 15: // Discount Coupon
+              if ((booking as any)?.type === "offline") return "";
               const originalPriceA3 = activity?.price || experience?.price || 0;
-              const officialPriceA = originalPriceA3 * booking.total_participants;
+              const officialPriceA =
+                originalPriceA3 * booking.total_participants;
               const bookingAmountA = (booking as any)?.booking_amount || 0;
-              return officialPriceA - bookingAmountA > 0 ? officialPriceA - bookingAmountA : 0;
-            case 15: // Ticket Price (customer cost)
+              return officialPriceA - bookingAmountA > 0
+                ? officialPriceA - bookingAmountA
+                : 0;
+            case 16: // Ticket Price (customer cost)
               return (booking as any)?.booking_amount || 0;
-            case 16: // Advance paid to bucketlistt (10%)
+            case 17: // Advance paid to bucketlistt (10%)
+              if ((booking as any)?.type === "offline") return "";
               const bookingAmountA2 = (booking as any)?.booking_amount || 0;
               const dueAmountA = booking?.due_amount || 0;
               return bookingAmountA2 - dueAmountA;
-            case 17: // Payment to be collected by vendor
+            case 18: // Payment to be collected by vendor
+              if ((booking as any)?.type === "offline") return "";
               const bookingAmountA3 = (booking as any)?.booking_amount || 0;
               const dueAmountA2 = booking?.due_amount || 0;
               return bookingAmountA3 - (bookingAmountA3 - dueAmountA2);
-            case 18: // Actual Commission to bucketlistt (Net profit)
+            case 19: // Actual Commission to bucketlistt (Net profit)
+              if ((booking as any)?.type === "offline") return "";
               const bookingAmountA4 = (booking as any)?.booking_amount || 0;
               const b2bPriceA3 = booking.b2bPrice || activity?.b2bPrice || 0;
-              return bookingAmountA4 - (b2bPriceA3 * booking.total_participants);
-            case 19: // Amount to be collected from vendor/ '- to be paid'
+              return bookingAmountA4 - b2bPriceA3 * booking.total_participants;
+            case 20: // Amount to be collected from vendor/ '- to be paid'
+              if ((booking as any)?.type === "offline") return "";
               const bookingAmountA5 = (booking as any)?.booking_amount || 0;
               const b2bPriceA4 = booking.b2bPrice || activity?.b2bPrice || 0;
               const dueAmountA3 = booking?.due_amount || 0;
-              return bookingAmountA5 - (b2bPriceA4 * booking.total_participants) - (bookingAmountA5 - dueAmountA3);
-            case 20: // Advance + discount (vendor needs this)
+              return (
+                bookingAmountA5 -
+                b2bPriceA4 * booking.total_participants -
+                (bookingAmountA5 - dueAmountA3)
+              );
+            case 21: // Advance + discount (vendor needs this)
+              if ((booking as any)?.type === "offline") return "";
               const bookingAmountA6 = (booking as any)?.booking_amount || 0;
               const dueAmountA4 = booking?.due_amount || 0;
               const originalPriceA4 = activity?.price || experience?.price || 0;
-              const officialPriceA2 = originalPriceA4 * booking.total_participants;
-              const discountCouponA = officialPriceA2 - bookingAmountA6 > 0 ? officialPriceA2 - bookingAmountA6 : 0;
-              return (bookingAmountA6 - dueAmountA4) + discountCouponA;
+              const officialPriceA2 =
+                originalPriceA4 * booking.total_participants;
+              const discountCouponA =
+                officialPriceA2 - bookingAmountA6 > 0
+                  ? officialPriceA2 - bookingAmountA6
+                  : 0;
+              return bookingAmountA6 - dueAmountA4 + discountCouponA;
             default:
               return "";
           }
         };
 
         // Get values for comparison
-        aValue = getCellValue(a, profileA, activityA, timeslotA, experienceA, sortBy);
-        bValue = getCellValue(b, profileB, activityB, timeslotB, experienceB, sortBy);
+        aValue = getCellValue(
+          a,
+          profileA,
+          activityA,
+          timeslotA,
+          experienceA,
+          sortBy
+        );
+        bValue = getCellValue(
+          b,
+          profileB,
+          activityB,
+          timeslotB,
+          experienceB,
+          sortBy
+        );
 
-        aValue = getCellValue(a, profileA, activityA, timeslotA, experienceA, sortBy);
-        bValue = getCellValue(b, profileB, activityB, timeslotB, experienceB, sortBy);
+        aValue = getCellValue(
+          a,
+          profileA,
+          activityA,
+          timeslotA,
+          experienceA,
+          sortBy
+        );
+        bValue = getCellValue(
+          b,
+          profileB,
+          activityB,
+          timeslotB,
+          experienceB,
+          sortBy
+        );
       } else {
         // Handle legacy string-based sorting
         switch (sortBy) {
@@ -862,7 +1100,9 @@ export const UserBookings = () => {
     bookings.forEach((booking) => {
       // Only include activities from active experiences
       if (booking.experiences?.is_active === true) {
-        const activity = booking.time_slots?.activities as any;
+        // For offline bookings, activities are directly linked; for online, through time_slots
+        const activity = (booking.time_slots?.activities ||
+          (booking as any).activities) as any;
         if (activity && activity.id && activity.name) {
           activities.set(activity.id, {
             id: activity.id,
@@ -1057,85 +1297,179 @@ export const UserBookings = () => {
 
     bookings.forEach((booking) => {
       const profile = profileMap[booking.user_id];
-      const activity = booking.time_slots?.activities as any;
+      // For offline bookings, activities are directly linked; for online, through time_slots
+      const activity = (booking.time_slots?.activities ||
+        (booking as any).activities) as any;
       const timeslot = booking.time_slots;
       const experience = booking.experiences;
-      const currency = activity?.currency || booking?.experiences?.currency || "INR";
+      const currency =
+        activity?.currency || booking?.experiences?.currency || "INR";
 
-      for (let colIndex = 0; colIndex <= 20; colIndex++) {
+      for (let colIndex = 0; colIndex <= 21; colIndex++) {
         if (!valuesMap[colIndex]) {
           valuesMap[colIndex] = [];
         }
 
         const getCellValue = (colIdx: number): string => {
+          const isOffline = (booking as any)?.type === "offline";
           switch (colIdx) {
-            case 0: return experience?.title || "";
-            case 1: return activity?.name || "";
-            case 2: return booking.contact_person_number || profile?.phone_number || booking?.booking_participants?.[0]?.phone_number || "";
-            case 3: return booking.contact_person_name || (profile ? `${profile.first_name} ${profile.last_name}`.trim() : "") || booking?.booking_participants?.[0]?.name || "";
-            case 4: return booking.contact_person_email || profile?.email || booking?.booking_participants?.[0]?.email || "";
-            case 5: return (booking as any)?.referral_code || (booking as any)?.referred_by || "";
-            case 6: return timeslot?.start_time && timeslot?.end_time
-              ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(timeslot.end_time)}`
-              : "";
-            case 7: return format(new Date(booking.booking_date), "MMM d, yyyy");
-            case 8: return String(booking?.total_participants || "");
-            case 9: return booking.note_for_guide || "";
-            case 10: {
-              const originalPrice = activity?.price || experience?.price || 0;
-              return formatCurrency(currency, originalPrice * booking.total_participants);
-            }
+            case 0:
+              return experience?.title || "";
+            case 1:
+              return activity?.name || "";
+            case 2:
+              return (
+                (booking as any).contact_person_number ||
+                profile?.phone_number ||
+                booking?.booking_participants?.[0]?.phone_number ||
+                ""
+              );
+            case 3:
+              return (
+                (booking as any).contact_person_name ||
+                (profile
+                  ? `${profile.first_name} ${profile.last_name}`.trim()
+                  : "") ||
+                booking?.booking_participants?.[0]?.name ||
+                ""
+              );
+            case 4:
+              return (
+                (booking as any).contact_person_email ||
+                profile?.email ||
+                booking?.booking_participants?.[0]?.email ||
+                ""
+              );
+            case 5:
+              return (
+                (booking as any)?.referral_code ||
+                (booking as any)?.referred_by ||
+                ""
+              );
+            case 6:
+              return timeslot?.start_time && timeslot?.end_time
+                ? `${formatTime12Hour(
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                : isOffline
+                ? "Offline"
+                : "";
+            case 7:
+              return format(new Date(booking.booking_date), "MMM d, yyyy");
+            case 8:
+              return String(booking?.total_participants || "");
+            case 9:
+              return booking.note_for_guide || "";
+            case 10:
+              return (booking as any)?.type === "offline"
+                ? "Offline"
+                : "Online";
             case 11: {
-              const b2bPrice = booking.b2bPrice || activity?.b2bPrice || 0;
-              return formatCurrency(currency, b2bPrice * booking.total_participants);
+              if (isOffline) return "-";
+              const originalPrice = activity?.price || experience?.price || 0;
+              return formatCurrency(
+                currency,
+                originalPrice * booking.total_participants
+              );
             }
             case 12: {
-              const originalPrice = activity?.price || experience?.price || 0;
-              const b2bPrice = booking.b2bPrice || activity?.b2bPrice || 0;
-              return formatCurrency(currency, (originalPrice - b2bPrice) * booking.total_participants);
+              if (isOffline) return "-";
+              const b2bPrice =
+                (booking as any).b2bPrice || activity?.b2bPrice || 0;
+              return formatCurrency(
+                currency,
+                b2bPrice * booking.total_participants
+              );
             }
             case 13: {
-              const discountedPrice = activity?.discounted_price || 0;
-              return formatCurrency(currency, discountedPrice * booking.total_participants);
+              if (isOffline) return "-";
+              const originalPrice = activity?.price || experience?.price || 0;
+              const b2bPrice =
+                (booking as any).b2bPrice || activity?.b2bPrice || 0;
+              return formatCurrency(
+                currency,
+                (originalPrice - b2bPrice) * booking.total_participants
+              );
             }
             case 14: {
+              if (isOffline) return "-";
+              const discountedPrice = activity?.discounted_price || 0;
+              return formatCurrency(
+                currency,
+                discountedPrice * booking.total_participants
+              );
+            }
+            case 15: {
+              if (isOffline) return "-";
               const originalPrice = activity?.price || experience?.price || 0;
               const officialPrice = originalPrice * booking.total_participants;
               const bookingAmount = (booking as any)?.booking_amount || 0;
-              const discountCoupon = officialPrice - bookingAmount > 0 ? officialPrice - bookingAmount : 0;
+              const discountCoupon =
+                officialPrice - bookingAmount > 0
+                  ? officialPrice - bookingAmount
+                  : 0;
               return formatCurrency(currency, discountCoupon);
             }
-            case 15: return formatCurrency(currency, (booking as any)?.booking_amount || 0);
-            case 16: {
+            case 16:
+              return formatCurrency(
+                currency,
+                (booking as any)?.booking_amount || 0
+              );
+            case 17: {
+              if (isOffline) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
-              const dueAmount = booking?.due_amount || 0;
+              const dueAmount = (booking as any)?.due_amount || 0;
               return formatCurrency(currency, bookingAmount - dueAmount);
             }
-            case 17: {
-              const bookingAmount = (booking as any)?.booking_amount || 0;
-              const dueAmount = booking?.due_amount || 0;
-              return formatCurrency(currency, bookingAmount - (bookingAmount - dueAmount));
-            }
             case 18: {
+              if (isOffline) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
-              const b2bPrice = booking.b2bPrice || activity?.b2bPrice || 0;
-              return formatCurrency(currency, bookingAmount - (b2bPrice * booking.total_participants));
+              const dueAmount = (booking as any)?.due_amount || 0;
+              return formatCurrency(
+                currency,
+                bookingAmount - (bookingAmount - dueAmount)
+              );
             }
             case 19: {
+              if (isOffline) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
-              const b2bPrice = booking.b2bPrice || activity?.b2bPrice || 0;
-              const dueAmount = booking?.due_amount || 0;
-              return formatCurrency(currency, bookingAmount - (b2bPrice * booking.total_participants) - (bookingAmount - dueAmount));
+              const b2bPrice =
+                (booking as any).b2bPrice || activity?.b2bPrice || 0;
+              return formatCurrency(
+                currency,
+                bookingAmount - b2bPrice * booking.total_participants
+              );
             }
             case 20: {
+              if (isOffline) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
-              const dueAmount = booking?.due_amount || 0;
+              const b2bPrice =
+                (booking as any).b2bPrice || activity?.b2bPrice || 0;
+              const dueAmount = (booking as any)?.due_amount || 0;
+              return formatCurrency(
+                currency,
+                bookingAmount -
+                  b2bPrice * booking.total_participants -
+                  (bookingAmount - dueAmount)
+              );
+            }
+            case 21: {
+              if (isOffline) return "-";
+              const bookingAmount = (booking as any)?.booking_amount || 0;
+              const dueAmount = (booking as any)?.due_amount || 0;
               const originalPrice = activity?.price || experience?.price || 0;
               const officialPrice = originalPrice * booking.total_participants;
-              const discountCoupon = officialPrice - bookingAmount > 0 ? officialPrice - bookingAmount : 0;
-              return formatCurrency(currency, (bookingAmount - dueAmount) + discountCoupon);
+              const discountCoupon =
+                officialPrice - bookingAmount > 0
+                  ? officialPrice - bookingAmount
+                  : 0;
+              return formatCurrency(
+                currency,
+                bookingAmount - dueAmount + discountCoupon
+              );
             }
-            default: return "";
+            default:
+              return "";
           }
         };
 
@@ -1222,7 +1556,9 @@ export const UserBookings = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (openFilterDropdown !== null) {
         const ref = filterDropdownRefs.current[openFilterDropdown];
-        const filterIcon = (event.target as HTMLElement).closest('.filter-icon');
+        const filterIcon = (event.target as HTMLElement).closest(
+          ".filter-icon"
+        );
         if (ref && !ref.contains(event.target as Node) && !filterIcon) {
           setOpenFilterDropdown(null);
         }
@@ -1253,15 +1589,15 @@ export const UserBookings = () => {
       const handleResize = () => updatePosition();
 
       // Use capture phase to catch scroll events in all containers
-      window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('resize', handleResize);
+      window.addEventListener("scroll", handleScroll, true);
+      window.addEventListener("resize", handleResize);
 
       // Initial position update
       updatePosition();
 
       return () => {
-        window.removeEventListener('scroll', handleScroll, true);
-        window.removeEventListener('resize', handleResize);
+        window.removeEventListener("scroll", handleScroll, true);
+        window.removeEventListener("resize", handleResize);
       };
     }
   }, [openFilterDropdown]);
@@ -1311,7 +1647,9 @@ export const UserBookings = () => {
     isMobile: boolean;
   }) => {
     const profile = profileMap[booking.user_id];
-    const activity = booking.time_slots?.activities;
+    // For offline bookings, activities are directly linked; for online, through time_slots
+    const activity = (booking.time_slots?.activities ||
+      (booking as any).activities) as any;
     const price = activity?.price || booking?.experiences?.price || 0;
     const currency =
       activity?.currency || booking?.experiences?.currency || "INR";
@@ -1404,21 +1742,22 @@ export const UserBookings = () => {
           </div>
           {(profile?.phone_number ||
             booking?.booking_participants?.[0]?.phone_number) && (
-              <div className="text-sm" id="UserBookingsCardContentStyles4">
-                <span className="text-muted-foreground">Contact:</span>
-                <p className="font-medium" style={{ color: "blue" }}>
-                  <a
-                    href={`tel:${profile?.phone_number ||
-                      booking?.booking_participants?.[0]?.phone_number
-                      }`}
-                  >
-                    {profile?.phone_number ||
-                      booking?.booking_participants?.[0]?.phone_number ||
-                      "N/A"}
-                  </a>
-                </p>
-              </div>
-            )}
+            <div className="text-sm" id="UserBookingsCardContentStyles4">
+              <span className="text-muted-foreground">Contact:</span>
+              <p className="font-medium" style={{ color: "blue" }}>
+                <a
+                  href={`tel:${
+                    profile?.phone_number ||
+                    booking?.booking_participants?.[0]?.phone_number
+                  }`}
+                >
+                  {profile?.phone_number ||
+                    booking?.booking_participants?.[0]?.phone_number ||
+                    "N/A"}
+                </a>
+              </p>
+            </div>
+          )}
           <div className="">
             <div className="space-y-2">
               {/* <div className="flex justify-between items-center">
@@ -1558,7 +1897,7 @@ export const UserBookings = () => {
                         {bookingAmount -
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants -
+                            booking.total_participants -
                           (bookingAmount - dueAmount)}
                       </p>
                     </div>
@@ -1589,8 +1928,8 @@ export const UserBookings = () => {
                   isMobile && showDateRangePicker
                     ? "default"
                     : sortBy === "booking_date"
-                      ? "default"
-                      : "outline"
+                    ? "default"
+                    : "outline"
                 }
                 onClick={() =>
                   isMobile
@@ -1689,7 +2028,7 @@ export const UserBookings = () => {
                   e.stopPropagation();
                   setShowColumnSelector(!showColumnSelector);
                 }}
-              // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
               >
                 Columns
               </Button>
@@ -1697,7 +2036,7 @@ export const UserBookings = () => {
               {/* Column Selector Dropdown */}
               {showColumnSelector && (
                 <div
-                  className="absolute right-0 mt-2 w-[300px] p-4 border border-blue-500 rounded-lg bg-white shadow-lg max-h-96 overflow-y-auto z-50"
+                  className="absolute right-0 left-2 mt-2 w-[300px] p-4 border border-blue-500 rounded-lg bg-white shadow-lg max-h-96 overflow-y-auto z-50"
                   style={{ minHeight: "200px" }}
                 >
                   <div className="text-sm font-semibold mb-3 text-gray-900">
@@ -1714,10 +2053,11 @@ export const UserBookings = () => {
                       return (
                         <label
                           key={index}
-                          className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
-                            ? "opacity-50 cursor-not-allowed"
-                            : "cursor-pointer hover:bg-muted/30"
-                            }`}
+                          className={`flex items-center gap-2 p-2 rounded ${
+                            isHiddenForAgent
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-muted/30"
+                          }`}
                         >
                           <input
                             type="checkbox"
@@ -2075,7 +2415,10 @@ export const UserBookings = () => {
             {/* Column Selector Button */}
 
             <div className="overflow-x-auto overflow-y-visible">
-              <table className="w-full text-xs" style={{ tableLayout: "fixed" }}>
+              <table
+                className="w-full text-xs"
+                style={{ tableLayout: "fixed" }}
+              >
                 <thead>
                   <tr>
                     {columnOrder.map(
@@ -2087,16 +2430,15 @@ export const UserBookings = () => {
                               headerRefs.current[originalIndex] = el;
                             }}
                             data-column-index={originalIndex}
-                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${draggedColumnIndex === originalIndex
-                              ? "opacity-50"
-                              : ""
-                              } ${dragOverColumnIndex === originalIndex
+                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${
+                              draggedColumnIndex === originalIndex
+                                ? "opacity-50"
+                                : ""
+                            } ${
+                              dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                              } ${sortBy === originalIndex
-                                ? "bg-blue-50"
-                                : ""
-                              }`}
+                            } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
                             style={{ width: columnWidths[originalIndex] }}
                             draggable={true}
                             onDragStart={() =>
@@ -2109,7 +2451,12 @@ export const UserBookings = () => {
                             onDragEnd={handleColumnDragEnd}
                             onClick={(e) => {
                               // Only sort if not dragging and not clicking on filter icon
-                              if (draggedColumnIndex === null && !(e.target as HTMLElement).closest('.filter-icon')) {
+                              if (
+                                draggedColumnIndex === null &&
+                                !(e.target as HTMLElement).closest(
+                                  ".filter-icon"
+                                )
+                              ) {
                                 e.stopPropagation();
                                 handleColumnSort(originalIndex);
                               }
@@ -2124,7 +2471,9 @@ export const UserBookings = () => {
                               >
                                 <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                               </svg>
-                              <span className="flex-1 truncate">{columnHeaders[originalIndex]}</span>
+                              <span className="flex-1 truncate">
+                                {columnHeaders[originalIndex]}
+                              </span>
                               <div className="flex items-center gap-1 flex-shrink-0">
                                 <span
                                   className="filter-icon cursor-pointer hover:bg-gray-200 rounded p-0.5 transition-colors duration-150"
@@ -2133,9 +2482,11 @@ export const UserBookings = () => {
                                     if (openFilterDropdown === originalIndex) {
                                       setOpenFilterDropdown(null);
                                     } else {
-                                      const headerElement = headerRefs.current[originalIndex];
+                                      const headerElement =
+                                        headerRefs.current[originalIndex];
                                       if (headerElement) {
-                                        const rect = headerElement.getBoundingClientRect();
+                                        const rect =
+                                          headerElement.getBoundingClientRect();
                                         setFilterDropdownPosition({
                                           top: rect.bottom + 4,
                                           left: rect.left,
@@ -2145,196 +2496,251 @@ export const UserBookings = () => {
                                     }
                                   }}
                                   onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = "#e5e7eb";
+                                    e.currentTarget.style.backgroundColor =
+                                      "#e5e7eb";
                                   }}
                                   onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = "transparent";
+                                    e.currentTarget.style.backgroundColor =
+                                      "transparent";
                                   }}
                                   title="Filter"
                                 >
                                   <Filter
-                                    className={`w-3 h-3 ${columnFilters[originalIndex] && columnFilters[originalIndex].length > 0
+                                    className={`w-3 h-3 ${
+                                      columnFilters[originalIndex] &&
+                                      columnFilters[originalIndex].length > 0
                                         ? "text-blue-600"
                                         : "text-gray-400"
-                                      }`}
+                                    }`}
                                   />
                                 </span>
                               </div>
                             </span>
                             {/* Filter Dropdown */}
-                            {openFilterDropdown === originalIndex && filterDropdownPosition && (
-                              <div
-                                ref={(el) => {
-                                  filterDropdownRefs.current[originalIndex] = el;
-                                }}
-                                className="fixed border border-gray-300 rounded-lg shadow-xl z-[9999] min-w-[250px] max-w-[350px] max-h-[400px] overflow-hidden"
-                                onClick={(e) => e.stopPropagation()}
-                                onMouseEnter={(e) => e.stopPropagation()}
-                                onMouseLeave={(e) => e.stopPropagation()}
-                                style={{
-                                  position: "fixed",
-                                  top: `${filterDropdownPosition.top}px`,
-                                  left: `${filterDropdownPosition.left}px`,
-                                  backgroundColor: "#ffffff",
-                                  opacity: 1,
-                                }}
-                              >
-                                <div className="p-2 border-b border-gray-200 bg-gray-50">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-semibold text-gray-900">Filter by {columnHeaders[originalIndex]}</span>
-                                    {columnFilters[originalIndex] && columnFilters[originalIndex].length > 0 && (
+                            {openFilterDropdown === originalIndex &&
+                              filterDropdownPosition && (
+                                <div
+                                  ref={(el) => {
+                                    filterDropdownRefs.current[originalIndex] =
+                                      el;
+                                  }}
+                                  className="fixed border border-gray-300 rounded-lg shadow-xl z-[9999] min-w-[250px] max-w-[350px] max-h-[400px] overflow-hidden"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onMouseEnter={(e) => e.stopPropagation()}
+                                  onMouseLeave={(e) => e.stopPropagation()}
+                                  style={{
+                                    position: "fixed",
+                                    top: `${filterDropdownPosition.top}px`,
+                                    left: `${filterDropdownPosition.left}px`,
+                                    backgroundColor: "#ffffff",
+                                    opacity: 1,
+                                  }}
+                                >
+                                  <div className="p-2 border-b border-gray-200 bg-gray-50">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-xs font-semibold text-gray-900">
+                                        Filter by {columnHeaders[originalIndex]}
+                                      </span>
+                                      {columnFilters[originalIndex] &&
+                                        columnFilters[originalIndex].length >
+                                          0 && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 px-2 text-xs hover:bg-gray-200"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleClearColumnFilter(
+                                                originalIndex
+                                              );
+                                            }}
+                                          >
+                                            <X className="w-3 h-3 mr-1" />
+                                            Clear
+                                          </Button>
+                                        )}
+                                    </div>
+                                    {/* Sort Buttons */}
+                                    <div className="flex items-center gap-1">
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-6 px-2 text-xs hover:bg-gray-200"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleClearColumnFilter(originalIndex);
-                                        }}
-                                      >
-                                        <X className="w-3 h-3 mr-1" />
-                                        Clear
-                                      </Button>
-                                    )}
-                                  </div>
-                                  {/* Sort Buttons */}
-                                  <div className="flex items-center gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex && sortOrder === "asc"
-                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                          : "hover:bg-gray-200"
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
+                                          sortOrder === "asc"
+                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                            : "hover:bg-gray-200"
                                         }`}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (sortBy === originalIndex && sortOrder === "asc") {
-                                          setSortBy(7); // Reset to default
-                                          setSortOrder("desc");
-                                        } else {
-                                          setSortBy(originalIndex);
-                                          setSortOrder("asc");
-                                        }
-                                      }}
-                                      title="Sort Ascending"
-                                    >
-                                      <ArrowUp className="w-3 h-3 mr-1" />
-                                      Sort ↑
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex && sortOrder === "desc"
-                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                          : "hover:bg-gray-200"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (
+                                            sortBy === originalIndex &&
+                                            sortOrder === "asc"
+                                          ) {
+                                            setSortBy(7); // Reset to default
+                                            setSortOrder("desc");
+                                          } else {
+                                            setSortBy(originalIndex);
+                                            setSortOrder("asc");
+                                          }
+                                        }}
+                                        title="Sort Ascending"
+                                      >
+                                        <ArrowUp className="w-3 h-3 mr-1" />
+                                        Sort ↑
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
+                                          sortOrder === "desc"
+                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                            : "hover:bg-gray-200"
                                         }`}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (sortBy === originalIndex && sortOrder === "desc") {
-                                          setSortBy(7); // Reset to default
-                                          setSortOrder("desc");
-                                        } else {
-                                          setSortBy(originalIndex);
-                                          setSortOrder("desc");
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (
+                                            sortBy === originalIndex &&
+                                            sortOrder === "desc"
+                                          ) {
+                                            setSortBy(7); // Reset to default
+                                            setSortOrder("desc");
+                                          } else {
+                                            setSortBy(originalIndex);
+                                            setSortOrder("desc");
+                                          }
+                                        }}
+                                        title="Sort Descending"
+                                      >
+                                        <ArrowDown className="w-3 h-3 mr-1" />
+                                        Sort ↓
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  {/* Search Input */}
+                                  <div className="p-2 border-b border-gray-200 bg-white">
+                                    <div className="relative">
+                                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+                                      <Input
+                                        type="text"
+                                        placeholder="Search..."
+                                        value={
+                                          filterSearchQueries[originalIndex] ||
+                                          ""
                                         }
-                                      }}
-                                      title="Sort Descending"
-                                    >
-                                      <ArrowDown className="w-3 h-3 mr-1" />
-                                      Sort ↓
-                                    </Button>
-                                  </div>
-                                </div>
-                                {/* Search Input */}
-                                <div className="p-2 border-b border-gray-200 bg-white">
-                                  <div className="relative">
-                                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
-                                    <Input
-                                      type="text"
-                                      placeholder="Search..."
-                                      value={filterSearchQueries[originalIndex] || ""}
-                                      onChange={(e) => {
-                                        setFilterSearchQueries((prev) => ({
-                                          ...prev,
-                                          [originalIndex]: e.target.value,
-                                        }));
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="pl-7 h-7 text-xs"
-                                    />
-                                  </div>
-                                </div>
-                                {/* Select All / Deselect All */}
-                                <div className="p-2 border-b border-gray-200 bg-white">
-                                  <div className="flex items-center gap-2">
-                                    {areAllVisibleSelected(originalIndex) ? (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2 text-xs hover:bg-gray-100 flex-1"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeselectAll(originalIndex);
+                                        onChange={(e) => {
+                                          setFilterSearchQueries((prev) => ({
+                                            ...prev,
+                                            [originalIndex]: e.target.value,
+                                          }));
                                         }}
-                                      >
-                                        Deselect All
-                                      </Button>
-                                    ) : (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 px-2 text-xs hover:bg-gray-100 flex-1"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleSelectAll(originalIndex);
-                                        }}
-                                      >
-                                        Select All
-                                      </Button>
-                                    )}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="pl-7 h-7 text-xs"
+                                      />
+                                    </div>
                                   </div>
-                                </div>
-                                {/* Filter Options List */}
-                                <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
-                                  {getUniqueColumnValues[originalIndex] && getUniqueColumnValues[originalIndex].length > 0 ? (() => {
-                                    const searchQuery = filterSearchQueries[originalIndex]?.toLowerCase() || "";
-                                    const filteredValues = getUniqueColumnValues[originalIndex].filter((value) =>
-                                      value.toLowerCase().includes(searchQuery)
-                                    );
-
-                                    if (filteredValues.length === 0) {
-                                      return (
-                                        <div className="text-xs text-gray-500 p-2 text-center">No matching values</div>
-                                      );
-                                    }
-
-                                    return filteredValues.map((value, idx) => {
-                                      const isChecked = columnFilters[originalIndex]?.includes(value) || false;
-                                      return (
-                                        <label
-                                          key={idx}
-                                          className="flex items-center gap-2 p-1.5 hover:bg-blue-50 active:bg-blue-100 cursor-pointer text-xs rounded transition-colors duration-150"
-                                          onMouseEnter={(e) => {
-                                            e.currentTarget.style.backgroundColor = "#eff6ff";
-                                          }}
-                                          onMouseLeave={(e) => {
-                                            e.currentTarget.style.backgroundColor = "transparent";
+                                  {/* Select All / Deselect All */}
+                                  <div className="p-2 border-b border-gray-200 bg-white">
+                                    <div className="flex items-center gap-2">
+                                      {areAllVisibleSelected(originalIndex) ? (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 px-2 text-xs hover:bg-gray-100 flex-1"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeselectAll(originalIndex);
                                           }}
                                         >
-                                          <Checkbox
-                                            checked={isChecked}
-                                            onCheckedChange={() => handleFilterToggle(originalIndex, value)}
-                                          />
-                                          <span className="truncate flex-1 text-gray-900">{value || "(empty)"}</span>
-                                        </label>
-                                      );
-                                    });
-                                  })() : (
-                                    <div className="text-xs text-gray-500 p-2">No values available</div>
-                                  )}
+                                          Deselect All
+                                        </Button>
+                                      ) : (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 px-2 text-xs hover:bg-gray-100 flex-1"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSelectAll(originalIndex);
+                                          }}
+                                        >
+                                          Select All
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {/* Filter Options List */}
+                                  <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
+                                    {getUniqueColumnValues[originalIndex] &&
+                                    getUniqueColumnValues[originalIndex]
+                                      .length > 0 ? (
+                                      (() => {
+                                        const searchQuery =
+                                          filterSearchQueries[
+                                            originalIndex
+                                          ]?.toLowerCase() || "";
+                                        const filteredValues =
+                                          getUniqueColumnValues[
+                                            originalIndex
+                                          ].filter((value) =>
+                                            value
+                                              .toLowerCase()
+                                              .includes(searchQuery)
+                                          );
+
+                                        if (filteredValues.length === 0) {
+                                          return (
+                                            <div className="text-xs text-gray-500 p-2 text-center">
+                                              No matching values
+                                            </div>
+                                          );
+                                        }
+
+                                        return filteredValues.map(
+                                          (value, idx) => {
+                                            const isChecked =
+                                              columnFilters[
+                                                originalIndex
+                                              ]?.includes(value) || false;
+                                            return (
+                                              <label
+                                                key={idx}
+                                                className="flex items-center gap-2 p-1.5 hover:bg-blue-50 active:bg-blue-100 cursor-pointer text-xs rounded transition-colors duration-150"
+                                                onMouseEnter={(e) => {
+                                                  e.currentTarget.style.backgroundColor =
+                                                    "#eff6ff";
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                  e.currentTarget.style.backgroundColor =
+                                                    "transparent";
+                                                }}
+                                              >
+                                                <Checkbox
+                                                  checked={isChecked}
+                                                  onCheckedChange={() =>
+                                                    handleFilterToggle(
+                                                      originalIndex,
+                                                      value
+                                                    )
+                                                  }
+                                                />
+                                                <span className="truncate flex-1 text-gray-900">
+                                                  {value || "(empty)"}
+                                                </span>
+                                              </label>
+                                            );
+                                          }
+                                        );
+                                      })()
+                                    ) : (
+                                      <div className="text-xs text-gray-500 p-2">
+                                        No values available
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
                             <div
                               className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400"
                               onMouseDown={(e) => {
@@ -2351,19 +2757,21 @@ export const UserBookings = () => {
                   {filteredAndSortedBookings.map(
                     (booking: BookingWithDueAmount, index) => {
                       const profile = profileMap[booking.user_id];
-                      const activity = booking.time_slots?.activities;
+                      // For offline bookings, activities are directly linked; for online, through time_slots
+                      const activity = (booking.time_slots?.activities ||
+                        (booking as any).activities) as any;
                       const timeslot = booking.time_slots;
                       const experience = booking.experiences;
                       const bookingAmount =
                         (booking as any)?.booking_amount || 0;
-                      const dueAmount = booking?.due_amount || 0;
+                      const dueAmount = (booking as any)?.due_amount || 0;
                       const currency =
                         activity?.currency ||
                         booking?.experiences?.currency ||
                         "INR";
 
                       // Calculate all money values from API data
-                      const activityData = activity as any;
+                      const activityData = activity;
                       const originalPrice =
                         activityData?.price || experience?.price || 0;
                       const officialPrice =
@@ -2409,8 +2817,8 @@ export const UserBookings = () => {
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                        ? booking.note_for_guide || ""
-                                        : ""
+                                      ? booking.note_for_guide || ""
+                                      : ""
                                   }
                                 >
                                   {renderCellContent(
