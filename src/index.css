@@ -1028,3 +1028,9 @@ h6 {
 video::-webkit-media-controls {
   display: none !important;
 }
+
+
+.booking-details-text>div>div{
+  margin-top: -8px;
+  padding-bottom: 10px;
+}

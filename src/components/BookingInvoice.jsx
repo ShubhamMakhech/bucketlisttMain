@@ -15,6 +15,7 @@ import DownloadPdfButton from "./DownloadPdfButton";
  * @param {string} [props.amountToBePaid="10.53"]
  * @param {string} [props.currency="INR"]
  * @param {boolean} [props.showDownloadButton=true]
+ * 
  */
 const PaymentLayout = ({
   participantName = "divyam",
@@ -28,39 +29,44 @@ const PaymentLayout = ({
   amountToBePaid = "10.53",
   currency = "INR",
   showDownloadButton = true,
+  isForPdf = false,
 }) => {
   const invoiceRef = useRef(null);
-
+  // const isForPdf = props.isForPdf; 
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: isForPdf ? "auto" : "100%",
         display: "flex",
         justifyContent: "center",
-        background: "#f5f7fb",
+        alignItems: isForPdf ? "center" : "center",
+        background: isForPdf ? "white" : "white",
         fontFamily:
           "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         fontSize: "16px",
+        padding: isForPdf ? "0" : "0px 0",
       }}
     >
       <div
         style={{
-          width: "600px",
-          background: "#ffffff",
+          width: "700px", // Fixed width to match preview exactly
+          background: "white",
           borderRadius: "16px",
-          boxShadow: "0 18px 45px rgba(0,0,0,0.08)",
+          boxShadow: isForPdf ? "none" : "0 18px 45px rgba(0,0,0,0.08)",
           padding: "32px 32px 24px",
+          height: "auto", // Allow height to adapt, or fixed if strictly required
+          minHeight: "1080px"
         }}
         ref={invoiceRef}
       >
         {/* Header logo + title */}
-        <header style={{ marginBottom: "24px", position: "relative" }}>
+        <header style={{ marginBottom: "5px", position: "relative" }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: "16px",
+              marginBottom: "5px",
             }}
           >
             <div
@@ -76,19 +82,35 @@ const PaymentLayout = ({
                   height: "26px",
                   borderRadius: "8px",
                   background: "#940fdb",
+                  fontSize: "16px",
+                  color: "#fff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: "16px",
-                  flexShrink: 0,
-                  lineHeight: "1",
-                  paddingTop: "2px",
+                  position: "relative",
                 }}
               >
-                b
+                <div
+                  style={{
+                    // backgroundColor: "red",
+                    marginTop:"-10px",
+                    width: "15px",
+                    height: "15px",
+                    borderRadius: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "#fff",
+                    lineHeight: 1,
+                    paddingBottom: "2px" // Minor adjustment for visual centering of lowercase b
+                  }}
+                >
+                  b
+                </div>
               </div>
+
               <img
                 src="/Images/BucketlisttLogo.png"
                 alt="Bucketlistt Logo"
@@ -113,7 +135,8 @@ const PaymentLayout = ({
               lineHeight: 1.4,
               fontWeight: 700,
               color: "#111827",
-              margin: "15px 0 0",
+              marginBottom: "20px",
+              marginTop: "10px" // Restore natural spacing
             }}
           >
             Booking Confirmed !!
@@ -125,8 +148,7 @@ const PaymentLayout = ({
           style={{
             width: "100%",
             borderRadius: "18px",
-            background:
-              "radial-gradient(circle at top left, rgba(148,15,219,0.12), transparent 55%), #f7f8fc",
+            background: "#f3effb", // Solid light purple approximation
             padding: "18px 10px",
             display: "flex",
             justifyContent: "center",
@@ -170,6 +192,7 @@ const PaymentLayout = ({
               rowGap: "8px",
               fontSize: "16px",
             }}
+            className="booking-details-text"
           >
             {[
               { label: "Activity:", value: activityName },
@@ -199,13 +222,12 @@ const PaymentLayout = ({
               },
               {
                 label: "Amount Paid:",
-                value: `${currency === "INR" ? "₹" : currency} ${amountPaid}`,
+                value: `${currency === "INR" ? "Rs." : currency} ${amountPaid}`,
               },
               {
                 label: "Amount to be Paid:",
-                value: `${
-                  currency === "INR" ? "₹" : currency
-                } ${amountToBePaid}`,
+                value: `${currency === "INR" ? "Rs." : currency
+                  } ${amountToBePaid}`,
                 strong: true,
               },
             ].map((item, index) => (
@@ -264,7 +286,7 @@ const PaymentLayout = ({
             marginBottom: "0",
           }}
         >
-          <p style={{ margin: "0 0 8px" }}>
+          <p style={{ marginTop: "-10px", marginBottom: "20px" }}>
             This message is sent to confirm your booking.
           </p>
 
@@ -281,7 +303,7 @@ const PaymentLayout = ({
                 padding: "10px 12px",
                 borderRadius: "10px",
                 border: "1px solid #940fdb",
-                background: "rgba(148,15,219,0.04)",
+                background: "#fbf5fe", // Solid light purple
                 color: "#111827",
               }}
             >
