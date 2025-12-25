@@ -48,6 +48,7 @@ import { SlotSelector } from "@/components/SlotSelector";
 import { useNavigate } from "react-router-dom";
 import { useRazorpay } from "@/hooks/useRazorpay";
 import { SendWhatsappMessage } from "@/utils/whatsappUtil";
+import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
 import moment from "moment";
 import { useQuery } from "@tanstack/react-query";
 import { Modal, Select as AntSelect } from "antd";
@@ -426,14 +427,52 @@ export const BookingDialog = ({
         .eq("id", timeSlot?.experiences?.vendor_id)
         .single();
 
+      // Generate PDF invoice
+      let pdfUrl = "";
+      try {
+        const formattedDateTime = `${moment(selectedDate).format(
+          "DD/MM/YYYY"
+        )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+          "hh:mm A"
+        )} - ${moment(timeSlot?.end_time, "HH:mm").format("hh:mm A")}`;
+
+        // Get location URL if available (you may need to construct this from location data)
+        const locationUrl = timeSlot?.experiences?.location;
+
+        pdfUrl = await generateInvoicePdf(
+          {
+            participantName: data.participant.name,
+            activityName: timeSlot?.activities.name || "",
+            dateTime: formattedDateTime,
+            pickUpLocation: "-",
+            spotLocation: timeSlot?.experiences?.location || "",
+            spotLocationUrl: locationUrl,
+            totalParticipants: data.participant_count,
+            amountPaid: upfrontAmount.toFixed(2),
+            amountToBePaid: dueAmount || "0",
+            currency: selectedActivity?.currency || experience.currency,
+          },
+          bookingId
+        );
+      } catch (pdfError) {
+        console.error("PDF generation failed:", pdfError);
+        // Continue without PDF - WhatsApp will be sent without attachment
+      }
+
       // console.log(vendor
       // console.log(data);
       // console.log(vendor);
       let whatsappBody = {};
+      const phoneNumber =
+        data.participant.phone_number.toString().length !== 10
+          ? data.participant.phone_number
+          : "+91" + data.participant.phone_number.toString();
+
       if (
         timeSlot?.experiences?.location !== null &&
         timeSlot?.experiences?.location2 !== null
       ) {
+        // Two location template with PDF
         whatsappBody = {
           integrated_number: "919274046332",
           content_type: "template",
@@ -441,7 +480,7 @@ export const BookingDialog = ({
             messaging_product: "whatsapp",
             type: "template",
             template: {
-              name: "booking_confirmation_two_location",
+              name: "user_ticket_confirmation_two_location_v2",
               language: {
                 code: "en",
                 policy: "deterministic",
@@ -449,12 +488,17 @@ export const BookingDialog = ({
               namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
               to_and_components: [
                 {
-                  to: [
-                    data.participant.phone_number.toString().length !== 10
-                      ? data.participant.phone_number
-                      : "+91" + data.participant.phone_number.toString(),
-                  ],
+                  to: [phoneNumber],
                   components: {
+                    ...(pdfUrl
+                      ? {
+                          header_1: {
+                            filename: `Booking_Invoice_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
+                      : {}),
                     body_1: {
                       type: "text",
                       value: data.participant.name,
@@ -500,6 +544,7 @@ export const BookingDialog = ({
           },
         };
       } else {
+        // Single location template with PDF
         whatsappBody = {
           integrated_number: "919274046332",
           content_type: "template",
@@ -507,7 +552,7 @@ export const BookingDialog = ({
             messaging_product: "whatsapp",
             type: "template",
             template: {
-              name: "booking_confirmation_user_v2",
+              name: "confirmation_user_with_ticket",
               language: {
                 code: "en",
                 policy: "deterministic",
@@ -515,12 +560,17 @@ export const BookingDialog = ({
               namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
               to_and_components: [
                 {
-                  to: [
-                    data.participant.phone_number.toString().length !== 10
-                      ? data.participant.phone_number
-                      : "+91" + data.participant.phone_number.toString(),
-                  ],
+                  to: [phoneNumber],
                   components: {
+                    ...(pdfUrl
+                      ? {
+                          header_1: {
+                            filename: `Booking_Invoice_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
+                      : {}),
                     body_1: {
                       type: "text",
                       value: data.participant.name,
