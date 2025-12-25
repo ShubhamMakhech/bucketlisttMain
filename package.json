@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.1.0",
     "@feedback-fish/react": "^1.2.2",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^3.9.0",
