@@ -48,15 +48,16 @@ const offlineBookingSchema = z.object({
     .length(10, "Phone number must be exactly 10 digits"),
   contact_person_email: z
     .string()
-    .min(1, "Email is required")
-    .email("Please enter a valid email address"),
+    .email("Please enter a valid email address")
+    .optional()
+    .or(z.literal("")),
   total_participants: z
     .number()
     .min(1, "At least one participant is required")
     .max(50, "Maximum 50 participants allowed"),
-  booking_amount: z
+  booking_amount_per_person: z
     .number()
-    .min(0, "Booking amount must be positive")
+    .min(0, "Amount per person must be positive")
     .optional(),
   booking_date: z.date({ required_error: "Please select a date" }),
   note_for_guide: z.string().optional(),
@@ -95,7 +96,7 @@ export const OfflineBookingDialog = ({
       contact_person_number: "",
       contact_person_email: "",
       total_participants: 1,
-      booking_amount: 0,
+      booking_amount_per_person: 0,
       note_for_guide: "",
     },
   });
@@ -265,7 +266,7 @@ export const OfflineBookingDialog = ({
         .single();
 
       const bookingAmount =
-        data.booking_amount ||
+        (data.booking_amount_per_person || 0) * data.total_participants ||
         (activity?.price ? activity.price * data.total_participants : 0);
       const bookingDate = selectedDate || new Date();
       const formattedDate = moment(bookingDate).format("DD/MM/YYYY");
@@ -539,55 +540,65 @@ export const OfflineBookingDialog = ({
       // Send admin WhatsApp
       await SendWhatsappMessage(adminWhatsappBody);
 
-      // Send email confirmation
-      const emailResponse = await supabase.functions.invoke(
-        "send-booking-confirmation",
-        {
-          body: {
-            customerEmail: data.contact_person_email,
-            customerName: data.contact_person_name,
-            experienceTitle:
-              experienceDetails?.title || experience?.title || "",
-            activityName: activity?.name || "",
-            bookingDate: bookingDate.toISOString(),
-            formattedDateTime: formattedDateTime,
-            timeSlot: selectedSlotId
-              ? (() => {
-                  const selectedSlot = timeSlots.find(
-                    (slot: any) => slot.id === selectedSlotId
-                  );
-                  return selectedSlot
-                    ? `${selectedSlot.start_time} - ${selectedSlot.end_time}`
-                    : "Offline Booking";
-                })()
-              : "Offline Booking",
-            location: experienceDetails?.location || "",
-            location2: experienceDetails?.location2 || null,
-            totalParticipants: data.total_participants,
-            totalAmount: bookingAmount,
-            upfrontAmount: bookingAmount,
-            dueAmount: "0",
-            partialPayment: false,
-            currency:
-              activity?.currency || experienceDetails?.currency || "INR",
-            participants: Array.from(
-              { length: data.total_participants },
-              () => ({
-                name: data.contact_person_name,
-                email: data.contact_person_email,
-                phone_number: data.contact_person_number,
-              })
-            ),
-            bookingId: bookingId,
-            noteForGuide: data.note_for_guide || "",
-            paymentId: "",
-          },
-        }
-      );
+      // Send email confirmation only if email is provided
+      if (
+        data.contact_person_email &&
+        data.contact_person_email.trim() !== ""
+      ) {
+        try {
+          const emailResponse = await supabase.functions.invoke(
+            "send-booking-confirmation",
+            {
+              body: {
+                customerEmail: data.contact_person_email,
+                customerName: data.contact_person_name,
+                experienceTitle:
+                  experienceDetails?.title || experience?.title || "",
+                activityName: activity?.name || "",
+                bookingDate: bookingDate.toISOString(),
+                formattedDateTime: formattedDateTime,
+                timeSlot: selectedSlotId
+                  ? (() => {
+                      const selectedSlot = timeSlots.find(
+                        (slot: any) => slot.id === selectedSlotId
+                      );
+                      return selectedSlot
+                        ? `${selectedSlot.start_time} - ${selectedSlot.end_time}`
+                        : "Offline Booking";
+                    })()
+                  : "Offline Booking",
+                location: experienceDetails?.location || "",
+                location2: experienceDetails?.location2 || null,
+                totalParticipants: data.total_participants,
+                totalAmount: bookingAmount,
+                upfrontAmount: bookingAmount,
+                dueAmount: "0",
+                partialPayment: false,
+                currency:
+                  activity?.currency || experienceDetails?.currency || "INR",
+                participants: Array.from(
+                  { length: data.total_participants },
+                  () => ({
+                    name: data.contact_person_name,
+                    email: data.contact_person_email,
+                    phone_number: data.contact_person_number,
+                  })
+                ),
+                bookingId: bookingId,
+                noteForGuide: data.note_for_guide || "",
+                paymentId: "",
+              },
+            }
+          );
 
-      if (emailResponse.error) {
-        console.error("Email sending error:", emailResponse.error);
-        throw emailResponse.error;
+          if (emailResponse.error) {
+            console.error("Email sending error:", emailResponse.error);
+            // Don't throw - email is optional for offline bookings
+          }
+        } catch (emailError) {
+          console.error("Error sending email:", emailError);
+          // Don't throw - email is optional for offline bookings
+        }
       }
     } catch (error) {
       console.error("Error sending notifications:", error);
@@ -629,9 +640,9 @@ export const OfflineBookingDialog = ({
         total_participants: data.total_participants,
         contact_person_name: data.contact_person_name,
         contact_person_number: data.contact_person_number,
-        contact_person_email: data.contact_person_email,
+        contact_person_email: data.contact_person_email || null,
         booking_amount:
-          data.booking_amount ||
+          (data.booking_amount_per_person || 0) * data.total_participants ||
           (selectedActivity?.price
             ? selectedActivity.price * data.total_participants
             : 0),
@@ -768,7 +779,8 @@ export const OfflineBookingDialog = ({
                     <SelectContent>
                       {activities.map((activity) => (
                         <SelectItem key={activity.id} value={activity.id}>
-                          {activity.name} - {activity.currency} {activity.price}
+                          {activity.name}{" "}
+                          {/*- {activity.currency} {activity.price} */}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -928,7 +940,7 @@ export const OfflineBookingDialog = ({
               name="contact_person_email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contact Person Email *</FormLabel>
+                  <FormLabel>Contact Person Email (Optional)</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -996,18 +1008,18 @@ export const OfflineBookingDialog = ({
               )}
             />
 
-            {/* Booking Amount */}
+            {/* Booking Amount Per Person */}
             <FormField
               control={form.control}
-              name="booking_amount"
+              name="booking_amount_per_person"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    Booking Amount{" "}
+                    Amount Per Person{" "}
                     {selectedActivity && (
                       <span className="text-muted-foreground text-sm font-normal">
-                        (Suggested: {selectedActivity.currency}{" "}
-                        {selectedActivity.price * participantCount})
+                        {/* (Suggested: {selectedActivity.currency}{" "} */}
+                        {/* {selectedActivity.price}) */}
                       </span>
                     )}
                   </FormLabel>
@@ -1024,6 +1036,10 @@ export const OfflineBookingDialog = ({
                       }}
                     />
                   </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Total: {selectedActivity?.currency || "INR"}{" "}
+                    {((field.value || 0) * participantCount).toFixed(2)}
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -1070,22 +1086,22 @@ export const OfflineBookingDialog = ({
                       </span>
                       <span className="font-medium">
                         {selectedActivity.currency}{" "}
-                        {(() => {
-                          const bookingAmount =
-                            form.watch("booking_amount") ||
-                            selectedActivity.price * participantCount;
-                          return participantCount > 0
-                            ? (bookingAmount / participantCount).toFixed(2)
-                            : selectedActivity.price.toFixed(2);
-                        })()}
+                        {form.watch("booking_amount_per_person") ||
+                          selectedActivity.price}
                       </span>
                     </div>
                     <div className="flex justify-between text-lg font-bold pt-2 border-t">
                       <span>Total Amount:</span>
                       <span>
                         {selectedActivity.currency}{" "}
-                        {form.watch("booking_amount") ||
-                          selectedActivity.price * participantCount}
+                        {(() => {
+                          const perPersonAmount =
+                            form.watch("booking_amount_per_person") ||
+                            selectedActivity.price;
+                          return (perPersonAmount * participantCount).toFixed(
+                            2
+                          );
+                        })()}
                       </span>
                     </div>
                   </div>
