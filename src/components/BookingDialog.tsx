@@ -2409,7 +2409,7 @@ export const BookingDialog = ({
                             } & Confirm Booking`}
                     </Button>
                   </div>
-                  <div className="mt-2">
+                  {/* <div className="mt-2">
                     <DownloadPdfButton
                       invoiceRef={dummyInvoiceRef}
                       fileName={`Dummy_Invoice_${experience.title.replace(/\s+/g, '_')}`}
@@ -2425,7 +2425,7 @@ export const BookingDialog = ({
                       showDownloadButton={false}
                       isForPdf={true}
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Note for Guide */}
