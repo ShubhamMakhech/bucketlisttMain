@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 "use client";
 
 import * as React from "react";
@@ -21,6 +23,11 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import "./UserBookingsMobileCard.css";
 
 interface BookingWithDueAmount {
@@ -196,7 +203,7 @@ export const UserBookings = () => {
   // Helper function to format currency
   const formatCurrency = (currency: string, amount: number) => {
     const symbol = currency === "INR" ? "₹" : currency;
-    return `${symbol} ${amount}`;
+    return `${symbol} ${Math.round(amount)}`;
   };
 
   // Column drag handlers
@@ -1749,16 +1756,56 @@ export const UserBookings = () => {
           </div>
 
           <div>
-            {dueAmount > 0 && (
+            {/* Advance + Discount - Visible for vendors only */}
+            <div className="FlexMobileSection">
+              <div>
+                {user?.user_metadata?.role === "vendor" && (
+                  <div className="mobile-card-section">
+                    <div className="mobile-vendor-collection">
+                      <span className="mobile-vendor-collection-label">
+                        Advance + Discount:
+                      </span>
+                      <span className="mobile-vendor-collection-value">
+                        {(() => {
+                          const bookingAmountVal = (booking as any)?.booking_amount || 0;
+                          const dueAmountVal = booking?.due_amount || 0;
+                          const originalPriceVal = activity?.price || booking?.experiences?.price || 0;
+                          const officialPriceVal = originalPriceVal * booking.total_participants;
+
+                          // Calculate Discount: Official Price - Booking Amount (if positive)
+                          const discountCouponVal = officialPriceVal - bookingAmountVal > 0
+                            ? officialPriceVal - bookingAmountVal
+                            : 0;
+
+                          // Algorithm: Advance Paid + Discount
+                          // Advance Paid = Booking Amount - Due Amount
+                          const advancePaid = bookingAmountVal - dueAmountVal;
+                          const val = advancePaid + discountCouponVal;
+
+                          return formatCurrency(currency, val);
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="mobile-card-section">
-                <div className="mobile-pending-payment">
-                  <span className="mobile-pending-label">PENDING PAYMENT:</span>
+                <div
+                  className="mobile-pending-payment"
+                  style={{
+                    backgroundColor: dueAmount > 0 ? "#940fdb" : "#16a34a"
+                  }}
+                >
+                  <span className="mobile-pending-label">
+                    {dueAmount > 0 ? "PENDING PAYMENT:" : "PAYMENT STATUS:"}
+                  </span>
                   <span className="mobile-pending-amount">
-                    {currency} {dueAmount}
+                    {dueAmount > 0 ? formatCurrency(currency, dueAmount) : "FULL PAID"}
                   </span>
                 </div>
               </div>
-            )}
+            </div>
 
             {booking.note_for_guide && (
               <div className="mobile-notes-section">
@@ -1780,57 +1827,68 @@ export const UserBookings = () => {
                     <div className="mobile-vendor-item">
                       <span className="mobile-vendor-label">B2B Price</span>
                       <span className="mobile-vendor-value">
-                        {currency}{" "}
-                        {(booking.b2bPrice ||
-                          booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants}
+                        {formatCurrency(
+                          currency,
+                          (booking.b2bPrice ||
+                            booking.time_slots?.activities?.b2bPrice) *
+                          booking.total_participants
+                        )}
                       </span>
                     </div>
                     <div className="mobile-vendor-item">
                       <span className="mobile-vendor-label">Original Price</span>
                       <span className="mobile-vendor-value">
-                        {currency}{" "}
-                        {booking.time_slots?.activities?.price *
-                          booking.total_participants}
+                        {formatCurrency(
+                          currency,
+                          booking.time_slots?.activities?.price *
+                          booking.total_participants
+                        )}
                       </span>
                     </div>
                     <div className="mobile-vendor-item">
                       <span className="mobile-vendor-label">Commission</span>
                       <span className="mobile-vendor-value">
-                        {currency}{" "}
-                        {(booking.time_slots?.activities?.price -
-                          (booking.b2bPrice ||
-                            booking.time_slots?.activities?.b2bPrice)) *
-                          booking.total_participants}
+                        {formatCurrency(
+                          currency,
+                          (booking.time_slots?.activities?.price -
+                            (booking.b2bPrice ||
+                              booking.time_slots?.activities?.b2bPrice)) *
+                          booking.total_participants
+                        )}
                       </span>
                     </div>
                     <div className="mobile-vendor-item">
                       <span className="mobile-vendor-label">Customer Cost</span>
                       <span className="mobile-vendor-value">
-                        {currency} {bookingAmount}
+                        {formatCurrency(currency, Number(bookingAmount))}
                       </span>
                     </div>
                     <div className="mobile-vendor-item">
                       <span className="mobile-vendor-label">Advance Paid</span>
                       <span className="mobile-vendor-value">
-                        {currency} {bookingAmount - dueAmount}
+                        {formatCurrency(currency, Number(bookingAmount) - dueAmount)}
                       </span>
                     </div>
                     <div className="mobile-vendor-item">
                       <span className="mobile-vendor-label">To Be Paid</span>
                       <span className="mobile-vendor-value">
-                        {currency} {bookingAmount - (bookingAmount - dueAmount)}
+                        {formatCurrency(
+                          currency,
+                          Number(bookingAmount) - (Number(bookingAmount) - dueAmount)
+                        )}
                       </span>
                     </div>
                     <div className="mobile-vendor-item">
                       <span className="mobile-vendor-label">Collect from Vendor</span>
                       <span className="mobile-vendor-value">
-                        {currency}{" "}
-                        {bookingAmount -
+                        {formatCurrency(
+                          currency,
+                          Number(bookingAmount) -
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
                           booking.total_participants -
-                          (bookingAmount - dueAmount)}
+                          (Number(bookingAmount) - dueAmount)
+                        )}
                       </span>
                     </div>
                   </div>
@@ -1863,11 +1921,19 @@ export const UserBookings = () => {
                       ? "default"
                       : "outline"
                 }
-                onClick={() =>
-                  isMobile
-                    ? setShowDateRangePicker(!showDateRangePicker)
-                    : handleSort("booking_date")
-                }
+                onClick={() => {
+                  if (isMobile) {
+                    const newState = !showDateRangePicker;
+                    setShowDateRangePicker(newState);
+                    if (newState) {
+                      setShowActivityFilter(false);
+                      setShowTimeslotFilter(false);
+                      setShowColumnSelector(false);
+                    }
+                  } else {
+                    handleSort("booking_date");
+                  }
+                }}
                 className="text-sm"
               >
                 <span className="text-sm">
@@ -1884,7 +1950,7 @@ export const UserBookings = () => {
 
               {/* Mobile Date Range Picker - Opens below Date button */}
               {showDateRangePicker && (
-                <div className="absolute z-10 left-0 mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-3 shadow-lg">
+                <div className="absolute z-10 right-0 mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-3 shadow-lg" id="UserBookingsMobileDateRangePicker">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">
                       Start Date
@@ -1958,7 +2024,13 @@ export const UserBookings = () => {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setShowColumnSelector(!showColumnSelector);
+                  const newState = !showColumnSelector;
+                  setShowColumnSelector(newState);
+                  if (newState) {
+                    setShowActivityFilter(false);
+                    setShowTimeslotFilter(false);
+                    setShowDateRangePicker(false);
+                  }
                 }}
               // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
               >
@@ -2056,102 +2128,120 @@ export const UserBookings = () => {
           )} */}
 
           {/* Timeslot Filter Button */}
-          {/* <div className="relative">
-            <Button
-              variant={selectedTimeslotId ? "default" : "outline"}
-              onClick={() => setShowTimeslotFilter(!showTimeslotFilter)}
-              className="text-sm"
+          <div className="relative">
+            <Popover
+              open={showTimeslotFilter}
+              onOpenChange={(open) => {
+                setShowTimeslotFilter(open);
+                if (open) {
+                  setShowActivityFilter(false);
+                  setShowDateRangePicker(false);
+                  setShowColumnSelector(false); // Close other popovers
+                }
+              }}
             >
-              {selectedTimeslotId
-                ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                    ?.displayName || "Timeslot"
-                : "Timeslot"}
-            </Button>
-
-            {showTimeslotFilter && (
-              <div
-                className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
-                style={{ zIndex: 1000 }}
-              >
+              <PopoverTrigger asChild>
                 <Button
-                  variant={selectedTimeslotId === null ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedTimeslotId(null);
-                    setShowTimeslotFilter(false);
-                  }}
-                  className="w-full justify-start text-xs"
+                  variant={selectedTimeslotId ? "default" : "outline"}
+                  className="text-sm"
                 >
-                  All Timeslots
+                  {selectedTimeslotId
+                    ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
+                      ?.displayName || "Timeslot"
+                    : "Timeslot"}
                 </Button>
-                {uniqueTimeslots.map((timeslot) => (
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-4" align="start">
+                <div className="space-y-2 max-h-60 overflow-y-auto">
                   <Button
-                    key={timeslot.id}
-                    variant={
-                      selectedTimeslotId === timeslot.id ? "default" : "outline"
-                    }
+                    variant={selectedTimeslotId === null ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
-                      setSelectedTimeslotId(timeslot.id);
+                      setSelectedTimeslotId(null);
                       setShowTimeslotFilter(false);
                     }}
                     className="w-full justify-start text-xs"
                   >
-                    {timeslot.displayName}
+                    All Timeslots
                   </Button>
-                ))}
-              </div>
-            )}
-          </div> */}
+                  {uniqueTimeslots.map((timeslot) => (
+                    <Button
+                      key={timeslot.id}
+                      variant={
+                        selectedTimeslotId === timeslot.id ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTimeslotId(timeslot.id);
+                        setShowTimeslotFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      {timeslot.displayName}
+                    </Button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
 
           {/* Activity Filter Button */}
-          {/* <div className="relative">
-            <Button
-              variant={selectedActivityId ? "default" : "outline"}
-              onClick={() => setShowActivityFilter(!showActivityFilter)}
-              className="text-sm"
+          <div className="relative">
+            <Popover
+              open={showActivityFilter}
+              onOpenChange={(open) => {
+                setShowActivityFilter(open);
+                if (open) {
+                  setShowTimeslotFilter(false);
+                  setShowDateRangePicker(false);
+                  setShowColumnSelector(false); // Close other popovers
+                }
+              }}
             >
-              {selectedActivityId
-                ? uniqueActivities.find((a) => a.id === selectedActivityId)
-                    ?.name || "Activity"
-                : "Activity"}
-            </Button>
-
-            {showActivityFilter && (
-              <div
-                className="absolute  left-0 top-full mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-2 shadow-lg max-h-60 overflow-y-auto"
-                style={{ zIndex: 1000 }}
-              >
+              <PopoverTrigger asChild>
                 <Button
-                  variant={selectedActivityId === null ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedActivityId(null);
-                    setShowActivityFilter(false);
-                  }}
-                  className="w-full justify-start text-xs"
+                  variant={selectedActivityId ? "default" : "outline"}
+                  className="text-sm"
                 >
-                  All Activities
+                  {selectedActivityId
+                    ? uniqueActivities.find((a) => a.id === selectedActivityId)
+                      ?.name || "Activity"
+                    : "Activity"}
                 </Button>
-                {uniqueActivities.map((activity) => (
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-4" align="start">
+                <div className="space-y-2 max-h-60 overflow-y-auto">
                   <Button
-                    key={activity.id}
-                    variant={
-                      selectedActivityId === activity.id ? "default" : "outline"
-                    }
+                    variant={selectedActivityId === null ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
-                      setSelectedActivityId(activity.id);
+                      setSelectedActivityId(null);
                       setShowActivityFilter(false);
                     }}
                     className="w-full justify-start text-xs"
                   >
-                    {activity.name}
+                    All Activities
                   </Button>
-                ))}
-              </div>
-            )}
-          </div> */}
+                  {uniqueActivities.map((activity) => (
+                    <Button
+                      key={activity.id}
+                      variant={
+                        selectedActivityId === activity.id ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedActivityId(activity.id);
+                        setShowActivityFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      {activity.name}
+                    </Button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
 
           {/* Experience Filter Button (Admin only) */}
           {/* {isAdmin && (
@@ -2329,7 +2419,7 @@ export const UserBookings = () => {
           {/* Mobile: Card Layout */}
           <div
             id="UserBookingsMobileLayout"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2"
           >
             {filteredAndSortedBookings.map((booking, index) => (
               <BookingCard

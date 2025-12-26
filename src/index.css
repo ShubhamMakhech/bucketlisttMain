@@ -864,15 +864,11 @@ h6 {
   }
 
   #UserBookingsSortButtonStyles {
-    display: flex;
+    display: flex !important;
     gap: 5px;
     flex-direction: row;
     display: block;
-  }
-
-  /* Show mobile layout, hide desktop layout on mobile */
-  #UserBookingsMobileLayout {
-    display: grid !important;
+    justify-content: start;
   }
 
   #UserBookingsDesktopLayout {

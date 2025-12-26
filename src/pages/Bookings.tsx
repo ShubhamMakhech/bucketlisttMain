@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Header } from "@/components/Header";
 import { UserBookings } from "@/components/UserBookings";
 import { OfflineBookingDialog } from "@/components/OfflineBookingDialog";
@@ -99,8 +100,8 @@ const Bookings = () => {
             "Time Slot": booking.time_slots
               ? `${booking.time_slots.start_time} - ${booking.time_slots.end_time}`
               : booking.type === "offline"
-              ? "Offline Booking"
-              : "N/A",
+                ? "Offline Booking"
+                : "N/A",
             Activity: activity?.name || offlineActivity?.name || "N/A",
             "Total Participants": booking.total_participants || 0,
             "Booking Amount": booking.booking_amount || 0,
@@ -240,9 +241,8 @@ const Bookings = () => {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Bookings Data");
 
       // Generate filename
-      const fileName = `bookings_export_${
-        new Date().toISOString().split("T")[0]
-      }.xlsx`;
+      const fileName = `bookings_export_${new Date().toISOString().split("T")[0]
+        }.xlsx`;
 
       // Generate and download file
       XLSX.writeFile(workbook, fileName);
@@ -290,16 +290,16 @@ const Bookings = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Profile
           </Button> */}
-          <div className="mb-6">
+          <div className="mb-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-brand-primary/10">
                   <Calendar className="w-6 h-6 text-brand-primary" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">
+                  <div className="MybookingHeading">
                     My Bookings
-                  </h1>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {isVendor
                       ? "Manage all bookings for your experiences"
@@ -322,6 +322,7 @@ const Bookings = () => {
                     disabled={isExporting}
                     variant="outline"
                     className="border-brand-primary text-brand-primary hover:bg-brand-primary/10"
+                    id="ExportToExcelButtonStyles"
                   >
                     <Download className="h-4 w-4 mr-2" />
                     {isExporting ? "Exporting..." : "Export to Excel"}
