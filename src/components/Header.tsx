@@ -606,23 +606,25 @@ export function Header() {
 
                   {/* Main Menu Items */}
                   <div>
-                    <DropdownMenuItem
-                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
-                      onClick={() => setShowEditProfile(true)}
-                    >
-                      <div className="flex items-center gap-2.5 w-full">
-                        <div
-                          className="flex items-center justify-center w-7 h-7 rounded-md"
-                          style={{ background: "#940fdb15" }}
-                        >
-                          <User
-                            className="h-3.5 w-3.5"
-                            style={{ color: "#940fdb" }}
-                          />
+                    {!isVendor && (
+                      <DropdownMenuItem
+                        className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                        onClick={() => setShowEditProfile(true)}
+                      >
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div
+                            className="flex items-center justify-center w-7 h-7 rounded-md"
+                            style={{ background: "#940fdb15" }}
+                          >
+                            <User
+                              className="h-3.5 w-3.5"
+                              style={{ color: "#940fdb" }}
+                            />
+                          </div>
+                          <span className="text-sm">Profile</span>
                         </div>
-                        <span className="text-sm">Profile</span>
-                      </div>
-                    </DropdownMenuItem>
+                      </DropdownMenuItem>
+                    )}
 
                     <DropdownMenuItem
                       className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
@@ -642,41 +644,45 @@ export function Header() {
                       </div>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem
-                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
-                      onClick={() => navigate("/favorites")}
-                    >
-                      <div className="flex items-center gap-2.5 w-full">
-                        <div
-                          className="flex items-center justify-center w-7 h-7 rounded-md"
-                          style={{ background: "#940fdb15" }}
-                        >
-                          <Heart
-                            className="h-3.5 w-3.5"
-                            style={{ color: "#940fdb" }}
-                          />
+                    {!isVendor && (
+                      <DropdownMenuItem
+                        className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                        onClick={() => navigate("/favorites")}
+                      >
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div
+                            className="flex items-center justify-center w-7 h-7 rounded-md"
+                            style={{ background: "#940fdb15" }}
+                          >
+                            <Heart
+                              className="h-3.5 w-3.5"
+                              style={{ color: "#940fdb" }}
+                            />
+                          </div>
+                          <span className="text-sm">Wishlists</span>
                         </div>
-                        <span className="text-sm">Wishlists</span>
-                      </div>
-                    </DropdownMenuItem>
+                      </DropdownMenuItem>
+                    )}
 
-                    <DropdownMenuItem
-                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
-                      onClick={() => navigate("/coming-soon")}
-                    >
-                      <div className="flex items-center gap-2.5 w-full">
-                        <div
-                          className="flex items-center justify-center w-7 h-7 rounded-md"
-                          style={{ background: "#940fdb15" }}
-                        >
-                          <Star
-                            className="h-3.5 w-3.5"
-                            style={{ color: "#940fdb" }}
-                          />
+                    {!isVendor && (
+                      <DropdownMenuItem
+                        className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                        onClick={() => navigate("/coming-soon")}
+                      >
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div
+                            className="flex items-center justify-center w-7 h-7 rounded-md"
+                            style={{ background: "#940fdb15" }}
+                          >
+                            <Star
+                              className="h-3.5 w-3.5"
+                              style={{ color: "#940fdb" }}
+                            />
+                          </div>
+                          <span className="text-sm">Reviews</span>
                         </div>
-                        <span className="text-sm">Reviews</span>
-                      </div>
-                    </DropdownMenuItem>
+                      </DropdownMenuItem>
+                    )}
                   </div>
 
                   <DropdownMenuSeparator className="my-1" />
