@@ -896,62 +896,94 @@ export const OfflineBookingDialog = ({
               </div>
             )}
 
-            {/* Contact Person Name */}
-            <FormField
-              control={form.control}
-              name="contact_person_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Person Name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Full name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Primary Contact Details */}
+            <Card id="primary-contact-details-card">
+              <CardContent className="px-3 py-3">
+                <h4 className="font-medium mb-1">Primary Contact Details</h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <FormField
+                    control={form.control}
+                    name="contact_person_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            placeholder="Full name *"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              // Trigger validation if field becomes empty
+                              if (!e.target.value.trim()) {
+                                form.trigger("contact_person_name");
+                              }
+                            }}
+                            onBlur={(e) => {
+                              field.onBlur();
+                              // Trigger validation on blur
+                              form.trigger("contact_person_name");
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-            {/* Contact Person Phone */}
-            <FormField
-              control={form.control}
-              name="contact_person_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Person Phone *</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="10-digit phone number"
-                      {...field}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, "");
-                        field.onChange(value);
-                      }}
-                      maxLength={10}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="contact_person_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            placeholder="Phone number *"
+                            {...field}
+                            onChange={(e) => {
+                              // Remove all non-numeric characters and spaces
+                              const value = e.target.value.replace(
+                                /[^0-9]/g,
+                                ""
+                              );
+                              field.onChange(value);
+                            }}
+                            onBlur={(e) => {
+                              // Trigger validation on blur
+                              field.onBlur();
+                              form.trigger("contact_person_number");
+                            }}
+                            maxLength={10}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-            {/* Contact Person Email */}
-            <FormField
-              control={form.control}
-              name="contact_person_email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Person Email (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="email@example.com"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="contact_person_email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Email"
+                            {...field}
+                            onChange={(e) => {
+                              const value = e.target.value.trim();
+                              field.onChange(value);
+                            }}
+                            onBlur={(e) => {
+                              // Trigger validation on blur
+                              field.onBlur();
+                              form.trigger("contact_person_email");
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Number of Participants */}
             <FormField

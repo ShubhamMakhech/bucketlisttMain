@@ -30,6 +30,7 @@ interface BookingWithDueAmount {
 
 export const UserBookings = () => {
   const { user } = useAuth();
+  console.log("user", user);
   const { isAgent, isAdmin } = useUserRole();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -104,6 +105,7 @@ export const UserBookings = () => {
     visibility[1] = true; // Activity
     visibility[2] = true; // Contact Number
     visibility[3] = true; // Contact Name
+    visibility[7] = true; // Date
     visibility[6] = true; // Timeslot
     visibility[8] = true; // No. Of Participants
     visibility[10] = true; // Booking Type
@@ -277,13 +279,14 @@ export const UserBookings = () => {
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-          profile?.phone_number ||
-          booking?.booking_participants?.[0]?.phone_number ? (
+        profile?.phone_number ||
+        booking?.booking_participants?.[0]?.phone_number ? (
           <a
-            href={`tel:${booking.contact_person_number ||
+            href={`tel:${
+              booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-              }`}
+            }`}
             className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
@@ -307,11 +310,11 @@ export const UserBookings = () => {
       () =>
         timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-            timeslot.end_time
-          )}`
+              timeslot.end_time
+            )}`
           : isOfflineBooking
-            ? "Offline"
-            : "N/A",
+          ? "Offline"
+          : "N/A",
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
       () => booking.note_for_guide || "-",
@@ -319,10 +322,11 @@ export const UserBookings = () => {
         const bookingType = (booking as any)?.type || "online";
         return (
           <span
-            className={`px-2 py-1 rounded text-xs font-medium ${bookingType === "offline"
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-              : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-              }`}
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              bookingType === "offline"
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+            }`}
           >
             {bookingType === "offline" ? "Offline" : "Online"}
           </span>
@@ -698,11 +702,11 @@ export const UserBookings = () => {
                 const isOfflineFilter = (booking as any)?.type === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                  ? "Offline"
+                  : "";
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
               case 8: // No. Of Participants
@@ -793,8 +797,8 @@ export const UserBookings = () => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                  b2bPrice4 * booking.total_participants -
-                  (bookingAmount5 - dueAmount3)
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline") return "-";
@@ -836,13 +840,15 @@ export const UserBookings = () => {
             ?.toLowerCase()
             .includes(searchTerm) ||
           booking.status?.toLowerCase().includes(searchTerm) ||
-          profileMap[booking.user_id]?.first_name
+          (booking as any)?.contact_person_name
             ?.toLowerCase()
             .includes(searchTerm) ||
-          profileMap[booking.user_id]?.last_name
+          (booking as any)?.contact_person_email
             ?.toLowerCase()
             .includes(searchTerm) ||
-          profileMap[booking.user_id]?.email?.toLowerCase().includes(searchTerm)
+          (booking as any)?.contact_person_number
+            ?.toLowerCase()
+            .includes(searchTerm)
         );
       });
     }
@@ -913,8 +919,8 @@ export const UserBookings = () => {
             case 6: // Timeslot
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : "";
             case 7: // Date
               return new Date(booking.booking_date).getTime();
@@ -1348,11 +1354,11 @@ export const UserBookings = () => {
             case 6:
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : isOffline
-                  ? "Offline"
-                  : "";
+                ? "Offline"
+                : "";
             case 7:
               return format(new Date(booking.booking_date), "MMM d, yyyy");
             case 8:
@@ -1448,8 +1454,8 @@ export const UserBookings = () => {
               return formatCurrency(
                 currency,
                 bookingAmount -
-                b2bPrice * booking.total_participants -
-                (bookingAmount - dueAmount)
+                  b2bPrice * booking.total_participants -
+                  (bookingAmount - dueAmount)
               );
             }
             case 21: {
@@ -1726,14 +1732,15 @@ export const UserBookings = () => {
               <div className="mobile-info-item">
                 <span className="mobile-info-label">Contact</span>
                 <span className="mobile-info-value">
-                  {(booking.contact_person_number ||
-                    profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number) ? (
+                  {booking.contact_person_number ||
+                  profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ? (
                     <a
-                      href={`tel:${booking.contact_person_number ||
+                      href={`tel:${
+                        booking.contact_person_number ||
                         profile?.phone_number ||
                         booking?.booking_participants?.[0]?.phone_number
-                        }`}
+                      }`}
                       className="mobile-contact-link"
                     >
                       {booking.contact_person_number ||
@@ -1787,7 +1794,9 @@ export const UserBookings = () => {
                       </span>
                     </div>
                     <div className="mobile-vendor-item">
-                      <span className="mobile-vendor-label">Original Price</span>
+                      <span className="mobile-vendor-label">
+                        Original Price
+                      </span>
                       <span className="mobile-vendor-value">
                         {currency}{" "}
                         {booking.time_slots?.activities?.price *
@@ -1823,13 +1832,15 @@ export const UserBookings = () => {
                       </span>
                     </div>
                     <div className="mobile-vendor-item">
-                      <span className="mobile-vendor-label">Collect from Vendor</span>
+                      <span className="mobile-vendor-label">
+                        Collect from Vendor
+                      </span>
                       <span className="mobile-vendor-value">
                         {currency}{" "}
                         {bookingAmount -
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants -
+                            booking.total_participants -
                           (bookingAmount - dueAmount)}
                       </span>
                     </div>
@@ -1860,8 +1871,8 @@ export const UserBookings = () => {
                   isMobile && showDateRangePicker
                     ? "default"
                     : sortBy === "booking_date"
-                      ? "default"
-                      : "outline"
+                    ? "default"
+                    : "outline"
                 }
                 onClick={() =>
                   isMobile
@@ -1960,7 +1971,7 @@ export const UserBookings = () => {
                   e.stopPropagation();
                   setShowColumnSelector(!showColumnSelector);
                 }}
-              // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
               >
                 Columns
               </Button>
@@ -1985,10 +1996,11 @@ export const UserBookings = () => {
                       return (
                         <label
                           key={index}
-                          className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
-                            ? "opacity-50 cursor-not-allowed"
-                            : "cursor-pointer hover:bg-muted/30"
-                            }`}
+                          className={`flex items-center gap-2 p-2 rounded ${
+                            isHiddenForAgent
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-muted/30"
+                          }`}
                         >
                           <input
                             type="checkbox"
@@ -2361,13 +2373,15 @@ export const UserBookings = () => {
                               headerRefs.current[originalIndex] = el;
                             }}
                             data-column-index={originalIndex}
-                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${draggedColumnIndex === originalIndex
-                              ? "opacity-50"
-                              : ""
-                              } ${dragOverColumnIndex === originalIndex
+                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${
+                              draggedColumnIndex === originalIndex
+                                ? "opacity-50"
+                                : ""
+                            } ${
+                              dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                              } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
+                            } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
                             style={{ width: columnWidths[originalIndex] }}
                             draggable={true}
                             onDragStart={() =>
@@ -2435,11 +2449,12 @@ export const UserBookings = () => {
                                   title="Filter"
                                 >
                                   <Filter
-                                    className={`w-3 h-3 ${columnFilters[originalIndex] &&
+                                    className={`w-3 h-3 ${
+                                      columnFilters[originalIndex] &&
                                       columnFilters[originalIndex].length > 0
-                                      ? "text-blue-600"
-                                      : "text-gray-400"
-                                      }`}
+                                        ? "text-blue-600"
+                                        : "text-gray-400"
+                                    }`}
                                   />
                                 </span>
                               </div>
@@ -2471,7 +2486,7 @@ export const UserBookings = () => {
                                       </span>
                                       {columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length >
-                                        0 && (
+                                          0 && (
                                           <Button
                                             variant="ghost"
                                             size="sm"
@@ -2493,11 +2508,12 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
                                           sortOrder === "asc"
-                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                          : "hover:bg-gray-200"
-                                          }`}
+                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                            : "hover:bg-gray-200"
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -2519,11 +2535,12 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
                                           sortOrder === "desc"
-                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                          : "hover:bg-gray-200"
-                                          }`}
+                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                            : "hover:bg-gray-200"
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -2599,8 +2616,8 @@ export const UserBookings = () => {
                                   {/* Filter Options List */}
                                   <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
                                     {getUniqueColumnValues[originalIndex] &&
-                                      getUniqueColumnValues[originalIndex]
-                                        .length > 0 ? (
+                                    getUniqueColumnValues[originalIndex]
+                                      .length > 0 ? (
                                       (() => {
                                         const searchQuery =
                                           filterSearchQueries[
@@ -2743,8 +2760,8 @@ export const UserBookings = () => {
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                        ? booking.note_for_guide || ""
-                                        : ""
+                                      ? booking.note_for_guide || ""
+                                      : ""
                                   }
                                 >
                                   {renderCellContent(

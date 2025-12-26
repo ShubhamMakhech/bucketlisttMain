@@ -44,6 +44,7 @@ import WhatsAppButton from "./pages/whatsapp";
 import Users from "./pages/Users";
 import { AdminBlogPage } from "./components/AdminBlogPage";
 import VendorCalendarPage from "./pages/VendorCalendarPage";
+import { VendorRouteGuard } from "./components/VendorRouteGuard";
 const queryClient = new QueryClient();
 
 const WhatsappButtonConditional = () => {
@@ -169,9 +170,10 @@ const App: React.FC = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Layout>
-              <PageTransition>
-                <Routes>
+            <VendorRouteGuard>
+              <Layout>
+                <PageTransition>
+                  <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/blogs" element={<Blogs />} />
@@ -217,14 +219,15 @@ const App: React.FC = () => {
                     element={<DestinationDetail />}
                   />
                   <Route path="*" element={<NotFound />} />
-                </Routes>
-              </PageTransition>
-            </Layout>
+                  </Routes>
+                </PageTransition>
+              </Layout>
 
-            {/* AI Chatbot - Only show on homepage */}
-            <WhatsappButtonConditional />
-            {/* Mobile Floating Button - Only show on experience detail routes */}
-            <ConditionalMobileButton />
+              {/* AI Chatbot - Only show on homepage */}
+              <WhatsappButtonConditional />
+              {/* Mobile Floating Button - Only show on experience detail routes */}
+              <ConditionalMobileButton />
+            </VendorRouteGuard>
           </BrowserRouter>
         </AuthProvider>
       </ThemeProvider>
