@@ -11,6 +11,10 @@ import {
   FileText,
   UserCircle,
   Bell,
+  User,
+  BookOpen,
+  Star,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
@@ -47,6 +51,8 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [isDesktopDropdownOpen, setIsDesktopDropdownOpen] = useState(false);
+  const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
 
   // Check if we're on the landing page
   const isLandingPage = location.pathname === "/";
@@ -185,6 +191,13 @@ export function Header() {
 
   return (
     <>
+      {/* Backdrop Blur Overlay */}
+      {(isDesktopDropdownOpen || isMobileDropdownOpen) && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9997] animate-in fade-in duration-200"
+        />
+      )}
+
       <header
         className={`sticky top-0 left-0 right-0 z-[9998] w-full transition-all duration-300 ${getHeaderStyles()}`}
       >
@@ -306,7 +319,7 @@ export function Header() {
 
             {/* User Dropdown or Sign In Button */}
             {user ? (
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={setIsDesktopDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -325,94 +338,109 @@ export function Header() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-64 bg-background border shadow-lg"
+                  className="w-64 bg-background border border-border shadow-lg rounded-lg p-1.5"
                 >
-                  <div className="flex items-center justify-start gap-2 p-2">
-                    <Avatar className="h-8 w-8">
+                  {/* User Info Section */}
+                  <div className="flex items-center gap-2.5 p-2 mb-1">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage
                         src={user.user_metadata?.avatar_url}
                         alt={user.email || ""}
                       />
-                      <AvatarFallback className="bg-orange-500 text-white">
+                      <AvatarFallback style={{ background: '#940fdb' }} className="text-white font-semibold">
                         {getInitials(user.email || "")}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <p className="text-sm font-semibold leading-tight truncate">
                         {user.email}
                       </p>
-                      <p className="text-xs leading-none text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {getRoleDisplayName(role)}
                       </p>
                     </div>
                   </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    // onClick={() => navigate("/profile")}
-                    onClick={() => setShowEditProfile(true)}
-                  >
-                    <UserCircle className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/bookings")}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Bookings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/favorites")}
-                  >
-                    <Heart className="mr-2 h-4 w-4" />
-                    Wishlists
-                  </DropdownMenuItem>
-                  {/* <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/coming-soon")}
-                  >
-                    <Gift className="mr-2 h-4 w-4" />
-                    Rewards
-                  </DropdownMenuItem> */}
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/coming-soon")}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Reviews
-                  </DropdownMenuItem>
-                  {isAdmin && (
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  {/* Main Menu Items */}
+                  <div>
                     <DropdownMenuItem
-                      className="cursor-pointer"
-                      onClick={() => isAdmin && navigate("/users")}
+                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                      onClick={() => setShowEditProfile(true)}
                     >
-                      <FileText className="mr-2 h-4 w-4" />
-                      Users
+                      <div className="flex items-center gap-2.5 w-full">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                          <User className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        </div>
+                        <span className="text-sm">Profile</span>
+                      </div>
                     </DropdownMenuItem>
-                  )}
-                  {/* <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/coming-soon")}
-                  >
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Payment methods
-                  </DropdownMenuItem> */}
-                  {/* <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/coming-soon")}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </DropdownMenuItem> */}
-                  <DropdownMenuSeparator />
+
+                    <DropdownMenuItem
+                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                      onClick={() => navigate("/bookings")}
+                    >
+                      <div className="flex items-center gap-2.5 w-full">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                          <Calendar className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        </div>
+                        <span className="text-sm">Bookings</span>
+                      </div>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                      onClick={() => navigate("/favorites")}
+                    >
+                      <div className="flex items-center gap-2.5 w-full">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                          <Heart className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        </div>
+                        <span className="text-sm">Wishlists</span>
+                      </div>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                      onClick={() => navigate("/coming-soon")}
+                    >
+                      <div className="flex items-center gap-2.5 w-full">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                          <Star className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        </div>
+                        <span className="text-sm">Reviews</span>
+                      </div>
+                    </DropdownMenuItem>
+
+                    {isAdmin && (
+                      <DropdownMenuItem
+                        className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                        onClick={() => navigate("/users")}
+                      >
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                            <Shield className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                          </div>
+                          <span className="text-sm">Users</span>
+                        </div>
+                      </DropdownMenuItem>
+                    )}
+                  </div>
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  {/* Logout */}
                   <DropdownMenuItem
-                    className="cursor-pointer"
+                    className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
                     onClick={handleSignOut}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
+                    <div className="flex items-center gap-2.5 w-full">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                        <LogOut className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                      </div>
+                      <span className="text-sm" style={{ color: '#940fdb' }}>Log out</span>
+                    </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -462,7 +490,7 @@ export function Header() {
 
             {/* User Profile or Sign In - Mobile */}
             {user ? (
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={setIsMobileDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -481,103 +509,112 @@ export function Header() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-64 bg-background border shadow-lg"
+                  className="w-64 bg-background border border-border shadow-lg rounded-lg p-1.5"
                 >
-                  <div className="flex items-center justify-start gap-2 p-2">
-                    <Avatar className="h-8 w-8">
+                  {/* User Info Section */}
+                  <div className="flex items-center gap-2.5 p-2 mb-1">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage
                         src={user.user_metadata?.avatar_url}
                         alt={user.email || ""}
                       />
-                      <AvatarFallback className="bg-orange-500 text-white">
+                      <AvatarFallback style={{ background: '#940fdb' }} className="text-white font-semibold">
                         {getInitials(user.email || "")}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <p className="text-sm font-semibold leading-tight truncate">
                         {user.email}
                       </p>
-                      <p className="text-xs leading-none text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {getRoleDisplayName(role)}
                       </p>
                     </div>
                   </div>
-                  <DropdownMenuSeparator />
+
+                  <DropdownMenuSeparator className="my-1" />
 
                   {/* Mobile-specific: Notification item */}
                   {nextBooking && (
                     <>
                       <DropdownMenuItem
-                        className="cursor-pointer"
+                        className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors"
                         onClick={() => navigate("/bookings")}
                       >
-                        <Bell className="mr-2 h-4 w-4" />
-                        Upcoming Booking
-                        <span className="ml-auto bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        <Bell className="mr-2.5 h-4 w-4" />
+                        <span className="text-sm flex-1">Upcoming Booking</span>
+                        <span style={{ background: '#940fdb' }} className="text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold ml-auto">
                           1
                         </span>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      <DropdownMenuSeparator className="my-1" />
                     </>
                   )}
 
+                  {/* Main Menu Items */}
+                  <div>
+                    <DropdownMenuItem
+                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                      onClick={() => setShowEditProfile(true)}
+                    >
+                      <div className="flex items-center gap-2.5 w-full">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                          <User className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        </div>
+                        <span className="text-sm">Profile</span>
+                      </div>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                      onClick={() => navigate("/bookings")}
+                    >
+                      <div className="flex items-center gap-2.5 w-full">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                          <Calendar className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        </div>
+                        <span className="text-sm">Bookings</span>
+                      </div>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                      onClick={() => navigate("/favorites")}
+                    >
+                      <div className="flex items-center gap-2.5 w-full">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                          <Heart className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        </div>
+                        <span className="text-sm">Wishlists</span>
+                      </div>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                      onClick={() => navigate("/coming-soon")}
+                    >
+                      <div className="flex items-center gap-2.5 w-full">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                          <Star className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        </div>
+                        <span className="text-sm">Reviews</span>
+                      </div>
+                    </DropdownMenuItem>
+                  </div>
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  {/* Logout */}
                   <DropdownMenuItem
-                    className="cursor-pointer"
-                    // onClick={() => navigate("/profile")}
-                    onClick={() => setShowEditProfile(true)}
-                  >
-                    <UserCircle className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/bookings")}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Bookings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/favorites")}
-                  >
-                    <Heart className="mr-2 h-4 w-4" />
-                    Wishlists
-                  </DropdownMenuItem>
-                  {/* <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/coming-soon")}
-                  >
-                    <Gift className="mr-2 h-4 w-4" />
-                    Rewards
-                  </DropdownMenuItem> */}
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/coming-soon")}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Reviews
-                  </DropdownMenuItem>
-                  {/* <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/coming-soon")}
-                  >
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Payment methods
-                  </DropdownMenuItem> */}
-                  {/* <DropdownMenuItem
-                    className="cursor-pointer"
-                    onClick={() => navigate("/coming-soon")}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </DropdownMenuItem> */}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="cursor-pointer"
+                    className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
                     onClick={handleSignOut}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
+                    <div className="flex items-center gap-2.5 w-full">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
+                        <LogOut className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                      </div>
+                      <span className="text-sm" style={{ color: '#940fdb' }}>Log out</span>
+                    </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
