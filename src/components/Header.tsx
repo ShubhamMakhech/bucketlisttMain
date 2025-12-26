@@ -193,9 +193,7 @@ export function Header() {
     <>
       {/* Backdrop Blur Overlay */}
       {(isDesktopDropdownOpen || isMobileDropdownOpen) && (
-        <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9997] animate-in fade-in duration-200"
-        />
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9997] animate-in fade-in duration-200" />
       )}
 
       <header
@@ -216,15 +214,17 @@ export function Header() {
             <img
               src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt+(1).png"
               alt="bucketlistt Logo"
-              className={`h-20 w-auto transition-opacity duration-300 ${isScrolled ? "opacity-0 absolute" : "opacity-100"
-                }`}
+              className={`h-20 w-auto transition-opacity duration-300 ${
+                isScrolled ? "opacity-0 absolute" : "opacity-100"
+              }`}
             />
             {/* Second logo - shown after scroll */}
             <img
               src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt.png"
               alt="bucketlistt Logo"
-              className={`h-20 w-auto transition-opacity duration-300 ${isScrolled ? "opacity-100" : "opacity-0 absolute"
-                }`}
+              className={`h-20 w-auto transition-opacity duration-300 ${
+                isScrolled ? "opacity-100" : "opacity-0 absolute"
+              }`}
             />
           </Link>
 
@@ -347,7 +347,10 @@ export function Header() {
                         src={user.user_metadata?.avatar_url}
                         alt={user.email || ""}
                       />
-                      <AvatarFallback style={{ background: '#940fdb' }} className="text-white font-semibold">
+                      <AvatarFallback
+                        style={{ background: "#940fdb" }}
+                        className="text-white font-semibold"
+                      >
                         {getInitials(user.email || "")}
                       </AvatarFallback>
                     </Avatar>
@@ -369,12 +372,20 @@ export function Header() {
                       className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
                       onClick={() => setShowEditProfile(true)}
                     >
-                      <div className="flex items-center gap-2.5 w-full">
-                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                          <User className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                      {!isVendor && (
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div
+                            className="flex items-center justify-center w-7 h-7 rounded-md"
+                            style={{ background: "#940fdb15" }}
+                          >
+                            <User
+                              className="h-3.5 w-3.5"
+                              style={{ color: "#940fdb" }}
+                            />
+                          </div>
+                          <span className="text-sm">Profile</span>
                         </div>
-                        <span className="text-sm">Profile</span>
-                      </div>
+                      )}
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
@@ -382,36 +393,58 @@ export function Header() {
                       onClick={() => navigate("/bookings")}
                     >
                       <div className="flex items-center gap-2.5 w-full">
-                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                          <Calendar className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        <div
+                          className="flex items-center justify-center w-7 h-7 rounded-md"
+                          style={{ background: "#940fdb15" }}
+                        >
+                          <Calendar
+                            className="h-3.5 w-3.5"
+                            style={{ color: "#940fdb" }}
+                          />
                         </div>
                         <span className="text-sm">Bookings</span>
                       </div>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem
-                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
-                      onClick={() => navigate("/favorites")}
-                    >
-                      <div className="flex items-center gap-2.5 w-full">
-                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                          <Heart className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                    {!isVendor && (
+                      <DropdownMenuItem
+                        className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                        onClick={() => navigate("/favorites")}
+                      >
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div
+                            className="flex items-center justify-center w-7 h-7 rounded-md"
+                            style={{ background: "#940fdb15" }}
+                          >
+                            <Heart
+                              className="h-3.5 w-3.5"
+                              style={{ color: "#940fdb" }}
+                            />
+                          </div>
+                          <span className="text-sm">Wishlists</span>
                         </div>
-                        <span className="text-sm">Wishlists</span>
-                      </div>
-                    </DropdownMenuItem>
+                      </DropdownMenuItem>
+                    )}
 
-                    <DropdownMenuItem
-                      className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
-                      onClick={() => navigate("/coming-soon")}
-                    >
-                      <div className="flex items-center gap-2.5 w-full">
-                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                          <Star className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                    {!isVendor && (
+                      <DropdownMenuItem
+                        className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                        onClick={() => navigate("/coming-soon")}
+                      >
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div
+                            className="flex items-center justify-center w-7 h-7 rounded-md"
+                            style={{ background: "#940fdb15" }}
+                          >
+                            <Star
+                              className="h-3.5 w-3.5"
+                              style={{ color: "#940fdb" }}
+                            />
+                          </div>
+                          <span className="text-sm">Reviews</span>
                         </div>
-                        <span className="text-sm">Reviews</span>
-                      </div>
-                    </DropdownMenuItem>
+                      </DropdownMenuItem>
+                    )}
 
                     {isAdmin && (
                       <DropdownMenuItem
@@ -419,8 +452,14 @@ export function Header() {
                         onClick={() => navigate("/users")}
                       >
                         <div className="flex items-center gap-2.5 w-full">
-                          <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                            <Shield className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                          <div
+                            className="flex items-center justify-center w-7 h-7 rounded-md"
+                            style={{ background: "#940fdb15" }}
+                          >
+                            <Shield
+                              className="h-3.5 w-3.5"
+                              style={{ color: "#940fdb" }}
+                            />
                           </div>
                           <span className="text-sm">Users</span>
                         </div>
@@ -436,10 +475,18 @@ export function Header() {
                     onClick={handleSignOut}
                   >
                     <div className="flex items-center gap-2.5 w-full">
-                      <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                        <LogOut className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                      <div
+                        className="flex items-center justify-center w-7 h-7 rounded-md"
+                        style={{ background: "#940fdb15" }}
+                      >
+                        <LogOut
+                          className="h-3.5 w-3.5"
+                          style={{ color: "#940fdb" }}
+                        />
                       </div>
-                      <span className="text-sm" style={{ color: '#940fdb' }}>Log out</span>
+                      <span className="text-sm" style={{ color: "#940fdb" }}>
+                        Log out
+                      </span>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -518,7 +565,10 @@ export function Header() {
                         src={user.user_metadata?.avatar_url}
                         alt={user.email || ""}
                       />
-                      <AvatarFallback style={{ background: '#940fdb' }} className="text-white font-semibold">
+                      <AvatarFallback
+                        style={{ background: "#940fdb" }}
+                        className="text-white font-semibold"
+                      >
                         {getInitials(user.email || "")}
                       </AvatarFallback>
                     </Avatar>
@@ -543,7 +593,10 @@ export function Header() {
                       >
                         <Bell className="mr-2.5 h-4 w-4" />
                         <span className="text-sm flex-1">Upcoming Booking</span>
-                        <span style={{ background: '#940fdb' }} className="text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold ml-auto">
+                        <span
+                          style={{ background: "#940fdb" }}
+                          className="text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold ml-auto"
+                        >
                           1
                         </span>
                       </DropdownMenuItem>
@@ -558,8 +611,14 @@ export function Header() {
                       onClick={() => setShowEditProfile(true)}
                     >
                       <div className="flex items-center gap-2.5 w-full">
-                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                          <User className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        <div
+                          className="flex items-center justify-center w-7 h-7 rounded-md"
+                          style={{ background: "#940fdb15" }}
+                        >
+                          <User
+                            className="h-3.5 w-3.5"
+                            style={{ color: "#940fdb" }}
+                          />
                         </div>
                         <span className="text-sm">Profile</span>
                       </div>
@@ -570,8 +629,14 @@ export function Header() {
                       onClick={() => navigate("/bookings")}
                     >
                       <div className="flex items-center gap-2.5 w-full">
-                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                          <Calendar className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        <div
+                          className="flex items-center justify-center w-7 h-7 rounded-md"
+                          style={{ background: "#940fdb15" }}
+                        >
+                          <Calendar
+                            className="h-3.5 w-3.5"
+                            style={{ color: "#940fdb" }}
+                          />
                         </div>
                         <span className="text-sm">Bookings</span>
                       </div>
@@ -582,8 +647,14 @@ export function Header() {
                       onClick={() => navigate("/favorites")}
                     >
                       <div className="flex items-center gap-2.5 w-full">
-                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                          <Heart className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        <div
+                          className="flex items-center justify-center w-7 h-7 rounded-md"
+                          style={{ background: "#940fdb15" }}
+                        >
+                          <Heart
+                            className="h-3.5 w-3.5"
+                            style={{ color: "#940fdb" }}
+                          />
                         </div>
                         <span className="text-sm">Wishlists</span>
                       </div>
@@ -594,8 +665,14 @@ export function Header() {
                       onClick={() => navigate("/coming-soon")}
                     >
                       <div className="flex items-center gap-2.5 w-full">
-                        <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                          <Star className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                        <div
+                          className="flex items-center justify-center w-7 h-7 rounded-md"
+                          style={{ background: "#940fdb15" }}
+                        >
+                          <Star
+                            className="h-3.5 w-3.5"
+                            style={{ color: "#940fdb" }}
+                          />
                         </div>
                         <span className="text-sm">Reviews</span>
                       </div>
@@ -610,10 +687,18 @@ export function Header() {
                     onClick={handleSignOut}
                   >
                     <div className="flex items-center gap-2.5 w-full">
-                      <div className="flex items-center justify-center w-7 h-7 rounded-md" style={{ background: '#940fdb15' }}>
-                        <LogOut className="h-3.5 w-3.5" style={{ color: '#940fdb' }} />
+                      <div
+                        className="flex items-center justify-center w-7 h-7 rounded-md"
+                        style={{ background: "#940fdb15" }}
+                      >
+                        <LogOut
+                          className="h-3.5 w-3.5"
+                          style={{ color: "#940fdb" }}
+                        />
                       </div>
-                      <span className="text-sm" style={{ color: '#940fdb' }}>Log out</span>
+                      <span className="text-sm" style={{ color: "#940fdb" }}>
+                        Log out
+                      </span>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

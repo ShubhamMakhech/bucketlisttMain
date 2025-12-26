@@ -496,12 +496,12 @@ export const BookingDialog = ({
                   components: {
                     ...(pdfUrl
                       ? {
-                        header_1: {
-                          filename: `Booking_Invoice_${bookingId}.pdf`,
-                          type: "document",
-                          value: pdfUrl,
-                        },
-                      }
+                          header_1: {
+                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
                       : {}),
                     body_1: {
                       type: "text",
@@ -569,7 +569,7 @@ export const BookingDialog = ({
                     ...(pdfUrl
                       ? {
                         header_1: {
-                          filename: `Booking_Invoice_${bookingId}.pdf`,
+                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
                           type: "document",
                           value: pdfUrl,
                         },
