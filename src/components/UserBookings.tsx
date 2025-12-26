@@ -93,7 +93,7 @@ export const UserBookings = () => {
   );
 
   // Column width state for resizable columns
-  const columnCount = 22; // Total number of columns (added Booking Type)
+  const columnCount = 23; // Total number of columns (added Booking Type and Booking Created At)
   const [columnWidths, setColumnWidths] = React.useState<number[]>(
     Array(columnCount).fill(100) // Default width 100px for each column (compact)
   );
@@ -116,9 +116,10 @@ export const UserBookings = () => {
     visibility[6] = true; // Timeslot
     visibility[8] = true; // No. Of Participants
     visibility[10] = true; // Booking Type
-    visibility[16] = true; // Advance paid to bucketlistt (10%)
+    // visibility[16] = true; // Advance paid to bucketlistt (10%)
     visibility[18] = true; // Payment to be collected by vendor (shifted by 1)
     visibility[20] = true; // Amount to be collected from vendor/ '- to be paid' (shifted by 1)
+    visibility[21] = true; // Amount to be collected from vendor/ '- to be paid' (shifted by 1)
 
     // Ensure agent restrictions are applied
     if (isAgent) {
@@ -181,11 +182,12 @@ export const UserBookings = () => {
     "Website Price",
     "Discount Coupon",
     "Ticket Price (customer cost)",
-    "Advance paid to bucketlistt (10%)",
-    "Payment to be collected by vendor",
-    "Actual Commission to bucketlistt (Net profit)",
-    "Amount to be collected from vendor/ '- to be paid'",
-    "Advance + discount (vendor needs this)",
+    "Advance paid",
+    "Pending amount from customer",
+    "Net Commission",
+    "Net from agent / (- to agent)'",
+    "Advance + discount",
+    "Booking Created At",
   ];
 
   // Function to toggle column visibility
@@ -348,6 +350,12 @@ export const UserBookings = () => {
       () => formatCurrency(currency, actualCommissionNet),
       () => formatCurrency(currency, amountToCollectFromVendor),
       () => formatCurrency(currency, advancePlusDiscount),
+      () => {
+        if (booking?.created_at) {
+          return format(new Date(booking.created_at), "dd/MM/yyyy");
+        }
+        return "N/A";
+      },
     ];
 
     return cells[columnIndex] ? cells[columnIndex]() : "N/A";
@@ -821,6 +829,11 @@ export const UserBookings = () => {
                   currency,
                   bookingAmount6 - dueAmount4 + discountCoupon2
                 );
+              case 22: // Booking Created At
+                if (booking?.created_at) {
+                  return format(new Date(booking.created_at), "dd/MM/yyyy");
+                }
+                return "";
               default:
                 return "";
             }
@@ -1003,6 +1016,11 @@ export const UserBookings = () => {
                   ? officialPriceA2 - bookingAmountA6
                   : 0;
               return bookingAmountA6 - dueAmountA4 + discountCouponA;
+            case 22: // Booking Created At
+              if (booking?.created_at) {
+                return new Date(booking.created_at).getTime();
+              }
+              return 0;
             default:
               return "";
           }
@@ -1315,7 +1333,7 @@ export const UserBookings = () => {
       const currency =
         activity?.currency || booking?.experiences?.currency || "INR";
 
-      for (let colIndex = 0; colIndex <= 21; colIndex++) {
+      for (let colIndex = 0; colIndex <= 22; colIndex++) {
         if (!valuesMap[colIndex]) {
           valuesMap[colIndex] = [];
         }
@@ -1477,6 +1495,12 @@ export const UserBookings = () => {
                 currency,
                 bookingAmount - dueAmount + discountCoupon
               );
+            }
+            case 22: {
+              if (booking?.created_at) {
+                return format(new Date(booking.created_at), "dd/MM/yyyy");
+              }
+              return "";
             }
             default:
               return "";
@@ -1771,15 +1795,19 @@ export const UserBookings = () => {
                       </span>
                       <span className="mobile-vendor-collection-value">
                         {(() => {
-                          const bookingAmountVal = (booking as any)?.booking_amount || 0;
+                          const bookingAmountVal =
+                            (booking as any)?.booking_amount || 0;
                           const dueAmountVal = booking?.due_amount || 0;
-                          const originalPriceVal = activity?.price || booking?.experiences?.price || 0;
-                          const officialPriceVal = originalPriceVal * booking.total_participants;
+                          const originalPriceVal =
+                            activity?.price || booking?.experiences?.price || 0;
+                          const officialPriceVal =
+                            originalPriceVal * booking.total_participants;
 
                           // Calculate Discount: Official Price - Booking Amount (if positive)
-                          const discountCouponVal = officialPriceVal - bookingAmountVal > 0
-                            ? officialPriceVal - bookingAmountVal
-                            : 0;
+                          const discountCouponVal =
+                            officialPriceVal - bookingAmountVal > 0
+                              ? officialPriceVal - bookingAmountVal
+                              : 0;
 
                           // Algorithm: Advance Paid + Discount
                           // Advance Paid = Booking Amount - Due Amount
@@ -1798,14 +1826,16 @@ export const UserBookings = () => {
                 <div
                   className="mobile-pending-payment"
                   style={{
-                    backgroundColor: dueAmount > 0 ? "#940fdb" : "#16a34a"
+                    backgroundColor: dueAmount > 0 ? "#940fdb" : "#16a34a",
                   }}
                 >
                   <span className="mobile-pending-label">
                     {dueAmount > 0 ? "PENDING PAYMENT:" : "PAYMENT STATUS:"}
                   </span>
                   <span className="mobile-pending-amount">
-                    {dueAmount > 0 ? formatCurrency(currency, dueAmount) : "FULL PAID"}
+                    {dueAmount > 0
+                      ? formatCurrency(currency, dueAmount)
+                      : "FULL PAID"}
                   </span>
                 </div>
               </div>
@@ -1835,7 +1865,7 @@ export const UserBookings = () => {
                           currency,
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -1847,7 +1877,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           booking.time_slots?.activities?.price *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -1859,7 +1889,7 @@ export const UserBookings = () => {
                           (booking.time_slots?.activities?.price -
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice)) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -1872,7 +1902,10 @@ export const UserBookings = () => {
                     <div className="mobile-vendor-item">
                       <span className="mobile-vendor-label">Advance Paid</span>
                       <span className="mobile-vendor-value">
-                        {formatCurrency(currency, Number(bookingAmount) - dueAmount)}
+                        {formatCurrency(
+                          currency,
+                          Number(bookingAmount) - dueAmount
+                        )}
                       </span>
                     </div>
                     <div className="mobile-vendor-item">
@@ -1880,7 +1913,8 @@ export const UserBookings = () => {
                       <span className="mobile-vendor-value">
                         {formatCurrency(
                           currency,
-                          Number(bookingAmount) - (Number(bookingAmount) - dueAmount)
+                          Number(bookingAmount) -
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -1892,10 +1926,10 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (booking.b2bPrice ||
-                            booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants -
-                          (Number(bookingAmount) - dueAmount)
+                            (booking.b2bPrice ||
+                              booking.time_slots?.activities?.b2bPrice) *
+                              booking.total_participants -
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -2072,14 +2106,16 @@ export const UserBookings = () => {
                 >
                   {selectedTimeslotId
                     ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                      ?.displayName || "Timeslot"
+                        ?.displayName || "Timeslot"
                     : "Timeslot"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[280px] p-4" align="start">
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   <Button
-                    variant={selectedTimeslotId === null ? "default" : "outline"}
+                    variant={
+                      selectedTimeslotId === null ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => {
                       setSelectedTimeslotId(null);
@@ -2093,7 +2129,9 @@ export const UserBookings = () => {
                     <Button
                       key={timeslot.id}
                       variant={
-                        selectedTimeslotId === timeslot.id ? "default" : "outline"
+                        selectedTimeslotId === timeslot.id
+                          ? "default"
+                          : "outline"
                       }
                       size="sm"
                       onClick={() => {
@@ -2130,14 +2168,16 @@ export const UserBookings = () => {
                 >
                   {selectedActivityId
                     ? uniqueActivities.find((a) => a.id === selectedActivityId)
-                      ?.name || "Activity"
+                        ?.name || "Activity"
                     : "Activity"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[280px] p-4" align="start">
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   <Button
-                    variant={selectedActivityId === null ? "default" : "outline"}
+                    variant={
+                      selectedActivityId === null ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => {
                       setSelectedActivityId(null);
@@ -2151,7 +2191,9 @@ export const UserBookings = () => {
                     <Button
                       key={activity.id}
                       variant={
-                        selectedActivityId === activity.id ? "default" : "outline"
+                        selectedActivityId === activity.id
+                          ? "default"
+                          : "outline"
                       }
                       size="sm"
                       onClick={() => {
