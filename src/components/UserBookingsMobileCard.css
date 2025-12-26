@@ -1,0 +1,180 @@
+/* Mobile Booking Card Styles - Ultra Compact */
+
+.mobile-booking-card-content {
+    padding: 10px !important;
+    /* Reduced from 16px to 10px for compactness */
+}
+
+.mobile-card-section {
+    margin-bottom: 8px;
+    /* Reduced from 16px */
+}
+
+.mobile-card-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Main Info Grid */
+.mobile-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 8px;
+    /* Tight gaps: Row 8px, Col 8px */
+    font-size: 12px;
+}
+
+.mobile-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    /* Very tight label-value gap */
+}
+
+/* Left Column Styling */
+.mobile-info-item:nth-child(odd) {
+    align-items: flex-start;
+    text-align: left;
+}
+
+/* Right Column Styling */
+.mobile-info-item:nth-child(even) {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.mobile-info-label {
+    color: #6b7280;
+    font-size: 9px;
+    /* Smaller label */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+.mobile-info-value {
+    font-weight: 700;
+    color: #111827;
+    font-size: 12px;
+    /* standard readable size but not huge */
+    line-height: 1.2;
+}
+
+/* Pending Payment Badge - Side by Side */
+.mobile-pending-payment {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Pushes label left, amount right */
+    gap: 8px;
+    background: #940fdb;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #ffffff;
+    width: 100%;
+    margin-top: 4px;
+    box-shadow: 0 2px 4px rgba(148, 15, 219, 0.2);
+    min-height: 28px;
+}
+
+.mobile-pending-label {
+    font-weight: 600;
+    opacity: 0.95;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.3px;
+}
+
+.mobile-pending-amount {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Notes Section */
+.mobile-notes-section {
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 8px;
+    text-align: left;
+}
+
+.mobile-notes-label {
+    color: #6b7280;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+    display: block;
+}
+
+.mobile-notes-content {
+    font-weight: 500;
+    color: #374151;
+    font-size: 11px;
+    line-height: 1.3;
+    background: #f9fafb;
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid #f3f4f6;
+}
+
+/* Vendor Money Calculation - Compact */
+.mobile-vendor-section {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+.mobile-vendor-container {
+    background: #f3e8ff;
+    border-radius: 6px;
+    padding: 8px;
+    border: 1px solid #e9d5ff;
+}
+
+.mobile-vendor-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: #6b21a8;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.mobile-vendor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    font-size: 11px;
+}
+
+.mobile-vendor-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+}
+
+.mobile-vendor-item:nth-child(odd) {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.mobile-vendor-item:nth-child(even) {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.mobile-vendor-label {
+    color: #581c87;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.mobile-vendor-value {
+    font-weight: 700;
+    color: #111827;
+    font-size: 11px;
+}

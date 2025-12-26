@@ -21,6 +21,7 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import "./UserBookingsMobileCard.css";
 
 interface BookingWithDueAmount {
   due_amount?: number;
@@ -276,14 +277,13 @@ export const UserBookings = () => {
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-        profile?.phone_number ||
-        booking?.booking_participants?.[0]?.phone_number ? (
+          profile?.phone_number ||
+          booking?.booking_participants?.[0]?.phone_number ? (
           <a
-            href={`tel:${
-              booking.contact_person_number ||
+            href={`tel:${booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-            }`}
+              }`}
             className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
@@ -307,11 +307,11 @@ export const UserBookings = () => {
       () =>
         timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-              timeslot.end_time
-            )}`
+            timeslot.end_time
+          )}`
           : isOfflineBooking
-          ? "Offline"
-          : "N/A",
+            ? "Offline"
+            : "N/A",
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
       () => booking.note_for_guide || "-",
@@ -319,11 +319,10 @@ export const UserBookings = () => {
         const bookingType = (booking as any)?.type || "online";
         return (
           <span
-            className={`px-2 py-1 rounded text-xs font-medium ${
-              bookingType === "offline"
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-            }`}
+            className={`px-2 py-1 rounded text-xs font-medium ${bookingType === "offline"
+              ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+              : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+              }`}
           >
             {bookingType === "offline" ? "Offline" : "Online"}
           </span>
@@ -699,11 +698,11 @@ export const UserBookings = () => {
                 const isOfflineFilter = (booking as any)?.type === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                      timeslot.start_time
-                    )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                  ? "Offline"
-                  : "";
+                    ? "Offline"
+                    : "";
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
               case 8: // No. Of Participants
@@ -794,8 +793,8 @@ export const UserBookings = () => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                    b2bPrice4 * booking.total_participants -
-                    (bookingAmount5 - dueAmount3)
+                  b2bPrice4 * booking.total_participants -
+                  (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline") return "-";
@@ -914,8 +913,8 @@ export const UserBookings = () => {
             case 6: // Timeslot
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                  timeslot.start_time
+                )} - ${formatTime12Hour(timeslot.end_time)}`
                 : "";
             case 7: // Date
               return new Date(booking.booking_date).getTime();
@@ -1349,11 +1348,11 @@ export const UserBookings = () => {
             case 6:
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                  timeslot.start_time
+                )} - ${formatTime12Hour(timeslot.end_time)}`
                 : isOffline
-                ? "Offline"
-                : "";
+                  ? "Offline"
+                  : "";
             case 7:
               return format(new Date(booking.booking_date), "MMM d, yyyy");
             case 8:
@@ -1449,8 +1448,8 @@ export const UserBookings = () => {
               return formatCurrency(
                 currency,
                 bookingAmount -
-                  b2bPrice * booking.total_participants -
-                  (bookingAmount - dueAmount)
+                b2bPrice * booking.total_participants -
+                (bookingAmount - dueAmount)
               );
             }
             case 21: {
@@ -1688,218 +1687,151 @@ export const UserBookings = () => {
             </Badge> */}
           </div>
         </CardHeader>
-        <CardContent className="space-y-1 p-3">
-          <div
-            className="grid grid-cols-2 gap-1 text-sm"
-            id="UserBookingsCardContentStyles"
-          >
-            <div>
-              <span className="text-muted-foreground">Activity:</span>
-              <p className="font-medium">
-                {(booking.time_slots?.activities as any)?.name || "N/A"}
-              </p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Date:</span>
-              <p className="font-medium">
-                {format(new Date(booking.booking_date), "MMM d, yyyy")}
-              </p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Start Time:</span>
-              <p className="font-medium">
-                {formatTime12Hour(booking.time_slots?.start_time || "")}
-              </p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Participants:</span>
-              <p className="font-medium">
-                {booking?.total_participants || "N/A"}
-              </p>
-            </div>
-            {/* <div>
-              <span className="text-muted-foreground">End Time:</span>
-              <p className="font-medium">
-                {formatTime12Hour(booking.time_slots?.end_time || "")}
-              </p>
-            </div> */}
-          </div>
-
-          <div className="">
-            <div
-              className="grid grid-cols-2 gap-2 text-sm"
-              id="UserBookingsCardContentStyles3"
-            >
-              <div>
-                <span className="text-muted-foreground">Customer:</span>
-                <p className="font-medium">
-                  {profile
-                    ? `${profile.first_name} ${profile.last_name}`.trim()
-                    : booking?.booking_participants?.[0]?.name || "N/A"}
-                </p>
+        <CardContent className="mobile-booking-card-content">
+          <div className="mobile-card-section">
+            <div className="mobile-info-grid">
+              <div className="mobile-info-item">
+                <span className="mobile-info-label">Activity</span>
+                <span className="mobile-info-value">
+                  {(booking.time_slots?.activities as any)?.name || "N/A"}
+                </span>
+              </div>
+              <div className="mobile-info-item">
+                <span className="mobile-info-label">Date</span>
+                <span className="mobile-info-value">
+                  {format(new Date(booking.booking_date), "MMM d, yyyy")}
+                </span>
+              </div>
+              <div className="mobile-info-item">
+                <span className="mobile-info-label">Start Time</span>
+                <span className="mobile-info-value">
+                  {formatTime12Hour(booking.time_slots?.start_time || "")}
+                </span>
+              </div>
+              <div className="mobile-info-item">
+                <span className="mobile-info-label">Participants</span>
+                <span className="mobile-info-value">
+                  {booking?.total_participants || "N/A"}
+                </span>
+              </div>
+              <div className="mobile-info-item">
+                <span className="mobile-info-label">Customer</span>
+                <span className="mobile-info-value">
+                  {booking.contact_person_name ||
+                    (profile
+                      ? `${profile.first_name} ${profile.last_name}`.trim()
+                      : booking?.booking_participants?.[0]?.name || "N/A")}
+                </span>
+              </div>
+              <div className="mobile-info-item">
+                <span className="mobile-info-label">Contact</span>
+                <span className="mobile-info-value">
+                  {(booking.contact_person_number ||
+                    profile?.phone_number ||
+                    booking?.booking_participants?.[0]?.phone_number) ? (
+                    <a
+                      href={`tel:${booking.contact_person_number ||
+                        profile?.phone_number ||
+                        booking?.booking_participants?.[0]?.phone_number
+                        }`}
+                      className="mobile-contact-link"
+                    >
+                      {booking.contact_person_number ||
+                        profile?.phone_number ||
+                        booking?.booking_participants?.[0]?.phone_number}
+                    </a>
+                  ) : (
+                    "N/A"
+                  )}
+                </span>
               </div>
             </div>
           </div>
-          {(profile?.phone_number ||
-            booking?.booking_participants?.[0]?.phone_number) && (
-            <div className="text-sm" id="UserBookingsCardContentStyles4">
-              <span className="text-muted-foreground">Contact:</span>
-              <p className="font-medium" style={{ color: "blue" }}>
-                <a
-                  href={`tel:${
-                    profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number
-                  }`}
-                >
-                  {profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number ||
-                    "N/A"}
-                </a>
-              </p>
-            </div>
-          )}
-          <div className="">
-            <div className="space-y-2">
-              {/* <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Total Amount:</span>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-orange-500">
-                    {bookingAmount === "N/A"
-                      ? "N/A"
-                      : `${currency} ${bookingAmount}`}
-                  </div>
-                  {bookingAmount !== "N/A" && (
-                    <div className="text-xs text-muted-foreground">
-                      {booking?.total_participants} × {currency}{" "}
-                      {bookingAmount / booking?.total_participants}
-                    </div>
-                  )}
-                </div>
-              </div> */}
-              {dueAmount > 0 && (
-                <div className="flex gap-1 items-center">
-                  <span className="text-sm text-muted-foreground">
-                    Pending Payment:
-                  </span>
-                  <span className="text-sm font-medium">
+
+          <div>
+            {dueAmount > 0 && (
+              <div className="mobile-card-section">
+                <div className="mobile-pending-payment">
+                  <span className="mobile-pending-label">PENDING PAYMENT:</span>
+                  <span className="mobile-pending-amount">
                     {currency} {dueAmount}
                   </span>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {booking.note_for_guide && (
+              <div className="mobile-notes-section">
+                <span className="mobile-notes-label">Notes for Guide</span>
+                <p className="mobile-notes-content">{booking.note_for_guide}</p>
+              </div>
+            )}
           </div>
-
-          {/* {(profile?.email || booking?.booking_participants?.[0]?.email) && (
-            <div className="border-t pt-3">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Email:</span>
-                <p className="font-medium">
-                  {profile?.email ||
-                    booking?.booking_participants?.[0]?.email ||
-                    "N/A"}
-                </p>
-              </div>
-            </div>
-          )} */}
-
-          {booking.note_for_guide && (
-            <div className=" pt-1" id="UserBookingsCardContentStyles5">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Notes for Guide:</span>
-                <p className="font-medium">{booking.note_for_guide}</p>
-              </div>
-            </div>
-          )}
 
           {/* Vendor Money Calculation Section - Hidden on mobile */}
           {!isMobile &&
             user?.user_metadata?.role === "vendor" &&
             booking.time_slots?.activities?.b2bPrice &&
             bookingAmount != "N/A" && (
-              <div className="border-t pt-3 mt-3">
-                <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3 space-y-2">
-                  <div className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                    Money Calculation
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {/* Space reserved for vendor money calculations */}
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">B2B Price:</span>
-                      <p className="font-medium">
+              <div className="mobile-vendor-section">
+                <div className="mobile-vendor-container">
+                  <div className="mobile-vendor-title">Money Calculation</div>
+                  <div className="mobile-vendor-grid">
+                    <div className="mobile-vendor-item">
+                      <span className="mobile-vendor-label">B2B Price</span>
+                      <span className="mobile-vendor-value">
                         {currency}{" "}
                         {(booking.b2bPrice ||
                           booking.time_slots?.activities?.b2bPrice) *
                           booking.total_participants}
-                      </p>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">
-                        Original Price:
                       </span>
-                      <p className="font-medium">
+                    </div>
+                    <div className="mobile-vendor-item">
+                      <span className="mobile-vendor-label">Original Price</span>
+                      <span className="mobile-vendor-value">
                         {currency}{" "}
                         {booking.time_slots?.activities?.price *
                           booking.total_participants}
-                      </p>
-                    </div>
-                    {/* <div className="text-sm">
-                      <span className="text-muted-foreground">
-                        Website Price:
                       </span>
-                      <p className="font-medium">
-                        {currency}{" "}
-                        {booking.time_slots?.activities?.discounted_price *
-                          booking.total_participants}
-                      </p>
-                    </div> */}
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Commission:</span>
-                      <p className="font-medium">
+                    </div>
+                    <div className="mobile-vendor-item">
+                      <span className="mobile-vendor-label">Commission</span>
+                      <span className="mobile-vendor-value">
                         {currency}{" "}
                         {(booking.time_slots?.activities?.price -
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice)) *
                           booking.total_participants}
-                      </p>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">
-                        Customer Cost:
                       </span>
-                      <p className="font-medium">
+                    </div>
+                    <div className="mobile-vendor-item">
+                      <span className="mobile-vendor-label">Customer Cost</span>
+                      <span className="mobile-vendor-value">
                         {currency} {bookingAmount}
-                      </p>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">
-                        Advance Paid:
                       </span>
-                      <p className="font-medium">
+                    </div>
+                    <div className="mobile-vendor-item">
+                      <span className="mobile-vendor-label">Advance Paid</span>
+                      <span className="mobile-vendor-value">
                         {currency} {bookingAmount - dueAmount}
-                      </p>
-                    </div>
-                    <div className="text-sm">
-                      {" "}
-                      <span className="text-muted-foreground">
-                        Amount to be paid:
                       </span>
-                      <p className="font-medium">
+                    </div>
+                    <div className="mobile-vendor-item">
+                      <span className="mobile-vendor-label">To Be Paid</span>
+                      <span className="mobile-vendor-value">
                         {currency} {bookingAmount - (bookingAmount - dueAmount)}
-                      </p>
-                    </div>
-                    <div className="text-sm">
-                      {" "}
-                      <span className="text-muted-foreground">
-                        Amount to be collected from vendor:
                       </span>
-                      <p className="font-medium">
+                    </div>
+                    <div className="mobile-vendor-item">
+                      <span className="mobile-vendor-label">Collect from Vendor</span>
+                      <span className="mobile-vendor-value">
                         {currency}{" "}
                         {bookingAmount -
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                            booking.total_participants -
+                          booking.total_participants -
                           (bookingAmount - dueAmount)}
-                      </p>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1928,8 +1860,8 @@ export const UserBookings = () => {
                   isMobile && showDateRangePicker
                     ? "default"
                     : sortBy === "booking_date"
-                    ? "default"
-                    : "outline"
+                      ? "default"
+                      : "outline"
                 }
                 onClick={() =>
                   isMobile
@@ -2028,7 +1960,7 @@ export const UserBookings = () => {
                   e.stopPropagation();
                   setShowColumnSelector(!showColumnSelector);
                 }}
-                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+              // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
               >
                 Columns
               </Button>
@@ -2053,11 +1985,10 @@ export const UserBookings = () => {
                       return (
                         <label
                           key={index}
-                          className={`flex items-center gap-2 p-2 rounded ${
-                            isHiddenForAgent
-                              ? "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer hover:bg-muted/30"
-                          }`}
+                          className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
+                            ? "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer hover:bg-muted/30"
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -2430,15 +2361,13 @@ export const UserBookings = () => {
                               headerRefs.current[originalIndex] = el;
                             }}
                             data-column-index={originalIndex}
-                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${
-                              draggedColumnIndex === originalIndex
-                                ? "opacity-50"
-                                : ""
-                            } ${
-                              dragOverColumnIndex === originalIndex
+                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${draggedColumnIndex === originalIndex
+                              ? "opacity-50"
+                              : ""
+                              } ${dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                            } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
+                              } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
                             style={{ width: columnWidths[originalIndex] }}
                             draggable={true}
                             onDragStart={() =>
@@ -2506,12 +2435,11 @@ export const UserBookings = () => {
                                   title="Filter"
                                 >
                                   <Filter
-                                    className={`w-3 h-3 ${
-                                      columnFilters[originalIndex] &&
+                                    className={`w-3 h-3 ${columnFilters[originalIndex] &&
                                       columnFilters[originalIndex].length > 0
-                                        ? "text-blue-600"
-                                        : "text-gray-400"
-                                    }`}
+                                      ? "text-blue-600"
+                                      : "text-gray-400"
+                                      }`}
                                   />
                                 </span>
                               </div>
@@ -2543,7 +2471,7 @@ export const UserBookings = () => {
                                       </span>
                                       {columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length >
-                                          0 && (
+                                        0 && (
                                           <Button
                                             variant="ghost"
                                             size="sm"
@@ -2565,12 +2493,11 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${
-                                          sortBy === originalIndex &&
+                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
                                           sortOrder === "asc"
-                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                            : "hover:bg-gray-200"
-                                        }`}
+                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                          : "hover:bg-gray-200"
+                                          }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -2592,12 +2519,11 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${
-                                          sortBy === originalIndex &&
+                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
                                           sortOrder === "desc"
-                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                            : "hover:bg-gray-200"
-                                        }`}
+                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                          : "hover:bg-gray-200"
+                                          }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -2673,8 +2599,8 @@ export const UserBookings = () => {
                                   {/* Filter Options List */}
                                   <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
                                     {getUniqueColumnValues[originalIndex] &&
-                                    getUniqueColumnValues[originalIndex]
-                                      .length > 0 ? (
+                                      getUniqueColumnValues[originalIndex]
+                                        .length > 0 ? (
                                       (() => {
                                         const searchQuery =
                                           filterSearchQueries[
@@ -2817,8 +2743,8 @@ export const UserBookings = () => {
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                      ? booking.note_for_guide || ""
-                                      : ""
+                                        ? booking.note_for_guide || ""
+                                        : ""
                                   }
                                 >
                                   {renderCellContent(
