@@ -291,16 +291,16 @@ const Bookings = () => {
             Back to Profile
           </Button> */}
           <div className="mb-0">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
                 <div className="p-2 rounded-lg bg-brand-primary/10">
-                  <Calendar className="w-6 h-6 text-brand-primary" />
+                  <Calendar className="calenderIcon text-brand-primary" />
                 </div>
                 <div>
                   <div className="MybookingHeading">
                     My Bookings
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground OnlyMobileParaGraph">
                     {isVendor
                       ? "Manage all bookings for your experiences"
                       : "View and manage your bookings"}
@@ -311,7 +311,7 @@ const Bookings = () => {
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => setIsOfflineBookingDialogOpen(true)}
-                    className="bg-brand-primary hover:bg-brand-primary/90 text-white"
+                    className="bg-brand-primary hover:bg-brand-primary/90 text-white EditButtonStyle"
                     size="default"
                   >
                     <Plus className="h-4 w-4 mr-2" />

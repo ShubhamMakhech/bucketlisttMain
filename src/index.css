@@ -869,8 +869,13 @@ h6 {
     flex-direction: row;
     display: block;
     justify-content: start;
+    margin-bottom: 10px;
   }
 
+  #UserBookingsSortButtonStyles button{
+    padding: 5px 10px !important;
+    height: 100% !important;
+  }
   #UserBookingsDesktopLayout {
     display: none !important;
   }
