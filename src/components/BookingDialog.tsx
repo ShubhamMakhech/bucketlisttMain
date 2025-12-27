@@ -2084,7 +2084,7 @@ export const BookingDialog = ({
                             </FormItem>
                           )}
                         />
-                        <FormField
+                        {/* <FormField
                           control={form.control}
                           name="referral_code"
                           render={({ field }) => (
@@ -2135,7 +2135,7 @@ export const BookingDialog = ({
                               )}
                             </FormItem>
                           )}
-                        />
+                        /> */}
                         {!isAgent && (
                           <div className="space-y-3">
                             <FormField
