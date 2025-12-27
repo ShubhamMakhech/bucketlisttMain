@@ -307,7 +307,7 @@ const Bookings = () => {
                   </p>
                 </div>
               </div>
-              {/* {isVendor && ( */}
+              {isVendor && (
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => setIsOfflineBookingDialogOpen(true)}
@@ -328,7 +328,7 @@ const Bookings = () => {
                     {isExporting ? "Exporting..." : "Export to Excel"}
                   </Button>
                 </div>
-              {/* )} */}
+              )} 
             </div>
 
             {/* Info Banner for Vendors */}
