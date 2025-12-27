@@ -1784,10 +1784,11 @@ export const UserBookings = () => {
           </div>
 
           <div>
-            {/* Advance + Discount - Visible for vendors only */}
-            <div className="FlexMobileSection">
-              <div>
-                {user?.user_metadata?.role === "vendor" && (
+            {/* Advance + Discount - Visible for vendors and admin only */}
+           
+              <div className="FlexMobileSection">
+                 {(isVendor || isAdmin) && (
+                <div>
                   <div className="mobile-card-section">
                     <div className="mobile-vendor-collection">
                       <span className="mobile-vendor-collection-label">
@@ -1819,27 +1820,27 @@ export const UserBookings = () => {
                       </span>
                     </div>
                   </div>
-                )}
-              </div>
-
-              <div className="mobile-card-section">
-                <div
-                  className="mobile-pending-payment"
-                  style={{
-                    backgroundColor: dueAmount > 0 ? "#940fdb" : "#16a34a",
-                  }}
-                >
-                  <span className="mobile-pending-label">
-                    {dueAmount > 0 ? "PENDING PAYMENT:" : "PAYMENT STATUS:"}
-                  </span>
-                  <span className="mobile-pending-amount">
-                    {dueAmount > 0
-                      ? formatCurrency(currency, dueAmount)
-                      : "FULL PAID"}
-                  </span>
+                </div>
+ )}
+                <div className="mobile-card-section">
+                  <div
+                    className="mobile-pending-payment"
+                    style={{
+                      backgroundColor: dueAmount > 0 ? "#940fdb" : "#16a34a",
+                    }}
+                  >
+                    <span className="mobile-pending-label">
+                      {dueAmount > 0 ? "PENDING PAYMENT:" : "PAYMENT STATUS:"}
+                    </span>
+                    <span className="mobile-pending-amount">
+                      {dueAmount > 0
+                        ? formatCurrency(currency, dueAmount)
+                        : "FULL PAID"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+           
 
             {booking.note_for_guide && (
               <div className="mobile-notes-section">
