@@ -140,22 +140,22 @@ export const BookingDialog = ({
   appliedCoupon,
   setIsBookingDialogOpen,
 }: BookingDialogProps) => {
-  const dummyInvoiceRef = useRef<HTMLDivElement>(null);
+  const dummyInvoiceRef = useRef < HTMLDivElement > (null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedSlotId, setSelectedSlotId] = useState<string | undefined>(
+  const [selectedDate, setSelectedDate] = useState < Date | undefined > (undefined);
+  const [selectedSlotId, setSelectedSlotId] = useState < string | undefined > (
     undefined
   );
   const [bypassPayment, setBypassPayment] = useState(false);
   const [partialPayment, setPartialPayment] = useState(false);
-  const [selectedActivityId, setSelectedActivityId] = useState<string>();
+  const [selectedActivityId, setSelectedActivityId] = useState < string > ();
   const [currentStep, setCurrentStep] = useState(1); // 1: Activity Selection, 2: Date/Time Selection, 3: Participants (mobile only)
   const [couponCode, setCouponCode] = useState("");
-  const [couponValidation, setCouponValidation] = useState<{
+  const [couponValidation, setCouponValidation] = useState < {
     isValid: boolean;
     message: string;
     coupon?: any;
-  } | null>(null);
+  } | null > (null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -164,12 +164,12 @@ export const BookingDialog = ({
   const isMobile = useIsMobile();
   const { isAgent } = useUserRole();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [b2bPrice, setB2bPrice] = useState<number>(0);
-  const [sellingPrice, setSellingPrice] = useState<number>(0);
-  const [advancePayment, setAdvancePayment] = useState<number>(0);
+  const [b2bPrice, setB2bPrice] = useState < number > (0);
+  const [sellingPrice, setSellingPrice] = useState < number > (0);
+  const [advancePayment, setAdvancePayment] = useState < number > (0);
   const [isReferralCodeExpanded, setIsReferralCodeExpanded] = useState(false);
   const [isCouponCodeExpanded, setIsCouponCodeExpanded] = useState(false);
-  const form = useForm<BookingFormData>({
+  const form = useForm < BookingFormData > ({
     resolver: zodResolver(bookingSchema),
     mode: "onBlur",
     reValidateMode: "onBlur",
