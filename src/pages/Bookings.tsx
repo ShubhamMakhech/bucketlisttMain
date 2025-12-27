@@ -328,7 +328,7 @@ const Bookings = () => {
                     {isExporting ? "Exporting..." : "Export to Excel"}
                   </Button>
                 </div>
-              )} 
+              )}
             </div>
 
             {/* Info Banner for Vendors */}

@@ -68,39 +68,62 @@ const ConditionalMobileButton = () => {
   }
 
   // Get experience ID from state (passed during navigation)
-  const experienceId = location.state?.experienceData?.id;
+  const experienceIdFromState = location.state?.experienceData?.id;
+  
+  // Extract url_name from the path: /experience/:name
+  const urlName = location.pathname.split("/experience/")[1];
 
   // Get experience data using React Query
   const { data: experience } = useQuery({
-    queryKey: ["experience", experienceId],
+    queryKey: ["experience", experienceIdFromState || urlName],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("experiences")
-        .select("*")
-        .eq("id", experienceId)
-        .single();
+      // If we have the ID, use it for fastest lookup
+      if (experienceIdFromState) {
+        const { data, error } = await supabase
+          .from("experiences")
+          .select("*")
+          .eq("id", experienceIdFromState)
+          .single();
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        return data;
+      } 
+      
+      // Fallback: fetch by url_name from the URL path
+      if (urlName) {
+        const { data, error } = await supabase
+          .from("experiences")
+          .select("*")
+          .eq("url_name", urlName)
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+      
+      return null;
     },
-    enabled: !!experienceId,
+    enabled: !!(experienceIdFromState || urlName),
   });
+
+  // Use the resolved experience ID for the activities query
+  const resolvedExperienceId = experience?.id;
 
   // Get activities data to check for discounted prices
   const { data: activities } = useQuery({
-    queryKey: ["activities", experienceId],
+    queryKey: ["activities", resolvedExperienceId],
     queryFn: async () => {
-      if (!experienceId) return [];
+      if (!resolvedExperienceId) return [];
       const { data, error } = await supabase
         .from("activities")
         .select("*")
-        .eq("experience_id", experienceId)
+        .eq("experience_id", resolvedExperienceId)
         .eq("is_active", true);
 
       if (error) throw error;
       return data || [];
     },
-    enabled: !!experienceId,
+    enabled: !!resolvedExperienceId,
   });
 
   // Get the first activity's discounted price (assuming single activity for mobile button)
@@ -174,51 +197,51 @@ const App: React.FC = () => {
               <Layout>
                 <PageTransition>
                   <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/blogs" element={<Blogs />} />
-                  <Route path="/blogs/:slug" element={<BlogDetail />} />
-                  <Route path="/admin/blogs" element={<AdminBlogPage />} />
-                  <Route path="/qrcode" element={<QRCodeRedirect />} />
-                  <Route
-                    path="/email-confirmation"
-                    element={<EmailConfirmation />}
-                  />
-                  <Route path="/experiences" element={<Experiences />} />
-                  <Route path="/destinations" element={<Destinations />} />
-                  <Route path="/favorites" element={<Favorites />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/profile/calendar" element={<VendorCalendarPage />} />
-                  <Route path="/bookings" element={<Bookings />} />
-                  <Route path="/confirm-booking" element={<ConfirmBooking />} />
-                  <Route
-                    path="/create-experience"
-                    element={<CreateExperience />}
-                  />
-                  <Route
-                    path="/edit-experience/:id"
-                    element={<EditExperience />}
-                  />
-                  <Route path="/contact" element={<ContactUs />} />
-                  <Route path="/our-story" element={<OurStory />} />
-                  <Route path="/terms" element={<TermsAndConditions />} />
-                  <Route path="/search" element={<SearchResults />} />
-                  <Route path="/coming-soon" element={<ComingSoon />} />
-                  <Route path="/users" element={<Users />} />
-                  <Route path="/partner" element={<Partner />} />
-                  <Route
-                    path="/vendor/experiences"
-                    element={<VendorExperiences />}
-                  />
-                  <Route
-                    path="/experience/:name"
-                    element={<ExperienceDetail />}
-                  />
-                  <Route
-                    path="/destination/:name"
-                    element={<DestinationDetail />}
-                  />
-                  <Route path="*" element={<NotFound />} />
+                    <Route path="/" element={<Index />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/blogs" element={<Blogs />} />
+                    <Route path="/blogs/:slug" element={<BlogDetail />} />
+                    <Route path="/admin/blogs" element={<AdminBlogPage />} />
+                    <Route path="/qrcode" element={<QRCodeRedirect />} />
+                    <Route
+                      path="/email-confirmation"
+                      element={<EmailConfirmation />}
+                    />
+                    <Route path="/experiences" element={<Experiences />} />
+                    <Route path="/destinations" element={<Destinations />} />
+                    <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/profile/calendar" element={<VendorCalendarPage />} />
+                    <Route path="/bookings" element={<Bookings />} />
+                    <Route path="/confirm-booking" element={<ConfirmBooking />} />
+                    <Route
+                      path="/create-experience"
+                      element={<CreateExperience />}
+                    />
+                    <Route
+                      path="/edit-experience/:id"
+                      element={<EditExperience />}
+                    />
+                    <Route path="/contact" element={<ContactUs />} />
+                    <Route path="/our-story" element={<OurStory />} />
+                    <Route path="/terms" element={<TermsAndConditions />} />
+                    <Route path="/search" element={<SearchResults />} />
+                    <Route path="/coming-soon" element={<ComingSoon />} />
+                    <Route path="/users" element={<Users />} />
+                    <Route path="/partner" element={<Partner />} />
+                    <Route
+                      path="/vendor/experiences"
+                      element={<VendorExperiences />}
+                    />
+                    <Route
+                      path="/experience/:name"
+                      element={<ExperienceDetail />}
+                    />
+                    <Route
+                      path="/destination/:name"
+                      element={<DestinationDetail />}
+                    />
+                    <Route path="*" element={<NotFound />} />
                   </Routes>
                 </PageTransition>
               </Layout>

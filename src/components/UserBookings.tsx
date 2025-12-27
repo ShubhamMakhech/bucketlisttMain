@@ -38,7 +38,7 @@ interface BookingWithDueAmount {
 export const UserBookings = () => {
   const { user } = useAuth();
   console.log("user", user);
-  const { isAgent, isAdmin } = useUserRole();
+  const { isAgent, isAdmin, isVendor } = useUserRole();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [globalFilter, setGlobalFilter] = React.useState("");
@@ -1865,7 +1865,7 @@ export const UserBookings = () => {
                           currency,
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                            booking.total_participants
+                          booking.total_participants
                         )}
                       </span>
                     </div>
@@ -1877,7 +1877,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           booking.time_slots?.activities?.price *
-                            booking.total_participants
+                          booking.total_participants
                         )}
                       </span>
                     </div>
@@ -1889,7 +1889,7 @@ export const UserBookings = () => {
                           (booking.time_slots?.activities?.price -
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice)) *
-                            booking.total_participants
+                          booking.total_participants
                         )}
                       </span>
                     </div>
@@ -1914,7 +1914,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                            (Number(bookingAmount) - dueAmount)
+                          (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -1926,10 +1926,10 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                            (booking.b2bPrice ||
-                              booking.time_slots?.activities?.b2bPrice) *
-                              booking.total_participants -
-                            (Number(bookingAmount) - dueAmount)
+                          (booking.b2bPrice ||
+                            booking.time_slots?.activities?.b2bPrice) *
+                          booking.total_participants -
+                          (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -1958,124 +1958,125 @@ export const UserBookings = () => {
           </div>
         )}
 
-        {/* Filter Buttons Row - Shows on both mobile and desktop */}
-        <div
-          className="relative flex flex-wrap gap-2"
-          id="UserBookingsSortButtonStyles"
-        >
-          {/* Today's Button - KEEP */}
-          <Button
-            variant={showTodayOnly ? "default" : "outline"}
-            className="text-sm"
-            onClick={() => setShowTodayOnly((prev) => !prev)}
-          >
-            {showTodayOnly ? `Show All` : `Today (${todayBookingsCount})`}
-          </Button>
-
-          {/* Columns Button - KEEP */}
+        {/* Filter Buttons Row - Shows on both mobile and desktop - HIDDEN for Vendors/Users */}
+        {(isAdmin || isAgent || isVendor) && (
           <div
-            className="mb-2 flex justify-end"
-            id="UserBookingsColumnSelectorStyles"
+            className="relative flex flex-wrap gap-2"
+            id="UserBookingsSortButtonStyles"
           >
-            <div className="relative" ref={columnSelectorRef}>
-              <Button
-                variant="outline"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const newState = !showColumnSelector;
-                  setShowColumnSelector(newState);
-                  if (newState) {
-                    setShowActivityFilter(false);
-                    setShowTimeslotFilter(false);
-                    setShowDateRangePicker(false);
-                  }
-                }}
-              // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
-              >
-                Columns
-              </Button>
+            {/* Today's Button - KEEP */}
+            <Button
+              variant={showTodayOnly ? "default" : "outline"}
+              className="text-sm"
+              onClick={() => setShowTodayOnly((prev) => !prev)}
+            >
+              {showTodayOnly ? `Show All` : `Today (${todayBookingsCount})`}
+            </Button>
 
-              {/* Column Selector Dropdown */}
-              {showColumnSelector && (
-                <div
-                  className="absolute right-0 left-2 mt-2 w-[300px] p-4 border border-blue-500 rounded-lg bg-white shadow-lg max-h-96 overflow-y-auto z-50"
-                  style={{ minHeight: "200px" }}
+            {/* Columns Button - KEEP */}
+            <div
+              className="mb-2 flex justify-end"
+              id="UserBookingsColumnSelectorStyles"
+            >
+              <div className="relative" ref={columnSelectorRef}>
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const newState = !showColumnSelector;
+                    setShowColumnSelector(newState);
+                    if (newState) {
+                      setShowActivityFilter(false);
+                      setShowTimeslotFilter(false);
+                      setShowDateRangePicker(false);
+                    }
+                  }}
+                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
-                  <div className="text-sm font-semibold mb-3 text-gray-900">
-                    Select Columns to Display
-                  </div>
-                  <div className="space-y-2">
-                    {columnHeaders.map((header, index) => {
-                      const isHiddenForAgent =
-                        isAgent &&
-                        (index === 10 ||
-                          index === 12 ||
-                          index === 13 ||
-                          index === 14);
-                      return (
-                        <label
-                          key={index}
-                          className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
-                            ? "opacity-50 cursor-not-allowed"
-                            : "cursor-pointer hover:bg-muted/30"
-                            }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={columnVisibility[index]}
-                            onChange={() => toggleColumnVisibility(index)}
-                            disabled={isHiddenForAgent}
-                            className="cursor-pointer"
-                          />
-                          <span className="text-sm">{header}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const newVisibility = Array(columnCount).fill(true);
-                        // Keep hidden columns hidden for agents
-                        if (isAgent) {
-                          newVisibility[10] = false; // Official Price/ Original Price
-                          newVisibility[12] = false; // Commission as per vendor
-                          newVisibility[13] = false; // Website Price
-                          newVisibility[14] = false; // Discount Coupon
+                  Columns
+                </Button>
+
+                {/* Column Selector Dropdown */}
+                {showColumnSelector && (
+                  <div
+                    className="absolute right-0 left-2 mt-2 w-[300px] p-4 border border-blue-500 rounded-lg bg-white shadow-lg max-h-96 overflow-y-auto z-50"
+                    style={{ minHeight: "200px" }}
+                  >
+                    <div className="text-sm font-semibold mb-3 text-gray-900">
+                      Select Columns to Display
+                    </div>
+                    <div className="space-y-2">
+                      {columnHeaders.map((header, index) => {
+                        const isHiddenForAgent =
+                          isAgent &&
+                          (index === 10 ||
+                            index === 12 ||
+                            index === 13 ||
+                            index === 14);
+                        return (
+                          <label
+                            key={index}
+                            className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-muted/30"
+                              }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={columnVisibility[index]}
+                              onChange={() => toggleColumnVisibility(index)}
+                              disabled={isHiddenForAgent}
+                              className="cursor-pointer"
+                            />
+                            <span className="text-sm">{header}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newVisibility = Array(columnCount).fill(true);
+                          // Keep hidden columns hidden for agents
+                          if (isAgent) {
+                            newVisibility[10] = false; // Official Price/ Original Price
+                            newVisibility[12] = false; // Commission as per vendor
+                            newVisibility[13] = false; // Website Price
+                            newVisibility[14] = false; // Discount Coupon
+                          }
+                          setColumnVisibility(newVisibility);
+                        }}
+                        className="text-xs flex-1"
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setColumnVisibility(Array(columnCount).fill(false))
                         }
-                        setColumnVisibility(newVisibility);
-                      }}
-                      className="text-xs flex-1"
-                    >
-                      Select All
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setColumnVisibility(Array(columnCount).fill(false))
-                      }
-                      className="text-xs flex-1"
-                    >
-                      Deselect All
-                    </Button>
+                        className="text-xs flex-1"
+                      >
+                        Deselect All
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Export to Excel Button Container - KEEP */}
-          <div className="export-to-excel-container">
-            {/* Export to Excel button will be added here */}
-          </div>
+            {/* Export to Excel Button Container - KEEP */}
+            <div className="export-to-excel-container">
+              {/* Export to Excel button will be added here */}
+            </div>
 
-          {/* COMMENTED OUT BUTTONS - DO NOT DELETE */}
-          {/* Desktop: Date button sorts bookings */}
-          {/* {!isMobile && (
+            {/* COMMENTED OUT BUTTONS - DO NOT DELETE */}
+            {/* Desktop: Date button sorts bookings */}
+            {/* {!isMobile && (
           <Button
               variant={sortBy === "booking_date" ? "default" : "outline"}
               onClick={() => handleSort("booking_date")}
@@ -2086,208 +2087,208 @@ export const UserBookings = () => {
           </Button>
           )} */}
 
-          {/* Timeslot Filter Button */}
-          <div className="relative">
-            <Popover
-              open={showTimeslotFilter}
-              onOpenChange={(open) => {
-                setShowTimeslotFilter(open);
-                if (open) {
-                  setShowActivityFilter(false);
-                  setShowDateRangePicker(false);
-                  setShowColumnSelector(false); // Close other popovers
-                }
-              }}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  variant={selectedTimeslotId ? "default" : "outline"}
-                  className="text-sm"
-                >
-                  {selectedTimeslotId
-                    ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                        ?.displayName || "Timeslot"
-                    : "Timeslot"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[280px] p-4" align="start">
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+            {/* Timeslot Filter Button */}
+            <div className="relative">
+              <Popover
+                open={showTimeslotFilter}
+                onOpenChange={(open) => {
+                  setShowTimeslotFilter(open);
+                  if (open) {
+                    setShowActivityFilter(false);
+                    setShowDateRangePicker(false);
+                    setShowColumnSelector(false); // Close other popovers
+                  }
+                }}
+              >
+                <PopoverTrigger asChild>
                   <Button
-                    variant={
-                      selectedTimeslotId === null ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => {
-                      setSelectedTimeslotId(null);
-                      setShowTimeslotFilter(false);
-                    }}
-                    className="w-full justify-start text-xs"
+                    variant={selectedTimeslotId ? "default" : "outline"}
+                    className="text-sm"
                   >
-                    All Timeslots
+                    {selectedTimeslotId
+                      ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
+                        ?.displayName || "Timeslot"
+                      : "Timeslot"}
                   </Button>
-                  {uniqueTimeslots.map((timeslot) => (
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-4" align="start">
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
                     <Button
-                      key={timeslot.id}
                       variant={
-                        selectedTimeslotId === timeslot.id
-                          ? "default"
-                          : "outline"
+                        selectedTimeslotId === null ? "default" : "outline"
                       }
                       size="sm"
                       onClick={() => {
-                        setSelectedTimeslotId(timeslot.id);
+                        setSelectedTimeslotId(null);
                         setShowTimeslotFilter(false);
                       }}
                       className="w-full justify-start text-xs"
                     >
-                      {timeslot.displayName}
+                      All Timeslots
                     </Button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+                    {uniqueTimeslots.map((timeslot) => (
+                      <Button
+                        key={timeslot.id}
+                        variant={
+                          selectedTimeslotId === timeslot.id
+                            ? "default"
+                            : "outline"
+                        }
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTimeslotId(timeslot.id);
+                          setShowTimeslotFilter(false);
+                        }}
+                        className="w-full justify-start text-xs"
+                      >
+                        {timeslot.displayName}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
 
-          {/* Activity Filter Button */}
-          <div className="relative">
-            <Popover
-              open={showActivityFilter}
-              onOpenChange={(open) => {
-                setShowActivityFilter(open);
-                if (open) {
-                  setShowTimeslotFilter(false);
-                  setShowDateRangePicker(false);
-                  setShowColumnSelector(false); // Close other popovers
-                }
-              }}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  variant={selectedActivityId ? "default" : "outline"}
-                  className="text-sm"
-                >
-                  {selectedActivityId
-                    ? uniqueActivities.find((a) => a.id === selectedActivityId)
-                        ?.name || "Activity"
-                    : "Activity"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[280px] p-4" align="start">
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+            {/* Activity Filter Button */}
+            <div className="relative">
+              <Popover
+                open={showActivityFilter}
+                onOpenChange={(open) => {
+                  setShowActivityFilter(open);
+                  if (open) {
+                    setShowTimeslotFilter(false);
+                    setShowDateRangePicker(false);
+                    setShowColumnSelector(false); // Close other popovers
+                  }
+                }}
+              >
+                <PopoverTrigger asChild>
                   <Button
-                    variant={
-                      selectedActivityId === null ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => {
-                      setSelectedActivityId(null);
-                      setShowActivityFilter(false);
-                    }}
-                    className="w-full justify-start text-xs"
+                    variant={selectedActivityId ? "default" : "outline"}
+                    className="text-sm"
                   >
-                    All Activities
+                    {selectedActivityId
+                      ? uniqueActivities.find((a) => a.id === selectedActivityId)
+                        ?.name || "Activity"
+                      : "Activity"}
                   </Button>
-                  {uniqueActivities.map((activity) => (
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-4" align="start">
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
                     <Button
-                      key={activity.id}
                       variant={
-                        selectedActivityId === activity.id
-                          ? "default"
-                          : "outline"
+                        selectedActivityId === null ? "default" : "outline"
                       }
                       size="sm"
                       onClick={() => {
-                        setSelectedActivityId(activity.id);
+                        setSelectedActivityId(null);
                         setShowActivityFilter(false);
                       }}
                       className="w-full justify-start text-xs"
                     >
-                      {activity.name}
+                      All Activities
                     </Button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="relative">
-            <Button
-              variant={
-                showDateRangePicker
-                  ? "default"
-                  : selectedDate
+                    {uniqueActivities.map((activity) => (
+                      <Button
+                        key={activity.id}
+                        variant={
+                          selectedActivityId === activity.id
+                            ? "default"
+                            : "outline"
+                        }
+                        size="sm"
+                        onClick={() => {
+                          setSelectedActivityId(activity.id);
+                          setShowActivityFilter(false);
+                        }}
+                        className="w-full justify-start text-xs"
+                      >
+                        {activity.name}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="relative">
+              <Button
+                variant={
+                  showDateRangePicker
                     ? "default"
-                    : "outline"
-              }
-              onClick={() => {
-                const newState = !showDateRangePicker;
-                setShowDateRangePicker(newState);
-                if (newState) {
-                  setShowActivityFilter(false);
-                  setShowTimeslotFilter(false);
-                  setShowColumnSelector(false);
-                }
-              }}
-              className="text-sm"
-            >
-              <span className="text-sm">
-                {isDateRangeActive
-                  ? selectedDate && selectedEndDate
-                    ? `${selectedDate} to ${selectedEndDate}`
                     : selectedDate
-                  : "Date"}
-              </span>
-            </Button>
+                      ? "default"
+                      : "outline"
+                }
+                onClick={() => {
+                  const newState = !showDateRangePicker;
+                  setShowDateRangePicker(newState);
+                  if (newState) {
+                    setShowActivityFilter(false);
+                    setShowTimeslotFilter(false);
+                    setShowColumnSelector(false);
+                  }
+                }}
+                className="text-sm"
+              >
+                <span className="text-sm">
+                  {isDateRangeActive
+                    ? selectedDate && selectedEndDate
+                      ? `${selectedDate} to ${selectedEndDate}`
+                      : selectedDate
+                    : "Date"}
+                </span>
+              </Button>
 
-            {/* Mobile Date Range Picker - Opens below Date button */}
-            {showDateRangePicker && (
-              <div className="absolute z-50 right-0 mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-3 shadow-lg" id="UserBookingsMobileDateRangePicker">
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">
-                    Start Date
-                  </label>
-                  <Input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full text-sm"
-                    max={selectedEndDate || undefined}
-                  />
+              {/* Mobile Date Range Picker - Opens below Date button */}
+              {showDateRangePicker && (
+                <div className="absolute z-50 right-0 mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-3 shadow-lg" id="UserBookingsMobileDateRangePicker">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">
+                      Start Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full text-sm"
+                      max={selectedEndDate || undefined}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">
+                      End Date (Optional)
+                    </label>
+                    <Input
+                      type="date"
+                      value={selectedEndDate}
+                      onChange={(e) => setSelectedEndDate(e.target.value)}
+                      className="w-full text-sm"
+                      min={selectedDate || undefined}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setShowDateRangePicker(false)}
+                      className="flex-1 text-xs"
+                    >
+                      Apply Filter
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearDateFilter}
+                      className="text-xs"
+                    >
+                      Clear
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">
-                    End Date (Optional)
-                  </label>
-                  <Input
-                    type="date"
-                    value={selectedEndDate}
-                    onChange={(e) => setSelectedEndDate(e.target.value)}
-                    className="w-full text-sm"
-                    min={selectedDate || undefined}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => setShowDateRangePicker(false)}
-                    className="flex-1 text-xs"
-                  >
-                    Apply Filter
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClearDateFilter}
-                    className="text-xs"
-                  >
-                    Clear
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-          {/* Experience Filter Button (Admin only) */}
-          {/* {isAdmin && (
+              )}
+            </div>
+            {/* Experience Filter Button (Admin only) */}
+            {/* {isAdmin && (
             <div className="relative">
               <Button
                 variant={selectedExperienceId ? "default" : "outline"}
@@ -2341,8 +2342,8 @@ export const UserBookings = () => {
             </div>
           )} */}
 
-          {/* Agent Filter Button (Admin only) */}
-          {/* {isAdmin && (
+            {/* Agent Filter Button (Admin only) */}
+            {/* {isAdmin && (
             <div className="relative">
               <Button
                 variant={selectedAgentId ? "default" : "outline"}
@@ -2392,8 +2393,8 @@ export const UserBookings = () => {
             </div>
           )} */}
 
-          {/* Vendor Filter Button (Admin only) */}
-          {/* {isAdmin && (
+            {/* Vendor Filter Button (Admin only) */}
+            {/* {isAdmin && (
             <div className="relative">
               <Button
                 variant={selectedVendorId ? "default" : "outline"}
@@ -2442,7 +2443,8 @@ export const UserBookings = () => {
               )}
             </div>
           )} */}
-        </div>
+          </div>
+        )}
 
         {/* Desktop Search Bar - Hidden on mobile */}
         {!isMobile && (
