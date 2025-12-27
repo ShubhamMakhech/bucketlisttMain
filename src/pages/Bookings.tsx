@@ -30,7 +30,7 @@ const Bookings = () => {
   }, [user, loading, navigate]);
 
   const exportToExcel = async () => {
-    if (!user || user.user_metadata?.role !== "vendor") return;
+    // if (!user || user.user_metadata?.role !== "vendor") return;
 
     setIsExporting(true);
     try {
@@ -307,7 +307,7 @@ const Bookings = () => {
                   </p>
                 </div>
               </div>
-              {isVendor && (
+              {/* {isVendor && ( */}
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => setIsOfflineBookingDialogOpen(true)}
@@ -328,7 +328,7 @@ const Bookings = () => {
                     {isExporting ? "Exporting..." : "Export to Excel"}
                   </Button>
                 </div>
-              )}
+              {/* )} */}
             </div>
 
             {/* Info Banner for Vendors */}
