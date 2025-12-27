@@ -1,20 +1,158 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Home } from 'lucide-react';
+import { Home, Download, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const ConfirmBookingPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [isFetchingBooking, setIsFetchingBooking] = useState(true);
+
+  useEffect(() => {
+    // Get booking ID from localStorage (set by BookingDialog after successful booking)
+    const storedBookingId = localStorage.getItem('lastBookingId');
+    if (storedBookingId) {
+      setBookingId(storedBookingId);
+      fetchPdfUrl(storedBookingId);
+      setIsFetchingBooking(false);
+    } else if (user) {
+      // If no booking ID in localStorage, fetch the user's most recent booking
+      fetchLatestBooking();
+    } else {
+      setIsFetchingBooking(false);
+    }
+  }, [user]);
+
+  const fetchLatestBooking = async () => {
+    try {
+      const { data: bookings, error } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error fetching latest booking:', error);
+        setIsFetchingBooking(false);
+        return;
+      }
+
+      if (bookings && bookings.length > 0) {
+        const latestBookingId = bookings[0].id;
+        setBookingId(latestBookingId);
+        await fetchPdfUrl(latestBookingId);
+      }
+      setIsFetchingBooking(false);
+    } catch (error) {
+      console.error('Error fetching latest booking:', error);
+      setIsFetchingBooking(false);
+    }
+  };
+
+  const fetchPdfUrl = async (bookingId: string) => {
+    try {
+      // List files in the booking's folder
+      const { data: files, error } = await supabase.storage
+        .from('booking-invoices')
+        .list(bookingId);
+
+      if (error) {
+        console.error('Error fetching PDF:', error);
+        return;
+      }
+
+      // Get the first (latest) PDF file
+      if (files && files.length > 0) {
+        const fileName = `${bookingId}/${files[0].name}`;
+        const { data: { publicUrl } } = supabase.storage
+          .from('booking-invoices')
+          .getPublicUrl(fileName);
+
+        setPdfUrl(publicUrl);
+      }
+    } catch (error) {
+      console.error('Error fetching PDF URL:', error);
+    }
+  };
 
   const handleGoHome = () => {
+    localStorage.removeItem('lastBookingId');
     navigate('/');
   };
 
   const handleViewBookings = () => {
+    localStorage.removeItem('lastBookingId');
     navigate('/bookings');
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!bookingId) {
+      toast({
+        title: 'No booking found',
+        description: 'Unable to download PDF.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+
+    try {
+      // Listfiles in the booking's folder
+      const { data: files, error: listError } = await supabase.storage
+        .from('booking-invoices')
+        .list(bookingId);
+
+      if (listError) throw listError;
+
+      if (!files || files.length === 0) {
+        toast({
+          title: 'PDF not available',
+          description: 'The booking PDF is being generated. Please try again in a moment.',
+          variant: 'default',
+        });
+        setIsDownloadingPdf(false);
+        return;
+      }
+
+      // Get the first (latest) PDF file
+      const fileName = `${bookingId}/${files[0].name}`;
+      const { data: { publicUrl } } = supabase.storage
+        .from('booking-invoices')
+        .getPublicUrl(fileName);
+
+      // Download the file
+      const link = document.createElement('a');
+      link.href = publicUrl;
+      link.download = `booking_${bookingId}.pdf`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: 'Download started',
+        description: 'Your booking PDF is being downloaded.',
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({
+        title: 'Download failed',
+        description: 'Unable to download the PDF. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloadingPdf(false);
+    }
   };
 
   return (
@@ -133,7 +271,7 @@ export const ConfirmBookingPage: React.FC = () => {
                 Confirmation sent!
               </p>
               <p className="text-sm text-gray-500">
-                Check your email for details
+                Check your email and WhatsApp for details
               </p>
             </div>
 
@@ -170,6 +308,36 @@ export const ConfirmBookingPage: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="space-y-3">
+          {/* Download PDF Button - Always visible */}
+          <Button
+            onClick={handleDownloadPdf}
+            size="lg"
+            disabled={isDownloadingPdf || isFetchingBooking || !bookingId}
+            className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isFetchingBooking ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Loading booking...
+              </>
+            ) : isDownloadingPdf ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Downloading...
+              </>
+            ) : !bookingId ? (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                No booking PDF available
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Download Booking PDF
+              </>
+            )}
+          </Button>
+
           <Button
             onClick={handleViewBookings}
             size="lg"

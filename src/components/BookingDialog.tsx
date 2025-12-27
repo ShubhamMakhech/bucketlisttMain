@@ -496,12 +496,12 @@ export const BookingDialog = ({
                   components: {
                     ...(pdfUrl
                       ? {
-                          header_1: {
-                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                            type: "document",
-                            value: pdfUrl,
-                          },
-                        }
+                        header_1: {
+                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                          type: "document",
+                          value: pdfUrl,
+                        },
+                      }
                       : {}),
                     body_1: {
                       type: "text",
@@ -996,6 +996,9 @@ export const BookingDialog = ({
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
+      // Store booking ID for PDF download on confirmation page
+      localStorage.setItem('lastBookingId', booking.id);
+
       toast({
         title: "Booking confirmed!",
         description: "Your booking has been confirmed.",
@@ -1142,10 +1145,13 @@ export const BookingDialog = ({
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
+      // Store booking ID for PDF download on confirmation page
+      localStorage.setItem('lastBookingId', booking.id);
+
       toast({
         title: "Booking confirmed!",
         description:
-          "Your payment was successful and booking has been confirmed.",
+          "Your payment was successful and booking has been confirmed successfully.",
       });
 
       onBookingSuccess();

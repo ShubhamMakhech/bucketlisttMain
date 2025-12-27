@@ -559,13 +559,13 @@ export const OfflineBookingDialog = ({
                 formattedDateTime: formattedDateTime,
                 timeSlot: selectedSlotId
                   ? (() => {
-                      const selectedSlot = timeSlots.find(
-                        (slot: any) => slot.id === selectedSlotId
-                      );
-                      return selectedSlot
-                        ? `${selectedSlot.start_time} - ${selectedSlot.end_time}`
-                        : "Offline Booking";
-                    })()
+                    const selectedSlot = timeSlots.find(
+                      (slot: any) => slot.id === selectedSlotId
+                    );
+                    return selectedSlot
+                      ? `${selectedSlot.start_time} - ${selectedSlot.end_time}`
+                      : "Offline Booking";
+                  })()
                   : "Offline Booking",
                 location: experienceDetails?.location || "",
                 location2: experienceDetails?.location2 || null,
@@ -849,13 +849,12 @@ export const OfflineBookingDialog = ({
                               }
                             }}
                             disabled={!isAvailable}
-                            className={`p-3 rounded-lg border-2 text-left transition-all ${
-                              isSelected
+                            className={`p-3 rounded-lg border-2 text-left transition-all ${isSelected
                                 ? "border-brand-primary bg-brand-primary/10"
                                 : isAvailable
-                                ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                                : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
-                            }`}
+                                  ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                  : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
+                              }`}
                           >
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-gray-500" />

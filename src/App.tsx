@@ -69,7 +69,7 @@ const ConditionalMobileButton = () => {
 
   // Get experience ID from state (passed during navigation)
   const experienceIdFromState = location.state?.experienceData?.id;
-  
+
   // Extract url_name from the path: /experience/:name
   const urlName = location.pathname.split("/experience/")[1];
 
@@ -87,8 +87,8 @@ const ConditionalMobileButton = () => {
 
         if (error) throw error;
         return data;
-      } 
-      
+      }
+
       // Fallback: fetch by url_name from the URL path
       if (urlName) {
         const { data, error } = await supabase
@@ -100,7 +100,7 @@ const ConditionalMobileButton = () => {
         if (error) throw error;
         return data;
       }
-      
+
       return null;
     },
     enabled: !!(experienceIdFromState || urlName),

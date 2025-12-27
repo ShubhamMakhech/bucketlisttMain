@@ -44,7 +44,7 @@ export const UserBookings = () => {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sortBy, setSortBy] = React.useState<
     number | "booking_date" | "title" | "status"
-  >(7); // Default to Date column (index 7)
+  >(22); // Default to Booking Created At column (index 22)
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [showTodayOnly, setShowTodayOnly] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState<string>("");
@@ -1785,9 +1785,9 @@ export const UserBookings = () => {
 
           <div>
             {/* Advance + Discount - Visible for vendors and admin only */}
-           
-              <div className="FlexMobileSection">
-                 {(isVendor || isAdmin) && (
+
+            <div className="FlexMobileSection">
+              {(isVendor || isAdmin) && (
                 <div>
                   <div className="mobile-card-section">
                     <div className="mobile-vendor-collection">
@@ -1821,26 +1821,26 @@ export const UserBookings = () => {
                     </div>
                   </div>
                 </div>
- )}
-                <div className="mobile-card-section">
-                  <div
-                    className="mobile-pending-payment"
-                    style={{
-                      backgroundColor: dueAmount > 0 ? "#940fdb" : "#16a34a",
-                    }}
-                  >
-                    <span className="mobile-pending-label">
-                      {dueAmount > 0 ? "PENDING PAYMENT:" : "PAYMENT STATUS:"}
-                    </span>
-                    <span className="mobile-pending-amount">
-                      {dueAmount > 0
-                        ? formatCurrency(currency, dueAmount)
-                        : "FULL PAID"}
-                    </span>
-                  </div>
+              )}
+              <div className="mobile-card-section">
+                <div
+                  className="mobile-pending-payment"
+                  style={{
+                    backgroundColor: dueAmount > 0 ? "#940fdb" : "#16a34a",
+                  }}
+                >
+                  <span className="mobile-pending-label">
+                    {dueAmount > 0 ? "PENDING PAYMENT:" : "PAYMENT STATUS:"}
+                  </span>
+                  <span className="mobile-pending-amount">
+                    {dueAmount > 0
+                      ? formatCurrency(currency, dueAmount)
+                      : "FULL PAID"}
+                  </span>
                 </div>
               </div>
-           
+            </div>
+
 
             {booking.note_for_guide && (
               <div className="mobile-notes-section">
