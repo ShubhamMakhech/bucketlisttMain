@@ -42,7 +42,7 @@ export function VendorRouteGuard({ children }: { children: React.ReactNode }) {
         // Pattern matches - routes starting with these prefixes
         if (
           path.startsWith("/experience/") ||
-          path.startsWith("/edit-experience/")
+          path.startsWith("/edit-experience/") 
         ) {
           return true;
         }
