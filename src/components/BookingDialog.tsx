@@ -61,7 +61,7 @@ import { useDiscountCoupon } from "@/hooks/useDiscountCoupon";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AuthModal } from "@/components/AuthModal";
 import { useUserRole } from "@/hooks/useUserRole";
-import "@/styles/BookingSummary.css";
+import "@/Styles/BookingSummary.css";
 import { Clock } from "lucide-react";
 const participantSchema = z.object({
   name: z.string().min(1, "Name is required"),
