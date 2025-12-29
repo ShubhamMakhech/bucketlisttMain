@@ -18,7 +18,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -420,112 +419,20 @@ export const UserBookings = () => {
             <span className="text-xs truncate max-w-[200px]" title={adminNote}>
               {adminNote || "-"}
             </span>
-            <Dialog
-              open={
-                adminNoteDialogOpen &&
-                editingAdminNote?.bookingId === booking.id
-              }
-              onOpenChange={(open) => {
-                setAdminNoteDialogOpen(open);
-                if (!open) {
-                  setEditingAdminNote(null);
-                }
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => {
+                setEditingAdminNote({
+                  bookingId: booking.id,
+                  note: adminNote,
+                });
+                setAdminNoteDialogOpen(true);
               }}
             >
-              <DialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => {
-                    setEditingAdminNote({
-                      bookingId: booking.id,
-                      note: adminNote,
-                    });
-                    setAdminNoteDialogOpen(true);
-                  }}
-                >
-                  <Edit className="h-3 w-3" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Edit Admin Note</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Admin Note
-                    </label>
-                    <Textarea
-                      value={editingAdminNote?.note || ""}
-                      onChange={(e) => {
-                        if (editingAdminNote) {
-                          setEditingAdminNote({
-                            ...editingAdminNote,
-                            note: e.target.value,
-                          });
-                        }
-                      }}
-                      placeholder="Enter admin note..."
-                      className="min-h-[100px]"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setAdminNoteDialogOpen(false);
-                        setEditingAdminNote(null);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        if (!editingAdminNote) return;
-
-                        try {
-                          const { error } = await supabase
-                            .from("bookings")
-                            .update({
-                              admin_note: editingAdminNote.note || null,
-                            })
-                            .eq("id", editingAdminNote.bookingId);
-
-                          if (error) throw error;
-
-                          toast({
-                            title: "Admin note updated",
-                            description:
-                              "The admin note has been saved successfully.",
-                          });
-
-                          // Invalidate queries to refresh data
-                          queryClient.invalidateQueries({
-                            queryKey: ["user-bookings"],
-                          });
-
-                          setAdminNoteDialogOpen(false);
-                          setEditingAdminNote(null);
-                        } catch (error) {
-                          console.error("Error updating admin note:", error);
-                          toast({
-                            title: "Error",
-                            description:
-                              "Failed to update admin note. Please try again.",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+              <Edit className="h-3 w-3" />
+            </Button>
           </div>
         );
       },
@@ -2050,138 +1957,20 @@ export const UserBookings = () => {
                   <span className="mobile-notes-label mobile-admin-note-label">
                     Admin Note
                   </span>
-                  <Dialog
-                    open={
-                      adminNoteDialogOpen &&
-                      editingAdminNote?.bookingId === booking.id
-                    }
-                    onOpenChange={(open) => {
-                      setAdminNoteDialogOpen(open);
-                      if (!open) {
-                        setEditingAdminNote(null);
-                      }
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-purple-100"
+                    onClick={() => {
+                      setEditingAdminNote({
+                        bookingId: booking.id,
+                        note: (booking as any)?.admin_note || "",
+                      });
+                      setAdminNoteDialogOpen(true);
                     }}
                   >
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 hover:bg-purple-100"
-                        onClick={() => {
-                          setEditingAdminNote({
-                            bookingId: booking.id,
-                            note: (booking as any)?.admin_note || "",
-                          });
-                          setAdminNoteDialogOpen(true);
-                        }}
-                      >
-                        <Edit className="h-3 w-3 text-purple-600" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px]">
-                      <DialogHeader>
-                        <DialogTitle>Edit Admin Note</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium mb-2 block">
-                            Admin Note
-                          </label>
-                          <Textarea
-                            value={editingAdminNote?.note || ""}
-                            onChange={(e) => {
-                              if (editingAdminNote) {
-                                setEditingAdminNote({
-                                  ...editingAdminNote,
-                                  note: e.target.value,
-                                });
-                              }
-                            }}
-                            placeholder="Enter admin note..."
-                            className="min-h-[100px]"
-                          />
-                        </div>
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setAdminNoteDialogOpen(false);
-                              setEditingAdminNote(null);
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            onClick={async () => {
-                              if (!editingAdminNote) return;
-
-                              try {
-                                console.log("Updating admin note:", {
-                                  bookingId: editingAdminNote.bookingId,
-                                  note: editingAdminNote.note,
-                                  isAdmin: isAdmin,
-                                });
-
-                                const { data: updateData, error } =
-                                  await supabase
-                                    .from("bookings")
-                                    .update({
-                                      admin_note: editingAdminNote.note || null,
-                                    })
-                                    .eq("id", editingAdminNote.bookingId)
-                                    .select("admin_note")
-                                    .single();
-
-                                if (error) {
-                                  console.error("Update error details:", {
-                                    message: error.message,
-                                    details: error.details,
-                                    hint: error.hint,
-                                    code: error.code,
-                                  });
-                                  throw error;
-                                }
-
-                                console.log(
-                                  "Admin note updated successfully:",
-                                  updateData
-                                );
-
-                                toast({
-                                  title: "Admin note updated",
-                                  description:
-                                    "The admin note has been saved successfully.",
-                                });
-
-                                // Invalidate queries to refresh data
-                                queryClient.invalidateQueries({
-                                  queryKey: ["user-bookings"],
-                                });
-
-                                setAdminNoteDialogOpen(false);
-                                setEditingAdminNote(null);
-                              } catch (error) {
-                                console.error(
-                                  "Error updating admin note:",
-                                  error
-                                );
-                                toast({
-                                  title: "Error",
-                                  description:
-                                    "Failed to update admin note. Please try again.",
-                                  variant: "destructive",
-                                });
-                              }
-                            }}
-                            className="bg-purple-600 hover:bg-purple-700"
-                          >
-                            <Save className="h-4 w-4 mr-2" />
-                            Save
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                    <Edit className="h-3 w-3 text-purple-600" />
+                  </Button>
                 </div>
                 <p className="mobile-notes-content">
                   {(booking as any)?.admin_note || (
@@ -2563,7 +2352,7 @@ export const UserBookings = () => {
               <ConfigProvider
                 theme={{
                   token: {
-                    colorPrimary: '#9b87f5',
+                    colorPrimary: "#9b87f5",
                     borderRadius: 6,
                   },
                 }}
@@ -2605,7 +2394,9 @@ export const UserBookings = () => {
                       selectedDate
                         ? [
                             dayjs(selectedDate),
-                            selectedEndDate ? dayjs(selectedEndDate) : dayjs(selectedDate),
+                            selectedEndDate
+                              ? dayjs(selectedEndDate)
+                              : dayjs(selectedDate),
                           ]
                         : null
                     }
@@ -2623,7 +2414,7 @@ export const UserBookings = () => {
                     format="YYYY-MM-DD"
                     placeholder={["Start", "End"]}
                     className="h-9 text-sm border-gray-200 hover:border-brand-primary focus:border-brand-primary"
-                    style={{ width: '240px' }}
+                    style={{ width: "240px" }}
                     variant="outlined"
                     allowClear
                   />
@@ -3266,6 +3057,119 @@ export const UserBookings = () => {
         <div className="text-center py-10 text-muted-foreground">
           {showTodayOnly ? "No bookings for today." : "No bookings found."}
         </div>
+      )}
+
+      {/* Single Admin Note Dialog - Rendered once outside the loop */}
+      {isAdmin && (
+        <Dialog
+          open={adminNoteDialogOpen}
+          onOpenChange={(open) => {
+            setAdminNoteDialogOpen(open);
+            if (!open) {
+              setEditingAdminNote(null);
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Admin Note</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Admin Note
+                </label>
+                <Textarea
+                  value={editingAdminNote?.note || ""}
+                  onChange={(e) => {
+                    if (editingAdminNote) {
+                      setEditingAdminNote({
+                        ...editingAdminNote,
+                        note: e.target.value,
+                      });
+                    }
+                  }}
+                  placeholder="Enter admin note..."
+                  className="min-h-[100px]"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setAdminNoteDialogOpen(false);
+                    setEditingAdminNote(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!editingAdminNote) return;
+
+                    try {
+                      console.log("Updating admin note:", {
+                        bookingId: editingAdminNote.bookingId,
+                        note: editingAdminNote.note,
+                        isAdmin: isAdmin,
+                      });
+
+                      const { data: updateData, error } = await supabase
+                        .from("bookings")
+                        .update({
+                          admin_note: editingAdminNote.note || null,
+                        })
+                        .eq("id", editingAdminNote.bookingId)
+                        .select("admin_note")
+                        .single();
+
+                      if (error) {
+                        console.error("Update error details:", {
+                          message: error.message,
+                          details: error.details,
+                          hint: error.hint,
+                          code: error.code,
+                        });
+                        throw error;
+                      }
+
+                      console.log(
+                        "Admin note updated successfully:",
+                        updateData
+                      );
+
+                      toast({
+                        title: "Admin note updated",
+                        description:
+                          "The admin note has been saved successfully.",
+                      });
+
+                      // Invalidate queries to refresh data
+                      queryClient.invalidateQueries({
+                        queryKey: ["user-bookings"],
+                      });
+
+                      setAdminNoteDialogOpen(false);
+                      setEditingAdminNote(null);
+                    } catch (error) {
+                      console.error("Error updating admin note:", error);
+                      toast({
+                        title: "Error",
+                        description:
+                          "Failed to update admin note. Please try again.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
