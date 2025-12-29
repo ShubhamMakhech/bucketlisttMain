@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { DatePicker, ConfigProvider } from "antd";
+import dayjs from "dayjs";
 import "./UserBookingsMobileCard.css";
 
 interface BookingWithDueAmount {
@@ -2558,84 +2560,75 @@ export const UserBookings = () => {
               </Popover>
             </div>
             <div className="relative">
-              <Button
-                variant={
-                  showDateRangePicker
-                    ? "default"
-                    : selectedDate
-                    ? "default"
-                    : "outline"
-                }
-                onClick={() => {
-                  const newState = !showDateRangePicker;
-                  setShowDateRangePicker(newState);
-                  if (newState) {
-                    setShowActivityFilter(false);
-                    setShowTimeslotFilter(false);
-                    setShowColumnSelector(false);
-                  }
+              <ConfigProvider
+                theme={{
+                  token: {
+                    colorPrimary: '#9b87f5',
+                    borderRadius: 6,
+                  },
                 }}
-                className="text-sm"
               >
-                <span className="text-sm">
-                  {isDateRangeActive
-                    ? selectedDate && selectedEndDate
-                      ? `${selectedDate} to ${selectedEndDate}`
-                      : selectedDate
-                    : "Date"}
-                </span>
-              </Button>
-
-              {/* Mobile Date Range Picker - Opens below Date button */}
-              {showDateRangePicker && (
-                <div
-                  className="absolute z-50 right-0 mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-3 shadow-lg"
-                  id="UserBookingsMobileDateRangePicker"
-                >
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Start Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="w-full text-sm"
-                      max={selectedEndDate || undefined}
+                {isMobile ? (
+                  <div className="flex flex-col gap-2 w-full">
+                    <DatePicker
+                      placeholder="Start Date"
+                      value={selectedDate ? dayjs(selectedDate) : null}
+                      onChange={(date, dateString) => {
+                        if (dateString) {
+                          setSelectedDate(dateString as string);
+                        } else {
+                          setSelectedDate("");
+                        }
+                      }}
+                      format="YYYY-MM-DD"
+                      className="h-9 text-sm"
+                      allowClear
+                    />
+                    <DatePicker
+                      placeholder="End Date"
+                      value={selectedEndDate ? dayjs(selectedEndDate) : null}
+                      onChange={(date, dateString) => {
+                        if (dateString) {
+                          setSelectedEndDate(dateString as string);
+                        } else {
+                          setSelectedEndDate("");
+                        }
+                      }}
+                      format="YYYY-MM-DD"
+                      className="h-9 text-sm"
+                      allowClear
                     />
                   </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      End Date (Optional)
-                    </label>
-                    <Input
-                      type="date"
-                      value={selectedEndDate}
-                      onChange={(e) => setSelectedEndDate(e.target.value)}
-                      className="w-full text-sm"
-                      min={selectedDate || undefined}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => setShowDateRangePicker(false)}
-                      className="flex-1 text-xs"
-                    >
-                      Apply Filter
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearDateFilter}
-                      className="text-xs"
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                </div>
-              )}
+                ) : (
+                  <DatePicker.RangePicker
+                    value={
+                      selectedDate
+                        ? [
+                            dayjs(selectedDate),
+                            selectedEndDate ? dayjs(selectedEndDate) : dayjs(selectedDate),
+                          ]
+                        : null
+                    }
+                    onChange={(dates, dateStrings) => {
+                      if (dates && dates[0] && dates[1]) {
+                        setSelectedDate(dateStrings[0]);
+                        setSelectedEndDate(dateStrings[1]);
+                      } else if (dates && dates[0]) {
+                        setSelectedDate(dateStrings[0]);
+                        setSelectedEndDate("");
+                      } else {
+                        handleClearDateFilter();
+                      }
+                    }}
+                    format="YYYY-MM-DD"
+                    placeholder={["Start", "End"]}
+                    className="h-9 text-sm border-gray-200 hover:border-brand-primary focus:border-brand-primary"
+                    style={{ width: '240px' }}
+                    variant="outlined"
+                    allowClear
+                  />
+                )}
+              </ConfigProvider>
             </div>
             {/* Experience Filter Button (Admin only) */}
             {/* {isAdmin && (

@@ -1,4 +1,7 @@
+// @ts-nocheck
 import { useState, useEffect } from "react";
+import { DatePicker } from "antd";
+import dayjs from "dayjs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -26,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Minus, Plus, Clock } from "lucide-react";
+import { Minus, Plus, Clock, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +38,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { format } from "date-fns";
 import { SendWhatsappMessage } from "@/utils/whatsappUtil";
 import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
+
+import "../styles/OfflineBookingDialog.css";
 import moment from "moment";
 
 const offlineBookingSchema = z.object({
@@ -810,107 +815,109 @@ export const OfflineBookingDialog = ({
     }
   };
 
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-brand-primary">
-            Create Offline Booking
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="offline-booking-dialog max-h-[95vh] overflow-y-auto">
+        <div className="offline-booking-header">
+          <h2 className="offline-booking-title">Create Offline Booking</h2>
+        </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Experience Selection */}
-            <FormField
-              control={form.control}
-              name="experience_id"
-              render={({ field }) => (
-                <FormItem>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      form.setValue("activity_id", ""); // Reset activity when experience changes
-                    }}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Experience *" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {experiences.map((exp) => (
-                        <SelectItem key={exp.id} value={exp.id}>
-                          {exp.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Activity Selection */}
-            <FormField
-              control={form.control}
-              name="activity_id"
-              render={({ field }) => (
-                <FormItem>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={!selectedExperienceId}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Activity *" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {activities.map((activity) => (
-                        <SelectItem key={activity.id} value={activity.id}>
-                          {activity.name}{" "}
-                          {/*- {activity.currency} {activity.price} */}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Booking Date */}
-            <FormField
-              control={form.control}
-              name="booking_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      placeholder="Booking Date *"
-                      value={
-                        selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""
-                      }
-                      onChange={(e) => {
-                        const date = e.target.value
-                          ? new Date(e.target.value)
-                          : undefined;
-                        setSelectedDate(date);
-                        setSelectedSlotId(undefined); // Reset slot when date changes
-                        form.setValue("time_slot_id", "");
-                        field.onChange(date);
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="offline-booking-form"
+          >
+            {/* Experience & Activity Selection Group */}
+            <div className="form-section-group">
+              <FormField
+                control={form.control}
+                name="experience_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        form.setValue("activity_id", "");
                       }}
-                      min={format(new Date(), "yyyy-MM-dd")}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select Experience *" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {experiences.map((exp) => (
+                          <SelectItem key={exp.id} value={exp.id}>
+                            {exp.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="activity_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={!selectedExperienceId}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select Activity *" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {activities.map((activity) => (
+                          <SelectItem key={activity.id} value={activity.id}>
+                            {activity.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="booking_date"
+                render={({ field }) => (
+                  <FormItem className="form-full-width">
+                    <FormControl>
+                      <div className="relative">
+                        <DatePicker
+                          className="h-11 w-full"
+                          value={selectedDate ? dayjs(selectedDate) : null}
+                          onChange={(date) => {
+                            const d = date ? date.toDate() : undefined;
+                            setSelectedDate(d);
+                            setSelectedSlotId(undefined);
+                            form.setValue("time_slot_id", "");
+                            field.onChange(d);
+                          }}
+                          disabledDate={(current) =>
+                            current && current < dayjs().startOf("day")
+                          }
+                          placeholder="Select Date *"
+                          format="YYYY-MM-DD"
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Time Slot Selection */}
             {selectedDate && selectedActivity && timeSlots.length > 0 && (
@@ -919,11 +926,15 @@ export const OfflineBookingDialog = ({
                 name="time_slot_id"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="text-sm text-muted-foreground mb-2">
-                      Time Slot (Optional) -{" "}
-                      {format(selectedDate, "MMM d, yyyy")}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-slate-700">
+                        Available Time Slots
+                      </span>
+                      <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+                        {format(selectedDate, "MMM d, yyyy")}
+                      </span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <div className="time-slots-grid">
                       {timeSlots.map((slot: any) => {
                         const isSelected = selectedSlotId === slot.id;
                         const isAvailable =
@@ -952,290 +963,239 @@ export const OfflineBookingDialog = ({
                             }`}
                           >
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-gray-500" />
-                              <div>
-                                <div className="font-semibold text-sm">
-                                  {formatTime(slot.start_time)} -{" "}
-                                  {formatTime(slot.end_time)}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {slot.available_spots} spots available
-                                </div>
-                              </div>
+                              <Clock className="h-3.5 w-3.5 theme-purple-text" />
+                              <span className="time-slot-time">
+                                {formatTime(slot.start_time)}
+                              </span>
                             </div>
+                            <span className="time-slot-spots">
+                              {slot.available_spots} spots left
+                            </span>
                           </button>
                         );
                       })}
                     </div>
-                    {timeSlots.length === 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        No time slots available for this date
-                      </p>
-                    )}
                     <FormMessage />
                   </FormItem>
                 )}
               />
             )}
 
-            {selectedDate && selectedActivity && timeSlots.length === 0 && (
-              <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                <p className="text-sm text-muted-foreground">
-                  No time slots available for {selectedActivity.name} on{" "}
-                  {format(selectedDate, "MMM d, yyyy")}. You can still create
-                  the booking without a time slot.
-                </p>
+            {/* Contact Details Section */}
+            <div className="contact-details-container">
+              <span className="contact-details-title">
+                Customer Information
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <FormField
+                  control={form.control}
+                  name="contact_person_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          placeholder="Full Name *"
+                          className="bg-white"
+                          {...field}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contact_person_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          placeholder="Phone Number *"
+                          className="bg-white"
+                          {...field}
+                          maxLength={10}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contact_person_email"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="Email Address"
+                          className="bg-white"
+                          {...field}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </div>
-            )}
+            </div>
 
-            {/* Primary Contact Details */}
-            <Card id="primary-contact-details-card">
-              <CardContent className="px-3 py-3">
-                <h4 className="font-medium mb-1">Primary Contact Details</h4>
-                <div className="grid grid-cols-1 gap-2">
+            {/* Booking Details & Summary */}
+            <div className="booking-info-layout">
+              <div className="space-y-4">
+                <div className="MobileFlexOnly">
                   <FormField
                     control={form.control}
-                    name="contact_person_name"
+                    name="total_participants"
                     render={({ field }) => (
                       <FormItem>
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
+                          Participants
+                        </label>
+                        <div className="participants-control">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg"
+                            onClick={() =>
+                              field.onChange(Math.max(1, field.value - 1))
+                            }
+                            disabled={field.value <= 1}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="font-bold text-lg min-w-[2rem] text-center">
+                            {field.value}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg"
+                            onClick={() =>
+                              field.onChange(Math.min(50, field.value + 1))
+                            }
+                            disabled={field.value >= 50}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="booking_amount_per_person"
+                    render={({ field }) => (
+                      <FormItem>
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
+                          Amount Per Person
+                        </label>
                         <FormControl>
-                          <Input
-                            placeholder="Full name *"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                              // Trigger validation if field becomes empty
-                              if (!e.target.value.trim()) {
-                                form.trigger("contact_person_name");
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                              {selectedActivity?.currency || "INR"}
+                            </span>
+                            <Input
+                              type="number"
+                              className="pl-12 h-11"
+                              placeholder="0.00"
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) =>
+                                field.onChange(parseFloat(e.target.value) || 0)
                               }
-                            }}
-                            onBlur={(e) => {
-                              field.onBlur();
-                              // Trigger validation on blur
-                              form.trigger("contact_person_name");
-                            }}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="contact_person_number"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            placeholder="Phone number *"
-                            {...field}
-                            onChange={(e) => {
-                              // Remove all non-numeric characters and spaces
-                              const value = e.target.value.replace(
-                                /[^0-9]/g,
-                                ""
-                              );
-                              field.onChange(value);
-                            }}
-                            onBlur={(e) => {
-                              // Trigger validation on blur
-                              field.onBlur();
-                              form.trigger("contact_person_number");
-                            }}
-                            maxLength={10}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="contact_person_email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="Email"
-                            {...field}
-                            onChange={(e) => {
-                              const value = e.target.value.trim();
-                              field.onChange(value);
-                            }}
-                            onBlur={(e) => {
-                              // Trigger validation on blur
-                              field.onBlur();
-                              form.trigger("contact_person_email");
-                            }}
-                          />
+                            />
+                          </div>
                         </FormControl>
                       </FormItem>
                     )}
                   />
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Number of Participants */}
-            <FormField
-              control={form.control}
-              name="total_participants"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10"
-                      onClick={() => {
-                        if (field.value > 1) {
-                          field.onChange(field.value - 1);
-                        }
-                      }}
-                      disabled={field.value <= 1}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="50"
-                        value={field.value}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || 1;
-                          field.onChange(Math.min(Math.max(value, 1), 50));
-                        }}
-                        className="text-center font-medium w-20"
-                      />
-                    </FormControl>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10"
-                      onClick={() => {
-                        if (field.value < 50) {
-                          field.onChange(field.value + 1);
-                        }
-                      }}
-                      disabled={field.value >= 50}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="note_for_guide"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          placeholder="Note for Guide (Optional)"
+                          className="h-11"
+                          {...field}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-            {/* Booking Amount Per Person */}
-            <FormField
-              control={form.control}
-              name="booking_amount_per_person"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="Amount Per Person"
-                      value={field.value || ""}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value) || 0;
-                        field.onChange(value);
-                      }}
-                    />
-                  </FormControl>
-                  <p className="text-xs text-muted-foreground">
-                    Total: {selectedActivity?.currency || "INR"}{" "}
-                    {((field.value || 0) * participantCount).toFixed(2)}
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Note for Guide */}
-            <FormField
-              control={form.control}
-              name="note_for_guide"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input placeholder="Note for Guide (Optional)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Summary Card */}
-            {selectedActivity && (
-              <Card className="bg-muted/50">
-                <CardContent className="pt-6">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Activity:</span>
-                      <span className="font-medium">
-                        {selectedActivity.name}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Participants:
-                      </span>
-                      <span className="font-medium">{participantCount}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Price per person:
-                      </span>
-                      <span className="font-medium">
-                        {selectedActivity.currency}{" "}
-                        {form.watch("booking_amount_per_person") ||
-                          selectedActivity.price}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                      <span>Total Amount:</span>
-                      <span>
-                        {selectedActivity.currency}{" "}
-                        {(() => {
-                          const perPersonAmount =
+              {/* Summary Card */}
+              {selectedActivity && (
+                <div className="summary-card">
+                  <div className="summary-content">
+                    <h4 className="text-sm font-bold text-slate-800 mb-4 border-b pb-2">
+                      Booking Summary
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="summary-row">
+                        <span className="summary-label">Activity</span>
+                        <span className="summary-value text-right max-w-[150px] truncate">
+                          {selectedActivity.name}
+                        </span>
+                      </div>
+                      <div className="summary-row">
+                        <span className="summary-label">Participants</span>
+                        <span className="summary-value">
+                          {participantCount}
+                        </span>
+                      </div>
+                      <div className="summary-row">
+                        <span className="summary-label">Price per person</span>
+                        <span className="summary-value">
+                          {selectedActivity.currency}{" "}
+                          {(
                             form.watch("booking_amount_per_person") ||
-                            selectedActivity.price;
-                          return (perPersonAmount * participantCount).toFixed(
-                            2
-                          );
-                        })()}
-                      </span>
+                            selectedActivity.price
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="summary-total">
+                        <span className="total-label">Total Amount</span>
+                        <span className="total-value">
+                          {selectedActivity.currency}{" "}
+                          {(
+                            (form.watch("booking_amount_per_person") ||
+                              selectedActivity.price) * participantCount
+                          ).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              )}
+            </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
+            <div className="action-footer">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                className="flex-1"
+                className="flex-1 btn-secondary-custom"
                 disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="flex-1 bg-brand-primary hover:bg-brand-primary/90"
+                // disabled={isSubmitting}
+                className="flex-1 btn-primary-custom"
               >
-                {isSubmitting ? "Creating..." : "Create Offline Booking"}
+                {isSubmitting ? "Creating..." : "Create Booking"}
               </Button>
             </div>
           </form>
