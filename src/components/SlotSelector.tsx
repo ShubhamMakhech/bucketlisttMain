@@ -341,9 +341,9 @@ export const SlotSelector = ({
                           onActivityChange(activity.id);
                           onSlotChange(undefined); // Reset slot when activity changes
                         }}
-                        style={{ width: "280px", minHeight: "200px" }}
+                        style={{ width: "280px", minHeight: "200px",height:"100%" }}
                       >
-                        <div className="flex flex-col h-full p-4">
+                        <div className="flex flex-col h-full p-3">
                           {/* Title */}
                           <div className="mb-3">
                             <h3
@@ -359,9 +359,9 @@ export const SlotSelector = ({
                           {/* Price */}
                           <div className="mb-4">
                             {activity.discounted_price &&
-                              activity.discounted_price !== activity.price ? (
-                              <div className="flex flex-col">
-                                <div className="text-lg text-muted-foreground line-through">
+                                activity.discounted_price !== activity.price ? (
+                              <div className="flex gap-2">
+                                <div className="text-lg text-muted-foreground line-through opacity-50">
                                   {activity.currency === "USD"
                                     ? "₹"
                                     : activity.currency === "INR"
@@ -403,7 +403,7 @@ export const SlotSelector = ({
                           {/* Select Button */}
                           <div className="mb-4">
                             <Button
-                              className={`w-full rounded-lg border-2 font-semibold ${selectedActivityId === activity.id
+                              className={`w-full rounded-lg border-1 font-semibold ${selectedActivityId === activity.id
                                 ? "border-[var(--brand-color)] bg-[var(--brand-color)] text-white hover:opacity-90"
                                 : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                 }`}
@@ -677,7 +677,7 @@ export const SlotSelector = ({
                     onOpenChange={setShowCalendar}
                     placement="bottomLeft"
                   >
-                    <Button className="flex-shrink-0 w-16 h-20 flex flex-col items-center justify-center gap-1 border-gray-200 hover:border-gray-300 p-2">
+                    <Button className="flex-shrink-0 w-16 h-20 flex flex-col items-center justify-center gap-1 border-gray-200 hover:border-gray-300 p-2 " style={{width:"100%"}}>
                       <CalendarIcon className="h-4 w-4 text-gray-600" />
                       <span className="text-xs text-gray-600">
                         More <br />
@@ -705,7 +705,7 @@ export const SlotSelector = ({
                       ))}
                     </div>
                   ) : timeSlots && timeSlots.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-2 gap-1 ">
+                    <div className="grid grid-cols-3 md:grid-cols-3 gap-1 ">
                       {timeSlots.map((slot) => {
                         const available = isSlotAvailable(slot);
                         const isSelected = selectedSlotId === slot.id;
@@ -772,7 +772,7 @@ export const SlotSelector = ({
                     <Card>
                       <div className="p-8 text-center">
                         <div className="text-gray-500">
-                          No time slots available for this date
+                          o time slots available for this date
                         </div>
                       </div>
                     </Card>
