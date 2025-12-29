@@ -96,7 +96,7 @@ const Profile = () => {
   };
 
   const sidebarItems = [
-    ...(isVendor
+    ...(isVendor || isAdmin
       ? [
           {
             id: "analytics",
@@ -209,7 +209,7 @@ const Profile = () => {
   const renderActiveSection = () => {
     switch (activeSection) {
       case "analytics":
-        return isVendor ? <VendorAnalytics /> : null;
+        return isVendor || isAdmin ? <VendorAnalytics /> : null;
       case "bookings":
         return <UserBookings />;
       default:
