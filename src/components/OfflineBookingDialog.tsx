@@ -34,6 +34,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
 import { format } from "date-fns";
 import { SendWhatsappMessage } from "@/utils/whatsappUtil";
+import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
 import moment from "moment";
 
 const offlineBookingSchema = z.object({
@@ -274,8 +275,9 @@ export const OfflineBookingDialog = ({
       // Get time slot details if selected
       let timeSlotText = "Offline Booking";
       let formattedDateTime = `${formattedDate} - Offline Booking`;
+      let selectedSlot = null;
       if (selectedSlotId) {
-        const selectedSlot = timeSlots.find(
+        selectedSlot = timeSlots.find(
           (slot: any) => slot.id === selectedSlotId
         );
         if (selectedSlot) {
@@ -290,12 +292,45 @@ export const OfflineBookingDialog = ({
         }
       }
 
+      // Generate PDF invoice
+      let pdfUrl = "";
+      try {
+        const locationUrl = experienceDetails?.location;
+        const location2Url = experienceDetails?.location2;
+        pdfUrl = await generateInvoicePdf(
+          {
+            participantName: data.contact_person_name,
+            activityName: activity?.name || "",
+            dateTime: formattedDateTime,
+            pickUpLocation: experienceDetails?.location || "-",
+            spotLocation: experienceDetails?.location2 || "",
+            spotLocationUrl: locationUrl,
+            totalParticipants: data.total_participants,
+            amountPaid: bookingAmount.toFixed(2),
+            amountToBePaid: "0",
+            currency:
+              activity?.currency || experienceDetails?.currency || "INR",
+          },
+          bookingId
+        );
+      } catch (pdfError) {
+        console.error("PDF generation failed:", pdfError);
+        // Continue without PDF - WhatsApp will be sent without attachment
+      }
+
       // Customer WhatsApp message
       let customerWhatsappBody = {};
+      const phoneNumber =
+        data.contact_person_number.toString().length !== 10
+          ? data.contact_person_number
+          : "+91" + data.contact_person_number.toString();
       if (
         experienceDetails?.location !== null &&
-        experienceDetails?.location2 !== null
+        experienceDetails?.location2 !== null &&
+        experienceDetails?.location2 !== "" &&
+        experienceDetails?.location !== ""
       ) {
+        // Two location template with PDF
         customerWhatsappBody = {
           integrated_number: "919274046332",
           content_type: "template",
@@ -303,7 +338,7 @@ export const OfflineBookingDialog = ({
             messaging_product: "whatsapp",
             type: "template",
             template: {
-              name: "booking_confirmation_two_location",
+              name: "user_ticket_confirmation_two_location_v2",
               language: {
                 code: "en",
                 policy: "deterministic",
@@ -311,12 +346,17 @@ export const OfflineBookingDialog = ({
               namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
               to_and_components: [
                 {
-                  to: [
-                    data.contact_person_number.toString().length !== 10
-                      ? data.contact_person_number
-                      : "+91" + data.contact_person_number.toString(),
-                  ],
+                  to: [phoneNumber],
                   components: {
+                    ...(pdfUrl
+                      ? {
+                          header_1: {
+                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
+                      : {}),
                     body_1: {
                       type: "text",
                       value: data.contact_person_name,
@@ -327,7 +367,7 @@ export const OfflineBookingDialog = ({
                     },
                     body_3: {
                       type: "text",
-                      value: timeSlotText,
+                      value: formattedDateTime,
                     },
                     body_4: {
                       type: "text",
@@ -356,6 +396,7 @@ export const OfflineBookingDialog = ({
           },
         };
       } else {
+        // Single location template with PDF
         customerWhatsappBody = {
           integrated_number: "919274046332",
           content_type: "template",
@@ -363,7 +404,7 @@ export const OfflineBookingDialog = ({
             messaging_product: "whatsapp",
             type: "template",
             template: {
-              name: "booking_confirmation_user_v2",
+              name: "confirmation_user_with_ticket",
               language: {
                 code: "en",
                 policy: "deterministic",
@@ -371,12 +412,17 @@ export const OfflineBookingDialog = ({
               namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
               to_and_components: [
                 {
-                  to: [
-                    data.contact_person_number.toString().length !== 10
-                      ? data.contact_person_number
-                      : "+91" + data.contact_person_number.toString(),
-                  ],
+                  to: [phoneNumber],
                   components: {
+                    ...(pdfUrl
+                      ? {
+                          header_1: {
+                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
+                      : {}),
                     body_1: {
                       type: "text",
                       value: data.contact_person_name,
@@ -387,7 +433,7 @@ export const OfflineBookingDialog = ({
                     },
                     body_3: {
                       type: "text",
-                      value: timeSlotText,
+                      value: formattedDateTime,
                     },
                     body_4: {
                       type: "text",
@@ -559,13 +605,13 @@ export const OfflineBookingDialog = ({
                 formattedDateTime: formattedDateTime,
                 timeSlot: selectedSlotId
                   ? (() => {
-                    const selectedSlot = timeSlots.find(
-                      (slot: any) => slot.id === selectedSlotId
-                    );
-                    return selectedSlot
-                      ? `${selectedSlot.start_time} - ${selectedSlot.end_time}`
-                      : "Offline Booking";
-                  })()
+                      const selectedSlot = timeSlots.find(
+                        (slot: any) => slot.id === selectedSlotId
+                      );
+                      return selectedSlot
+                        ? `${selectedSlot.start_time} - ${selectedSlot.end_time}`
+                        : "Offline Booking";
+                    })()
                   : "Offline Booking",
                 location: experienceDetails?.location || "",
                 location2: experienceDetails?.location2 || null,
@@ -849,12 +895,13 @@ export const OfflineBookingDialog = ({
                               }
                             }}
                             disabled={!isAvailable}
-                            className={`p-3 rounded-lg border-2 text-left transition-all ${isSelected
+                            className={`p-3 rounded-lg border-2 text-left transition-all ${
+                              isSelected
                                 ? "border-brand-primary bg-brand-primary/10"
                                 : isAvailable
-                                  ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                                  : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
-                              }`}
+                                ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
+                            }`}
                           >
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-gray-500" />
