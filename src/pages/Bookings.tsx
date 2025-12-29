@@ -17,7 +17,7 @@ const Bookings = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isVendor } = useUserRole();
+  const { isVendor, isAgent } = useUserRole();
   const queryClient = useQueryClient();
   const [isExporting, setIsExporting] = useState(false);
   const [isOfflineBookingDialogOpen, setIsOfflineBookingDialogOpen] =
@@ -34,8 +34,8 @@ const Bookings = () => {
 
     setIsExporting(true);
     try {
-      // Fetch all vendor bookings with related data
-      const { data: bookings, error } = await supabase
+      // Build query for bookings
+      let query = supabase
         .from("bookings")
         .select(
           `
@@ -72,9 +72,21 @@ const Bookings = () => {
             phone_number
           )
         `
-        )
-        .eq("experiences.vendor_id", user.id)
-        .order("created_at", { ascending: false });
+        );
+
+      // For vendors: filter by vendor_id in experiences
+      // For agents: filter by bookings they created (booked_by or user_id)
+      if (isVendor) {
+        query = query.eq("experiences.vendor_id", user.id);
+      } else if (isAgent) {
+        // Agents can see bookings they created (offline bookings)
+        // Filter by user_id (which will be agent's ID for offline bookings they create)
+        query = query.eq("user_id", user.id);
+      }
+
+      const { data: bookings, error } = await query.order("created_at", {
+        ascending: false,
+      });
 
       if (error) throw error;
 
@@ -119,7 +131,9 @@ const Bookings = () => {
             Location: booking.experiences?.location || "N/A",
             "Note for Guide": booking.note_for_guide || "N/A",
             "Booked By": booking.booked_by
-              ? "Vendor (Offline)"
+              ? booking.type === "offline" && isAgent
+                ? "Agent (Offline)"
+                : "Vendor (Offline)"
               : "Customer (Online)",
             "Created At": new Date(booking.created_at).toLocaleString(),
           };
@@ -303,11 +317,13 @@ const Bookings = () => {
                   <p className="text-sm text-muted-foreground OnlyMobileParaGraph">
                     {isVendor
                       ? "Manage all bookings for your experiences"
+                      : isAgent
+                      ? "Manage all bookings and create offline bookings"
                       : "View and manage your bookings"}
                   </p>
                 </div>
               </div>
-              {isVendor && (
+              {(isVendor || isAgent) && (
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => setIsOfflineBookingDialogOpen(true)}
@@ -355,7 +371,7 @@ const Bookings = () => {
         <UserBookings />
 
         {/* Offline Booking Dialog */}
-        {isVendor && (
+        {(isVendor || isAgent) && (
           <OfflineBookingDialog
             isOpen={isOfflineBookingDialogOpen}
             onClose={() => setIsOfflineBookingDialogOpen(false)}

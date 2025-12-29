@@ -78,7 +78,7 @@ export const OfflineBookingDialog = ({
   onBookingSuccess,
 }: OfflineBookingDialogProps) => {
   const { user } = useAuth();
-  const { isVendor } = useUserRole();
+  const { isVendor, isAgent } = useUserRole();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -102,23 +102,49 @@ export const OfflineBookingDialog = ({
     },
   });
 
-  // Fetch vendor's experiences
+  // Fetch agent profile for agent name
+  const { data: agentProfile } = useQuery({
+    queryKey: ["agent-profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id || !isAgent) return null;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id && isAgent,
+  });
+
+  // Fetch experiences - vendor's own experiences OR all active experiences for agents
   const { data: experiences = [] } = useQuery({
-    queryKey: ["vendor-experiences", user?.id],
+    queryKey: ["offline-booking-experiences", user?.id, isVendor, isAgent],
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("experiences")
         .select("id, title, currency")
-        .eq("vendor_id", user.id)
-        .eq("is_active", true)
-        .order("title", { ascending: true });
+        .eq("is_active", true);
+
+      // For vendors, filter by vendor_id; for agents, get all active experiences
+      if (isVendor) {
+        query = query.eq("vendor_id", user.id);
+      }
+      // For agents, no filter - get all active experiences
+
+      query = query.order("title", { ascending: true });
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id && isVendor,
+    enabled: !!user?.id && (isVendor || isAgent),
   });
 
   const selectedExperienceId = form.watch("experience_id");
@@ -212,18 +238,18 @@ export const OfflineBookingDialog = ({
     }
   }, [isOpen, form]);
 
-  // Validate vendor access
+  // Validate vendor/agent access
   useEffect(() => {
-    if (!isVendor && user) {
-      //   console.log("isVendor", isVendor, user);
+    if (!isVendor && !isAgent && user) {
+      //   console.log("isVendor", isVendor, "isAgent", isAgent, user);
       //   toast({
       //     title: "Access Denied",
-      //     description: "Only vendors can create offline bookings.",
+      //     description: "Only vendors and agents can create offline bookings.",
       //     variant: "destructive",
       //   });
       onClose();
     }
-  }, [isVendor, user, toast, onClose]);
+  }, [isVendor, isAgent, user, toast, onClose]);
 
   const handleClose = () => {
     form.reset();
@@ -248,29 +274,38 @@ export const OfflineBookingDialog = ({
     activity: any
   ) => {
     try {
-      // Get vendor profile
+      // Get experience details with location and vendor_id
+      const { data: experienceDetails } = await supabase
+        .from("experiences")
+        .select("title, location, location2, currency, vendor_id")
+        .eq("id", data.experience_id)
+        .single();
+
+      // Get vendor profile (for vendor bookings, use user.id; for agent bookings, use experience vendor_id)
+      const vendorId = isVendor ? user?.id : experienceDetails?.vendor_id;
       const { data: vendor, error: vendorError } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user?.id)
+        .eq("id", vendorId)
         .single();
 
       if (vendorError) {
         console.error("Error fetching vendor profile:", vendorError);
       }
 
-      // Get experience details with location
-      const { data: experienceDetails } = await supabase
-        .from("experiences")
-        .select("title, location, location2, currency")
-        .eq("id", data.experience_id)
-        .single();
-
       const bookingAmount =
         (data.booking_amount_per_person || 0) * data.total_participants ||
         (activity?.price ? activity.price * data.total_participants : 0);
       const bookingDate = selectedDate || new Date();
       const formattedDate = moment(bookingDate).format("DD/MM/YYYY");
+
+      // Get agent name for WhatsApp messages
+      const agentName =
+        isAgent && agentProfile
+          ? `${agentProfile.first_name || ""} ${
+              agentProfile.last_name || ""
+            }`.trim()
+          : "";
 
       // Get time slot details if selected
       let timeSlotText = "Offline Booking";
@@ -290,6 +325,12 @@ export const OfflineBookingDialog = ({
           timeSlotText = `${formattedDate} - ${startTime} - ${endTime}`;
           formattedDateTime = `${formattedDate} - ${startTime} - ${endTime}`;
         }
+      }
+
+      // Add agent name in brackets to date/time strings if agent
+      if (isAgent && agentName) {
+        timeSlotText = `${timeSlotText} (${agentName})`;
+        formattedDateTime = `${formattedDateTime} (${agentName})`;
       }
 
       // Generate PDF invoice
@@ -653,16 +694,16 @@ export const OfflineBookingDialog = ({
   };
 
   const onSubmit = async (data: OfflineBookingFormData) => {
-    if (!user || !isVendor) {
+    if (!user || (!isVendor && !isAgent)) {
       toast({
         title: "Access Denied",
-        description: "Only vendors can create offline bookings.",
+        description: "Only vendors and agents can create offline bookings.",
         variant: "destructive",
       });
       return;
     }
 
-    // Verify the experience belongs to the vendor
+    // Verify the experience exists (for vendors, it should belong to them; for agents, any active experience)
     const experience = experiences.find((e) => e.id === data.experience_id);
     if (!experience) {
       toast({
@@ -673,18 +714,25 @@ export const OfflineBookingDialog = ({
       return;
     }
 
+    // For vendors, verify the experience belongs to them
+    if (isVendor && experience) {
+      // Additional check can be done here if needed
+      // The query already filters by vendor_id for vendors
+    }
+
     setIsSubmitting(true);
 
     try {
       // Create offline booking
-      // For offline bookings, user_id can be the vendor's ID since customer didn't book online
+      // For offline bookings, user_id can be the vendor's/agent's ID since customer didn't book online
       const bookingData = {
-        user_id: user.id, // Vendor's user_id (customer didn't book online)
+        user_id: user.id, // Vendor's/Agent's user_id (customer didn't book online)
         experience_id: data.experience_id,
         activity_id: data.activity_id, // Direct activity reference for offline bookings
         booking_date: selectedDate?.toISOString() || new Date().toISOString(),
         total_participants: data.total_participants,
         contact_person_name: data.contact_person_name,
+        isAgentBooking: isAgent ? true : false,
         contact_person_number: data.contact_person_number,
         contact_person_email: data.contact_person_email || null,
         booking_amount:
@@ -696,7 +744,7 @@ export const OfflineBookingDialog = ({
         status: "confirmed",
         terms_accepted: true,
         note_for_guide: data.note_for_guide || null,
-        booked_by: user.id, // Vendor who created the booking
+        booked_by: user.id, // Vendor/Agent who created the booking
         type: "offline" as const,
         time_slot_id: selectedSlotId || null, // Optional time slot for offline bookings
       };
