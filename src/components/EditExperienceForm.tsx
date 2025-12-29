@@ -55,6 +55,7 @@ interface Activity {
   timeSlots: TimeSlot[];
   discount_type?: "flat" | "percentage";
   discount_amount?: number;
+  b2bPrice?: number;
 }
 
 interface AutoGenerateConfig {
@@ -211,6 +212,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
       timeSlots: [],
       discount_type: "percentage", // Default to percentage
       discount_amount: 0,
+      b2bPrice: 0,
     };
     setActivities((prev) => [...prev, newActivity]);
   };
@@ -224,7 +226,14 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
   const updateActivity = (
     activityId: string,
     field: keyof Activity,
-    value: string | number | TimeSlot[] | "flat" | "percentage"
+    value:
+      | string
+      | number
+      | TimeSlot[]
+      | "flat"
+      | "percentage"
+      | null
+      | undefined
   ) => {
     setActivities((prev) =>
       prev.map((activity) => {
@@ -569,6 +578,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
         currency: activity.currency,
         display_order: activities.indexOf(activity),
         is_active: true,
+        b2bPrice: activity.b2bPrice || null,
       };
 
       const { error: updateError } = await supabase
@@ -605,6 +615,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
           currency: activity.currency,
           display_order: existingActivitiesToUpdate.length + index,
           is_active: true,
+          b2bPrice: activity.b2bPrice || null,
         })
       );
 
@@ -869,18 +880,17 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     let counter = 1;
 
     while (true) {
-      let query = supabase
+      let queryBuilder = supabase
         .from("experiences")
         .select("id")
         .eq("url_name", urlName)
         .limit(1);
 
-      // If editing, exclude current experience from check
       if (excludeId) {
-        query = query.neq("id", excludeId);
+        queryBuilder = queryBuilder.neq("id", excludeId);
       }
 
-      const { data } = await query;
+      const { data } = await queryBuilder;
 
       if (!data || data.length === 0) {
         // URL name is unique
@@ -1034,10 +1044,14 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
       await updateExperienceCategories(initialData.id, formData.category_ids);
 
       // Invalidate relevant queries to refresh cached data
-      queryClient.invalidateQueries({ queryKey: ["experience", initialData.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["experience", initialData.id],
+      });
       queryClient.invalidateQueries({ queryKey: ["experiences"] });
       queryClient.invalidateQueries({ queryKey: ["vendor-experiences"] });
-      queryClient.invalidateQueries({ queryKey: ["activities", initialData.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["activities", initialData.id],
+      });
 
       toast({
         title: "Experience updated successfully!",
@@ -1190,7 +1204,8 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
               placeholder="Paste second Google Maps link (e.g., end point/drop-off location)"
             />
             <p className="text-xs text-muted-foreground">
-              Optional: Add a second location (e.g., end point or drop-off location)
+              Optional: Add a second location (e.g., end point or drop-off
+              location)
             </p>
           </div>
 
@@ -1400,6 +1415,30 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
                         {activity.discounted_price.toFixed(2)}
                       </span>
                     </div>
+                  </div>
+
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor={`activity-b2b-price-${activity.id}`}>
+                      B2B Price (Optional)
+                    </Label>
+                    <Input
+                      id={`activity-b2b-price-${activity.id}`}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={activity.b2bPrice || ""}
+                      onChange={(e) =>
+                        updateActivity(
+                          activity.id,
+                          "b2bPrice",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      placeholder="0.00"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      B2B price for agent bookings (optional)
+                    </p>
                   </div>
                 </div>
 

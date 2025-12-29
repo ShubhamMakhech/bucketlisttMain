@@ -15,7 +15,6 @@ const EditExperience = () => {
   const { user, loading: authLoading } = useAuth();
   const { isVendor, loading: roleLoading, isAdmin } = useUserRole();
   const queryClient = useQueryClient();
-console.log("isAdmin", isAdmin);
   useEffect(() => {
     if (!authLoading && !roleLoading) {
       if (!user) {
@@ -114,6 +113,7 @@ console.log("isAdmin", isAdmin);
           discount_percentage: activity.discount_percentage || 0,
           discounted_price: activity.discounted_price || activity.price,
           currency: activity.currency,
+          b2bPrice: activity.b2bPrice || null,
           timeSlots:
             activity.time_slots?.map((slot) => ({
               id: slot.id,
