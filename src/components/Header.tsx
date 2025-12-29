@@ -199,7 +199,7 @@ export function Header() {
       <header
         className={`sticky top-0 left-0 right-0 z-[9998] w-full transition-all duration-300 ${getHeaderStyles()}`}
       >
-        <div className="flex h-16 items-center justify-between px-4 max-w-7xl mx-auto relative">
+        <div className="flex items-center justify-between px-4 max-w-7xl mx-auto relative navigationheight" >
           {/* Logo */}
           <Link
             to="/"

@@ -61,6 +61,8 @@ import { useDiscountCoupon } from "@/hooks/useDiscountCoupon";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AuthModal } from "@/components/AuthModal";
 import { useUserRole } from "@/hooks/useUserRole";
+import "@/styles/BookingSummary.css";
+import { Clock } from "lucide-react";
 const participantSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z
@@ -140,22 +142,22 @@ export const BookingDialog = ({
   appliedCoupon,
   setIsBookingDialogOpen,
 }: BookingDialogProps) => {
-  const dummyInvoiceRef = useRef < HTMLDivElement > (null);
+  const dummyInvoiceRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedDate, setSelectedDate] = useState < Date | undefined > (undefined);
-  const [selectedSlotId, setSelectedSlotId] = useState < string | undefined > (
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | undefined>(
     undefined
   );
   const [bypassPayment, setBypassPayment] = useState(false);
   const [partialPayment, setPartialPayment] = useState(false);
-  const [selectedActivityId, setSelectedActivityId] = useState < string > ();
+  const [selectedActivityId, setSelectedActivityId] = useState<string>();
   const [currentStep, setCurrentStep] = useState(1); // 1: Activity Selection, 2: Date/Time Selection, 3: Participants (mobile only)
   const [couponCode, setCouponCode] = useState("");
-  const [couponValidation, setCouponValidation] = useState < {
+  const [couponValidation, setCouponValidation] = useState<{
     isValid: boolean;
     message: string;
     coupon?: any;
-  } | null > (null);
+  } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -164,12 +166,12 @@ export const BookingDialog = ({
   const isMobile = useIsMobile();
   const { isAgent } = useUserRole();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [b2bPrice, setB2bPrice] = useState < number > (0);
-  const [sellingPrice, setSellingPrice] = useState < number > (0);
-  const [advancePayment, setAdvancePayment] = useState < number > (0);
+  const [b2bPrice, setB2bPrice] = useState<number>(0);
+  const [sellingPrice, setSellingPrice] = useState<number>(0);
+  const [advancePayment, setAdvancePayment] = useState<number>(0);
   const [isReferralCodeExpanded, setIsReferralCodeExpanded] = useState(false);
   const [isCouponCodeExpanded, setIsCouponCodeExpanded] = useState(false);
-  const form = useForm < BookingFormData > ({
+  const form = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
     mode: "onBlur",
     reValidateMode: "onBlur",
@@ -1599,56 +1601,42 @@ export const BookingDialog = ({
                   {/* <div className="ActivityImageShow">
                     <img src={experience.image_url} alt={experience.title} className="w-full h-full object-cover rounded-lg" />
                   </div> */}
-                  <Card className="py-2 px-2" id="BookingSummaryCard">
-                    <h3 className="textSmall">Booking Summary</h3>
+                  <div className="booking-summary-wrapper">
+                    <span className="summary-title-label">Booking Summary</span>
 
-                    {/* Date Selection */}
-                    <div className="DateSelectorContainer">
-                      <div
-                        className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-1.5 md:p-2"
-                        style={{ border: "1px solid #e0e0e0" }}
-                      >
-                        <div className="text-red-500 text-xs md:text-sm font-medium">
-                          {selectedDate ? format(selectedDate, "MMM") : "---"}
+                    <div className="summary-main-layout">
+                      <div className="summary-visual-column">
+                        <div className="summary-image-container">
+                          <img
+                            src={experience.image_url}
+                            alt={experience.title}
+                            className="summary-activity-img"
+                          />
                         </div>
-                        <div className="text-xl md:text-2xl font-bold text-gray-900">
-                          {selectedDate ? format(selectedDate, "d") : "--"}
-                        </div>
-                        <div className="text-gray-500 text-xs">
-                          {selectedDate ? format(selectedDate, "EEE") : "---"}
+                        <div className="summary-date-card">
+                          <div className="summary-month">
+                            {selectedDate ? format(selectedDate, "MMM") : "---"}
+                          </div>
+                          <div className="summary-day">
+                            {selectedDate ? format(selectedDate, "d") : "--"}
+                          </div>
+                          <div className="summary-weekday">
+                            {selectedDate ? format(selectedDate, "EEE") : "---"}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 md:w-4 md:h-4 bg-gray-400 rounded-sm flex-shrink-0"></div>
-                            <span className="ExperienceTitleText text-sm md:text-base truncate">
-                              {experience.title.length > 25
-                                ? `${experience.title.substring(0, 25)}...`
-                                : experience.title}
-                            </span>
+                      <div className="summary-info-column">
+                        <div className="summary-info-block">
+                          <div className="summary-exp-title">
+                            {experience.title}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 md:w-4 md:h-4 bg-gray-400 rounded-sm flex-shrink-0"></div>
-                            <span className="font-medium text-gray-900 text-sm md:text-base truncate">
-                              {selectedActivity?.name || "Select Activity"}
-                            </span>
+                          <div className="summary-activity-name">
+                            {selectedActivity?.name || "Select Activity"}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 md:w-4 md:h-4 text-gray-400 flex-shrink-0">
-                              <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                className="w-full h-full"
-                              >
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12,6 12,12 16,14"></polyline>
-                              </svg>
-                            </div>
-                            <span className="text-gray-600 text-sm md:text-base">
+                          <div className="summary-time-slot">
+                            <Clock className="summary-time-icon" />
+                            <span>
                               {timeSlots?.find(
                                 (slot) => slot.id === selectedSlotId
                               )
@@ -1664,67 +1652,46 @@ export const BookingDialog = ({
                       </div>
                     </div>
 
-                    <hr className="my-2 md:my-3" />
+                    <div className="summary-divider-line" />
 
-                    {/* Pricing Breakdown */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm md:text-base">
+                    <div className="summary-footer-row">
+                      <span className="summary-people-count">
                         {participantCount}{" "}
                         {experience.title==="Bike on Rent in Rishikesh"?participantCount === 1 ? "day" : "days":participantCount === 1 ? "Person" : "People"}
                       </span>
-                      <div className="text-right">  
+                      <div className="summary-price-container">  
                         {(selectedActivity as any)?.discounted_price &&
                           (selectedActivity as any).discounted_price !==
                           (selectedActivity as any).price ? (
-                          <div className="flex items-end gap-2">
-                            <span className="text-xs md:text-sm text-gray-400 line-through">
+                          <>
+                            <div className="summary-price-original">
                               {selectedActivity.currency === "INR"
                                 ? "₹"
                                 : selectedActivity?.currency}{" "}
                               {selectedActivity.price * participantCount}
-                            </span>
-                            <span className="font-semibold text-green-600 text-sm md:text-base">
-                              {selectedActivity.currency === "INR"
-                                ? "₹"
-                                : selectedActivity?.currency}{" "}
+                            </div>
+                            <div className="summary-price-final">
+                              <span className="summary-price-currency">
+                                {selectedActivity.currency === "INR"
+                                  ? "₹"
+                                  : selectedActivity?.currency}
+                              </span>
                               {totalActivityPrice}
-                            </span>
-                          </div>
+                            </div>
+                          </>
                         ) : (
-                          <span className="font-semibold text-sm md:text-base">
-                            {selectedActivity?.currency === "INR"
-                              ? "₹"
-                              : selectedActivity?.currency}{" "}
+                          <div className="summary-price-final">
+                            <span className="summary-price-currency">
+                              {selectedActivity?.currency === "INR"
+                                ? "₹"
+                                : selectedActivity?.currency}
+                            </span>
                             {totalActivityPrice}
-                          </span>
+                          </div>
                         )}
                       </div>
                     </div>
-
-                    {/* <hr className="my-4" /> */}
-
-                    {/* Total Payable */}
-                    {/* <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-bold text-lg">Total payable</div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
-                        You'll pay ${(totalActivityPrice * 0.011).toFixed(2)}
-                        <div className="w-4 h-4 text-gray-400">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-orange-500">
-                        {selectedActivity?.currency === 'INR' ? '₹' : selectedActivity?.currency}{totalActivityPrice}
-                      </div>
-                    </div>
-                  </div> */}
-                  </Card>
+                  </div>
                 </div>
               </div>
 
