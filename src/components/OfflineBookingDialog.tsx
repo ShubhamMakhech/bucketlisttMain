@@ -39,7 +39,7 @@ import { format } from "date-fns";
 import { SendWhatsappMessage } from "@/utils/whatsappUtil";
 import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
 
-import "../styles/OfflineBookingDialog.css";
+import "../Styles/OfflineBookingDialog.css";
 import moment from "moment";
 
 const offlineBookingSchema = z.object({
@@ -814,7 +814,6 @@ export const OfflineBookingDialog = ({
       setIsSubmitting(false);
     }
   };
-
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
