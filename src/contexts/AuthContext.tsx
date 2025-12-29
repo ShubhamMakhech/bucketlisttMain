@@ -111,7 +111,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+      // Force removal of supabase keys from local storage to prevent auto-login on refresh
+      // in case the supabase.auth.signOut() call failed to clean up
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith("sb-") && key.endsWith("-auth-token")) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
   };
 
   const resetPassword = async (email: string) => {

@@ -12,6 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from "@/hooks/useUserRole";
 import {
@@ -21,6 +29,8 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  Edit,
+  Save,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -28,6 +38,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import "./UserBookingsMobileCard.css";
 
 interface BookingWithDueAmount {
@@ -41,6 +53,15 @@ export const UserBookings = () => {
   const { isAgent, isAdmin, isVendor } = useUserRole();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // State for editing admin notes
+  const [editingAdminNote, setEditingAdminNote] = React.useState<{
+    bookingId: string;
+    note: string;
+  } | null>(null);
+  const [adminNoteDialogOpen, setAdminNoteDialogOpen] = React.useState(false);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sortBy, setSortBy] = React.useState<
     number | "booking_date" | "title" | "status"
@@ -93,7 +114,7 @@ export const UserBookings = () => {
   );
 
   // Column width state for resizable columns
-  const columnCount = 23; // Total number of columns (added Booking Type and Booking Created At)
+  const columnCount = 24; // Total number of columns (added Admin Note)
   const [columnWidths, setColumnWidths] = React.useState<number[]>(
     Array(columnCount).fill(100) // Default width 100px for each column (compact)
   );
@@ -121,20 +142,26 @@ export const UserBookings = () => {
     visibility[20] = true; // Amount to be collected from vendor/ '- to be paid' (shifted by 1)
     visibility[21] = true; // Amount to be collected from vendor/ '- to be paid' (shifted by 1)
 
+    // Admin Note - only visible to admins
+    if (isAdmin) {
+      visibility[23] = true; // Admin Note
+    }
+
     // Ensure agent restrictions are applied
     if (isAgent) {
       visibility[11] = false; // Official Price/ Original Price (shifted by 1)
       visibility[13] = false; // Commission as per vendor (shifted by 1)
       visibility[14] = false; // Website Price (shifted by 1)
       visibility[15] = false; // Discount Coupon (shifted by 1)
+      visibility[23] = false; // Admin Note - not visible to agents
     }
     return visibility;
-  }, [isAgent, columnCount]);
+  }, [isAgent, isAdmin, columnCount]);
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<boolean[]>(initialVisibility);
 
-  // Update column visibility when isAgent changes
+  // Update column visibility when isAgent or isAdmin changes
   React.useEffect(() => {
     setColumnVisibility((prev) => {
       const newVisibility = [...prev];
@@ -144,10 +171,17 @@ export const UserBookings = () => {
         newVisibility[13] = false; // Commission as per vendor (shifted by 1)
         newVisibility[14] = false; // Website Price (shifted by 1)
         newVisibility[15] = false; // Discount Coupon (shifted by 1)
+        newVisibility[23] = false; // Admin Note - not visible to agents
+      }
+      // Admin Note - only visible to admins
+      if (isAdmin) {
+        newVisibility[23] = true; // Admin Note
+      } else if (!isAdmin) {
+        newVisibility[23] = false; // Hide Admin Note for non-admins
       }
       return newVisibility;
     });
-  }, [isAgent]);
+  }, [isAgent, isAdmin]);
 
   const [showColumnSelector, setShowColumnSelector] = React.useState(false);
   const columnSelectorRef = React.useRef<HTMLDivElement>(null);
@@ -188,6 +222,7 @@ export const UserBookings = () => {
     "Net from agent / (- to agent)'",
     "Advance + discount",
     "Booking Created At",
+    "Admin Note",
   ];
 
   // Function to toggle column visibility
@@ -198,6 +233,10 @@ export const UserBookings = () => {
       (index === 10 || index === 12 || index === 13 || index === 14)
     ) {
       return; // Don't allow toggling these columns for agents
+    }
+    // Prevent non-admins from showing admin note
+    if (index === 23 && !isAdmin) {
+      return; // Don't allow toggling admin note for non-admins
     }
     const newVisibility = [...columnVisibility];
     newVisibility[index] = !newVisibility[index];
@@ -288,13 +327,14 @@ export const UserBookings = () => {
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-          profile?.phone_number ||
-          booking?.booking_participants?.[0]?.phone_number ? (
+        profile?.phone_number ||
+        booking?.booking_participants?.[0]?.phone_number ? (
           <a
-            href={`tel:${booking.contact_person_number ||
+            href={`tel:${
+              booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-              }`}
+            }`}
             className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
@@ -318,11 +358,11 @@ export const UserBookings = () => {
       () =>
         timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-            timeslot.end_time
-          )}`
+              timeslot.end_time
+            )}`
           : isOfflineBooking
-            ? "Offline"
-            : "N/A",
+          ? "Offline"
+          : "N/A",
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
       () => booking.note_for_guide || "-",
@@ -330,10 +370,11 @@ export const UserBookings = () => {
         const bookingType = (booking as any)?.type || "online";
         return (
           <span
-            className={`px-2 py-1 rounded text-xs font-medium ${bookingType === "offline"
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-              : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-              }`}
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              bookingType === "offline"
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+            }`}
           >
             {bookingType === "offline" ? "Offline" : "Online"}
           </span>
@@ -355,6 +396,136 @@ export const UserBookings = () => {
           return format(new Date(booking.created_at), "dd/MM/yyyy");
         }
         return "N/A";
+      },
+      () => {
+        // Admin Note column - only visible/editable by admins
+        if (!isAdmin) return "-";
+
+        const adminNote = (booking as any)?.admin_note || "";
+
+        // Debug log to check if admin_note is being accessed
+        if (isAdmin && booking.id) {
+          console.log("Rendering admin note for booking:", {
+            bookingId: booking.id,
+            adminNote: adminNote,
+            hasAdminNote: !!adminNote,
+            bookingKeys: Object.keys(booking),
+          });
+        }
+
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-xs truncate max-w-[200px]" title={adminNote}>
+              {adminNote || "-"}
+            </span>
+            <Dialog
+              open={
+                adminNoteDialogOpen &&
+                editingAdminNote?.bookingId === booking.id
+              }
+              onOpenChange={(open) => {
+                setAdminNoteDialogOpen(open);
+                if (!open) {
+                  setEditingAdminNote(null);
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => {
+                    setEditingAdminNote({
+                      bookingId: booking.id,
+                      note: adminNote,
+                    });
+                    setAdminNoteDialogOpen(true);
+                  }}
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Edit Admin Note</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Admin Note
+                    </label>
+                    <Textarea
+                      value={editingAdminNote?.note || ""}
+                      onChange={(e) => {
+                        if (editingAdminNote) {
+                          setEditingAdminNote({
+                            ...editingAdminNote,
+                            note: e.target.value,
+                          });
+                        }
+                      }}
+                      placeholder="Enter admin note..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setAdminNoteDialogOpen(false);
+                        setEditingAdminNote(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (!editingAdminNote) return;
+
+                        try {
+                          const { error } = await supabase
+                            .from("bookings")
+                            .update({
+                              admin_note: editingAdminNote.note || null,
+                            })
+                            .eq("id", editingAdminNote.bookingId);
+
+                          if (error) throw error;
+
+                          toast({
+                            title: "Admin note updated",
+                            description:
+                              "The admin note has been saved successfully.",
+                          });
+
+                          // Invalidate queries to refresh data
+                          queryClient.invalidateQueries({
+                            queryKey: ["user-bookings"],
+                          });
+
+                          setAdminNoteDialogOpen(false);
+                          setEditingAdminNote(null);
+                        } catch (error) {
+                          console.error("Error updating admin note:", error);
+                          toast({
+                            title: "Error",
+                            description:
+                              "Failed to update admin note. Please try again.",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        );
       },
     ];
 
@@ -436,6 +607,7 @@ export const UserBookings = () => {
           .select(
             `
             *,
+            admin_note,
             experiences (
               id,
               title,
@@ -510,6 +682,16 @@ export const UserBookings = () => {
           isAdmin,
           userId: user.id,
         });
+
+        // Debug: Log first booking to check if admin_note is present
+        if (data && data.length > 0 && isAdmin) {
+          console.log("Sample booking with admin_note:", {
+            bookingId: data[0].id,
+            hasAdminNote: !!(data[0] as any)?.admin_note,
+            adminNote: (data[0] as any)?.admin_note,
+            allKeys: Object.keys(data[0] || {}),
+          });
+        }
 
         return data || [];
       } catch (error) {
@@ -715,11 +897,11 @@ export const UserBookings = () => {
                 const isOfflineFilter = (booking as any)?.type === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                  ? "Offline"
+                  : "";
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
               case 8: // No. Of Participants
@@ -810,8 +992,8 @@ export const UserBookings = () => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                  b2bPrice4 * booking.total_participants -
-                  (bookingAmount5 - dueAmount3)
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline") return "-";
@@ -834,6 +1016,9 @@ export const UserBookings = () => {
                   return format(new Date(booking.created_at), "dd/MM/yyyy");
                 }
                 return "";
+              case 23: // Admin Note
+                if (!isAdmin) return "";
+                return (booking as any)?.admin_note || "";
               default:
                 return "";
             }
@@ -937,8 +1122,8 @@ export const UserBookings = () => {
             case 6: // Timeslot
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : "";
             case 7: // Date
               return new Date(booking.booking_date).getTime();
@@ -1021,6 +1206,9 @@ export const UserBookings = () => {
                 return new Date(booking.created_at).getTime();
               }
               return 0;
+            case 23: // Admin Note
+              if (!isAdmin) return "";
+              return (booking as any)?.admin_note || "";
             default:
               return "";
           }
@@ -1377,11 +1565,11 @@ export const UserBookings = () => {
             case 6:
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : isOffline
-                  ? "Offline"
-                  : "";
+                ? "Offline"
+                : "";
             case 7:
               return format(new Date(booking.booking_date), "MMM d, yyyy");
             case 8:
@@ -1477,8 +1665,8 @@ export const UserBookings = () => {
               return formatCurrency(
                 currency,
                 bookingAmount -
-                b2bPrice * booking.total_participants -
-                (bookingAmount - dueAmount)
+                  b2bPrice * booking.total_participants -
+                  (bookingAmount - dueAmount)
               );
             }
             case 21: {
@@ -1501,6 +1689,10 @@ export const UserBookings = () => {
                 return format(new Date(booking.created_at), "dd/MM/yyyy");
               }
               return "";
+            }
+            case 23: {
+              if (!isAdmin) return "";
+              return (booking as any)?.admin_note || "";
             }
             default:
               return "";
@@ -1762,13 +1954,14 @@ export const UserBookings = () => {
                 <span className="mobile-info-label">Contact</span>
                 <span className="mobile-info-value">
                   {booking.contact_person_number ||
-                    profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number ? (
+                  profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ? (
                     <a
-                      href={`tel:${booking.contact_person_number ||
+                      href={`tel:${
+                        booking.contact_person_number ||
                         profile?.phone_number ||
                         booking?.booking_participants?.[0]?.phone_number
-                        }`}
+                      }`}
                       className="mobile-contact-link"
                     >
                       {booking.contact_person_number ||
@@ -1841,11 +2034,158 @@ export const UserBookings = () => {
               </div>
             </div>
 
-
             {booking.note_for_guide && (
               <div className="mobile-notes-section">
                 <span className="mobile-notes-label">Notes for Guide</span>
                 <p className="mobile-notes-content">{booking.note_for_guide}</p>
+              </div>
+            )}
+
+            {/* Admin Note Section - Only visible to admins */}
+            {isAdmin && (
+              <div className="mobile-notes-section mobile-admin-note-section">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="mobile-notes-label mobile-admin-note-label">
+                    Admin Note
+                  </span>
+                  <Dialog
+                    open={
+                      adminNoteDialogOpen &&
+                      editingAdminNote?.bookingId === booking.id
+                    }
+                    onOpenChange={(open) => {
+                      setAdminNoteDialogOpen(open);
+                      if (!open) {
+                        setEditingAdminNote(null);
+                      }
+                    }}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-purple-100"
+                        onClick={() => {
+                          setEditingAdminNote({
+                            bookingId: booking.id,
+                            note: (booking as any)?.admin_note || "",
+                          });
+                          setAdminNoteDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-3 w-3 text-purple-600" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[500px]">
+                      <DialogHeader>
+                        <DialogTitle>Edit Admin Note</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">
+                            Admin Note
+                          </label>
+                          <Textarea
+                            value={editingAdminNote?.note || ""}
+                            onChange={(e) => {
+                              if (editingAdminNote) {
+                                setEditingAdminNote({
+                                  ...editingAdminNote,
+                                  note: e.target.value,
+                                });
+                              }
+                            }}
+                            placeholder="Enter admin note..."
+                            className="min-h-[100px]"
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setAdminNoteDialogOpen(false);
+                              setEditingAdminNote(null);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={async () => {
+                              if (!editingAdminNote) return;
+
+                              try {
+                                console.log("Updating admin note:", {
+                                  bookingId: editingAdminNote.bookingId,
+                                  note: editingAdminNote.note,
+                                  isAdmin: isAdmin,
+                                });
+
+                                const { data: updateData, error } =
+                                  await supabase
+                                    .from("bookings")
+                                    .update({
+                                      admin_note: editingAdminNote.note || null,
+                                    })
+                                    .eq("id", editingAdminNote.bookingId)
+                                    .select("admin_note")
+                                    .single();
+
+                                if (error) {
+                                  console.error("Update error details:", {
+                                    message: error.message,
+                                    details: error.details,
+                                    hint: error.hint,
+                                    code: error.code,
+                                  });
+                                  throw error;
+                                }
+
+                                console.log(
+                                  "Admin note updated successfully:",
+                                  updateData
+                                );
+
+                                toast({
+                                  title: "Admin note updated",
+                                  description:
+                                    "The admin note has been saved successfully.",
+                                });
+
+                                // Invalidate queries to refresh data
+                                queryClient.invalidateQueries({
+                                  queryKey: ["user-bookings"],
+                                });
+
+                                setAdminNoteDialogOpen(false);
+                                setEditingAdminNote(null);
+                              } catch (error) {
+                                console.error(
+                                  "Error updating admin note:",
+                                  error
+                                );
+                                toast({
+                                  title: "Error",
+                                  description:
+                                    "Failed to update admin note. Please try again.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            className="bg-purple-600 hover:bg-purple-700"
+                          >
+                            <Save className="h-4 w-4 mr-2" />
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <p className="mobile-notes-content">
+                  {(booking as any)?.admin_note || (
+                    <span className="text-gray-400 italic">No admin note</span>
+                  )}
+                </p>
               </div>
             )}
           </div>
@@ -1866,7 +2206,7 @@ export const UserBookings = () => {
                           currency,
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -1878,7 +2218,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           booking.time_slots?.activities?.price *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -1890,7 +2230,7 @@ export const UserBookings = () => {
                           (booking.time_slots?.activities?.price -
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice)) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -1915,7 +2255,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (Number(bookingAmount) - dueAmount)
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -1927,10 +2267,10 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (booking.b2bPrice ||
-                            booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants -
-                          (Number(bookingAmount) - dueAmount)
+                            (booking.b2bPrice ||
+                              booking.time_slots?.activities?.b2bPrice) *
+                              booking.total_participants -
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -1955,7 +2295,6 @@ export const UserBookings = () => {
               onChange={(e) => setGlobalFilter(e.target.value)}
               className="flex-1 text-sm"
             />
-
           </div>
         )}
 
@@ -1993,7 +2332,7 @@ export const UserBookings = () => {
                       setShowDateRangePicker(false);
                     }
                   }}
-                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                  // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
                   Columns
                 </Button>
@@ -2018,10 +2357,11 @@ export const UserBookings = () => {
                         return (
                           <label
                             key={index}
-                            className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
-                              ? "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer hover:bg-muted/30"
-                              }`}
+                            className={`flex items-center gap-2 p-2 rounded ${
+                              isHiddenForAgent
+                                ? "opacity-50 cursor-not-allowed"
+                                : "cursor-pointer hover:bg-muted/30"
+                            }`}
                           >
                             <input
                               type="checkbox"
@@ -2047,6 +2387,11 @@ export const UserBookings = () => {
                             newVisibility[12] = false; // Commission as per vendor
                             newVisibility[13] = false; // Website Price
                             newVisibility[14] = false; // Discount Coupon
+                            newVisibility[23] = false; // Admin Note
+                          }
+                          // Hide admin note for non-admins
+                          if (!isAdmin) {
+                            newVisibility[23] = false; // Admin Note
                           }
                           setColumnVisibility(newVisibility);
                         }}
@@ -2108,7 +2453,7 @@ export const UserBookings = () => {
                   >
                     {selectedTimeslotId
                       ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                        ?.displayName || "Timeslot"
+                          ?.displayName || "Timeslot"
                       : "Timeslot"}
                   </Button>
                 </PopoverTrigger>
@@ -2169,8 +2514,9 @@ export const UserBookings = () => {
                     className="text-sm"
                   >
                     {selectedActivityId
-                      ? uniqueActivities.find((a) => a.id === selectedActivityId)
-                        ?.name || "Activity"
+                      ? uniqueActivities.find(
+                          (a) => a.id === selectedActivityId
+                        )?.name || "Activity"
                       : "Activity"}
                   </Button>
                 </PopoverTrigger>
@@ -2217,8 +2563,8 @@ export const UserBookings = () => {
                   showDateRangePicker
                     ? "default"
                     : selectedDate
-                      ? "default"
-                      : "outline"
+                    ? "default"
+                    : "outline"
                 }
                 onClick={() => {
                   const newState = !showDateRangePicker;
@@ -2242,7 +2588,10 @@ export const UserBookings = () => {
 
               {/* Mobile Date Range Picker - Opens below Date button */}
               {showDateRangePicker && (
-                <div className="absolute z-50 right-0 mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-3 shadow-lg" id="UserBookingsMobileDateRangePicker">
+                <div
+                  className="absolute z-50 right-0 mt-2 w-[280px] p-4 border rounded-lg bg-background space-y-3 shadow-lg"
+                  id="UserBookingsMobileDateRangePicker"
+                >
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">
                       Start Date
@@ -2497,13 +2846,15 @@ export const UserBookings = () => {
                               headerRefs.current[originalIndex] = el;
                             }}
                             data-column-index={originalIndex}
-                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${draggedColumnIndex === originalIndex
-                              ? "opacity-50"
-                              : ""
-                              } ${dragOverColumnIndex === originalIndex
+                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${
+                              draggedColumnIndex === originalIndex
+                                ? "opacity-50"
+                                : ""
+                            } ${
+                              dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                              } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
+                            } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
                             style={{ width: columnWidths[originalIndex] }}
                             draggable={true}
                             onDragStart={() =>
@@ -2571,11 +2922,12 @@ export const UserBookings = () => {
                                   title="Filter"
                                 >
                                   <Filter
-                                    className={`w-3 h-3 ${columnFilters[originalIndex] &&
+                                    className={`w-3 h-3 ${
+                                      columnFilters[originalIndex] &&
                                       columnFilters[originalIndex].length > 0
-                                      ? "text-blue-600"
-                                      : "text-gray-400"
-                                      }`}
+                                        ? "text-blue-600"
+                                        : "text-gray-400"
+                                    }`}
                                   />
                                 </span>
                               </div>
@@ -2607,7 +2959,7 @@ export const UserBookings = () => {
                                       </span>
                                       {columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length >
-                                        0 && (
+                                          0 && (
                                           <Button
                                             variant="ghost"
                                             size="sm"
@@ -2629,11 +2981,12 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
                                           sortOrder === "asc"
-                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                          : "hover:bg-gray-200"
-                                          }`}
+                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                            : "hover:bg-gray-200"
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -2655,11 +3008,12 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
                                           sortOrder === "desc"
-                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                          : "hover:bg-gray-200"
-                                          }`}
+                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                            : "hover:bg-gray-200"
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -2735,8 +3089,8 @@ export const UserBookings = () => {
                                   {/* Filter Options List */}
                                   <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
                                     {getUniqueColumnValues[originalIndex] &&
-                                      getUniqueColumnValues[originalIndex]
-                                        .length > 0 ? (
+                                    getUniqueColumnValues[originalIndex]
+                                      .length > 0 ? (
                                       (() => {
                                         const searchQuery =
                                           filterSearchQueries[
@@ -2879,8 +3233,8 @@ export const UserBookings = () => {
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                        ? booking.note_for_guide || ""
-                                        : ""
+                                      ? booking.note_for_guide || ""
+                                      : ""
                                   }
                                 >
                                   {renderCellContent(

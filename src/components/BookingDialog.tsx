@@ -1670,9 +1670,9 @@ export const BookingDialog = ({
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 text-sm md:text-base">
                         {participantCount}{" "}
-                        {participantCount === 1 ? "Person" : "People"}
+                        {experience.title==="Bike on Rent in Rishikesh"?participantCount === 1 ? "day" : "days":participantCount === 1 ? "Person" : "People"}
                       </span>
-                      <div className="text-right">
+                      <div className="text-right">  
                         {(selectedActivity as any)?.discounted_price &&
                           (selectedActivity as any).discounted_price !==
                           (selectedActivity as any).price ? (
@@ -1878,7 +1878,7 @@ export const BookingDialog = ({
                                 id="ParticipantCountCard"
                               >
                                 <div>
-                                  <FormLabel>Number of Participants</FormLabel>
+                                  <FormLabel>{experience.title=="Bike on Rent in Rishikesh"?"Number of days":"Number of Participants"}</FormLabel>
                                   {selectedSlotId &&
                                     availableSpots !== undefined && (
                                       // <p className="text-xs text-muted-foreground mt-1">

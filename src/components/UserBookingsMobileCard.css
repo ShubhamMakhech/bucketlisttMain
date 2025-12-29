@@ -137,6 +137,22 @@
     word-break: break-word;
 }
 
+/* Admin Note Section - Purple theme to distinguish from guide notes */
+.mobile-admin-note-section {
+    border-top-color: #d8b4fe;
+    border-top-width: 1.5px;
+}
+
+.mobile-admin-note-label {
+    color: #86198f !important;
+}
+
+.mobile-admin-note-section .mobile-notes-content {
+    background: #fdf4ff;
+    border-color: #f0abfc;
+    color: #6b21a8;
+}
+
 /* Vendor Section - Kept compact */
 .mobile-vendor-section {
     border-top: 1px solid #e5e7eb;
