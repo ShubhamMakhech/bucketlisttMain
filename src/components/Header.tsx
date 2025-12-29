@@ -286,7 +286,7 @@ export function Header() {
                         <div className="flex-shrink-0">
                           <Calendar className="h-5 w-5 text-blue-500" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1" style={{textAlign:"left"}}>
                           <h4 className="font-medium text-gray-900 dark:text-white mb-1">
                             Upcoming Booking
                           </h4>
@@ -305,7 +305,7 @@ export function Header() {
                       <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                         <Button
                           size="sm"
-                          className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                        className="w-full bg-blue-500 ViewBookingButton"
                           onClick={() => navigate("/bookings")}
                         >
                           View All Bookings
