@@ -1541,6 +1541,12 @@ h6 {
   display: none;
 }
 
+/* .ContainerBorderSet{
+  border: 1px solid rgba(0, 0, 0, 0.128);
+  padding: 10px;
+  border-radius: 10px;
+} */
+
 @media (max-width: 768px) {
   .FlexAdjustContainer {
     display: flex !important;
@@ -1641,12 +1647,13 @@ h6 {
 /* Activity Swiper Styles */
 .activity-swiper-container {
   width: 100%;
-  padding: 0 20px;
+  /* padding: 0 20px; */
 }
 
 .activity-swiper {
   width: 100%;
   padding: 10px 0;
+  overflow: visible !important;
 }
 
 .activity-slide {
@@ -1657,7 +1664,7 @@ h6 {
 .activity-card {
   border-radius: 12px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+ box-shadow: rgba(0, 0, 0, 0.04) 0px 3px 5px;
 }
 
 .activity-card:hover {
@@ -1682,6 +1689,12 @@ h6 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.activity-swiper .swiper-button-prev{
+  margin-left: -30px;
+}
+.activity-swiper .swiper-button-next{
+  margin-right: -30px;
+}
 .activity-swiper .swiper-button-next:after,
 .activity-swiper .swiper-button-prev:after {
   font-size: 16px;
@@ -2788,11 +2801,12 @@ video::-webkit-media-controls {
   #ParticipantCountCard {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: start;
+    gap: 10px;
   }
 }
 
-.BackgroundImageSet::before {
+/* .BackgroundImageSet::before {
   content: "";
   position: absolute;
   top: 0;
@@ -2806,8 +2820,8 @@ video::-webkit-media-controls {
       rgba(0, 0, 0, 0.15) 100%);
   z-index: 1;
   pointer-events: none;
-}
-
+} */
+/* 
 .BackgroundImageSet::after {
   content: "";
   position: absolute;
@@ -2822,12 +2836,22 @@ video::-webkit-media-controls {
       transparent 100%);
   z-index: 2;
   pointer-events: none;
-}
+} */
 
+.GridSetNow{
+  display: grid !important;
+  grid-template-columns: 1.5fr 2fr !important;
+  gap: 20px;
+}
 @media (max-width: 767px) {
   .BackgroundImageSet::after {
     height: 150px;
   }
+  .GridSetNow{
+  display: grid !important;
+  grid-template-columns: 1fr  !important;
+  gap: 10px;
+}
 }
 
 .ActivityImageShow {

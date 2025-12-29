@@ -4,19 +4,48 @@
     background: #ffffff;
     border-radius: 12px;
     border: 1px solid #eef2f6;
+    /* Brand color top border interaction */
+    border-top: 4px solid var(--brand-color);
     padding: 18px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     margin-bottom: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+.booking-summary-wrapper::before {
+    content: "";
+    position: absolute;
+    bottom: 60px;
+    right: -20px;
+    width: 200px;
+    height: 200px;
+    background-image: url('https://s3.ap-south-1.amazonaws.com/prepseed/prod/ldoc/media/BackgroundSummaryImage.jpg');
+    background-position: bottom right;
+    background-repeat: no-repeat;
+    background-size: contain;
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.booking-summary-wrapper>* {
+    position: relative;
+    z-index: 1;
 }
 
 .summary-title-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--brand-color);
+    background-color: #940fdb1a;
+    /* Light brand color background */
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 14px;
-    display: block;
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 4px;
 }
 
 .summary-main-layout {
@@ -143,7 +172,7 @@
 .summary-divider-line {
     height: 1px;
     background: #f1f5f9;
-    margin: 16px 0;
+    margin: 7px 0;
 }
 
 .summary-footer-row {
@@ -184,7 +213,22 @@
     font-weight: 700;
 }
 
+.MobileSmmaryDate{
+    display: none;
+}
 @media (max-width: 768px) {
+    .summary-date-card{
+        min-width: 70px;
+    }
+    .summary-footer-row{
+        align-items: center;
+    }
+    .MobileSmmaryDate{
+        display: block;
+    }
+    .PcummaryDate{
+        display: none;
+    }
     .summary-visual-column {
         width: 80px;
     }
@@ -192,12 +236,20 @@
     .summary-day {
         font-size: 20px;
     }
-
+.booking-summary-wrapper{
+    margin-bottom: 0px;
+    padding: 10px 16px;
+}
     .summary-exp-title {
         font-size: 15px;
     }
 
     .summary-price-final {
         font-size: 18px;
+    }
+    .summary-price-container{
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 }

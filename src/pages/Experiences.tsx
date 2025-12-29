@@ -1,31 +1,45 @@
-
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { Header } from "@/components/Header"
 import { ExperienceCard } from "@/components/ExperienceCard"
-import { ExperienceFilters } from "@/components/ExperienceFilters"
 import { SEO } from "@/components/SEO"
 import { Breadcrumb } from "@/components/Breadcrumb"
-
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Slider } from "@/components/ui/slider"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Search, SlidersHorizontal } from "lucide-react"
+import "@/styles/Experiences.css"
 
 interface FilterState {
   priceRange: [number, number]
-  locations: string[]
-  categories: string[]
   sortBy: string
 }
 
 const Experiences = () => {
+  const [searchQuery, setSearchQuery] = useState("")
   const [filters, setFilters] = useState<FilterState>({
     priceRange: [0, 10000],
-    locations: [],
-    categories: [],
     sortBy: 'title'
   })
 
+  // Debounce search query for API calls could be better, but for now direct state is fine as it's a small app
+  // or I can rely on React Query's behavior if I pass searchQuery to queryKey.
+
   const { data: experiences, isLoading } = useQuery({
-    queryKey: ['all-experiences', filters],
+    queryKey: ['all-experiences', filters, searchQuery],
     queryFn: async () => {
       let query = supabase
         .from('experiences')
@@ -46,9 +60,9 @@ const Experiences = () => {
         .gte('price', filters.priceRange[0])
         .lte('price', filters.priceRange[1])
 
-      // Apply location filter
-      if (filters.locations.length > 0) {
-        query = query.in('location', filters.locations)
+      // Apply search filter
+      if (searchQuery) {
+        query = query.ilike('title', `%${searchQuery}%`)
       }
 
       let data
@@ -56,16 +70,6 @@ const Experiences = () => {
 
       if (error) throw error
       data = queryData
-
-      // Apply category filter using the junction table
-      if (filters.categories.length > 0) {
-        const filteredData = data.filter(experience => 
-          experience.experience_categories?.some(ec => 
-            filters.categories.includes(ec.categories?.name || '')
-          )
-        )
-        data = filteredData
-      }
 
       // Apply sorting
       if (filters.sortBy === 'price-low') {
@@ -79,45 +83,6 @@ const Experiences = () => {
       }
 
       return data
-    }
-  })
-
-  const { data: filterOptions } = useQuery({
-    queryKey: ['filter-options'],
-    queryFn: async () => {
-      // Get experiences with their categories to ensure we only show options that have experiences
-      const { data: experiencesWithCategories, error: experiencesError } = await supabase
-        .from('experiences')
-        .select(`
-          location,
-          experience_categories (
-            categories (
-              name
-            )
-          )
-        `)
-      
-      if (experiencesError) throw experiencesError
-
-      // Extract unique locations that have experiences
-      const locations = [...new Set(
-        experiencesWithCategories
-          .map(exp => exp.location)
-          .filter(Boolean)
-      )]
-
-      // Extract unique categories that have experiences
-      const categoriesSet = new Set<string>()
-      experiencesWithCategories.forEach(exp => {
-        exp.experience_categories?.forEach(ec => {
-          if (ec.categories?.name) {
-            categoriesSet.add(ec.categories.name)
-          }
-        })
-      })
-      const categories = Array.from(categoriesSet)
-      
-      return { locations, categories }
     }
   })
 
@@ -149,18 +114,18 @@ const Experiences = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO 
+      <SEO
         title="Adventure Experiences in India - bucketlistt | Book Now"
         description="Browse all adventure experiences and activities in India. From bungee jumping to river rafting, find your next thrill with bucketlistt. ATOAI certified tours."
         keywords="adventure experiences India, bungee jumping, river rafting, trekking, adventure activities, ATOAI certified, adventure tours India"
         structuredData={experiencesStructuredData}
       />
       <Header />
-      
+
       {/* Header Section */}
       <section className="section-wrapper-sm section-bg-primary">
         <div className="container">
-          <Breadcrumb 
+          <Breadcrumb
             items={[
               { label: "Experiences", current: true }
             ]}
@@ -176,34 +141,83 @@ const Experiences = () => {
       </section>
 
       {/* Main Content Section */}
-      <section className="section-wrapper section-bg-secondary">
+      <section className="section-wrapper section-bg-secondary pt-0">
         <div className="container">
-          <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters Sidebar */}
-          <div className="lg:w-80 flex-shrink-0">
-            <ExperienceFilters
-              filters={filters}
-              onFiltersChange={setFilters}
-              filterOptions={filterOptions}
-            />
+
+          {/* Top Filter Bar */}
+          <div className="experiences-filter-bar">
+            {/* Search */}
+            <div className="experiences-search-container">
+              <Search className="experiences-search-icon" />
+              <Input
+                placeholder="Search experiences..."
+                className="experiences-search-input border-0 bg-transparent ring-0 focus-visible:ring-0 pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <div className="experiences-filters-group">
+              {/* Price Range */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="filter-button">
+                    <SlidersHorizontal className="w-4 h-4" />
+                    Price Range
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4">
+                  <div className="space-y-4">
+                    <h4 className="font-medium leading-none">Price Range</h4>
+                    <Slider
+                      defaultValue={[0, 10000]}
+                      value={filters.priceRange}
+                      max={10000}
+                      step={100}
+                      onValueChange={(val) => setFilters({ ...filters, priceRange: [val[0], val[1]] })}
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>₹{filters.priceRange[0]}</span>
+                      <span>₹{filters.priceRange[1]}</span>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Sort By */}
+              <Select
+                value={filters.sortBy}
+                onValueChange={(value) => setFilters({ ...filters, sortBy: value })}
+              >
+                <SelectTrigger className="sort-select-trigger bg-white">
+                  <SelectValue placeholder="Sort By" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="title">Name (A-Z)</SelectItem>
+                  <SelectItem value="price-low">Price (Low to High)</SelectItem>
+                  <SelectItem value="price-high">Price (High to Low)</SelectItem>
+                  <SelectItem value="rating">Rating (High to Low)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Experiences Grid */}
-          <div className="flex-1">
+          <div className="">
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
+              <div className="experiences-grid">
+                {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="h-80 bg-muted animate-pulse rounded-lg"></div>
                 ))}
               </div>
             ) : experiences && experiences.length > 0 ? (
               <>
-                <div className="mb-6">
+                <div className="mb-6 flex justify-between items-center">
                   <p className="text-muted-foreground">
                     Found {experiences.length} experience{experiences.length !== 1 ? 's' : ''}
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="experiences-grid">
                   {experiences.map((experience) => (
                     <ExperienceCard
                       key={experience.id}
@@ -231,7 +245,6 @@ const Experiences = () => {
               </div>
             )}
           </div>
-        </div>
         </div>
       </section>
     </div>

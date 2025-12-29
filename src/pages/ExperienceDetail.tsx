@@ -144,8 +144,8 @@ const ExperienceDetail = () => {
   // Merge vendor_id if we fetched it separately
   const experienceWithVendorId =
     experience &&
-    (experience.vendor_id === undefined || experience.vendor_id === null) &&
-    vendorIdData
+      (experience.vendor_id === undefined || experience.vendor_id === null) &&
+      vendorIdData
       ? { ...experience, vendor_id: vendorIdData }
       : experience;
 
@@ -293,7 +293,7 @@ const ExperienceDetail = () => {
     images && images.length > 0
       ? images
       : experience?.image_url
-      ? [
+        ? [
           {
             id: "main",
             image_url: experience.image_url,
@@ -302,7 +302,7 @@ const ExperienceDetail = () => {
             is_primary: true,
           },
         ]
-      : [];
+        : [];
 
   // Bulk Booking CSV Download
   const handleDownloadBulkBookingCSV = () => {
@@ -371,8 +371,7 @@ const ExperienceDetail = () => {
 
         if (!bookingDate || !participantName || !participantEmail) {
           errors.push(
-            `Row ${
-              i + 2
+            `Row ${i + 2
             }: Missing required fields (booking_date, participant_name, participant_email)`
           );
           continue;
@@ -408,8 +407,7 @@ const ExperienceDetail = () => {
 
         if (bookingsError) {
           errors.push(
-            `Row ${i + 2}: Error checking existing bookings - ${
-              bookingsError.message
+            `Row ${i + 2}: Error checking existing bookings - ${bookingsError.message
             }`
           );
           continue;
@@ -436,8 +434,7 @@ const ExperienceDetail = () => {
 
         if (!availableSlot) {
           errors.push(
-            `Row ${
-              i + 2
+            `Row ${i + 2
             }: No available time slots for ${participantName} on ${bookingDate}`
           );
           continue;
@@ -746,7 +743,7 @@ const ExperienceDetail = () => {
                         <div className="flex items-center gap-3 mb-6">
                           <span style={{ color: "grey" }}>From</span>
                           {appliedCoupon &&
-                          appliedCoupon.discount_calculation ? (
+                            appliedCoupon.discount_calculation ? (
                             <>
                               <span className="text-3xl font-bold line-through text-muted-foreground">
                                 {formatCurrency(experience.price)}
@@ -770,7 +767,7 @@ const ExperienceDetail = () => {
                             </>
                           ) : discountedPrice &&
                             discountedPrice !==
-                              (firstActivity?.price || experience.price) ? (
+                            (firstActivity?.price || experience.price) ? (
                             <>
                               <span className="text-lg text-muted-foreground line-through">
                                 {formatCurrency(
@@ -857,20 +854,20 @@ const ExperienceDetail = () => {
                       >
                         {bookingButtonText} {!isAgent && " - "}{" "}
                         {!isAgent &&
-                        appliedCoupon?.discount_calculation?.final_amount
+                          appliedCoupon?.discount_calculation?.final_amount
                           ? formatCurrency(
-                              appliedCoupon.discount_calculation.final_amount
-                            )
+                            appliedCoupon.discount_calculation.final_amount
+                          )
                           : discountedPrice &&
                             discountedPrice !==
-                              (firstActivity?.price || experience.price)
-                          ? formatCurrency(discountedPrice)
-                          : experience.original_price &&
-                            experience.original_price !== experience.price
-                          ? formatCurrency(experience.price)
-                          : formatCurrency(
-                              firstActivity?.price || experience.price
-                            )}
+                            (firstActivity?.price || experience.price)
+                            ? formatCurrency(discountedPrice)
+                            : experience.original_price &&
+                              experience.original_price !== experience.price
+                              ? formatCurrency(experience.price)
+                              : formatCurrency(
+                                firstActivity?.price || experience.price
+                              )}
                       </Button>
 
                       {/* Bulk Booking Buttons for Vendor */}
@@ -994,7 +991,7 @@ const ExperienceDetail = () => {
             title: experience.title,
             price: experience.price || 0, // Always use original price for coupon validation
             currency: experience.currency || "INR",
-            image_url: experience.image_url,
+            image_url: galleryImages?.[0]?.image_url || experience.image_url,
           }}
           appliedCoupon={appliedCoupon}
           onBookingSuccess={handleBookingSuccess}

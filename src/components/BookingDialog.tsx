@@ -1476,7 +1476,9 @@ export const BookingDialog = ({
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+
   const totalActivityPrice = selectedActivity
+
     ? parseFloat(
       (getActivityPrice(selectedActivity) * participantCount).toFixed(2)
     )
@@ -1492,7 +1494,7 @@ export const BookingDialog = ({
       destroyOnClose={true}
       maskClosable={false}
       className="BookingDialogModal"
-      bodyStyle={{ padding: "10px" }}
+      bodyStyle={{ padding: "10px",minHeight:"400px" }}
     >
       {currentStep === 1 ? (
         // Step 1: Activity Selection (Mobile) or Activity + Date + Time Selection (Desktop)
@@ -1593,7 +1595,7 @@ export const BookingDialog = ({
         // Step 2: Participants and Payment Details
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
+            <div className="GridSetNow">
               {/* Left Column: Activity Summary */}
 
               <div>
@@ -1613,7 +1615,7 @@ export const BookingDialog = ({
                             className="summary-activity-img"
                           />
                         </div>
-                        <div className="summary-date-card">
+                        <div className="summary-date-card PcummaryDate">
                           <div className="summary-month">
                             {selectedDate ? format(selectedDate, "MMM") : "---"}
                           </div>
@@ -1655,11 +1657,22 @@ export const BookingDialog = ({
                     <div className="summary-divider-line" />
 
                     <div className="summary-footer-row">
+                      <div className="summary-date-card MobileSmmaryDate">
+                          <div className="summary-month">
+                            {selectedDate ? format(selectedDate, "MMM") : "---"}
+                          </div>
+                          <div className="summary-day">
+                            {selectedDate ? format(selectedDate, "d") : "--"}
+                          </div>
+                          <div className="summary-weekday">
+                            {selectedDate ? format(selectedDate, "EEE") : "---"}
+                          </div>
+                        </div>
                       <span className="summary-people-count">
                         {participantCount}{" "}
-                        {experience.title==="Bike on Rent in Rishikesh"?participantCount === 1 ? "day" : "days":participantCount === 1 ? "Person" : "People"}
+                        {experience.title === "Bike on Rent in Rishikesh" ? participantCount === 1 ? "day" : "days" : participantCount === 1 ? "Person" : "People"}
                       </span>
-                      <div className="summary-price-container">  
+                      <div className="summary-price-container">
                         {(selectedActivity as any)?.discounted_price &&
                           (selectedActivity as any).discounted_price !==
                           (selectedActivity as any).price ? (
@@ -1845,7 +1858,7 @@ export const BookingDialog = ({
                                 id="ParticipantCountCard"
                               >
                                 <div>
-                                  <FormLabel>{experience.title=="Bike on Rent in Rishikesh"?"Number of days":"Number of Participants"}</FormLabel>
+                                  <FormLabel>{experience.title == "Bike on Rent in Rishikesh" ? "Number of days" : "Number of Participants"}</FormLabel>
                                   {selectedSlotId &&
                                     availableSpots !== undefined && (
                                       // <p className="text-xs text-muted-foreground mt-1">
@@ -2339,7 +2352,7 @@ export const BookingDialog = ({
                   />
 
                   {/* Step 2 Footer */}
-                  <div className="flex gap-3 pt-0 mt-0">
+                  <div className="flex gap-3 pt-0 mt-0 flex-wrap">
                     <Button
                       type="button"
                       variant="outline"

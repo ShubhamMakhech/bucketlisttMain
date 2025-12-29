@@ -207,7 +207,7 @@ const App: React.FC = () => {
                       path="/email-confirmation"
                       element={<EmailConfirmation />}
                     />
-                    <Route path="/experiences" element={<Experiences />} />
+                    {/* <Route path="/experiences" element={<Experiences />} /> */}
                     <Route path="/destinations" element={<Destinations />} />
                     <Route path="/favorites" element={<Favorites />} />
                     <Route path="/profile" element={<Profile />} />

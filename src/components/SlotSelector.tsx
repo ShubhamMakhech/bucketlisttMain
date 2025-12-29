@@ -304,12 +304,12 @@ export const SlotSelector = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ overflow: "hidden" }}>
       {/* Activity Selection - Show only if not in date/time only mode */}
       {!showOnlyDateAndTime && (
         <>
           {/* Add Activity Selector */}
-          <div >
+          <Card className="ContainerBorderSet" bodyStyle={{ padding: "10px" }}>
             <label className="text-base font-semibold mb-3 block textSmall">Select Activity</label>
 
             {/* Desktop Activity Swiper Slider */}
@@ -341,7 +341,7 @@ export const SlotSelector = ({
                           onActivityChange(activity.id);
                           onSlotChange(undefined); // Reset slot when activity changes
                         }}
-                        style={{ width: "280px", minHeight: "200px",height:"100%" }}
+                        style={{ width: "280px", minHeight: "200px", height: "100%" }}
                       >
                         <div className="flex flex-col h-full p-3">
                           {/* Title */}
@@ -359,7 +359,7 @@ export const SlotSelector = ({
                           {/* Price */}
                           <div className="mb-4">
                             {activity.discounted_price &&
-                                activity.discounted_price !== activity.price ? (
+                              activity.discounted_price !== activity.price ? (
                               <div className="flex gap-2">
                                 <div className="text-lg text-muted-foreground line-through opacity-50">
                                   {activity.currency === "USD"
@@ -611,7 +611,7 @@ export const SlotSelector = ({
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         </>
       )}
 
@@ -621,75 +621,76 @@ export const SlotSelector = ({
           {/* Existing Calendar and Time Slots components */}
           {selectedActivityId && (
             <>
-              <div className='CalenderLayoutContainer '>
-                <label className="text-base font-medium mb-3 font-semibold block textSmall">Select date</label>
+              <Card bodyStyle={{ padding: "10px" }}>
+                <div className='CalenderLayoutContainer'>
+                  <label className="text-base font-medium mb-3 font-semibold block textSmall">Select date</label>
 
-                {/* Horizontal Date Picker */}
-                <div className="grid grid-cols-5 gap-1 pb-2 AdjustContainer">
-                  {next4Days.map((date) => {
-                    const isSelected =
-                      selectedDate && isSameDay(date, selectedDate);
-                    const isDisabled = isDateDisabled(date);
+                  {/* Horizontal Date Picker */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-1 pb-2 AdjustContainer">
+                    {next4Days.map((date) => {
+                      const isSelected =
+                        selectedDate && isSameDay(date, selectedDate);
+                      const isDisabled = isDateDisabled(date);
 
-                    return (
-                      <div
-                        key={date.toISOString()}
-                        className={`flex-shrink-0 cursor-pointer transition-all duration-200 ${isDisabled
-                          ? "opacity-50 cursor-not-allowed"
-                          : "hover:scale-105"
-                          }`}
-                        onClick={() => !isDisabled && onDateChange(date)}
-                      >
+                      return (
                         <div
-                          className={`w-full h-20 rounded-lg border-2 p-2 text-center flex flex-col justify-between ${isSelected
-                            ? 'border-[var(--brand-color)] bg-orange-50'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
+                          key={date.toISOString()}
+                          className={`flex-shrink-0 cursor-pointer transition-all duration-200 ${isDisabled
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:scale-105"
                             }`}
+                          onClick={() => !isDisabled && onDateChange(date)}
                         >
-                          <div className="text-xs text-gray-500 font-medium textSmall">
-                            {format(date, "EEE")}
-                          </div>
-                          <div className="text-sm font-semibold text-gray-800 textSmall">
-                            {format(date, "MMM d")}
+                          <div
+                            className={`w-full h-15 rounded-lg border-2 p-2 text-center flex flex-col justify-between ${isSelected
+                              ? 'border-[var(--brand-color)] bg-orange-50'
+                              : 'border-gray-200 bg-white hover:border-gray-300'
+                              }`}
+                          >
+                            <div className="text-xs text-gray-500 font-medium textSmall">
+                              {format(date, "EEE")}
+                            </div>
+                            <div className="text-sm font-semibold text-gray-800 textSmall">
+                              {format(date, "MMM d")}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
 
-                  {/* More Dates Button */}
-                  <Popover
-                    content={
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={(date) => {
-                          onDateChange(date);
-                          setShowCalendar(false);
-                        }}
-                        disabled={isDateDisabled}
-                        className="rounded-md border"
-                      />
-                    }
-                    title="Select Date"
-                    trigger="click"
-                    open={showCalendar}
-                    onOpenChange={setShowCalendar}
-                    placement="bottomLeft"
-                  >
-                    <Button className="flex-shrink-0 w-16 h-20 flex flex-col items-center justify-center gap-1 border-gray-200 hover:border-gray-300 p-2 " style={{width:"100%"}}>
-                      <CalendarIcon className="h-4 w-4 text-gray-600" />
-                      <span className="text-xs text-gray-600">
-                        More <br />
-                        dates
-                      </span>
-                    </Button>
-                  </Popover>
+                    {/* More Dates Button */}
+                    <Popover
+                      content={
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={(date) => {
+                            onDateChange(date);
+                            setShowCalendar(false);
+                          }}
+                          disabled={isDateDisabled}
+                          className="rounded-md border"
+                        />
+                      }
+                      title="Select Date"
+                      trigger="click"
+                      open={showCalendar}
+                      onOpenChange={setShowCalendar}
+                      placement="bottomLeft"
+                    >
+                      <Button className="flex-shrink-0 w-16 h-100  flex flex-col items-center justify-center gap-1 border-gray-200 hover:border-gray-300 p-2 " style={{ width: "100%" }}>
+                        <CalendarIcon className="h-4 w-4 text-gray-600" />
+                        <span className="text-xs text-gray-600">
+                          More
+                          dates
+                        </span>
+                      </Button>
+                    </Popover>
+                  </div>
                 </div>
-              </div>
-
+              </Card >
               {selectedDate && (
-                <div>
+                <Card bodyStyle={{ padding: "10px" }} style={{ marginTop: "10px" }}>
                   <label className="text-base font-semibold mb-3 block textSmall">
                     Available Time Slots for{" "}
                     {format(selectedDate, "MMM d, yyyy")}
@@ -705,7 +706,7 @@ export const SlotSelector = ({
                       ))}
                     </div>
                   ) : timeSlots && timeSlots.length > 0 ? (
-                    <div className="grid grid-cols-3 md:grid-cols-3 gap-1 ">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1 ">
                       {timeSlots.map((slot) => {
                         const available = isSlotAvailable(slot);
                         const isSelected = selectedSlotId === slot.id;
@@ -777,7 +778,7 @@ export const SlotSelector = ({
                       </div>
                     </Card>
                   )}
-                </div>
+                </Card>
               )}
             </>
           )}
