@@ -162,7 +162,7 @@ export const OfflineBookingDialog = ({
 
       const { data, error } = await supabase
         .from("activities")
-        .select("id, name, price, currency")
+        .select("id, name, price, currency, b2bPrice")
         .eq("experience_id", selectedExperienceId)
         .eq("is_active", true)
         .order("name", { ascending: true });
@@ -227,6 +227,13 @@ export const OfflineBookingDialog = ({
           booked_count: bookedCount,
           available_spots: Math.max(0, availableSpots),
         };
+      });
+
+      // Sort by start_time in ascending order
+      slotsWithAvailability.sort((a: any, b: any) => {
+        const timeA = a.start_time || "";
+        const timeB = b.start_time || "";
+        return timeA.localeCompare(timeB);
       });
 
       return slotsWithAvailability;
@@ -967,9 +974,9 @@ export const OfflineBookingDialog = ({
                                 {formatTime(slot.start_time)}
                               </span>
                             </div>
-                            <span className="time-slot-spots">
+                            {/* <span className="time-slot-spots">
                               {slot.available_spots} spots left
-                            </span>
+                            </span> */}
                           </button>
                         );
                       })}
@@ -1155,18 +1162,26 @@ export const OfflineBookingDialog = ({
                         <span className="summary-value">
                           {selectedActivity.currency}{" "}
                           {(
-                            form.watch("booking_amount_per_person") ||
-                            selectedActivity.price
+                            form.watch("booking_amount_per_person") || 0
                           ).toLocaleString()}
                         </span>
                       </div>
+                      {isAgent && selectedActivity.b2bPrice && (
+                        <div className="summary-row">
+                          <span className="summary-label">B2B Price</span>
+                          <span className="summary-value">
+                            {selectedActivity.currency}{" "}
+                            {selectedActivity.b2bPrice.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
                       <div className="summary-total">
                         <span className="total-label">Total Amount</span>
                         <span className="total-value">
                           {selectedActivity.currency}{" "}
                           {(
-                            (form.watch("booking_amount_per_person") ||
-                              selectedActivity.price) * participantCount
+                            (form.watch("booking_amount_per_person") || 0) *
+                            participantCount
                           ).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,

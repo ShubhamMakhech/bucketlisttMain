@@ -45,6 +45,7 @@ import Users from "./pages/Users";
 import { AdminBlogPage } from "./components/AdminBlogPage";
 import VendorCalendarPage from "./pages/VendorCalendarPage";
 import { VendorRouteGuard } from "./components/VendorRouteGuard";
+import { AgentRouteGuard } from "./components/AgentRouteGuard";
 const queryClient = new QueryClient();
 
 const WhatsappButtonConditional = () => {
@@ -194,62 +195,70 @@ const App: React.FC = () => {
           <Sonner />
           <BrowserRouter>
             <VendorRouteGuard>
-              <Layout>
-                <PageTransition>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/blogs" element={<Blogs />} />
-                    <Route path="/blogs/:slug" element={<BlogDetail />} />
-                    <Route path="/admin/blogs" element={<AdminBlogPage />} />
-                    <Route path="/qrcode" element={<QRCodeRedirect />} />
-                    <Route
-                      path="/email-confirmation"
-                      element={<EmailConfirmation />}
-                    />
-                    {/* <Route path="/experiences" element={<Experiences />} /> */}
-                    <Route path="/destinations" element={<Destinations />} />
-                    <Route path="/favorites" element={<Favorites />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/profile/calendar" element={<VendorCalendarPage />} />
-                    <Route path="/bookings" element={<Bookings />} />
-                    <Route path="/confirm-booking" element={<ConfirmBooking />} />
-                    <Route
-                      path="/create-experience"
-                      element={<CreateExperience />}
-                    />
-                    <Route
-                      path="/edit-experience/:id"
-                      element={<EditExperience />}
-                    />
-                    <Route path="/contact" element={<ContactUs />} />
-                    <Route path="/our-story" element={<OurStory />} />
-                    <Route path="/terms" element={<TermsAndConditions />} />
-                    <Route path="/search" element={<SearchResults />} />
-                    <Route path="/coming-soon" element={<ComingSoon />} />
-                    <Route path="/users" element={<Users />} />
-                    <Route path="/partner" element={<Partner />} />
-                    <Route
-                      path="/vendor/experiences"
-                      element={<VendorExperiences />}
-                    />
-                    <Route
-                      path="/experience/:name"
-                      element={<ExperienceDetail />}
-                    />
-                    <Route
-                      path="/destination/:name"
-                      element={<DestinationDetail />}
-                    />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </PageTransition>
-              </Layout>
+              <AgentRouteGuard>
+                <Layout>
+                  <PageTransition>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/blogs" element={<Blogs />} />
+                      <Route path="/blogs/:slug" element={<BlogDetail />} />
+                      <Route path="/admin/blogs" element={<AdminBlogPage />} />
+                      <Route path="/qrcode" element={<QRCodeRedirect />} />
+                      <Route
+                        path="/email-confirmation"
+                        element={<EmailConfirmation />}
+                      />
+                      {/* <Route path="/experiences" element={<Experiences />} /> */}
+                      <Route path="/destinations" element={<Destinations />} />
+                      <Route path="/favorites" element={<Favorites />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route
+                        path="/profile/calendar"
+                        element={<VendorCalendarPage />}
+                      />
+                      <Route path="/bookings" element={<Bookings />} />
+                      <Route
+                        path="/confirm-booking"
+                        element={<ConfirmBooking />}
+                      />
+                      <Route
+                        path="/create-experience"
+                        element={<CreateExperience />}
+                      />
+                      <Route
+                        path="/edit-experience/:id"
+                        element={<EditExperience />}
+                      />
+                      <Route path="/contact" element={<ContactUs />} />
+                      <Route path="/our-story" element={<OurStory />} />
+                      <Route path="/terms" element={<TermsAndConditions />} />
+                      <Route path="/search" element={<SearchResults />} />
+                      <Route path="/coming-soon" element={<ComingSoon />} />
+                      <Route path="/users" element={<Users />} />
+                      <Route path="/partner" element={<Partner />} />
+                      <Route
+                        path="/vendor/experiences"
+                        element={<VendorExperiences />}
+                      />
+                      <Route
+                        path="/experience/:name"
+                        element={<ExperienceDetail />}
+                      />
+                      <Route
+                        path="/destination/:name"
+                        element={<DestinationDetail />}
+                      />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </PageTransition>
+                </Layout>
 
-              {/* AI Chatbot - Only show on homepage */}
-              <WhatsappButtonConditional />
-              {/* Mobile Floating Button - Only show on experience detail routes */}
-              <ConditionalMobileButton />
+                {/* AI Chatbot - Only show on homepage */}
+                <WhatsappButtonConditional />
+                {/* Mobile Floating Button - Only show on experience detail routes */}
+                <ConditionalMobileButton />
+              </AgentRouteGuard>
             </VendorRouteGuard>
           </BrowserRouter>
         </AuthProvider>
