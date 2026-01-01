@@ -337,8 +337,13 @@ export const UserBookings = () => {
     }
 
     // For offline bookings, show "-" for calculation columns except ticket price
+    // But show all fields for admins viewing offline bookings
     const calculationColumns = [11, 12, 13, 14, 15, 17, 18, 19, 20, 21]; // Official Price, B2B Price, Commission, Website Price, Discount Coupon, Advance, Payment to collect, Commission Net, Amount to collect, Advance+Discount
-    if (isOfflineBooking && calculationColumns.includes(columnIndex)) {
+    if (
+      isOfflineBooking &&
+      calculationColumns.includes(columnIndex) &&
+      !isAdmin
+    ) {
       return "-";
     }
 
@@ -347,13 +352,14 @@ export const UserBookings = () => {
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-          profile?.phone_number ||
-          booking?.booking_participants?.[0]?.phone_number ? (
+        profile?.phone_number ||
+        booking?.booking_participants?.[0]?.phone_number ? (
           <a
-            href={`tel:${booking.contact_person_number ||
+            href={`tel:${
+              booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-              }`}
+            }`}
             className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
@@ -377,11 +383,11 @@ export const UserBookings = () => {
       () =>
         timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-            timeslot.end_time
-          )}`
+              timeslot.end_time
+            )}`
           : isOfflineBooking
-            ? "Offline"
-            : "N/A",
+          ? "Offline"
+          : "N/A",
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
       () => booking.note_for_guide || "-",
@@ -389,10 +395,11 @@ export const UserBookings = () => {
         const bookingType = (booking as any)?.type || "online";
         return (
           <span
-            className={`px-2 py-1 rounded text-xs font-medium ${bookingType === "offline"
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              bookingType === "offline"
                 ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                 : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-              }`}
+            }`}
           >
             {bookingType === "offline" ? "Offline" : "Online"}
           </span>
@@ -823,11 +830,11 @@ export const UserBookings = () => {
                 const isOfflineFilter = (booking as any)?.type === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                  ? "Offline"
+                  : "";
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
               case 8: // No. Of Participants
@@ -839,14 +846,16 @@ export const UserBookings = () => {
                   ? "Offline"
                   : "Online";
               case 11: // Official Price/ Original Price
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const originalPrice = activity?.price || experience?.price || 0;
                 return formatCurrency(
                   currency,
                   originalPrice * booking.total_participants
                 );
               case 12: // B2B Price
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const b2bPrice =
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
                 return formatCurrency(
@@ -854,7 +863,8 @@ export const UserBookings = () => {
                   b2bPrice * booking.total_participants
                 );
               case 13: // Commission as per vendor
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const originalPrice2 =
                   activity?.price || experience?.price || 0;
                 const b2bPrice2 =
@@ -864,14 +874,16 @@ export const UserBookings = () => {
                   (originalPrice2 - b2bPrice2) * booking.total_participants
                 );
               case 14: // Website Price
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const discountedPrice = activity?.discounted_price || 0;
                 return formatCurrency(
                   currency,
                   discountedPrice * booking.total_participants
                 );
               case 15: // Discount Coupon
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const originalPrice3 =
                   activity?.price || experience?.price || 0;
                 const officialPrice =
@@ -888,12 +900,14 @@ export const UserBookings = () => {
                   (booking as any)?.booking_amount || 0
                 );
               case 17: // Advance paid to bucketlistt (10%)
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const bookingAmount2 = (booking as any)?.booking_amount || 0;
                 const dueAmount = (booking as any)?.due_amount || 0;
                 return formatCurrency(currency, bookingAmount2 - dueAmount);
               case 18: // Payment to be collected by vendor
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const bookingAmount3 = (booking as any)?.booking_amount || 0;
                 const dueAmount2 = (booking as any)?.due_amount || 0;
                 return formatCurrency(
@@ -901,7 +915,8 @@ export const UserBookings = () => {
                   bookingAmount3 - (bookingAmount3 - dueAmount2)
                 );
               case 19: // Actual Commission to bucketlistt (Net profit)
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const bookingAmount4 = (booking as any)?.booking_amount || 0;
                 const b2bPrice3 =
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
@@ -910,7 +925,8 @@ export const UserBookings = () => {
                   bookingAmount4 - b2bPrice3 * booking.total_participants
                 );
               case 20: // Amount to be collected from vendor/ '- to be paid'
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const bookingAmount5 = (booking as any)?.booking_amount || 0;
                 const b2bPrice4 =
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
@@ -918,11 +934,12 @@ export const UserBookings = () => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                  b2bPrice4 * booking.total_participants -
-                  (bookingAmount5 - dueAmount3)
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const bookingAmount6 = (booking as any)?.booking_amount || 0;
                 const dueAmount4 = (booking as any)?.due_amount || 0;
                 const originalPrice4 =
@@ -1048,8 +1065,8 @@ export const UserBookings = () => {
             case 6: // Timeslot
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : "";
             case 7: // Date
               return new Date(booking.booking_date).getTime();
@@ -1061,26 +1078,26 @@ export const UserBookings = () => {
               const bookingTypeA = (booking as any)?.type || "online";
               return bookingTypeA === "offline" ? "Offline" : "Online";
             case 11: // Official Price/ Original Price
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const originalPriceA = activity?.price || experience?.price || 0;
               return originalPriceA * booking.total_participants;
             case 12: // B2B Price
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const b2bPriceA = booking.b2bPrice || activity?.b2bPrice || 0;
               return b2bPriceA * booking.total_participants;
             case 13: // Commission as per vendor
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const originalPriceA2 = activity?.price || experience?.price || 0;
               const b2bPriceA2 = booking.b2bPrice || activity?.b2bPrice || 0;
               return (
                 (originalPriceA2 - b2bPriceA2) * booking.total_participants
               );
             case 14: // Website Price
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const discountedPriceA = activity?.discounted_price || 0;
               return discountedPriceA * booking.total_participants;
             case 15: // Discount Coupon
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const originalPriceA3 = activity?.price || experience?.price || 0;
               const officialPriceA =
                 originalPriceA3 * booking.total_participants;
@@ -1091,22 +1108,22 @@ export const UserBookings = () => {
             case 16: // Ticket Price (customer cost)
               return (booking as any)?.booking_amount || 0;
             case 17: // Advance paid to bucketlistt (10%)
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const bookingAmountA2 = (booking as any)?.booking_amount || 0;
               const dueAmountA = booking?.due_amount || 0;
               return bookingAmountA2 - dueAmountA;
             case 18: // Payment to be collected by vendor
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const bookingAmountA3 = (booking as any)?.booking_amount || 0;
               const dueAmountA2 = booking?.due_amount || 0;
               return bookingAmountA3 - (bookingAmountA3 - dueAmountA2);
             case 19: // Actual Commission to bucketlistt (Net profit)
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const bookingAmountA4 = (booking as any)?.booking_amount || 0;
               const b2bPriceA3 = booking.b2bPrice || activity?.b2bPrice || 0;
               return bookingAmountA4 - b2bPriceA3 * booking.total_participants;
             case 20: // Amount to be collected from vendor/ '- to be paid'
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const bookingAmountA5 = (booking as any)?.booking_amount || 0;
               const b2bPriceA4 = booking.b2bPrice || activity?.b2bPrice || 0;
               const dueAmountA3 = booking?.due_amount || 0;
@@ -1116,7 +1133,7 @@ export const UserBookings = () => {
                 (bookingAmountA5 - dueAmountA3)
               );
             case 21: // Advance + discount (vendor needs this)
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const bookingAmountA6 = (booking as any)?.booking_amount || 0;
               const dueAmountA4 = booking?.due_amount || 0;
               const originalPriceA4 = activity?.price || experience?.price || 0;
@@ -1374,8 +1391,6 @@ export const UserBookings = () => {
     }));
   }, [vendorProfiles, isAdmin]);
 
-
-
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "confirmed":
@@ -1474,11 +1489,11 @@ export const UserBookings = () => {
             case 6:
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : isOffline
-                  ? "Offline"
-                  : "";
+                ? "Offline"
+                : "";
             case 7:
               return format(new Date(booking.booking_date), "MMM d, yyyy");
             case 8:
@@ -1490,7 +1505,7 @@ export const UserBookings = () => {
                 ? "Offline"
                 : "Online";
             case 11: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const originalPrice = activity?.price || experience?.price || 0;
               return formatCurrency(
                 currency,
@@ -1498,7 +1513,7 @@ export const UserBookings = () => {
               );
             }
             case 12: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const b2bPrice =
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
               return formatCurrency(
@@ -1507,7 +1522,7 @@ export const UserBookings = () => {
               );
             }
             case 13: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const originalPrice = activity?.price || experience?.price || 0;
               const b2bPrice =
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
@@ -1517,7 +1532,7 @@ export const UserBookings = () => {
               );
             }
             case 14: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const discountedPrice = activity?.discounted_price || 0;
               return formatCurrency(
                 currency,
@@ -1525,7 +1540,7 @@ export const UserBookings = () => {
               );
             }
             case 15: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const originalPrice = activity?.price || experience?.price || 0;
               const officialPrice = originalPrice * booking.total_participants;
               const bookingAmount = (booking as any)?.booking_amount || 0;
@@ -1541,13 +1556,13 @@ export const UserBookings = () => {
                 (booking as any)?.booking_amount || 0
               );
             case 17: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
               const dueAmount = (booking as any)?.due_amount || 0;
               return formatCurrency(currency, bookingAmount - dueAmount);
             }
             case 18: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
               const dueAmount = (booking as any)?.due_amount || 0;
               return formatCurrency(
@@ -1556,7 +1571,7 @@ export const UserBookings = () => {
               );
             }
             case 19: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
               const b2bPrice =
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
@@ -1566,7 +1581,7 @@ export const UserBookings = () => {
               );
             }
             case 20: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
               const b2bPrice =
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
@@ -1574,12 +1589,12 @@ export const UserBookings = () => {
               return formatCurrency(
                 currency,
                 bookingAmount -
-                b2bPrice * booking.total_participants -
-                (bookingAmount - dueAmount)
+                  b2bPrice * booking.total_participants -
+                  (bookingAmount - dueAmount)
               );
             }
             case 21: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
               const dueAmount = (booking as any)?.due_amount || 0;
               const originalPrice = activity?.price || experience?.price || 0;
@@ -1863,13 +1878,14 @@ export const UserBookings = () => {
                 <span className="mobile-info-label">Contact</span>
                 <span className="mobile-info-value">
                   {booking.contact_person_number ||
-                    profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number ? (
+                  profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ? (
                     <a
-                      href={`tel:${booking.contact_person_number ||
+                      href={`tel:${
+                        booking.contact_person_number ||
                         profile?.phone_number ||
                         booking?.booking_participants?.[0]?.phone_number
-                        }`}
+                      }`}
                       className="mobile-contact-link"
                     >
                       {booking.contact_person_number ||
@@ -1996,7 +2012,7 @@ export const UserBookings = () => {
                           currency,
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2008,7 +2024,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           booking.time_slots?.activities?.price *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2020,7 +2036,7 @@ export const UserBookings = () => {
                           (booking.time_slots?.activities?.price -
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice)) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2045,7 +2061,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (Number(bookingAmount) - dueAmount)
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -2057,10 +2073,10 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (booking.b2bPrice ||
-                            booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants -
-                          (Number(bookingAmount) - dueAmount)
+                            (booking.b2bPrice ||
+                              booking.time_slots?.activities?.b2bPrice) *
+                              booking.total_participants -
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -2122,7 +2138,7 @@ export const UserBookings = () => {
                       setShowDateRangePicker(false);
                     }
                   }}
-                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                  // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
                   Columns
                 </Button>
@@ -2147,10 +2163,11 @@ export const UserBookings = () => {
                         return (
                           <label
                             key={index}
-                            className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
+                            className={`flex items-center gap-2 p-2 rounded ${
+                              isHiddenForAgent
                                 ? "opacity-50 cursor-not-allowed"
                                 : "cursor-pointer hover:bg-muted/30"
-                              }`}
+                            }`}
                           >
                             <input
                               type="checkbox"
@@ -2242,7 +2259,7 @@ export const UserBookings = () => {
                   >
                     {selectedTimeslotId
                       ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                        ?.displayName || "Timeslot"
+                          ?.displayName || "Timeslot"
                       : "Timeslot"}
                   </Button>
                 </PopoverTrigger>
@@ -2304,8 +2321,8 @@ export const UserBookings = () => {
                   >
                     {selectedActivityId
                       ? uniqueActivities.find(
-                        (a) => a.id === selectedActivityId
-                      )?.name || "Activity"
+                          (a) => a.id === selectedActivityId
+                        )?.name || "Activity"
                       : "Activity"}
                   </Button>
                 </PopoverTrigger>
@@ -2391,11 +2408,11 @@ export const UserBookings = () => {
                     value={
                       selectedDate
                         ? [
-                          dayjs(selectedDate),
-                          selectedEndDate
-                            ? dayjs(selectedEndDate)
-                            : dayjs(selectedDate),
-                        ]
+                            dayjs(selectedDate),
+                            selectedEndDate
+                              ? dayjs(selectedEndDate)
+                              : dayjs(selectedDate),
+                          ]
                         : null
                     }
                     onChange={(dates, dateStrings) => {
@@ -2628,13 +2645,15 @@ export const UserBookings = () => {
                               headerRefs.current[originalIndex] = el;
                             }}
                             data-column-index={originalIndex}
-                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${draggedColumnIndex === originalIndex
+                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${
+                              draggedColumnIndex === originalIndex
                                 ? "opacity-50"
                                 : ""
-                              } ${dragOverColumnIndex === originalIndex
+                            } ${
+                              dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                              } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
+                            } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
                             style={{ width: columnWidths[originalIndex] }}
                             draggable={true}
                             onDragStart={() =>
@@ -2702,11 +2721,12 @@ export const UserBookings = () => {
                                   title="Filter"
                                 >
                                   <Filter
-                                    className={`w-3 h-3 ${columnFilters[originalIndex] &&
-                                        columnFilters[originalIndex].length > 0
+                                    className={`w-3 h-3 ${
+                                      columnFilters[originalIndex] &&
+                                      columnFilters[originalIndex].length > 0
                                         ? "text-blue-600"
                                         : "text-gray-400"
-                                      }`}
+                                    }`}
                                   />
                                 </span>
                               </div>
@@ -2738,7 +2758,7 @@ export const UserBookings = () => {
                                       </span>
                                       {columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length >
-                                        0 && (
+                                          0 && (
                                           <Button
                                             variant="ghost"
                                             size="sm"
@@ -2760,11 +2780,12 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
-                                            sortOrder === "asc"
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
+                                          sortOrder === "asc"
                                             ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                                             : "hover:bg-gray-200"
-                                          }`}
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -2786,11 +2807,12 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
-                                            sortOrder === "desc"
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
+                                          sortOrder === "desc"
                                             ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                                             : "hover:bg-gray-200"
-                                          }`}
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -2866,8 +2888,8 @@ export const UserBookings = () => {
                                   {/* Filter Options List */}
                                   <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
                                     {getUniqueColumnValues[originalIndex] &&
-                                      getUniqueColumnValues[originalIndex]
-                                        .length > 0 ? (
+                                    getUniqueColumnValues[originalIndex]
+                                      .length > 0 ? (
                                       (() => {
                                         const searchQuery =
                                           filterSearchQueries[
@@ -3010,8 +3032,8 @@ export const UserBookings = () => {
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                        ? booking.note_for_guide || ""
-                                        : ""
+                                      ? booking.note_for_guide || ""
+                                      : ""
                                   }
                                 >
                                   {renderCellContent(

@@ -65,6 +65,10 @@ const offlineBookingSchema = z.object({
     .number()
     .min(0, "Amount per person must be positive")
     .optional(),
+  advance_amount: z
+    .number()
+    .min(0, "Advance amount must be positive")
+    .optional(),
   booking_date: z.date({ required_error: "Please select a date" }),
   note_for_guide: z.string().optional(),
 });
@@ -103,6 +107,7 @@ export const OfflineBookingDialog = ({
       contact_person_email: "",
       total_participants: 1,
       booking_amount_per_person: 0,
+      advance_amount: 0,
       note_for_guide: "",
     },
   });
@@ -314,6 +319,8 @@ export const OfflineBookingDialog = ({
       const bookingAmount =
         (data.booking_amount_per_person || 0) * data.total_participants ||
         (activity?.price ? activity.price * data.total_participants : 0);
+      const advanceAmount = data.advance_amount || 0;
+      const dueAmount = Math.max(0, bookingAmount - advanceAmount);
       const bookingDate = selectedDate || new Date();
       const formattedDate = moment(bookingDate).format("DD/MM/YYYY");
 
@@ -676,8 +683,8 @@ export const OfflineBookingDialog = ({
                 location2: experienceDetails?.location2 || null,
                 totalParticipants: data.total_participants,
                 totalAmount: bookingAmount,
-                upfrontAmount: bookingAmount,
-                dueAmount: "0",
+                upfrontAmount: advanceAmount,
+                dueAmount: dueAmount.toFixed(2),
                 partialPayment: false,
                 currency:
                   activity?.currency || experienceDetails?.currency || "INR",
@@ -744,6 +751,14 @@ export const OfflineBookingDialog = ({
     try {
       // Create offline booking
       // For offline bookings, user_id can be the vendor's/agent's/admin's ID since customer didn't book online
+      const totalBookingAmount =
+        (data.booking_amount_per_person || 0) * data.total_participants ||
+        (selectedActivity?.price
+          ? selectedActivity.price * data.total_participants
+          : 0);
+      const advanceAmount = data.advance_amount || 0;
+      const dueAmount = Math.max(0, totalBookingAmount - advanceAmount);
+
       const bookingData = {
         user_id: user.id, // Vendor's/Agent's/Admin's user_id (customer didn't book online)
         experience_id: data.experience_id,
@@ -754,14 +769,11 @@ export const OfflineBookingDialog = ({
         isAgentBooking: isAgent ? true : false,
         contact_person_number: data.contact_person_number,
         contact_person_email: data.contact_person_email || null,
-        booking_amount:
-          (data.booking_amount_per_person || 0) * data.total_participants ||
-          (selectedActivity?.price
-            ? selectedActivity.price * data.total_participants
-            : 0),
-        due_amount: 0, // No payment needed for offline bookings
+        booking_amount: totalBookingAmount,
+        due_amount: dueAmount, // Calculate: (price per person * participants) - advance amount
         status: "confirmed",
         terms_accepted: true,
+        b2bPrice:selectedActivity?.b2bPrice || 0,
         note_for_guide: data.note_for_guide || null,
         booked_by: user.id, // Vendor/Agent/Admin who created the booking
         type: "offline" as const,
@@ -1126,6 +1138,35 @@ export const OfflineBookingDialog = ({
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="advance_amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
+                          Advance Amount
+                        </label>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                              {selectedActivity?.currency || "INR"}
+                            </span>
+                            <Input
+                              type="number"
+                              className="pl-12 h-11"
+                              placeholder="0.00"
+                              {...field}
+                              value={field.value || ""}
+                              onChange={(e) =>
+                                field.onChange(parseFloat(e.target.value) || 0)
+                              }
+                            />
+                          </div>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 <FormField
@@ -1183,13 +1224,41 @@ export const OfflineBookingDialog = ({
                           </span>
                         </div>
                       )}
-                      <div className="summary-total">
-                        <span className="total-label">Total Amount</span>
-                        <span className="total-value">
+                      <div className="summary-row">
+                        <span className="summary-label">Total Amount</span>
+                        <span className="summary-value">
                           {selectedActivity.currency}{" "}
                           {(
                             (form.watch("booking_amount_per_person") || 0) *
                             participantCount
+                          ).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                      <div className="summary-row">
+                        <span className="summary-label">Advance Amount</span>
+                        <span className="summary-value">
+                          {selectedActivity.currency}{" "}
+                          {(form.watch("advance_amount") || 0).toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
+                        </span>
+                      </div>
+                      <div className="summary-total">
+                        <span className="total-label">Due Amount</span>
+                        <span className="total-value">
+                          {selectedActivity.currency}{" "}
+                          {Math.max(
+                            0,
+                            (form.watch("booking_amount_per_person") || 0) *
+                              participantCount -
+                              (form.watch("advance_amount") || 0)
                           ).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
