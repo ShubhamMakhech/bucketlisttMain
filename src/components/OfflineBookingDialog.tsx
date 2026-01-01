@@ -83,7 +83,7 @@ export const OfflineBookingDialog = ({
   onBookingSuccess,
 }: OfflineBookingDialogProps) => {
   const { user } = useAuth();
-  const { isVendor, isAgent } = useUserRole();
+  const { isVendor, isAgent, isAdmin } = useUserRole();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -125,9 +125,15 @@ export const OfflineBookingDialog = ({
     enabled: !!user?.id && isAgent,
   });
 
-  // Fetch experiences - vendor's own experiences OR all active experiences for agents
+  // Fetch experiences - vendor's own experiences OR all active experiences for agents/admins
   const { data: experiences = [] } = useQuery({
-    queryKey: ["offline-booking-experiences", user?.id, isVendor, isAgent],
+    queryKey: [
+      "offline-booking-experiences",
+      user?.id,
+      isVendor,
+      isAgent,
+      isAdmin,
+    ],
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -136,11 +142,11 @@ export const OfflineBookingDialog = ({
         .select("id, title, currency")
         .eq("is_active", true);
 
-      // For vendors, filter by vendor_id; for agents, get all active experiences
+      // For vendors, filter by vendor_id; for agents/admins, get all active experiences
       if (isVendor) {
         query = query.eq("vendor_id", user.id);
       }
-      // For agents, no filter - get all active experiences
+      // For agents/admins, no filter - get all active experiences
 
       query = query.order("title", { ascending: true });
 
@@ -149,7 +155,7 @@ export const OfflineBookingDialog = ({
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id && (isVendor || isAgent),
+    enabled: !!user?.id && (isVendor || isAgent || isAdmin),
   });
 
   const selectedExperienceId = form.watch("experience_id");
@@ -250,18 +256,18 @@ export const OfflineBookingDialog = ({
     }
   }, [isOpen, form]);
 
-  // Validate vendor/agent access
+  // Validate vendor/agent/admin access
   useEffect(() => {
-    if (!isVendor && !isAgent && user) {
-      //   console.log("isVendor", isVendor, "isAgent", isAgent, user);
+    if (!isVendor && !isAgent && !isAdmin && user) {
+      //   console.log("isVendor", isVendor, "isAgent", isAgent, "isAdmin", isAdmin, user);
       //   toast({
       //     title: "Access Denied",
-      //     description: "Only vendors and agents can create offline bookings.",
+      //     description: "Only vendors, agents, and admins can create offline bookings.",
       //     variant: "destructive",
       //   });
       onClose();
     }
-  }, [isVendor, isAgent, user, toast, onClose]);
+  }, [isVendor, isAgent, isAdmin, user, toast, onClose]);
 
   const handleClose = () => {
     form.reset();
@@ -311,9 +317,9 @@ export const OfflineBookingDialog = ({
       const bookingDate = selectedDate || new Date();
       const formattedDate = moment(bookingDate).format("DD/MM/YYYY");
 
-      // Get agent name for WhatsApp messages
+      // Get agent name for WhatsApp messages (only for agents, not admins)
       const agentName =
-        isAgent && agentProfile
+        isAgent && !isAdmin && agentProfile
           ? `${agentProfile.first_name || ""} ${
               agentProfile.last_name || ""
             }`.trim()
@@ -339,8 +345,8 @@ export const OfflineBookingDialog = ({
         }
       }
 
-      // Add agent name in brackets to date/time strings if agent
-      if (isAgent && agentName) {
+      // Add agent name in brackets to date/time strings if agent (not admin)
+      if (isAgent && !isAdmin && agentName) {
         timeSlotText = `${timeSlotText} (${agentName})`;
         formattedDateTime = `${formattedDateTime} (${agentName})`;
       }
@@ -706,10 +712,11 @@ export const OfflineBookingDialog = ({
   };
 
   const onSubmit = async (data: OfflineBookingFormData) => {
-    if (!user || (!isVendor && !isAgent)) {
+    if (!user || (!isVendor && !isAgent && !isAdmin)) {
       toast({
         title: "Access Denied",
-        description: "Only vendors and agents can create offline bookings.",
+        description:
+          "Only vendors, agents, and admins can create offline bookings.",
         variant: "destructive",
       });
       return;
@@ -736,9 +743,9 @@ export const OfflineBookingDialog = ({
 
     try {
       // Create offline booking
-      // For offline bookings, user_id can be the vendor's/agent's ID since customer didn't book online
+      // For offline bookings, user_id can be the vendor's/agent's/admin's ID since customer didn't book online
       const bookingData = {
-        user_id: user.id, // Vendor's/Agent's user_id (customer didn't book online)
+        user_id: user.id, // Vendor's/Agent's/Admin's user_id (customer didn't book online)
         experience_id: data.experience_id,
         activity_id: data.activity_id, // Direct activity reference for offline bookings
         booking_date: selectedDate?.toISOString() || new Date().toISOString(),
@@ -756,9 +763,10 @@ export const OfflineBookingDialog = ({
         status: "confirmed",
         terms_accepted: true,
         note_for_guide: data.note_for_guide || null,
-        booked_by: user.id, // Vendor/Agent who created the booking
+        booked_by: user.id, // Vendor/Agent/Admin who created the booking
         type: "offline" as const,
         time_slot_id: selectedSlotId || null, // Optional time slot for offline bookings
+        admin_note: isAdmin ? "admin booking" : null, // Set default admin note for admin bookings
       };
 
       const { data: booking, error: bookingError } = await supabase

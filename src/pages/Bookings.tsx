@@ -17,7 +17,7 @@ const Bookings = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isVendor, isAgent } = useUserRole();
+  const { isVendor, isAgent, isAdmin } = useUserRole();
   const queryClient = useQueryClient();
   const [isExporting, setIsExporting] = useState(false);
   const [isOfflineBookingDialogOpen, setIsOfflineBookingDialogOpen] =
@@ -76,6 +76,7 @@ const Bookings = () => {
 
       // For vendors: filter by vendor_id in experiences
       // For agents: filter by bookings they created (booked_by or user_id)
+      // For admins: no filter - export all bookings
       if (isVendor) {
         query = query.eq("experiences.vendor_id", user.id);
       } else if (isAgent) {
@@ -83,6 +84,7 @@ const Bookings = () => {
         // Filter by user_id (which will be agent's ID for offline bookings they create)
         query = query.eq("user_id", user.id);
       }
+      // For admins, no filter - they can export all bookings
 
       const { data: bookings, error } = await query.order("created_at", {
         ascending: false,
@@ -133,6 +135,8 @@ const Bookings = () => {
             "Booked By": booking.booked_by
               ? booking.type === "offline" && isAgent
                 ? "Agent (Offline)"
+                : booking.type === "offline" && isAdmin
+                ? "Admin (Offline)"
                 : "Vendor (Offline)"
               : "Customer (Online)",
             "Created At": new Date(booking.created_at).toLocaleString(),
@@ -319,11 +323,13 @@ const Bookings = () => {
                       ? "Manage all bookings for your experiences"
                       : isAgent
                       ? "Manage all bookings and create offline bookings"
+                      : isAdmin
+                      ? "Manage all bookings and create offline bookings"
                       : "View and manage your bookings"}
                   </p>
                 </div>
               </div>
-              {(isVendor || isAgent) && (
+              {(isVendor || isAgent || isAdmin) && (
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => setIsOfflineBookingDialogOpen(true)}
@@ -371,7 +377,7 @@ const Bookings = () => {
         <UserBookings />
 
         {/* Offline Booking Dialog */}
-        {(isVendor || isAgent) && (
+        {(isVendor || isAgent || isAdmin) && (
           <OfflineBookingDialog
             isOpen={isOfflineBookingDialogOpen}
             onClose={() => setIsOfflineBookingDialogOpen(false)}
