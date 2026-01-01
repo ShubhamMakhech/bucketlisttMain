@@ -214,17 +214,15 @@ export function Header() {
             <img
               src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt+(1).png"
               alt="bucketlistt Logo"
-              className={`h-20 w-auto transition-opacity duration-300 ${
-                isScrolled ? "opacity-0 absolute" : "opacity-100"
-              }`}
+              className={`h-20 w-auto transition-opacity duration-300 ${isScrolled ? "opacity-0 absolute" : "opacity-100"
+                }`}
             />
             {/* Second logo - shown after scroll */}
             <img
               src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt.png"
               alt="bucketlistt Logo"
-              className={`h-20 w-auto transition-opacity duration-300 ${
-                isScrolled ? "opacity-100" : "opacity-0 absolute"
-              }`}
+              className={`h-20 w-auto transition-opacity duration-300 ${isScrolled ? "opacity-100" : "opacity-0 absolute"
+                }`}
             />
           </Link>
 
@@ -286,7 +284,7 @@ export function Header() {
                         <div className="flex-shrink-0">
                           <Calendar className="h-5 w-5 text-blue-500" />
                         </div>
-                        <div className="flex-1" style={{textAlign:"left"}}>
+                        <div className="flex-1" style={{ textAlign: "left" }}>
                           <h4 className="font-medium text-gray-900 dark:text-white mb-1">
                             Upcoming Booking
                           </h4>
@@ -305,7 +303,7 @@ export function Header() {
                       <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                         <Button
                           size="sm"
-                        className="w-full bg-blue-500 ViewBookingButton"
+                          className="w-full bg-blue-500 ViewBookingButton"
                           onClick={() => navigate("/bookings")}
                         >
                           View All Bookings
@@ -447,6 +445,7 @@ export function Header() {
                     )}
 
                     {isAdmin && (
+                      <>
                       <DropdownMenuItem
                         className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
                         onClick={() => navigate("/users")}
@@ -464,6 +463,25 @@ export function Header() {
                           <span className="text-sm">Users</span>
                         </div>
                       </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                        onClick={() => navigate("/profile")}
+                      >
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div
+                            className="flex items-center justify-center w-7 h-7 rounded-md"
+                            style={{ background: "#940fdb15" }}
+                          >
+                            <User
+                              className="h-3.5 w-3.5"
+                              style={{ color: "#940fdb" }}
+                            />
+                          </div>
+                          <span className="text-sm">Go to profile</span>
+                        </div>
+                      </DropdownMenuItem>
+                      </>
                     )}
                   </div>
 
