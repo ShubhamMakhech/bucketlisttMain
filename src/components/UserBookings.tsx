@@ -30,6 +30,7 @@ import {
   ArrowUpDown,
   Edit,
   Save,
+  XCircle,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -63,6 +64,12 @@ export const UserBookings = () => {
     note: string;
   } | null>(null);
   const [adminNoteDialogOpen, setAdminNoteDialogOpen] = React.useState(false);
+  const [cancelBookingDialogOpen, setCancelBookingDialogOpen] =
+    React.useState(false);
+  const [bookingToCancel, setBookingToCancel] = React.useState<{
+    id: string;
+    title?: string;
+  } | null>(null);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sortBy, setSortBy] = React.useState<
     number | "booking_date" | "title" | "status"
@@ -92,6 +99,14 @@ export const UserBookings = () => {
     null
   );
   const [showVendorFilter, setShowVendorFilter] = React.useState(false);
+  const [selectedBookingType, setSelectedBookingType] = React.useState<
+    "online" | "offline" | "canceled" | null
+  >(null);
+  const [showBookingTypeFilter, setShowBookingTypeFilter] =
+    React.useState(false);
+  const [cancelingBookingId, setCancelingBookingId] = React.useState<
+    string | null
+  >(null);
 
   // Excel-like column filters state
   const [columnFilters, setColumnFilters] = React.useState<
@@ -380,28 +395,74 @@ export const UserBookings = () => {
         "N/A",
       () =>
         (booking as any)?.referral_code || (booking as any)?.referred_by || "-",
-      () =>
-        timeslot?.start_time && timeslot?.end_time
+      () => {
+        const bookingTypeRender = (booking as any)?.type || "online";
+        if (bookingTypeRender === "canceled") return "Canceled";
+        return timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
               timeslot.end_time
             )}`
           : isOfflineBooking
           ? "Offline"
-          : "N/A",
+          : "N/A";
+      },
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
       () => booking.note_for_guide || "-",
       () => {
+        // Inline logic to get booking type display
         const bookingType = (booking as any)?.type || "online";
+        const bookedBy = (booking as any)?.booked_by;
+        let bookingTypeDisplay = "";
+
+        if (bookingType === "canceled") {
+          bookingTypeDisplay = "Canceled";
+        } else if (bookingType === "online") {
+          bookingTypeDisplay = "Bucketlistt";
+        } else if (bookingType === "offline" && bookedBy) {
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          if (bookedByRole === "admin") {
+            bookingTypeDisplay = "Admin-offline";
+          } else if (bookedByRole === "vendor") {
+            bookingTypeDisplay = "offline";
+          } else if (
+            bookedByRole === "agent" ||
+            (booking as any)?.isAgentBooking
+          ) {
+            const bookedByProfile = bookedByProfileMap?.[bookedBy];
+            bookingTypeDisplay =
+              bookedByProfile?.first_name && bookedByProfile?.last_name
+                ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                : bookedByProfile?.email ||
+                  bookedByProfile?.first_name ||
+                  "Agent";
+          } else {
+            bookingTypeDisplay = "offline";
+          }
+        } else {
+          bookingTypeDisplay = "offline";
+        }
+
+        const isCanceled = bookingTypeDisplay === "Canceled";
+        const isOffline =
+          bookingTypeDisplay.includes("offline") ||
+          bookingTypeDisplay.includes("Admin-offline");
+        const isAgentBooking =
+          !isCanceled && !isOffline && bookingTypeDisplay !== "Bucketlistt";
+
         return (
           <span
             className={`px-2 py-1 rounded text-xs font-medium ${
-              bookingType === "offline"
+              isCanceled
+                ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                : isOffline
                 ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                : isAgentBooking
+                ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
                 : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
             }`}
           >
-            {bookingType === "offline" ? "Offline" : "Online"}
+            {bookingTypeDisplay}
           </span>
         );
       },
@@ -429,14 +490,6 @@ export const UserBookings = () => {
         const adminNote = (booking as any)?.admin_note || "";
 
         // Debug log to check if admin_note is being accessed
-        if (isAdmin && booking.id) {
-          console.log("Rendering admin note for booking:", {
-            bookingId: booking.id,
-            adminNote: adminNote,
-            hasAdminNote: !!adminNote,
-            bookingKeys: Object.keys(booking),
-          });
-        }
 
         return (
           <div className="flex items-center gap-2">
@@ -541,6 +594,7 @@ export const UserBookings = () => {
             `
             *,
             admin_note,
+            booked_by,
             experiences (
               id,
               title,
@@ -709,6 +763,71 @@ export const UserBookings = () => {
     }, {} as Record<string, any>);
   }, [profiles]);
 
+  // Fetch profiles for booked_by users (to get agent/admin names) - MOVED BEFORE filteredAndSortedBookings
+  const bookedByUserIds = React.useMemo(() => {
+    const userIds = bookings
+      .map((booking) => (booking as any)?.booked_by)
+      .filter(Boolean);
+    return [...new Set(userIds)];
+  }, [bookings]);
+
+  const { data: bookedByProfiles = [] } = useQuery({
+    queryKey: ["booked-by-profiles", bookedByUserIds],
+    queryFn: async () => {
+      if (bookedByUserIds.length === 0) return [];
+
+      const { data: profiles, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", bookedByUserIds);
+
+      if (error) {
+        console.error("Error fetching booked_by profiles:", error);
+        return [];
+      }
+
+      return profiles || [];
+    },
+    enabled: bookedByUserIds.length > 0,
+  });
+
+  // Fetch roles for booked_by users
+  const { data: bookedByRoles = [] } = useQuery({
+    queryKey: ["booked-by-roles", bookedByUserIds],
+    queryFn: async () => {
+      if (bookedByUserIds.length === 0) return [];
+
+      const { data: roles, error } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", bookedByUserIds);
+
+      if (error) {
+        console.error("Error fetching booked_by roles:", error);
+        return [];
+      }
+
+      return roles || [];
+    },
+    enabled: bookedByUserIds.length > 0,
+  });
+
+  // Create a map of booked_by user_id to profile
+  const bookedByProfileMap = React.useMemo(() => {
+    return bookedByProfiles.reduce((acc, profile) => {
+      acc[profile.id] = profile;
+      return acc;
+    }, {} as Record<string, any>);
+  }, [bookedByProfiles]);
+
+  // Create a map of booked_by user_id to role
+  const bookedByRoleMap = React.useMemo(() => {
+    return bookedByRoles.reduce((acc, role) => {
+      acc[role.user_id] = role.role;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [bookedByRoles]);
+
   // Filter and sort bookings
   const filteredAndSortedBookings = React.useMemo(() => {
     let filtered = bookings;
@@ -775,6 +894,24 @@ export const UserBookings = () => {
       });
     }
 
+    // Apply booking type filter
+    if (selectedBookingType) {
+      filtered = filtered.filter((booking) => {
+        const bookingType = (booking as any)?.type || "online";
+
+        // Handle filter matching
+        if (selectedBookingType === "canceled") {
+          return bookingType === "canceled";
+        } else if (selectedBookingType === "offline") {
+          // Match offline bookings (not canceled)
+          return bookingType === "offline" && bookingType !== "canceled";
+        } else if (selectedBookingType === "online") {
+          return bookingType === "online";
+        }
+        return false;
+      });
+    }
+
     // Apply Excel-like column filters
     Object.keys(columnFilters).forEach((colIndexStr) => {
       const colIndex = parseInt(colIndexStr);
@@ -792,6 +929,9 @@ export const UserBookings = () => {
 
           // Get cell value for this column
           const getCellValue = (colIdx: number): string => {
+            // Access maps from outer scope - these will be available when useMemo runs
+            const roleMap = bookedByRoleMap || {};
+            const profileMapForBookedBy = bookedByProfileMap || {};
             switch (colIdx) {
               case 0: // Title
                 return experience?.title || "";
@@ -826,8 +966,11 @@ export const UserBookings = () => {
                   (booking as any)?.referred_by ||
                   ""
                 );
-              case 6: // Timeslot
-                const isOfflineFilter = (booking as any)?.type === "offline";
+              case 6: {
+                // Timeslot
+                const bookingTypeFilter = (booking as any)?.type || "online";
+                if (bookingTypeFilter === "canceled") return "Canceled";
+                const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
                       timeslot.start_time
@@ -835,16 +978,39 @@ export const UserBookings = () => {
                   : isOfflineFilter
                   ? "Offline"
                   : "";
+              }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
               case 8: // No. Of Participants
                 return String(booking?.total_participants || "");
               case 9: // Notes for guides
                 return booking.note_for_guide || "";
-              case 10: // Booking Type
-                return (booking as any)?.type === "offline"
-                  ? "Offline"
-                  : "Online";
+              case 10: {
+                // Booking Type - use inline logic with maps from outer scope
+                const bookingType = (booking as any)?.type || "online";
+                const bookedBy = (booking as any)?.booked_by;
+
+                if (bookingType === "canceled") return "Canceled";
+                if (bookingType === "online") return "Bucketlistt";
+                if (bookingType === "offline" && bookedBy) {
+                  const bookedByRole = roleMap[bookedBy];
+                  if (bookedByRole === "admin") return "Admin-offline";
+                  if (bookedByRole === "vendor") return "offline";
+                  if (
+                    bookedByRole === "agent" ||
+                    (booking as any)?.isAgentBooking
+                  ) {
+                    const bookedByProfile = profileMapForBookedBy[bookedBy];
+                    return bookedByProfile?.first_name &&
+                      bookedByProfile?.last_name
+                      ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                      : bookedByProfile?.email ||
+                          bookedByProfile?.first_name ||
+                          "Agent";
+                  }
+                }
+                return "offline";
+              }
               case 11: // Official Price/ Original Price
                 if ((booking as any)?.type === "offline" && !isAdmin)
                   return "-";
@@ -1028,6 +1194,9 @@ export const UserBookings = () => {
           experience: any,
           colIndex: number
         ) => {
+          // Access maps from outer scope
+          const roleMap = bookedByRoleMap || {};
+          const profileMapForBookedBy = bookedByProfileMap || {};
           switch (colIndex) {
             case 0: // Title
               return experience?.title || "";
@@ -1063,6 +1232,8 @@ export const UserBookings = () => {
                 ""
               );
             case 6: // Timeslot
+              const bookingTypeSort = (booking as any)?.type || "online";
+              if (bookingTypeSort === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
                     timeslot.start_time
@@ -1074,9 +1245,32 @@ export const UserBookings = () => {
               return booking?.total_participants || 0;
             case 9: // Notes for guides
               return booking.note_for_guide || "";
-            case 10: // Booking Type
-              const bookingTypeA = (booking as any)?.type || "online";
-              return bookingTypeA === "offline" ? "Offline" : "Online";
+            case 10: {
+              // Booking Type - use inline logic
+              const bookingType = (booking as any)?.type || "online";
+              const bookedBy = (booking as any)?.booked_by;
+
+              if (bookingType === "canceled") return "Canceled";
+              if (bookingType === "online") return "Bucketlistt";
+              if (bookingType === "offline" && bookedBy) {
+                const bookedByRole = roleMap[bookedBy];
+                if (bookedByRole === "admin") return "Admin-offline";
+                if (bookedByRole === "vendor") return "offline";
+                if (
+                  bookedByRole === "agent" ||
+                  (booking as any)?.isAgentBooking
+                ) {
+                  const bookedByProfile = profileMapForBookedBy[bookedBy];
+                  return bookedByProfile?.first_name &&
+                    bookedByProfile?.last_name
+                    ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                    : bookedByProfile?.email ||
+                        bookedByProfile?.first_name ||
+                        "Agent";
+                }
+              }
+              return "offline";
+            }
             case 11: // Official Price/ Original Price
               if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const originalPriceA = activity?.price || experience?.price || 0;
@@ -1244,6 +1438,7 @@ export const UserBookings = () => {
     selectedExperienceId,
     selectedAgentId,
     selectedVendorId,
+    selectedBookingType,
     isAdmin,
     globalFilter,
     sortBy,
@@ -1391,6 +1586,57 @@ export const UserBookings = () => {
     }));
   }, [vendorProfiles, isAdmin]);
 
+  // Helper function to get booking type display
+  const getBookingTypeDisplay = React.useCallback(
+    (booking: BookingWithDueAmount): string => {
+      const bookingType = (booking as any)?.type || "online";
+      const bookedBy = (booking as any)?.booked_by;
+
+      // If canceled, return "Canceled"
+      if (bookingType === "canceled") {
+        return "Canceled";
+      }
+
+      // If online booking, return "Bucketlistt"
+      if (bookingType === "online") {
+        return "Bucketlistt";
+      }
+
+      // If offline booking, check who booked it
+      if (bookingType === "offline" && bookedBy) {
+        const bookedByRole = bookedByRoleMap[bookedBy];
+
+        // Check if admin
+        if (bookedByRole === "admin") {
+          return "Admin-offline";
+        }
+
+        // Check if vendor
+        if (bookedByRole === "vendor") {
+          return "offline";
+        }
+
+        // Check if agent
+        if (bookedByRole === "agent" || (booking as any)?.isAgentBooking) {
+          const bookedByProfile = bookedByProfileMap[bookedBy];
+          const agentName =
+            bookedByProfile?.first_name && bookedByProfile?.last_name
+              ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+              : bookedByProfile?.email ||
+                bookedByProfile?.first_name ||
+                "Agent";
+          return agentName;
+        }
+      }
+
+      // Default for offline bookings
+      return "offline";
+    },
+    [bookedByRoleMap, bookedByProfileMap]
+  );
+
+  // Filter and sort bookings
+
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "confirmed":
@@ -1401,6 +1647,55 @@ export const UserBookings = () => {
         return "bg-red-100 text-red-700";
       default:
         return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  // Cancel booking function (admin only)
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!isAdmin) {
+      toast({
+        title: "Unauthorized",
+        description: "Only admins can cancel bookings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCancelingBookingId(bookingId);
+
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ type: "canceled" })
+        .eq("id", bookingId);
+
+      if (error) {
+        console.error("Error canceling booking:", error);
+        throw error;
+      }
+
+      toast({
+        title: "Booking canceled",
+        description: "The booking has been canceled successfully.",
+      });
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({
+        queryKey: ["user-bookings"],
+      });
+
+      // Close dialog after successful cancellation
+      setCancelBookingDialogOpen(false);
+      setBookingToCancel(null);
+    } catch (error) {
+      console.error("Error canceling booking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel booking. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancelingBookingId(null);
     }
   };
 
@@ -1487,6 +1782,8 @@ export const UserBookings = () => {
                 ""
               );
             case 6:
+              const bookingTypeUnique = (booking as any)?.type || "online";
+              if (bookingTypeUnique === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
                     timeslot.start_time
@@ -1500,10 +1797,32 @@ export const UserBookings = () => {
               return String(booking?.total_participants || "");
             case 9:
               return booking.note_for_guide || "";
-            case 10:
-              return (booking as any)?.type === "offline"
-                ? "Offline"
-                : "Online";
+            case 10: {
+              // Booking Type - use inline logic
+              const bookingType = (booking as any)?.type || "online";
+              const bookedBy = (booking as any)?.booked_by;
+
+              if (bookingType === "canceled") return "Canceled";
+              if (bookingType === "online") return "Bucketlistt";
+              if (bookingType === "offline" && bookedBy) {
+                const bookedByRole = bookedByRoleMap[bookedBy];
+                if (bookedByRole === "admin") return "Admin-offline";
+                if (bookedByRole === "vendor") return "offline";
+                if (
+                  bookedByRole === "agent" ||
+                  (booking as any)?.isAgentBooking
+                ) {
+                  const bookedByProfile = bookedByProfileMap[bookedBy];
+                  return bookedByProfile?.first_name &&
+                    bookedByProfile?.last_name
+                    ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                    : bookedByProfile?.email ||
+                        bookedByProfile?.first_name ||
+                        "Agent";
+                }
+              }
+              return "offline";
+            }
             case 11: {
               if (isOffline && !isAdmin) return "-";
               const originalPrice = activity?.price || experience?.price || 0;
@@ -1805,9 +2124,15 @@ export const UserBookings = () => {
       activity?.currency || booking?.experiences?.currency || "INR";
     const bookingAmount = booking?.booking_amount || "N/A";
     const dueAmount = booking?.due_amount || 0;
+    const isCanceled = (booking as any)?.type === "canceled";
 
     return (
-      <Card className="h-full" id="">
+      <Card
+        className={`h-full ${
+          isCanceled ? "bg-red-50 border-red-200 dark:bg-red-950/20" : ""
+        }`}
+        id=""
+      >
         <CardHeader className="pb-0 p-0">
           <div className="flex justify-between items-start">
             {/* <CardTitle className="text-base font-semibold line-clamp-2">
@@ -1992,6 +2317,36 @@ export const UserBookings = () => {
                     <span className="text-gray-400 italic">No admin note</span>
                   )}
                 </p>
+              </div>
+            )}
+
+            {/* Cancel Booking Button - Admin Only */}
+            {isAdmin && (
+              <div className="mobile-card-section">
+                {!isCanceled ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+                    onClick={() => {
+                      setBookingToCancel({
+                        id: booking.id,
+                        title: booking.experiences?.title || "this booking",
+                      });
+                      setCancelBookingDialogOpen(true);
+                    }}
+                    disabled={cancelingBookingId === booking.id}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    {cancelingBookingId === booking.id
+                      ? "Canceling..."
+                      : "Cancel Booking"}
+                  </Button>
+                ) : (
+                  <div className="w-full px-3 py-2 bg-red-100 text-red-700 rounded text-sm font-medium text-center">
+                    Booking Canceled
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -2363,6 +2718,98 @@ export const UserBookings = () => {
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* Booking Type Filter Button */}
+            <div className="relative">
+              <Popover
+                open={showBookingTypeFilter}
+                onOpenChange={(open) => {
+                  setShowBookingTypeFilter(open);
+                  if (open) {
+                    setShowTimeslotFilter(false);
+                    setShowActivityFilter(false);
+                    setShowDateRangePicker(false);
+                    setShowColumnSelector(false);
+                  }
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={selectedBookingType ? "default" : "outline"}
+                    className="text-sm"
+                  >
+                    {selectedBookingType
+                      ? selectedBookingType === "canceled"
+                        ? "Canceled"
+                        : selectedBookingType === "offline"
+                        ? "Offline"
+                        : "Bucketlistt"
+                      : "Booking Type"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-4" align="start">
+                  <div className="space-y-2">
+                    <Button
+                      variant={
+                        selectedBookingType === null ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedBookingType(null);
+                        setShowBookingTypeFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      All Types
+                    </Button>
+                    <Button
+                      variant={
+                        selectedBookingType === "online" ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedBookingType("online");
+                        setShowBookingTypeFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      Bucketlistt
+                    </Button>
+                    <Button
+                      variant={
+                        selectedBookingType === "offline"
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedBookingType("offline");
+                        setShowBookingTypeFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      Offline
+                    </Button>
+                    <Button
+                      variant={
+                        selectedBookingType === "canceled"
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedBookingType("canceled");
+                        setShowBookingTypeFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      Canceled
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
             <div className="relative">
               <ConfigProvider
                 theme={{
@@ -2966,6 +3413,12 @@ export const UserBookings = () => {
                           </th>
                         )
                     )}
+                    {/* Cancel Button Column Header - Admin Only */}
+                    {isAdmin && (
+                      <th className="px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -3020,8 +3473,17 @@ export const UserBookings = () => {
                       const advancePlusDiscount =
                         advancePaid10 + discountCoupon;
 
+                      const isCanceled = (booking as any)?.type === "canceled";
+
                       return (
-                        <tr key={booking.id}>
+                        <tr
+                          key={booking.id}
+                          className={
+                            isCanceled
+                              ? "bg-red-50 hover:bg-red-100 dark:bg-red-950/20"
+                              : ""
+                          }
+                        >
                           {columnOrder.map(
                             (originalIndex) =>
                               columnVisibility[originalIndex] && (
@@ -3058,6 +3520,36 @@ export const UserBookings = () => {
                                   )}
                                 </td>
                               )
+                          )}
+                          {/* Cancel Button Column - Admin Only */}
+                          {isAdmin && (
+                            <td className="px-1 py-0.5 text-xs text-left">
+                              {!isCanceled ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    setBookingToCancel({
+                                      id: booking.id,
+                                      title:
+                                        experience?.title || "this booking",
+                                    });
+                                    setCancelBookingDialogOpen(true);
+                                  }}
+                                  disabled={cancelingBookingId === booking.id}
+                                >
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  {cancelingBookingId === booking.id
+                                    ? "Canceling..."
+                                    : "Cancel"}
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-red-600 font-medium">
+                                  Canceled
+                                </span>
+                              )}
+                            </td>
                           )}
                         </tr>
                       );
@@ -3182,6 +3674,79 @@ export const UserBookings = () => {
                   Save
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Cancel Booking Confirmation Dialog */}
+      {isAdmin && (
+        <Dialog
+          open={cancelBookingDialogOpen}
+          onOpenChange={(open) => {
+            setCancelBookingDialogOpen(open);
+            if (!open) {
+              setBookingToCancel(null);
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <XCircle className="h-5 w-5" />
+                Cancel Booking
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="text-sm text-gray-700">
+                Are you sure you want to cancel this booking?
+                {bookingToCancel?.title && (
+                  <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                    <span className="font-medium">Booking:</span>{" "}
+                    {bookingToCancel.title}
+                  </div>
+                )}
+              </div>
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-xs text-red-800">
+                  <strong>Note:</strong> This action cannot be undone. The
+                  booking will be marked as canceled.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCancelBookingDialogOpen(false);
+                  setBookingToCancel(null);
+                }}
+                disabled={cancelingBookingId === bookingToCancel?.id}
+              >
+                Keep Booking
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (bookingToCancel?.id) {
+                    handleCancelBooking(bookingToCancel.id);
+                  }
+                }}
+                disabled={cancelingBookingId === bookingToCancel?.id}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {cancelingBookingId === bookingToCancel?.id ? (
+                  <>
+                    <XCircle className="h-4 w-4 mr-2 animate-spin" />
+                    Canceling...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Cancel Booking
+                  </>
+                )}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

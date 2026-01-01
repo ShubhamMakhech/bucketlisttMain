@@ -203,16 +203,16 @@ export function Footer() {
                     className="FooterLink"
                     onClick={() => navigate("/contact")}
                   >
-                    contact@bucketlistt.com
+                    founder@bucketlistt.com
                   </Button>
                 </li>
                 <li>
                   <Button
                     variant="link"
                     className="FooterLink"
-                    onClick={() => window.open("tel:+918200362890")}
+                    onClick={() => window.open("tel:+918511838237")}
                   >
-                    +91 820 036 2890
+                    +91 85118 38237
                   </Button>
                 </li>
               </ul>
