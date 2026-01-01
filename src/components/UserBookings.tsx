@@ -235,7 +235,7 @@ export const UserBookings = () => {
     "Advance paid",
     "Pending amount from customer",
     "Net Commission",
-    "Net from agent / (- to agent)'",
+    "( - Net from agent) / to agent",
     "Advance + discount",
     "Booking Created At",
     "Admin Note",

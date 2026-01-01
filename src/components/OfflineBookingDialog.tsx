@@ -290,12 +290,11 @@ export const OfflineBookingDialog = ({
     return `${hour12}:${minutes} ${ampm}`;
   };
 
-  const 
-  sendBookingConfirmation = async (
+  const sendBookingConfirmation = async (
     data: OfflineBookingFormData,
     bookingId: string,
     experience: any,
-    activity: any,
+    activity: any
   ) => {
     try {
       // Get experience details with location and vendor_id
@@ -321,7 +320,7 @@ export const OfflineBookingDialog = ({
         (data.booking_amount_per_person || 0) * data.total_participants ||
         (activity?.price ? activity.price * data.total_participants : 0);
       const advanceAmount = data.advance_amount || 0;
-      const dueAmount = Math.max(0, bookingAmount - advanceAmount) ||0;
+      const dueAmount = Math.max(0, bookingAmount - advanceAmount) || 0;
       const bookingDate = selectedDate || new Date();
       const formattedDate = moment(bookingDate).format("DD/MM/YYYY");
 
@@ -373,7 +372,7 @@ export const OfflineBookingDialog = ({
             spotLocation: experienceDetails?.location2 || "",
             spotLocationUrl: locationUrl,
             totalParticipants: data.total_participants,
-            amountPaid: (bookingAmount-dueAmount).toFixed(2),
+            amountPaid: (bookingAmount - dueAmount).toFixed(2),
             amountToBePaid: dueAmount.toFixed(2),
             currency:
               activity?.currency || experienceDetails?.currency || "INR",
@@ -450,7 +449,7 @@ export const OfflineBookingDialog = ({
                     },
                     body_7: {
                       type: "text",
-                      value: (bookingAmount-dueAmount).toFixed(2).toString(),
+                      value: (bookingAmount - dueAmount).toFixed(2).toString(),
                     },
                     body_8: {
                       type: "text",
@@ -512,7 +511,7 @@ export const OfflineBookingDialog = ({
                     },
                     body_6: {
                       type: "text",
-                      value: (bookingAmount-dueAmount).toFixed(2).toString(),
+                      value: (bookingAmount - dueAmount).toFixed(2).toString(),
                     },
                     body_7: {
                       type: "text",
@@ -528,7 +527,11 @@ export const OfflineBookingDialog = ({
 
       // Send customer WhatsApp
       await SendWhatsappMessage(customerWhatsappBody);
+      const activityPrice = activity?.price * data.total_participants || 0;
+      const discountAmount = activityPrice - bookingAmount || 0;
+      const advancePlusDiscountAmount = advanceAmount + discountAmount;
 
+      const discountPlusAdvanceAmount = 0;
       // Vendor WhatsApp message
       const vendorWhatsappBody = {
         integrated_number: "919274046332",
@@ -581,7 +584,8 @@ export const OfflineBookingDialog = ({
                   },
                   body_8: {
                     type: "text",
-                    value: (bookingAmount-dueAmount).toFixed(2).toString(),
+                    value:
+                      advancePlusDiscountAmount.toFixed(2).toString() || "0",
                   },
                 },
               },
@@ -641,7 +645,8 @@ export const OfflineBookingDialog = ({
                   },
                   body_8: {
                     type: "text",
-                    value: (bookingAmount-dueAmount).toFixed(2).toString(),
+                    value:
+                      advancePlusDiscountAmount.toFixed(2).toString() || "0",
                   },
                 },
               },
@@ -818,7 +823,7 @@ export const OfflineBookingDialog = ({
         data,
         booking.id,
         experience,
-        selectedActivity,
+        selectedActivity
       );
 
       toast({
