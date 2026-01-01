@@ -4,7 +4,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUserRole } from '@/hooks/useUserRole'
 import { SignInForm } from '@/components/auth/SignInForm'
+import { SignInFormOTP } from '@/components/auth/SignInFormOTP'
 import { SignUpForm } from '@/components/auth/SignUpForm'
+import { SignUpFormOTP } from '@/components/auth/SignUpFormOTP'
 import { VendorSignUpForm } from '@/components/auth/VendorSignUpForm'
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm'
 
@@ -93,10 +95,10 @@ export default function Auth() {
           isVendorMode ? (
             <VendorSignUpForm onToggleMode={() => setIsSignUp(false)} />
           ) : (
-            <SignUpForm onToggleMode={() => setIsSignUp(false)} />
+            <SignUpFormOTP onToggleMode={() => setIsSignUp(false)} />
           )
         ) : (
-          <SignInForm onToggleMode={() => setIsSignUp(true)} />
+          <SignInFormOTP onToggleMode={() => setIsSignUp(true)} />
         )}
       </div>
     </div>

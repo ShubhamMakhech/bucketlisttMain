@@ -1833,7 +1833,7 @@ export const UserBookings = () => {
                 </span>
               </div>
               <div className="mobile-info-item">
-                <span className="mobile-info-label">Date</span>
+                <span className="mobile-info-label">  Date</span>
                 <span className="mobile-info-value">
                   {format(new Date(booking.booking_date), "MMM d, yyyy")}
                 </span>

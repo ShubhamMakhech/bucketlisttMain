@@ -7,7 +7,23 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithOTP: (identifier: string, otp: string) => Promise<{ error: any }>;
   signUp: (data: SignUpData) => Promise<{ error: any }>;
+  signUpWithOTP: (
+    identifier: string,
+    otp: string,
+    role?: "customer" | "vendor" | "agent"
+  ) => Promise<{ error: any }>;
+  sendOTP: (
+    identifier: string,
+    type: "email" | "sms",
+    isSignIn?: boolean
+  ) => Promise<{ error: any; success?: boolean }>;
+  verifyOTP: (
+    identifier: string,
+    otp: string,
+    type: "email" | "sms"
+  ) => Promise<{ error: any; success?: boolean }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
@@ -63,6 +79,286 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
+  const sendOTP = async (
+    identifier: string,
+    type: "email" | "sms",
+    isSignIn: boolean = false
+  ) => {
+    try {
+      // Format phone number - add 91 if not present
+      let formattedIdentifier = identifier;
+      if (type === "sms") {
+        formattedIdentifier = identifier.replace(/\D/g, "");
+        if (!formattedIdentifier.startsWith("91")) {
+          formattedIdentifier = "91" + formattedIdentifier;
+        }
+      }
+
+      // For signin, check if user exists in profiles first
+      if (isSignIn) {
+        if (type === "email") {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("email")
+            .eq("email", identifier)
+            .single();
+
+          if (!profile) {
+            return {
+              error: {
+                message:
+                  "No account found with this email. Please sign up first.",
+              },
+            };
+          }
+        } else {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("phone_number")
+            .eq("phone_number", formattedIdentifier)
+            .single();
+
+          if (!profile) {
+            return {
+              error: {
+                message:
+                  "No account found with this phone number. Please sign up first.",
+              },
+            };
+          }
+        }
+      }
+
+      const { data, error } = await supabase.functions.invoke("send-otp", {
+        body: {
+          [type === "email" ? "email" : "phoneNumber"]: formattedIdentifier,
+          type,
+        },
+      });
+
+      if (error) {
+        return { error: { message: error.message || "Failed to send OTP" } };
+      }
+
+      return { success: true, error: null };
+    } catch (error: any) {
+      return { error: { message: error.message || "Failed to send OTP" } };
+    }
+  };
+
+  const verifyOTP = async (
+    identifier: string,
+    otp: string,
+    type: "email" | "sms"
+  ) => {
+    try {
+      // Format phone number for verification if SMS
+      let formattedIdentifier = identifier;
+      if (type === "sms") {
+        formattedIdentifier = identifier.replace(/\D/g, "");
+        if (!formattedIdentifier.startsWith("91")) {
+          formattedIdentifier = "91" + formattedIdentifier;
+        }
+      }
+
+      const { data, error } = await supabase.functions.invoke("verify-otp", {
+        body: {
+          identifier: formattedIdentifier,
+          otp,
+          type,
+        },
+      });
+
+      if (error) {
+        return { error: { message: error.message || "Failed to verify OTP" } };
+      }
+
+      if (!data?.success) {
+        return {
+          error: { message: data?.error || "Invalid or expired OTP" },
+        };
+      }
+
+      return { success: true, error: null };
+    } catch (error: any) {
+      return { error: { message: error.message || "Failed to verify OTP" } };
+    }
+  };
+
+  const signUpWithOTP = async (
+    identifier: string,
+    otp: string,
+    role: "customer" | "vendor" | "agent" = "customer"
+  ) => {
+    // Format identifier for phone numbers
+    const isEmail = identifier.includes("@");
+    const otpType = isEmail ? "email" : "sms";
+    let formattedIdentifier = identifier;
+
+    if (!isEmail) {
+      formattedIdentifier = identifier.replace(/\D/g, "");
+      if (!formattedIdentifier.startsWith("91")) {
+        formattedIdentifier = "91" + formattedIdentifier;
+      }
+    }
+
+    // Verify OTP first
+    const { error: verifyError } = await verifyOTP(
+      formattedIdentifier,
+      otp,
+      otpType
+    );
+    if (verifyError) {
+      return { error: verifyError };
+    }
+
+    // Check if user already exists in profiles (not auth.users)
+    try {
+      const { data: checkResult, error: checkError } =
+        await supabase.functions.invoke("check-user-exists", {
+          body: {
+            email: isEmail ? identifier : undefined,
+            phoneNumber: !isEmail ? formattedIdentifier : undefined,
+          },
+        });
+
+      if (checkError) {
+        return {
+          error: {
+            message: "Failed to validate identifier. Please try again.",
+          },
+        };
+      }
+
+      if (checkResult?.userExists) {
+        return {
+          error: {
+            message: "User already registered",
+            code: "user_already_exists",
+          },
+        };
+      }
+    } catch (error) {
+      return {
+        error: { message: "Failed to validate identifier. Please try again." },
+      };
+    }
+
+    // Create user account via edge function to handle both email and phone
+    try {
+      const { data, error: signUpError } = await supabase.functions.invoke(
+        "signup-with-otp",
+        {
+          body: {
+            identifier: formattedIdentifier, // Use formatted identifier
+            otp,
+            type: otpType,
+            role,
+          },
+        }
+      );
+
+      if (signUpError) {
+        return { error: signUpError };
+      }
+
+      if (!data?.success) {
+        return {
+          error: { message: data?.error || "Failed to create account" },
+        };
+      }
+
+      // If we got a session, set it
+      if (data.sessionLink) {
+        const url = new URL(data.sessionLink);
+        const accessToken = url.searchParams.get("access_token");
+        const refreshToken = url.searchParams.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (sessionError) {
+            return { error: sessionError };
+          }
+        }
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      return {
+        error: { message: error.message || "Failed to create account" },
+      };
+    }
+  };
+
+  const signInWithOTP = async (identifier: string, otp: string) => {
+    // Format identifier for phone numbers
+    const isEmail = identifier.includes("@");
+    const otpType = isEmail ? "email" : "sms";
+    let formattedIdentifier = identifier;
+
+    if (!isEmail) {
+      formattedIdentifier = identifier.replace(/\D/g, "");
+      if (!formattedIdentifier.startsWith("91")) {
+        formattedIdentifier = "91" + formattedIdentifier;
+      }
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "signin-with-otp",
+        {
+          body: {
+            identifier: formattedIdentifier, // Use formatted identifier
+            otp,
+            type: otpType,
+          },
+        }
+      );
+
+      if (error) {
+        return {
+          error: { message: error.message || "Failed to sign in with OTP" },
+        };
+      }
+
+      if (!data?.success) {
+        return {
+          error: { message: data?.error || "Invalid OTP or user not found" },
+        };
+      }
+
+      // If we got a session link, extract tokens and set session
+      if (data.sessionLink) {
+        // Parse the session link to extract tokens
+        const url = new URL(data.sessionLink);
+        const accessToken = url.searchParams.get("access_token");
+        const refreshToken = url.searchParams.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          // Set the session
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (sessionError) {
+            return { error: sessionError };
+          }
+        }
+      }
+
+      return { error: null };
+    } catch (error: any) {
+      return {
+        error: { message: error.message || "Failed to sign in with OTP" },
+      };
+    }
+  };
+
   const signUp = async (data: SignUpData) => {
     // Check if user already exists using secure Edge Function
     try {
@@ -93,6 +389,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const redirectUrl = `https://www.bucketlistt.com/auth`;
 
+    // Create user without email verification requirement
+    // Note: This method is kept for backward compatibility (VendorSignUpForm)
+    // New signups should use signUpWithOTP instead
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -107,6 +406,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       },
     });
+
+    // Note: Email confirmation is disabled in Supabase settings
+    // Users are auto-confirmed via email_confirm: true in edge functions
+
     return { error };
   };
 
@@ -152,7 +455,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         loading,
         signIn,
+        signInWithOTP,
         signUp,
+        signUpWithOTP,
+        sendOTP,
+        verifyOTP,
         signOut,
         resetPassword,
         updatePassword,

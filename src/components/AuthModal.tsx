@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { Modal } from 'antd'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUserRole } from '@/hooks/useUserRole'
-import { SignInForm } from '@/components/auth/SignInForm'
-import { SignUpForm } from '@/components/auth/SignUpForm'
+import { SignInFormOTP } from '@/components/auth/SignInFormOTP'
+import { SignUpFormOTP } from '@/components/auth/SignUpFormOTP'
 import { VendorSignUpForm } from '@/components/auth/VendorSignUpForm'
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm'
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
@@ -120,15 +120,13 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                         isVendorMode ? (
                             <VendorSignUpForm onToggleMode={() => setIsSignUp(false)} />
                         ) : (
-                            <SignUpForm
+                            <SignUpFormOTP
                                 onToggleMode={() => setIsSignUp(false)}
-                                onVendorMode={handleVendorMode}
                             />
                         )
                     ) : (
-                        <SignInForm
+                        <SignInFormOTP
                             onToggleMode={() => setIsSignUp(true)}
-                            onResetMode={handleResetMode}
                             onForgotPassword={handleForgotPassword}
                         />
                     )}
