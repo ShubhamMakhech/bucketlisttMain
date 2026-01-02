@@ -222,7 +222,7 @@ export const UserBookings = () => {
     "Email",
     "Referred by",
     "Timeslot",
-    "Date",
+    "Activity Date",
     "No. Of Participants",
     "Notes for guides",
     "Booking Type",
