@@ -132,7 +132,7 @@ const PaymentLayout = ({
                   src={logoUrl}
                   alt="Logo"
                   style={{
-                    height: "60px",
+                    height: "100px",
                     objectFit: "contain",
                   }}
                 />

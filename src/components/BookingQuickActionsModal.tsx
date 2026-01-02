@@ -128,14 +128,32 @@ export const BookingQuickActionsModal = ({
                 (experience?.location?.startsWith("http") ? experience.location : "") ||
                 "";
 
-            // Extract logoUrl from booking data (could be in experience, vendor, or booking itself)
-            const logoUrl = 
-                (booking as any)?.logoUrl || 
-                experience?.logoUrl || 
-                (experience as any)?.logo_url ||
-                ((booking as any)?.experiences as any)?.logoUrl ||
-                ((booking as any)?.experiences as any)?.logo_url ||
-                "";
+            // Fetch logo_url from vendor profile if vendor_id is available
+            let logoUrl = "";
+            if (experience?.vendor_id) {
+                try {
+                    const { data: vendorProfile } = await supabase
+                        .from("profiles")
+                        .select("logo_url")
+                        .eq("id", experience.vendor_id)
+                        .single();
+                    
+                    logoUrl = (vendorProfile as any)?.logo_url || "";
+                } catch (error) {
+                    console.error("Error fetching vendor logo_url:", error);
+                }
+            }
+
+            // Fallback: Extract logoUrl from booking data (could be in experience, vendor, or booking itself)
+            if (!logoUrl) {
+                logoUrl = 
+                    (booking as any)?.logoUrl || 
+                    experience?.logoUrl || 
+                    (experience as any)?.logo_url ||
+                    ((booking as any)?.experiences as any)?.logoUrl ||
+                    ((booking as any)?.experiences as any)?.logo_url ||
+                    "";
+            }
 
             const bookingData = {
                 participantName: booking.contact_person_name || "Guest",
