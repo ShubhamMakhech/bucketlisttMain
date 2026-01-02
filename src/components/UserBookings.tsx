@@ -32,6 +32,7 @@ import {
   Save,
   XCircle,
   MoreVertical,
+  Copy,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -102,7 +103,7 @@ export const UserBookings = () => {
   );
   const [showVendorFilter, setShowVendorFilter] = React.useState(false);
   const [selectedBookingType, setSelectedBookingType] = React.useState<
-    "online" | "offline" | "canceled" | null
+    "online" | "offline" | "admin-offline" | "agent" | "canceled" | null
   >(null);
   const [showBookingTypeFilter, setShowBookingTypeFilter] =
     React.useState(false);
@@ -930,15 +931,31 @@ export const UserBookings = () => {
     if (selectedBookingType) {
       filtered = filtered.filter((booking) => {
         const bookingType = (booking as any)?.type || "online";
+        const bookedBy = (booking as any)?.booked_by;
 
         // Handle filter matching
         if (selectedBookingType === "canceled") {
           return bookingType === "canceled";
-        } else if (selectedBookingType === "offline") {
-          // Match offline bookings (not canceled)
-          return bookingType === "offline" && bookingType !== "canceled";
         } else if (selectedBookingType === "online") {
           return bookingType === "online";
+        } else if (selectedBookingType === "admin-offline") {
+          // Match offline bookings created by admin
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "admin";
+        } else if (selectedBookingType === "offline") {
+          // Match offline bookings created by vendor (not admin, not agent)
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "vendor";
+        } else if (selectedBookingType === "agent") {
+          // Match offline bookings created by agents
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "agent" || (booking as any)?.isAgentBooking;
         }
         return false;
       });
@@ -2175,15 +2192,31 @@ export const UserBookings = () => {
     if (selectedBookingType) {
       filtered = filtered.filter((booking) => {
         const bookingType = (booking as any)?.type || "online";
+        const bookedBy = (booking as any)?.booked_by;
 
         // Handle filter matching
         if (selectedBookingType === "canceled") {
           return bookingType === "canceled";
-        } else if (selectedBookingType === "offline") {
-          // Match offline bookings (not canceled)
-          return bookingType === "offline" && bookingType !== "canceled";
         } else if (selectedBookingType === "online") {
           return bookingType === "online";
+        } else if (selectedBookingType === "admin-offline") {
+          // Match offline bookings created by admin
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "admin";
+        } else if (selectedBookingType === "offline") {
+          // Match offline bookings created by vendor (not admin, not agent)
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "vendor";
+        } else if (selectedBookingType === "agent") {
+          // Match offline bookings created by agents
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "agent" || (booking as any)?.isAgentBooking;
         }
         return false;
       });
@@ -2508,7 +2541,7 @@ export const UserBookings = () => {
           }`}
         id=""
       >
-        <CardHeader className="pb-0 p-0">
+        <CardHeader className="pb-0 p-0 relative">
           <div className="flex justify-between items-start">
             {/* <CardTitle className="text-base font-semibold line-clamp-2">
               <span
@@ -2537,6 +2570,111 @@ export const UserBookings = () => {
               {booking.status}
             </Badge> */}
           </div>
+          {/* Copy button - only for admin, vendor, agent - positioned in top right */}
+          {(isAdmin || isVendor || isAgent) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute top-0 right-0 h-8 w-8 p-0 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md z-10"
+              onClick={async () => {
+                try {
+                  const experience = booking.experiences;
+                  const activityData = (booking.time_slots?.activities ||
+                    (booking as any).activities) as any;
+                  const timeslot = booking.time_slots;
+
+                  // Get customer name
+                  const customerName =
+                    booking.contact_person_name ||
+                    (profile
+                      ? `${profile.first_name} ${profile.last_name}`.trim()
+                      : "") ||
+                    booking?.booking_participants?.[0]?.name ||
+                    "N/A";
+
+                  // Get total participants
+                  const totalParticipants = booking.total_participants || 0;
+
+                  // Get customer contact
+                  const customerContact =
+                    booking.contact_person_number ||
+                    profile?.phone_number ||
+                    booking?.booking_participants?.[0]?.phone_number ||
+                    "N/A";
+
+                  // Get experience name
+                  const experienceName = experience?.title || "N/A";
+
+                  // Get activity name
+                  const activityName = activityData?.name || "N/A";
+
+                  // Get date & time
+                  const bookingDate = format(
+                    new Date(booking.booking_date),
+                    "MMM d, yyyy"
+                  );
+                  let dateTime = bookingDate;
+                  if (timeslot?.start_time && timeslot?.end_time) {
+                    const startTime = formatTime12Hour(timeslot.start_time);
+                    const endTime = formatTime12Hour(timeslot.end_time);
+                    dateTime = `${bookingDate} ${startTime} - ${endTime}`;
+                  } else if ((booking as any)?.type === "offline") {
+                    dateTime = `${bookingDate} (Offline)`;
+                  }
+
+                  // Get amount to be collected (due amount)
+                  const amountToBeCollected = booking.due_amount || 0;
+
+                  // Get discount and advance amount
+                  const bookingAmount = parseFloat(
+                    (booking as any)?.booking_amount?.toString() || "0"
+                  );
+                  const dueAmount = parseFloat(
+                    booking?.due_amount?.toString() || "0"
+                  );
+                  const advanceAmount = bookingAmount - dueAmount;
+
+                  // Calculate discount
+                  const originalPrice =
+                    activityData?.price || experience?.price || 0;
+                  const officialPrice = originalPrice * totalParticipants;
+                  const discountAmount =
+                    officialPrice - bookingAmount > 0
+                      ? officialPrice - bookingAmount
+                      : 0;
+                  const discountAndAdvance = advanceAmount + discountAmount;
+
+                  // Format the text
+                  const formattedText = `Customer Name: ${customerName}
+Total Participants: ${totalParticipants}
+Customer Contact: ${customerContact}
+Experience: ${experienceName}
+Activity: ${activityName}
+Date & Time: ${dateTime}
+Amount to be Collected: ${formatCurrency(currency, amountToBeCollected)}
+Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
+
+                  // Copy to clipboard
+                  await navigator.clipboard.writeText(formattedText);
+
+                  toast({
+                    title: "Copied!",
+                    description: "Booking details copied to clipboard",
+                  });
+                } catch (error) {
+                  console.error("Error copying booking details:", error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to copy booking details",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              title="Copy Booking Details"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="mobile-booking-card-content">
           <div className="mobile-card-section">
@@ -3114,9 +3252,13 @@ export const UserBookings = () => {
                     {selectedBookingType
                       ? selectedBookingType === "canceled"
                         ? "Canceled"
+                        : selectedBookingType === "admin-offline"
+                        ? "Admin-offline"
                         : selectedBookingType === "offline"
-                          ? "Offline"
-                          : "Bucketlistt"
+                        ? "Offline"
+                        : selectedBookingType === "agent"
+                        ? "Agent"
+                        : "Bucketlistt"
                       : "Booking Type"}
                   </Button>
                 </PopoverTrigger>
@@ -3150,6 +3292,21 @@ export const UserBookings = () => {
                     </Button>
                     <Button
                       variant={
+                        selectedBookingType === "admin-offline"
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedBookingType("admin-offline");
+                        setShowBookingTypeFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      Admin-offline
+                    </Button>
+                    <Button
+                      variant={
                         selectedBookingType === "offline"
                           ? "default"
                           : "outline"
@@ -3162,6 +3319,19 @@ export const UserBookings = () => {
                       className="w-full justify-start text-xs"
                     >
                       Offline
+                    </Button>
+                    <Button
+                      variant={
+                        selectedBookingType === "agent" ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedBookingType("agent");
+                        setShowBookingTypeFilter(false);
+                      }}
+                      className="w-full justify-start text-xs"
+                    >
+                      Agent
                     </Button>
                     <Button
                       variant={

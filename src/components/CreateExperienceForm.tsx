@@ -71,9 +71,10 @@ interface ExperienceData {
   activities?: Activity[];
   destination_id?: string;
   legacyTimeSlots?: TimeSlot[];
-  image_urls?: string[];
-  image_url?: string;
-}
+    image_urls?: string[];
+    image_url?: string;
+    logo_url?: string;
+  }
 
 interface CreateExperienceFormProps {
   initialData?: ExperienceData;
@@ -106,6 +107,8 @@ export function CreateExperienceForm({
   const [selectedVideos, setSelectedVideos] = useState<File[]>([]);
   const [videoPreviewUrls, setVideoPreviewUrls] = useState<string[]>([]);
   const [removedImages, setRemovedImages] = useState<string[]>([]);
+  const [selectedLogo, setSelectedLogo] = useState<File | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
@@ -168,6 +171,10 @@ export function CreateExperienceForm({
     if (initialData?.image_urls && !firstRendered.current) {
       firstRendered.current = true;
       setPreviewUrls((prev) => [...prev, ...(initialData?.image_urls || [])]);
+    }
+    // Set logo preview if editing
+    if (initialData?.logo_url) {
+      setLogoPreviewUrl(initialData.logo_url);
     }
   }, [initialData]);
 
@@ -399,6 +406,56 @@ export function CreateExperienceForm({
       setSelectedImages((prev) => prev.filter((_, i) => i !== index));
       setRemovedImages((prev) => [...prev, previewUrls[index]]);
     }
+  };
+
+  const handleLogoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file for the logo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Revoke old preview URL if it was a blob
+    if (logoPreviewUrl && logoPreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(logoPreviewUrl);
+    }
+
+    setSelectedLogo(file);
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreviewUrl(previewUrl);
+  };
+
+  const removeLogo = () => {
+    if (logoPreviewUrl && logoPreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(logoPreviewUrl);
+    }
+    setSelectedLogo(null);
+    setLogoPreviewUrl(null);
+  };
+
+  const uploadLogo = async (experienceId: string): Promise<string | null> => {
+    if (!selectedLogo) return null;
+
+    const fileExt = selectedLogo.name.split(".").pop();
+    const fileName = `${experienceId}/logo_${Date.now()}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from("experience-images")
+      .upload(fileName, selectedLogo);
+
+    if (error) throw error;
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("experience-images").getPublicUrl(fileName);
+
+    return publicUrl;
   };
 
   const uploadImages = async (experienceId: string) => {
@@ -951,19 +1008,31 @@ export function CreateExperienceForm({
 
         if (experienceError) throw experienceError;
 
+        // Upload logo if selected
+        const logoUrl = await uploadLogo(initialData.id);
+
         // Upload new images if any
-        if (selectedImages.length > 0) {
-          const primaryImageUrl = await uploadImages(initialData.id);
+        const primaryImageUrl =
+          selectedImages.length > 0
+            ? await uploadImages(initialData.id)
+            : null;
 
-          if (primaryImageUrl) {
-            const { error: updateError } = await supabase
-              .from("experiences")
-              .update({ image_url: primaryImageUrl })
-              .eq("id", initialData.id)
-              .eq("is_active", true);
+        // Update experience with logo and/or primary image
+        const updateData: any = {};
+        if (logoUrl) {
+          updateData.logo_url = logoUrl;
+        }
+        if (primaryImageUrl) {
+          updateData.image_url = primaryImageUrl;
+        }
+        if (Object.keys(updateData).length > 0) {
+          const { error: updateError } = await supabase
+            .from("experiences")
+            .update(updateData)
+            .eq("id", initialData.id)
+            .eq("is_active", true);
 
-            if (updateError) throw updateError;
-          }
+          if (updateError) throw updateError;
         }
 
         // In handleSubmit (inside isEditing && initialData.id case)
@@ -1000,14 +1069,24 @@ export function CreateExperienceForm({
 
         if (experienceError) throw experienceError;
 
+        // Upload logo if selected
+        const logoUrl = await uploadLogo(experience.id);
+
         // Upload images and get primary image URL
         const primaryImageUrl = await uploadImages(experience.id);
 
-        // Update the experience with the primary image URL
+        // Update the experience with the primary image URL and logo
+        const updateData: any = {};
         if (primaryImageUrl) {
+          updateData.image_url = primaryImageUrl;
+        }
+        if (logoUrl) {
+          updateData.logo_url = logoUrl;
+        }
+        if (Object.keys(updateData).length > 0) {
           const { error: updateError } = await supabase
             .from("experiences")
-            .update({ image_url: primaryImageUrl })
+            .update(updateData)
             .eq("id", experience.id)
             .eq("is_active", true);
 
@@ -1461,6 +1540,50 @@ export function CreateExperienceForm({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Logo Upload Section */}
+          <div className="space-y-3 text-start">
+            <Label>Logo {isEditing ? "(Optional)" : ""}</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoSelect}
+                className="hidden"
+                id="logo-upload"
+              />
+              <label
+                htmlFor="logo-upload"
+                className="flex flex-col items-center cursor-pointer"
+              >
+                <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                <span className="text-sm text-gray-600">
+                  Click to upload logo
+                </span>
+              </label>
+            </div>
+
+            {/* Logo Preview */}
+            {logoPreviewUrl && (
+              <div className="mt-4">
+                <Label className="text-sm mb-2">Logo Preview</Label>
+                <div className="relative inline-block">
+                  <img
+                    src={logoPreviewUrl}
+                    alt="Logo preview"
+                    className="w-32 h-32 object-contain rounded-lg border border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeLogo}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {!isEditing && (

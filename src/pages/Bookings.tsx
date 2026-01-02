@@ -445,6 +445,17 @@ const Bookings = () => {
               </div>
               {(isVendor || isAgent || isAdmin) && (
                 <div className="flex items-center gap-2">
+                  {isVendor && (
+                    <Button
+                      onClick={() => navigate("/profile/calendar")}
+                      variant="outline"
+                      className="border-brand-primary text-brand-primary hover:bg-brand-primary/10"
+                      size="default"
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Calendar
+                    </Button>
+                  )}
                   <Button
                     onClick={() => setIsOfflineBookingDialogOpen(true)}
                     className="bg-brand-primary hover:bg-brand-primary/90 text-white EditButtonStyle"
