@@ -19,6 +19,7 @@ import {
   Loader2,
   DollarSign,
   XCircle,
+  Copy,
 } from "lucide-react";
 import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
 import { format } from "date-fns";
@@ -203,6 +204,110 @@ export const BookingQuickActionsModal = ({
       });
     } finally {
       setIsCancelingBooking(false);
+    }
+  };
+
+  // Format time helper
+  const formatTime12Hour = (timeString: string) => {
+    if (!timeString) return "N/A";
+    try {
+      const timeParts = timeString.split(":");
+      const hours = parseInt(timeParts[0]);
+      const minutes = timeParts[1];
+      if (isNaN(hours)) return timeString;
+      const period = hours >= 12 ? "PM" : "AM";
+      const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+      return `${displayHours}:${minutes} ${period}`;
+    } catch {
+      return timeString;
+    }
+  };
+
+  // Format currency helper
+  const formatCurrency = (currency: string, amount: number) => {
+    const symbol = currency === "INR" ? "₹" : currency;
+    return `${symbol} ${Math.round(amount)}`;
+  };
+
+  const handleCopyBookingDetails = async () => {
+    if (!booking) return;
+
+    try {
+      const experience = booking.experiences;
+      const activity = booking.time_slots?.activities || booking.activities;
+      const timeslot = booking.time_slots;
+      const currency = activity?.currency || experience?.currency || "INR";
+
+      // Get customer name
+      const customerName =
+        booking.contact_person_name ||
+        booking.booking_participants?.[0]?.name ||
+        "N/A";
+
+      // Get total participants
+      const totalParticipants = booking.total_participants || 0;
+
+      // Get customer contact
+      const customerContact =
+        booking.contact_person_number ||
+        booking.booking_participants?.[0]?.phone_number ||
+        "N/A";
+
+      // Get experience name
+      const experienceName = experience?.title || "N/A";
+
+      // Get activity name
+      const activityName = activity?.name || "N/A";
+
+      // Get date & time
+      const bookingDate = format(new Date(booking.booking_date), "MMM d, yyyy");
+      let dateTime = bookingDate;
+      if (timeslot?.start_time && timeslot?.end_time) {
+        const startTime = formatTime12Hour(timeslot.start_time);
+        const endTime = formatTime12Hour(timeslot.end_time);
+        dateTime = `${bookingDate} ${startTime} - ${endTime}`;
+      } else if ((booking as any)?.type === "offline") {
+        dateTime = `${bookingDate} (Offline)`;
+      }
+
+      // Get amount to be collected (due amount)
+      const amountToBeCollected = booking.due_amount || 0;
+
+      // Get discount and advance amount
+      const bookingAmount = parseFloat(booking.booking_amount?.toString() || "0");
+      const dueAmount = parseFloat(booking.due_amount?.toString() || "0");
+      const advanceAmount = bookingAmount - dueAmount;
+      
+      // Calculate discount
+      const originalPrice = activity?.price || experience?.price || 0;
+      const officialPrice = originalPrice * totalParticipants;
+      const discountAmount = officialPrice - bookingAmount > 0 ? officialPrice - bookingAmount : 0;
+      const discountAndAdvance = advanceAmount + discountAmount;
+
+      // Format the text
+      const formattedText = `Customer Name: ${customerName}
+Total Participants: ${totalParticipants}
+Customer Contact: ${customerContact}
+Experience: ${experienceName}
+Activity: ${activityName}
+Date & Time: ${dateTime}
+Amount to be Collected: ${formatCurrency(currency, amountToBeCollected)}
+Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(formattedText);
+
+      toast({
+        title: "Copied!",
+        description: "Booking details copied to clipboard",
+      });
+    } catch (error) {
+      console.error("Error copying booking details:", error);
+      toast({
+        title: "Error",
+        description: "Failed to copy booking details",
+        variant: "destructive",
+      });
     }
   };
 
@@ -391,6 +496,20 @@ export const BookingQuickActionsModal = ({
                   <span className="font-semibold">Edit Booking</span>
                   <span className="text-xs text-muted-foreground mt-0.5">
                     Update contact info and amounts
+                  </span>
+                </div>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="justify-start h-auto py-4 px-6 text-base font-normal hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all"
+                onClick={handleCopyBookingDetails}
+              >
+                <Copy className="mr-4 h-5 w-5" />
+                <div className="flex flex-col items-start">
+                  <span className="font-semibold">Copy Booking Details</span>
+                  <span className="text-xs text-muted-foreground mt-0.5">
+                    Copy formatted booking information
                   </span>
                 </div>
               </Button>

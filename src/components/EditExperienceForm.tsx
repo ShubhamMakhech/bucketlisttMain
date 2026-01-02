@@ -78,6 +78,7 @@ interface ExperienceData {
   destination_id: string;
   activities: Activity[];
   image_urls: string[];
+  logo_url?: string;
 }
 
 interface EditExperienceFormProps {
@@ -106,6 +107,8 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [removedImages, setRemovedImages] = useState<string[]>([]);
+  const [selectedLogo, setSelectedLogo] = useState<File | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
 
   // Auto-generate time slots configuration
   const [autoConfig, setAutoConfig] = useState<AutoGenerateConfig>({
@@ -160,6 +163,10 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     // Initialize preview URLs from existing images
     if (initialData.image_urls && initialData.image_urls.length > 0) {
       setPreviewUrls(initialData.image_urls);
+    }
+    // Initialize logo preview if exists
+    if (initialData.logo_url) {
+      setLogoPreviewUrl(initialData.logo_url);
     }
   }, [initialData]);
 
@@ -450,6 +457,56 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     }
 
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleLogoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file for the logo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Revoke old preview URL if it was a blob
+    if (logoPreviewUrl && logoPreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(logoPreviewUrl);
+    }
+
+    setSelectedLogo(file);
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreviewUrl(previewUrl);
+  };
+
+  const removeLogo = () => {
+    if (logoPreviewUrl && logoPreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(logoPreviewUrl);
+    }
+    setSelectedLogo(null);
+    setLogoPreviewUrl(null);
+  };
+
+  const uploadLogo = async (experienceId: string): Promise<string | null> => {
+    if (!selectedLogo) return null;
+
+    const fileExt = selectedLogo.name.split(".").pop();
+    const fileName = `${experienceId}/logo_${Date.now()}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from("experience-images")
+      .upload(fileName, selectedLogo);
+
+    if (error) throw error;
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("experience-images").getPublicUrl(fileName);
+
+    return publicUrl;
   };
 
   const uploadNewImages = async (experienceId: string) => {
@@ -1006,10 +1063,18 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
         url_name: uniqueUrlName, // Add url_name field
       };
 
-      // Update experience
+      // Upload logo if selected
+      const logoUrl = await uploadLogo(initialData.id);
+
+      // Update experience (include logo if uploaded)
+      const updateData: any = { ...experienceData };
+      if (logoUrl) {
+        updateData.logo_url = logoUrl;
+      }
+
       const { error: experienceError } = await supabase
         .from("experiences")
-        .update(experienceData)
+        .update(updateData)
         .eq("id", initialData.id);
 
       if (experienceError) throw experienceError;
@@ -1734,6 +1799,50 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Logo Upload Section */}
+          <div className="space-y-3 text-start">
+            <Label>Logo (Optional)</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoSelect}
+                className="hidden"
+                id="logo-upload"
+              />
+              <label
+                htmlFor="logo-upload"
+                className="flex flex-col items-center cursor-pointer"
+              >
+                <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                <span className="text-sm text-gray-600">
+                  Click to upload logo
+                </span>
+              </label>
+            </div>
+
+            {/* Logo Preview */}
+            {logoPreviewUrl && (
+              <div className="mt-4">
+                <Label className="text-sm mb-2">Logo Preview</Label>
+                <div className="relative inline-block">
+                  <img
+                    src={logoPreviewUrl}
+                    alt="Logo preview"
+                    className="w-32 h-32 object-contain rounded-lg border border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeLogo}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Image Management */}
