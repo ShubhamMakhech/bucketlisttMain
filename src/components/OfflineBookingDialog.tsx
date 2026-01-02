@@ -329,7 +329,8 @@ export const OfflineBookingDialog = ({
       // Get agent name for WhatsApp messages (only for agents, not admins)
       const agentName =
         isAgent && !isAdmin && agentProfile
-          ? `${agentProfile.first_name || ""} ${agentProfile.last_name || ""
+          ? `${agentProfile.first_name || ""} ${
+              agentProfile.last_name || ""
             }`.trim()
           : "";
 
@@ -367,7 +368,8 @@ export const OfflineBookingDialog = ({
         pdfUrl = await generateInvoicePdf(
           {
             participantName: data.contact_person_name,
-            experienceTitle: experienceDetails?.title || experience?.title || "Activity",
+            experienceTitle:
+              experienceDetails?.title || experience?.title || "Activity",
             activityName: activity?.name || "",
             dateTime: formattedDateTime,
             pickUpLocation: experienceDetails?.location || "-",
@@ -420,12 +422,12 @@ export const OfflineBookingDialog = ({
                   components: {
                     ...(pdfUrl
                       ? {
-                        header_1: {
-                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                          type: "document",
-                          value: pdfUrl,
-                        },
-                      }
+                          header_1: {
+                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
                       : {}),
                     body_1: {
                       type: "text",
@@ -486,12 +488,12 @@ export const OfflineBookingDialog = ({
                   components: {
                     ...(pdfUrl
                       ? {
-                        header_1: {
-                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                          type: "document",
-                          value: pdfUrl,
-                        },
-                      }
+                          header_1: {
+                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
                       : {}),
                     body_1: {
                       type: "text",
@@ -681,13 +683,13 @@ export const OfflineBookingDialog = ({
                 formattedDateTime: formattedDateTime,
                 timeSlot: selectedSlotId
                   ? (() => {
-                    const selectedSlot = timeSlots.find(
-                      (slot: any) => slot.id === selectedSlotId
-                    );
-                    return selectedSlot
-                      ? `${selectedSlot.start_time} - ${selectedSlot.end_time}`
-                      : "Offline Booking";
-                  })()
+                      const selectedSlot = timeSlots.find(
+                        (slot: any) => slot.id === selectedSlotId
+                      );
+                      return selectedSlot
+                        ? `${selectedSlot.start_time} - ${selectedSlot.end_time}`
+                        : "Offline Booking";
+                    })()
                   : "Offline Booking",
                 location: experienceDetails?.location || "",
                 location2: experienceDetails?.location2 || null,
@@ -822,22 +824,32 @@ export const OfflineBookingDialog = ({
         throw participantsError;
       }
 
-      // Send WhatsApp messages and email
-      await sendBookingConfirmation(
-        data,
-        booking.id,
-        experience,
-        selectedActivity
-      );
-
+      // Show success immediately after booking is created
       toast({
         title: "Offline Booking Created!",
         description:
-          "The offline booking has been successfully created. Notifications have been sent.",
+          "The offline booking has been successfully created. Notifications are being sent in the background.",
       });
 
+      // Close dialog and refresh immediately
       onBookingSuccess();
       handleClose();
+
+      // Run confirmations in the background (non-blocking)
+      // Use setTimeout to ensure it runs after the UI updates
+      setTimeout(() => {
+        sendBookingConfirmation(
+          data,
+          booking.id,
+          experience,
+          selectedActivity
+        ).catch((error) => {
+          // Log background errors but don't show to user (booking is already created)
+          console.error("Background notification error:", error);
+          // Optionally, you could show a subtle notification that some notifications failed
+          // but the booking was still created successfully
+        });
+      }, 100);
     } catch (error: any) {
       console.error("Offline booking creation error:", error);
       toast({
@@ -995,12 +1007,13 @@ export const OfflineBookingDialog = ({
                               }
                             }}
                             disabled={!isAvailable}
-                            className={`p-3 rounded-lg border-2 text-left transition-all ${isSelected
-                              ? "border-brand-primary bg-brand-primary/10"
-                              : isAvailable
+                            className={`p-3 rounded-lg border-2 text-left transition-all ${
+                              isSelected
+                                ? "border-brand-primary bg-brand-primary/10"
+                                : isAvailable
                                 ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                                 : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
-                              }`}
+                            }`}
                           >
                             <div className="flex items-center gap-2">
                               <Clock className="h-3.5 w-3.5 theme-purple-text" />
@@ -1288,8 +1301,8 @@ export const OfflineBookingDialog = ({
                           {Math.max(
                             0,
                             (form.watch("booking_amount_per_person") || 0) *
-                            participantCount -
-                            (form.watch("advance_amount") || 0)
+                              participantCount -
+                              (form.watch("advance_amount") || 0)
                           ).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
