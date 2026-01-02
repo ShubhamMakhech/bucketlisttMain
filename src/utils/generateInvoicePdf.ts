@@ -15,6 +15,7 @@ interface BookingInvoiceData {
   amountPaid: string;
   amountToBePaid: string;
   currency: string;
+  logoUrl?: string;
 }
 
 /**

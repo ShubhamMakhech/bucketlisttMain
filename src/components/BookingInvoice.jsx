@@ -16,6 +16,7 @@ import DownloadPdfButton from "./DownloadPdfButton";
  * @param {string} [props.amountToBePaid="10.53"]
  * @param {string} [props.currency="INR"]
  * @param {boolean} [props.showDownloadButton=true]
+ * @param {string} [props.logoUrl=""]
  * 
  */
 const PaymentLayout = ({
@@ -32,6 +33,7 @@ const PaymentLayout = ({
   currency = "INR",
   showDownloadButton = true,
   isForPdf = false,
+  logoUrl = "",
 }) => {
   const invoiceRef = useRef(null);
   // const isForPdf = props.isForPdf; 
@@ -78,49 +80,63 @@ const PaymentLayout = ({
                 gap: "8px",
               }}
             >
-              <div
-                style={{
-                  width: "26px",
-                  height: "26px",
-                  borderRadius: "8px",
-                  background: "#940fdb",
-                  fontSize: "16px",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
-                }}
-              >
-                <div
-                  style={{
-                    // backgroundColor: "red",
-                    marginTop: "-10px",
-                    width: "15px",
-                    height: "15px",
-                    borderRadius: "4px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    color: "#fff",
-                    lineHeight: 1,
-                    paddingBottom: "2px" // Minor adjustment for visual centering of lowercase b
-                  }}
-                >
-                  b
-                </div>
-              </div>
+              {!logoUrl && (
+                <>
+                  <div
+                    style={{
+                      width: "26px",
+                      height: "26px",
+                      borderRadius: "8px",
+                      background: "#940fdb",
+                      fontSize: "16px",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "relative",
+                    }}
+                  >
+                    <div
+                      style={{
+                        // backgroundColor: "red",
+                        marginTop: "-10px",
+                        width: "15px",
+                        height: "15px",
+                        borderRadius: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        color: "#fff",
+                        lineHeight: 1,
+                        paddingBottom: "2px" // Minor adjustment for visual centering of lowercase b
+                      }}
+                    >
+                      b
+                    </div>
+                  </div>
 
-              <img
-                src="/Images/BucketlisttLogo.png"
-                alt="Bucketlistt Logo"
-                style={{
-                  height: "60px",
-                  objectFit: "contain",
-                }}
-              />
+                  <img
+                    src="/Images/BucketlisttLogo.png"
+                    alt="Bucketlistt Logo"
+                    style={{
+                      height: "60px",
+                      objectFit: "contain",
+                    }}
+                  />
+                </>
+              )}
+              {logoUrl && (
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  style={{
+                    height: "60px",
+                    objectFit: "contain",
+                  }}
+                />
+              )}
             </div>
             {/* Download PDF Button */}
             {showDownloadButton && (
@@ -367,6 +383,22 @@ const PaymentLayout = ({
             </div>
           </div>
         </section>
+
+        {/* Powered by bucketlistt text - only show if logoUrl is provided */}
+        {logoUrl && (
+          <div
+            style={{
+              marginTop: "20px",
+              textAlign: "center",
+              fontSize: "14px",
+              color: "#6b7280",
+              paddingTop: "16px",
+              borderTop: "1px solid #e5e7eb",
+            }}
+          >
+            <p style={{ margin: 0 }}>powered by bucketlistt</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -128,6 +128,15 @@ export const BookingQuickActionsModal = ({
                 (experience?.location?.startsWith("http") ? experience.location : "") ||
                 "";
 
+            // Extract logoUrl from booking data (could be in experience, vendor, or booking itself)
+            const logoUrl = 
+                (booking as any)?.logoUrl || 
+                experience?.logoUrl || 
+                (experience as any)?.logo_url ||
+                ((booking as any)?.experiences as any)?.logoUrl ||
+                ((booking as any)?.experiences as any)?.logo_url ||
+                "";
+
             const bookingData = {
                 participantName: booking.contact_person_name || "Guest",
                 experienceTitle: experience?.title || "Activity",
@@ -147,6 +156,7 @@ export const BookingQuickActionsModal = ({
                 amountPaid: String(booking.booking_amount || 0),
                 amountToBePaid: String(booking.due_amount || 0),
                 currency: experience?.currency || "INR",
+                logoUrl: logoUrl || undefined,
             };
 
             const pdfUrl = await generateInvoicePdf(bookingData, booking.id);
