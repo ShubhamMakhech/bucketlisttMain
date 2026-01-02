@@ -136,8 +136,8 @@ const Bookings = () => {
               ? booking.type === "offline" && isAgent
                 ? "Agent (Offline)"
                 : booking.type === "offline" && isAdmin
-                ? "Admin (Offline)"
-                : "Vendor (Offline)"
+                  ? "Admin (Offline)"
+                  : "Vendor (Offline)"
               : "Customer (Online)",
             "Created At": new Date(booking.created_at).toLocaleString(),
           };
@@ -322,10 +322,10 @@ const Bookings = () => {
                     {isVendor
                       ? "Manage all bookings for your experiences"
                       : isAgent
-                      ? "Manage all bookings and create offline bookings"
-                      : isAdmin
-                      ? "Manage all bookings and create offline bookings"
-                      : "View and manage your bookings"}
+                        ? "Manage all bookings and create offline bookings"
+                        : isAdmin
+                          ? "Manage all bookings and create offline bookings"
+                          : "View and manage your bookings"}
                   </p>
                 </div>
               </div>

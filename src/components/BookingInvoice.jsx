@@ -93,7 +93,7 @@ const PaymentLayout = ({
                 <div
                   style={{
                     // backgroundColor: "red",
-                    marginTop:"-10px",
+                    marginTop: "-10px",
                     width: "15px",
                     height: "15px",
                     borderRadius: "4px",
@@ -200,12 +200,30 @@ const PaymentLayout = ({
                 label: "Date & Time:",
                 value: dateTime,
               },
-              { label: "Pick up location:", value: pickUpLocation },
+              {
+                label: "Pick up location:",
+                value: (pickUpLocation && pickUpLocation !== "-") ? (
+                  pickUpLocation.startsWith("http") ? (
+                    <a
+                      href={pickUpLocation}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: "#940fdb", textDecoration: "none" }}
+                    >
+                      Open in Maps
+                    </a>
+                  ) : (
+                    pickUpLocation
+                  )
+                ) : (
+                  "-"
+                )
+              },
               {
                 label: "Spot Location:",
-                value: spotLocationUrl ? (
+                value: (spotLocationUrl || (spotLocation && spotLocation.startsWith("http"))) ? (
                   <a
-                    href={spotLocationUrl}
+                    href={spotLocationUrl || spotLocation}
                     target="_blank"
                     rel="noreferrer"
                     style={{ color: "#940fdb", textDecoration: "none" }}
