@@ -849,7 +849,7 @@ export const OfflineBookingDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="offline-booking-dialog max-h-[95vh] overflow-y-auto">
+      <DialogContent className="offline-booking-dialog">
         <div className="offline-booking-header">
           <h2 className="offline-booking-title">Create Offline Booking</h2>
         </div>
@@ -874,7 +874,7 @@ export const OfflineBookingDialog = ({
                       value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="h-11">
+                        <SelectTrigger className="form-input-trigger">
                           <SelectValue placeholder="Select Experience *" />
                         </SelectTrigger>
                       </FormControl>
@@ -902,7 +902,7 @@ export const OfflineBookingDialog = ({
                       disabled={!selectedExperienceId}
                     >
                       <FormControl>
-                        <SelectTrigger className="h-11">
+                        <SelectTrigger className="form-input-trigger">
                           <SelectValue placeholder="Select Activity *" />
                         </SelectTrigger>
                       </FormControl>
@@ -927,7 +927,7 @@ export const OfflineBookingDialog = ({
                     <FormControl>
                       <div className="relative">
                         <DatePicker
-                          className="h-11 w-full"
+                          className="form-date-picker"
                           value={selectedDate ? dayjs(selectedDate) : null}
                           onChange={(date) => {
                             const d = date ? date.toDate() : undefined;
@@ -962,11 +962,11 @@ export const OfflineBookingDialog = ({
                 name="time_slot_id"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-slate-700">
+                    <div className="time-slots-header">
+                      <span className="time-slots-label">
                         Available Time Slots
                       </span>
-                      <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+                      <span className="selected-date-badge">
                         {format(selectedDate, "MMM d, yyyy")}
                       </span>
                     </div>
@@ -990,15 +990,10 @@ export const OfflineBookingDialog = ({
                               }
                             }}
                             disabled={!isAvailable}
-                            className={`p-3 rounded-lg border-2 text-left transition-all ${isSelected
-                              ? "border-brand-primary bg-brand-primary/10"
-                              : isAvailable
-                                ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                                : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
-                              }`}
+                            className={`time-slot-btn ${isSelected ? "selected" : ""}`}
                           >
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-3.5 w-3.5 theme-purple-text" />
+                            <div className="time-slot-content">
+                              <Clock className="time-slot-icon" />
                               <span className="time-slot-time">
                                 {formatTime(slot.start_time)}
                               </span>
@@ -1021,7 +1016,7 @@ export const OfflineBookingDialog = ({
               <span className="contact-details-title">
                 Customer Information
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="contact-fields-grid">
                 <FormField
                   control={form.control}
                   name="contact_person_name"
@@ -1030,7 +1025,7 @@ export const OfflineBookingDialog = ({
                       <FormControl>
                         <Input
                           placeholder="Full Name *"
-                          className="bg-white"
+                          className="form-input"
                           {...field}
                         />
                       </FormControl>
@@ -1046,7 +1041,7 @@ export const OfflineBookingDialog = ({
                       <FormControl>
                         <Input
                           placeholder="Phone Number *"
-                          className="bg-white"
+                          className="form-input"
                           {...field}
                           maxLength={10}
                         />
@@ -1064,7 +1059,7 @@ export const OfflineBookingDialog = ({
                         <Input
                           type="email"
                           placeholder="Email Address"
-                          className="bg-white"
+                          className="form-input"
                           {...field}
                         />
                       </FormControl>
@@ -1076,84 +1071,90 @@ export const OfflineBookingDialog = ({
 
             {/* Booking Details & Summary */}
             <div className="booking-info-layout">
-              <div className="space-y-4">
+              <div className="booking-fields-stack">
                 <div className="MobileFlexOnly">
-                  <FormField
-                    control={form.control}
-                    name="total_participants"
-                    render={({ field }) => (
-                      <FormItem>
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
-                          Participants
-                        </label>
-                        <div className="participants-control">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg"
-                            onClick={() =>
-                              field.onChange(Math.max(1, field.value - 1))
-                            }
-                            disabled={field.value <= 1}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="font-bold text-lg min-w-[2rem] text-center">
-                            {field.value}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg"
-                            onClick={() =>
-                              field.onChange(Math.min(50, field.value + 1))
-                            }
-                            disabled={field.value >= 50}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="booking_amount_per_person"
-                    render={({ field }) => (
-                      <FormItem>
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
-                          Amount Per Person
-                        </label>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
-                              {selectedActivity?.currency || "INR"}
-                            </span>
-                            <Input
-                              type="number"
-                              className="pl-12 h-11"
-                              placeholder="0.00"
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(parseFloat(e.target.value) || 0)
+                  <div className="GridSetPCMobileAdjust">
+                    <FormField
+                      control={form.control}
+                      name="total_participants"
+                      render={({ field }) => (
+                        <FormItem>
+                          <label className="field-label-compact">
+                            Participants
+                          </label>
+                          <div className="participants-control">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="participant-btn"
+                              onClick={() =>
+                                field.onChange(Math.max(1, field.value - 1))
                               }
-                            />
+                              disabled={field.value <= 1}
+                            >
+                              <Minus className="participant-icon" />
+                            </Button>
+                            <span className="participant-count">
+                              {field.value}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="participant-btn"
+                              onClick={() =>
+                                field.onChange(Math.min(50, field.value + 1))
+                              }
+                              disabled={field.value >= 50}
+                            >
+                              <Plus className="participant-icon" />
+                            </Button>
                           </div>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="booking_amount_per_person"
+                      render={({ field }) => (
+                        <FormItem>
+                          <label className="field-label-compact">
+                            Amount Per Person
+                          </label>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                                {selectedActivity?.currency || "INR"}
+                              </span>
+                              <Input
+                                type="number"
+                                className="pl-12 h-11"
+                                placeholder="0.00"
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) =>
+                                  field.onChange(parseFloat(e.target.value) || 0)
+                                }
+                              />
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+
+                </div>
+                <div className="FlexOnly">
 
                   <FormField
                     control={form.control}
                     name="advance_amount"
                     render={({ field }) => (
                       <FormItem>
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
+                        <label className="field-label-compact">
                           Advance Amount
                         </label>
                         <FormControl>
@@ -1176,36 +1177,35 @@ export const OfflineBookingDialog = ({
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="note_for_guide"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            placeholder="Note for Guide (Optional)"
+                            className="form-input"
+                            {...field}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="note_for_guide"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          placeholder="Note for Guide (Optional)"
-                          className="h-11"
-                          {...field}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
               </div>
 
               {/* Summary Card */}
               {selectedActivity && (
                 <div className="summary-card">
                   <div className="summary-content">
-                    <h4 className="text-sm font-bold text-slate-800 mb-4 border-b pb-2">
+                    <h4 className="summary-title">
                       Booking Summary
                     </h4>
                     <div className="space-y-3">
                       <div className="summary-row">
                         <span className="summary-label">Activity</span>
-                        <span className="summary-value text-right max-w-[150px] truncate">
+                        <span className="summary-value text-right-truncate">
                           {selectedActivity.name}
                         </span>
                       </div>
@@ -1225,13 +1225,30 @@ export const OfflineBookingDialog = ({
                         </span>
                       </div>
                       {isAgent && selectedActivity.b2bPrice && (
-                        <div className="summary-row">
-                          <span className="summary-label">B2B Price</span>
-                          <span className="summary-value">
-                            {selectedActivity.currency}{" "}
-                            {selectedActivity.b2bPrice.toLocaleString()}
-                          </span>
-                        </div>
+                        <>
+                          {!showB2BPrice ? (
+                            <div className="summary-row">
+                              <span className="summary-label">B2B Price</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="b2b-view-btn"
+                                onClick={() => setShowB2BPrice(true)}
+                              >
+                                View B2B Price
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="summary-row">
+                              <span className="summary-label">B2B Price</span>
+                              <span className="summary-value">
+                                {selectedActivity.currency}{" "}
+                                {selectedActivity.b2bPrice.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                        </>
                       )}
                       <div className="summary-row">
                         <span className="summary-label">Total Amount</span>
@@ -1285,7 +1302,7 @@ export const OfflineBookingDialog = ({
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                className="flex-1 btn-secondary-custom"
+                className="btn-secondary-custom"
                 disabled={isSubmitting}
               >
                 Cancel
@@ -1293,7 +1310,7 @@ export const OfflineBookingDialog = ({
               <Button
                 type="submit"
                 // disabled={isSubmitting}
-                className="flex-1 btn-primary-custom"
+                className="btn-primary-custom"
               >
                 {isSubmitting ? "Creating..." : "Create Booking"}
               </Button>
