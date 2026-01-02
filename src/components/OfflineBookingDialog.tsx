@@ -937,9 +937,14 @@ export const OfflineBookingDialog = ({
                             form.setValue("time_slot_id", "");
                             field.onChange(d);
                           }}
-                          disabledDate={(current) =>
-                            current && current < dayjs().startOf("day")
-                          }
+                          disabledDate={(current) => {
+                            // Admins can create backdated bookings, other roles cannot
+                            if (isAdmin) {
+                              return false; // No date restrictions for admins
+                            }
+                            // For vendors and agents, prevent selecting past dates
+                            return current && current < dayjs().startOf("day");
+                          }}
                           placeholder="Select Date *"
                           format="YYYY-MM-DD"
                         />

@@ -3076,12 +3076,12 @@ export const UserBookings = () => {
           <div id="UserBookingsDesktopLayout" className="hidden">
             {/* Column Selector Button */}
 
-            <div className="overflow-x-auto overflow-y-visible">
+            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-300px)]">
               <table
                 className="w-full text-xs"
                 style={{ tableLayout: "fixed" }}
               >
-                <thead>
+                <thead className="sticky top-0 z-10 bg-white shadow-sm">
                   <tr>
                     {columnOrder.map(
                       (originalIndex) =>
@@ -3092,7 +3092,7 @@ export const UserBookings = () => {
                               headerRefs.current[originalIndex] = el;
                             }}
                             data-column-index={originalIndex}
-                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${
+                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none bg-white ${
                               draggedColumnIndex === originalIndex
                                 ? "opacity-50"
                                 : ""
@@ -3415,7 +3415,7 @@ export const UserBookings = () => {
                     )}
                     {/* Cancel Button Column Header - Admin Only */}
                     {isAdmin && (
-                      <th className="px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap">
+                      <th className="px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap bg-white">
                         Actions
                       </th>
                     )}
