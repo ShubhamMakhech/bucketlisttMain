@@ -14,6 +14,7 @@ interface BookingInvoiceData {
   totalParticipants: number;
   amountPaid: string;
   amountToBePaid: string;
+  advancePlusDiscount?: string;
   currency: string;
   logoUrl?: string;
 }

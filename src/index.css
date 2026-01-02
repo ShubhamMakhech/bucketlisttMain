@@ -810,6 +810,10 @@ h6 {
   /* display: none; */
 }
 
+#UserBookingsDesktopLayout{
+  margin-top: 10px !important;
+}
+
 
 @media (max-width: 768px) {
   #UserBookingsColumnSelectorStyles {

@@ -222,6 +222,13 @@
     width: 25px;
 }
 
+.FontSetPerfect{
+    font-size: 0.75rem !important;
+}
+
+.cursor-move{
+    display: none !important;
+}
 @media (max-width: 768px) {
     .EditButtonStyle {
         padding:5px 20px !important;

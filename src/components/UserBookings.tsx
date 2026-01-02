@@ -33,6 +33,9 @@ import {
   XCircle,
   MoreVertical,
   Copy,
+  FileText,
+  DollarSign,
+  Loader2,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -40,12 +43,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { DatePicker, ConfigProvider } from "antd";
 import dayjs from "dayjs";
 import "./UserBookingsMobileCard.css";
-import { BookingQuickActionsModal } from "./BookingQuickActionsModal";
+import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
+import { Label } from "@/components/ui/label";
 
 interface BookingWithDueAmount {
   due_amount?: number;
@@ -111,11 +122,22 @@ export const UserBookings = () => {
     string | null
   >(null);
 
-  // Quick Actions State
-  const [quickActionsModalOpen, setQuickActionsModalOpen] =
+  // Edit Booking Dialog State
+  const [editBookingDialogOpen, setEditBookingDialogOpen] =
     React.useState(false);
-  const [selectedBookingForActions, setSelectedBookingForActions] =
-    React.useState<any>(null);
+  const [bookingToEdit, setBookingToEdit] = React.useState<any>(null);
+  const [isUpdatingBooking, setIsUpdatingBooking] = React.useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
+  
+  // Edit booking form state
+  const [contactPersonName, setContactPersonName] = React.useState("");
+  const [contactPersonNumber, setContactPersonNumber] = React.useState("");
+  const [bookingAmount, setBookingAmount] = React.useState("");
+  const [advance, setAdvance] = React.useState("");
+  const [totalParticipants, setTotalParticipants] = React.useState("");
+
+  // Dropdown open state for backdrop
+  const [isActionsDropdownOpen, setIsActionsDropdownOpen] = React.useState<Record<string, boolean>>({});
 
   // Excel-like column filters state
   const [columnFilters, setColumnFilters] = React.useState<
@@ -381,13 +403,13 @@ export const UserBookings = () => {
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-          profile?.phone_number ||
-          booking?.booking_participants?.[0]?.phone_number ? (
+        profile?.phone_number ||
+        booking?.booking_participants?.[0]?.phone_number ? (
           <a
             href={`tel:${booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-              }`}
+            }`}
             className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
@@ -413,11 +435,11 @@ export const UserBookings = () => {
         if (bookingTypeRender === "canceled") return "Canceled";
         return timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-            timeslot.end_time
-          )}`
+              timeslot.end_time
+            )}`
           : isOfflineBooking
-            ? "Offline"
-            : "N/A";
+          ? "Offline"
+          : "N/A";
       },
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
@@ -447,8 +469,8 @@ export const UserBookings = () => {
               bookedByProfile?.first_name && bookedByProfile?.last_name
                 ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                 : bookedByProfile?.email ||
-                bookedByProfile?.first_name ||
-                "Agent";
+                  bookedByProfile?.first_name ||
+                  "Agent";
           } else {
             bookingTypeDisplay = "offline";
           }
@@ -468,11 +490,11 @@ export const UserBookings = () => {
             className={`px-2 py-1 rounded text-xs font-medium ${isCanceled
                 ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
                 : isOffline
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  : isAgentBooking
-                    ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                    : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-              }`}
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                : isAgentBooking
+                ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+            }`}
           >
             {bookingTypeDisplay}
           </span>
@@ -529,19 +551,181 @@ export const UserBookings = () => {
         // Quick Actions Column - Admin only
         if (!isAdmin) return "";
 
+        const isCanceled = (booking as any)?.type === "canceled";
+
         return (
+          <DropdownMenu
+            open={isActionsDropdownOpen[booking.id] || false}
+            onOpenChange={(open) => {
+              setIsActionsDropdownOpen((prev) => ({
+                ...prev,
+                [booking.id]: open,
+              }));
+            }}
+          >
+            <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-            onClick={() => {
-              setSelectedBookingForActions(booking);
-              setQuickActionsModalOpen(true);
-            }}
             title="Quick Actions"
           >
             <MoreVertical className="h-4 w-4" />
           </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72 p-2 z-[9999]" onCloseAutoFocus={(e) => e.preventDefault()}>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setEditingAdminNote({
+                    bookingId: booking.id,
+                    note: (booking as any)?.admin_note || "",
+                  });
+                  setAdminNoteDialogOpen(true);
+                }}
+                className="justify-start h-auto py-2 px-6 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200"
+              >
+                <span className="font-semibold FontSetPerfect">Edit Admin Note</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={async (e) => {
+                  e.preventDefault();
+                  setIsGeneratingPdf(true);
+                  try {
+                    const experience = booking.experiences;
+                    const activity = booking.time_slots?.activities || booking.activities;
+
+                    // Fetch logo_url from vendor profile if vendor_id is available
+                    let logoUrl = "";
+                    if (experience?.vendor_id) {
+                      try {
+                        const { data: vendorProfile } = await supabase
+                          .from("profiles")
+                          .select("logo_url")
+                          .eq("id", experience.vendor_id)
+                          .single();
+
+                        logoUrl = (vendorProfile as any)?.logo_url || "";
+                      } catch (error) {
+                        console.error("Error fetching vendor logo_url:", error);
+                      }
+                    }
+
+                    // Fallback: Extract logoUrl from booking data
+                    if (!logoUrl) {
+                      logoUrl =
+                        (booking as any)?.logoUrl ||
+                        experience?.logoUrl ||
+                        (experience as any)?.logo_url ||
+                        ((booking as any)?.experiences as any)?.logoUrl ||
+                        ((booking as any)?.experiences as any)?.logo_url ||
+                        "";
+                    }
+
+                    // Calculate Advance + Discount
+                    const bookingAmountVal = parseFloat(String(booking.booking_amount || 0));
+                    const dueAmountVal = parseFloat(String(booking.due_amount || 0));
+                    const originalPriceVal = activity?.price || experience?.price || 0;
+                    const officialPriceVal = originalPriceVal * (booking.total_participants || 1);
+                    
+                    // Calculate Discount: Official Price - Booking Amount (if positive)
+                    const discountCouponVal = officialPriceVal - bookingAmountVal > 0
+                      ? officialPriceVal - bookingAmountVal
+                      : 0;
+                    
+                    // Advance Paid = Booking Amount - Due Amount
+                    const advancePaid = bookingAmountVal - dueAmountVal;
+                    const advancePlusDiscountVal = advancePaid + discountCouponVal;
+
+                    const bookingData = {
+                      participantName: booking.contact_person_name || "Guest",
+                      experienceTitle: experience?.title || "Activity",
+                      activityName: activity?.name || "",
+                      dateTime: booking.time_slots
+                        ? `${format(new Date(booking.booking_date), "dd/MM/yyyy")} - ${booking.time_slots.start_time} - ${booking.time_slots.end_time}`
+                        : format(new Date(booking.booking_date), "dd/MM/yyyy"),
+                      pickUpLocation: experience?.location || "-",
+                      spotLocation: booking.pickup_location || experience?.location2 || "-",
+                      spotLocationUrl: (
+                        booking.pickup_location || experience?.location2
+                      )?.startsWith("http")
+                        ? booking.pickup_location || experience?.location2
+                        : "",
+                      totalParticipants: booking.total_participants || 1,
+                      amountPaid: String(advancePaid),
+                      amountToBePaid: String(booking.due_amount || 0),
+                      advancePlusDiscount: String(advancePlusDiscountVal),
+                      currency: experience?.currency || "INR",
+                      logoUrl: logoUrl || undefined,
+                    };
+
+                    const pdfUrl = await generateInvoicePdf(bookingData, booking.id);
+                    window.open(pdfUrl, "_blank");
+
+                    toast({
+                      title: "Success",
+                      description: "PDF generated successfully",
+                    });
+                  } catch (error) {
+                    console.error("Error generating PDF:", error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to generate PDF",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setIsGeneratingPdf(false);
+                  }
+                }}
+                disabled={isGeneratingPdf}
+                className="justify-start h-auto py-2 px-6 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <span className="font-semibold FontSetPerfect">Download Ticket PDF</span>
+                  </>
+                ) : (
+                  <span className="font-semibold FontSetPerfect">Download Ticket PDF</span>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setBookingToEdit(booking);
+                  setContactPersonName(booking.contact_person_name || "");
+                  setContactPersonNumber(booking.contact_person_number || "");
+                  setBookingAmount(booking.booking_amount?.toString() || "0");
+                  setTotalParticipants(booking.total_participants?.toString() || "1");
+                  const bookingAmt = parseFloat(booking.booking_amount?.toString() || "0");
+                  const dueAmt = parseFloat(booking.due_amount?.toString() || "0");
+                  setAdvance((bookingAmt - dueAmt).toString());
+                  setEditBookingDialogOpen(true);
+                }}
+                className="justify-start h-auto py-2 px-6 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200"
+              >
+                <span className="font-semibold FontSetPerfect">Edit Booking</span>
+              </DropdownMenuItem>
+              {!isCanceled && (
+                <>
+                  <DropdownMenuSeparator className="my-2" />
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setBookingToCancel({
+                        id: booking.id,
+                        title: booking.experiences?.title || "this booking",
+                      });
+                      setCancelBookingDialogOpen(true);
+                    }}
+                    className="justify-start h-auto py-2 px-6 font-normal hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-red-200"
+                  >
+                    <span className="font-semibold FontSetPerfect">Cancel Booking</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     ];
@@ -1022,11 +1206,11 @@ export const UserBookings = () => {
                 const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                  ? "Offline"
+                  : "";
               }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
@@ -1054,8 +1238,8 @@ export const UserBookings = () => {
                       bookedByProfile?.last_name
                       ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                       : bookedByProfile?.email ||
-                      bookedByProfile?.first_name ||
-                      "Agent";
+                          bookedByProfile?.first_name ||
+                          "Agent";
                   }
                 }
                 return "offline";
@@ -1149,8 +1333,8 @@ export const UserBookings = () => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                  b2bPrice4 * booking.total_participants -
-                  (bookingAmount5 - dueAmount3)
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -1285,8 +1469,8 @@ export const UserBookings = () => {
               if (bookingTypeSort === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : "";
             case 7: // Date
               return new Date(booking.booking_date).getTime();
@@ -1314,8 +1498,8 @@ export const UserBookings = () => {
                     bookedByProfile?.last_name
                     ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                     : bookedByProfile?.email ||
-                    bookedByProfile?.first_name ||
-                    "Agent";
+                        bookedByProfile?.first_name ||
+                        "Agent";
                 }
               }
               return "offline";
@@ -1672,8 +1856,8 @@ export const UserBookings = () => {
             bookedByProfile?.first_name && bookedByProfile?.last_name
               ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
               : bookedByProfile?.email ||
-              bookedByProfile?.first_name ||
-              "Agent";
+                bookedByProfile?.first_name ||
+                "Agent";
           return agentName;
         }
       }
@@ -1836,11 +2020,11 @@ export const UserBookings = () => {
               if (bookingTypeUnique === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : isOffline
-                  ? "Offline"
-                  : "";
+                ? "Offline"
+                : "";
             case 7:
               return format(new Date(booking.booking_date), "MMM d, yyyy");
             case 8:
@@ -1867,8 +2051,8 @@ export const UserBookings = () => {
                     bookedByProfile?.last_name
                     ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                     : bookedByProfile?.email ||
-                    bookedByProfile?.first_name ||
-                    "Agent";
+                        bookedByProfile?.first_name ||
+                        "Agent";
                 }
               }
               return "offline";
@@ -1958,8 +2142,8 @@ export const UserBookings = () => {
               return formatCurrency(
                 currency,
                 bookingAmount -
-                b2bPrice * booking.total_participants -
-                (bookingAmount - dueAmount)
+                  b2bPrice * booking.total_participants -
+                  (bookingAmount - dueAmount)
               );
             }
             case 21: {
@@ -2283,11 +2467,11 @@ export const UserBookings = () => {
                 const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                  ? "Offline"
+                  : "";
               }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
@@ -2315,8 +2499,8 @@ export const UserBookings = () => {
                       bookedByProfile?.last_name
                       ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                       : bookedByProfile?.email ||
-                      bookedByProfile?.first_name ||
-                      "Agent";
+                          bookedByProfile?.first_name ||
+                          "Agent";
                   }
                 }
                 return "offline";
@@ -2408,8 +2592,8 @@ export const UserBookings = () => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                  b2bPrice4 * booking.total_participants -
-                  (bookingAmount5 - dueAmount3)
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -2538,7 +2722,7 @@ export const UserBookings = () => {
     return (
       <Card
         className={`h-full ${isCanceled ? "bg-red-50 border-red-200 dark:bg-red-950/20" : ""
-          }`}
+        }`}
         id=""
       >
         <CardHeader className="pb-0 p-0 relative">
@@ -2716,13 +2900,13 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                 <span className="mobile-info-label">Contact</span>
                 <span className="mobile-info-value">
                   {booking.contact_person_number ||
-                    profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number ? (
+                  profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ? (
                     <a
                       href={`tel:${booking.contact_person_number ||
                         profile?.phone_number ||
                         booking?.booking_participants?.[0]?.phone_number
-                        }`}
+                      }`}
                       className="mobile-contact-link"
                     >
                       {booking.contact_person_number ||
@@ -2879,7 +3063,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                           currency,
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2891,7 +3075,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           booking.time_slots?.activities?.price *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2903,7 +3087,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                           (booking.time_slots?.activities?.price -
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice)) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2928,7 +3112,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (Number(bookingAmount) - dueAmount)
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -2940,10 +3124,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (booking.b2bPrice ||
-                            booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants -
-                          (Number(bookingAmount) - dueAmount)
+                            (booking.b2bPrice ||
+                              booking.time_slots?.activities?.b2bPrice) *
+                              booking.total_participants -
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -2958,7 +3142,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
 
   return (
     <div>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-0">
         {/* Mobile Layout: Search + Date Button on top row */}
         {isMobile && (
           <div className="flex gap-2">
@@ -2970,6 +3154,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
             />
           </div>
         )}
+      
 
         {/* Filter Buttons Row - Shows on both mobile and desktop - HIDDEN for Vendors/Users */}
         {(isAdmin || isAgent || isVendor) && (
@@ -3005,7 +3190,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                       setShowDateRangePicker(false);
                     }
                   }}
-                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                  // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
                   Columns
                 </Button>
@@ -3033,7 +3218,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                             className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
                                 ? "opacity-50 cursor-not-allowed"
                                 : "cursor-pointer hover:bg-muted/30"
-                              }`}
+                            }`}
                           >
                             <input
                               type="checkbox"
@@ -3125,7 +3310,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   >
                     {selectedTimeslotId
                       ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                        ?.displayName || "Timeslot"
+                          ?.displayName || "Timeslot"
                       : "Timeslot"}
                   </Button>
                 </PopoverTrigger>
@@ -3187,8 +3372,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   >
                     {selectedActivityId
                       ? uniqueActivities.find(
-                        (a) => a.id === selectedActivityId
-                      )?.name || "Activity"
+                          (a) => a.id === selectedActivityId
+                        )?.name || "Activity"
                       : "Activity"}
                   </Button>
                 </PopoverTrigger>
@@ -3253,11 +3438,11 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                       ? selectedBookingType === "canceled"
                         ? "Canceled"
                         : selectedBookingType === "admin-offline"
-                        ? "Admin-offline"
+                          ? "Admin-offline"
                         : selectedBookingType === "offline"
                         ? "Offline"
-                        : selectedBookingType === "agent"
-                        ? "Agent"
+                            : selectedBookingType === "agent"
+                              ? "Agent"
                         : "Bucketlistt"
                       : "Booking Type"}
                   </Button>
@@ -3398,11 +3583,11 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                     value={
                       selectedDate
                         ? [
-                          dayjs(selectedDate),
-                          selectedEndDate
-                            ? dayjs(selectedEndDate)
-                            : dayjs(selectedDate),
-                        ]
+                            dayjs(selectedDate),
+                            selectedEndDate
+                              ? dayjs(selectedEndDate)
+                              : dayjs(selectedDate),
+                          ]
                         : null
                     }
                     onChange={(dates, dateStrings) => {
@@ -3614,7 +3799,6 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
               />
             ))}
           </div>
-
           {/* Desktop: Table Layout */}
           <div id="UserBookingsDesktopLayout" className="hidden">
             {/* Column Selector Button */}
@@ -3641,7 +3825,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                               } ${dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                              } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
+                            } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
                             style={{ width: columnWidths[originalIndex] }}
                             draggable={true}
                             onDragStart={() =>
@@ -3713,10 +3897,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                   >
                                     <Filter
                                       className={`w-3 h-3 ${columnFilters[originalIndex] &&
-                                          columnFilters[originalIndex].length > 0
+                                        columnFilters[originalIndex].length > 0
                                           ? "text-blue-600"
                                           : "text-gray-400"
-                                        }`}
+                                      }`}
                                     />
                                   </span>
                                 )}
@@ -3749,7 +3933,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                       </span>
                                       {columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length >
-                                        0 && (
+                                          0 && (
                                           <Button
                                             variant="ghost"
                                             size="sm"
@@ -3772,10 +3956,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                         variant="ghost"
                                         size="sm"
                                         className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
-                                            sortOrder === "asc"
+                                          sortOrder === "asc"
                                             ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                                             : "hover:bg-gray-200"
-                                          }`}
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -3798,10 +3982,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                         variant="ghost"
                                         size="sm"
                                         className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
-                                            sortOrder === "desc"
+                                          sortOrder === "desc"
                                             ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                                             : "hover:bg-gray-200"
-                                          }`}
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -3877,8 +4061,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                   {/* Filter Options List */}
                                   <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
                                     {getUniqueColumnValues[originalIndex] &&
-                                      getUniqueColumnValues[originalIndex]
-                                        .length > 0 ? (
+                                    getUniqueColumnValues[originalIndex]
+                                      .length > 0 ? (
                                       (() => {
                                         const searchQuery =
                                           filterSearchQueries[
@@ -4030,8 +4214,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                        ? booking.note_for_guide || ""
-                                        : ""
+                                      ? booking.note_for_guide || ""
+                                      : ""
                                   }
                                 >
                                   {renderCellContent(
@@ -4258,20 +4442,258 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
         </Dialog>
       )}
 
-      {/* Quick Actions Modal */}
-      <BookingQuickActionsModal
-        isOpen={quickActionsModalOpen}
-        onClose={() => {
-          setQuickActionsModalOpen(false);
-          setSelectedBookingForActions(null);
+      {/* Backdrop for Actions Dropdown */}
+      {Object.values(isActionsDropdownOpen).some((isOpen) => isOpen) && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-[9998]"
+          onClick={() => {
+            setIsActionsDropdownOpen({});
+          }}
+        />
+      )}
+
+      {/* Edit Booking Dialog */}
+      <Dialog
+        open={editBookingDialogOpen}
+        onOpenChange={(open) => {
+          setEditBookingDialogOpen(open);
+          if (!open) {
+            setBookingToEdit(null);
+          }
         }}
-        booking={selectedBookingForActions}
-        onBookingUpdated={() => {
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Booking</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editContactName">Contact Person Name *</Label>
+              <Input
+                id="editContactName"
+                placeholder="Enter contact person name"
+                value={contactPersonName}
+                onChange={(e) => setContactPersonName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editContactNumber">Contact Person Number *</Label>
+              <Input
+                id="editContactNumber"
+                placeholder="Enter contact person number"
+                value={contactPersonNumber}
+                onChange={(e) => setContactPersonNumber(e.target.value)}
+                maxLength={10}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editTotalParticipants">
+                Number of Participants *
+              </Label>
+              <Input
+                id="editTotalParticipants"
+                type="number"
+                placeholder="Enter number of participants"
+                value={totalParticipants}
+                onChange={(e) => setTotalParticipants(e.target.value)}
+                min="1"
+                max="50"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editBookingAmount">Booking Amount *</Label>
+              <Input
+                id="editBookingAmount"
+                type="number"
+                placeholder="Enter booking amount"
+                value={bookingAmount}
+                onChange={(e) => setBookingAmount(e.target.value)}
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editAdvance">Advance *</Label>
+              <Input
+                id="editAdvance"
+                type="number"
+                placeholder="Enter advance amount"
+                value={advance}
+                onChange={(e) => setAdvance(e.target.value)}
+                min="0"
+                step="0.01"
+              />
+              <p className="text-xs text-muted-foreground">
+                Due Amount:{" "}
+                {(() => {
+                  const booking = parseFloat(bookingAmount) || 0;
+                  const adv = parseFloat(advance) || 0;
+                  return (booking - adv).toFixed(2);
+                })()}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditBookingDialogOpen(false);
+                setBookingToEdit(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!bookingToEdit) return;
+
+                // Validate inputs
+                if (!contactPersonName.trim()) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Contact person name is required",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (!contactPersonNumber.trim()) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Contact person number is required",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                const bookingAmountNum = parseFloat(bookingAmount) || 0;
+                const advanceNum = parseFloat(advance) || 0;
+                const totalParticipantsNum = parseInt(totalParticipants) || 1;
+
+                if (totalParticipantsNum < 1) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Number of participants must be at least 1",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (totalParticipantsNum > 50) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Number of participants cannot exceed 50",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (bookingAmountNum < 0) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Booking amount cannot be negative",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (advanceNum < 0) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Advance cannot be negative",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (advanceNum > bookingAmountNum) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Advance cannot be greater than booking amount",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                setIsUpdatingBooking(true);
+                try {
+                  // Calculate due_amount: booking_amount - advance
+                  const dueAmountNum = bookingAmountNum - advanceNum;
+
+                  // Update booking
+                  const { error: bookingError } = await supabase
+                    .from("bookings")
+                    .update({
+                      contact_person_name: contactPersonName.trim(),
+                      contact_person_number: contactPersonNumber.trim(),
+                      booking_amount: bookingAmountNum,
+                      due_amount: dueAmountNum,
+                      total_participants: totalParticipantsNum,
+                    } as any)
+                    .eq("id", bookingToEdit.id);
+
+                  if (bookingError) throw bookingError;
+
+                  // Update booking_participants if they exist
+                  const { data: participants } = await supabase
+                    .from("booking_participants")
+                    .select("id")
+                    .eq("booking_id", bookingToEdit.id);
+
+                  if (participants && participants.length > 0) {
+                    // Update all participants with new contact info
+                    const { error: participantsError } = await supabase
+                      .from("booking_participants")
+                      .update({
+                        name: contactPersonName.trim(),
+                        phone_number: contactPersonNumber.trim(),
+                      })
+                      .eq("booking_id", bookingToEdit.id);
+
+                    if (participantsError) {
+                      console.error("Error updating participants:", participantsError);
+                      // Don't throw - booking update succeeded
+                    }
+                  }
+
+                  toast({
+                    title: "Success",
+                    description: "Booking updated successfully",
+                  });
           queryClient.invalidateQueries({
             queryKey: ["user-bookings"],
           });
-        }}
-      />
+                  setEditBookingDialogOpen(false);
+                  setBookingToEdit(null);
+                } catch (error) {
+                  console.error("Error updating booking:", error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to update booking",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setIsUpdatingBooking(false);
+                }
+              }}
+              disabled={isUpdatingBooking}
+              className="bg-brand-primary"
+            >
+              {isUpdatingBooking ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

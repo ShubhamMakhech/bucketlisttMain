@@ -156,6 +156,11 @@ export const BookingQuickActionsModal = ({
                     "";
             }
 
+            // Calculate Amount Paid (advance paid)
+            const bookingAmountVal = parseFloat(String(booking.booking_amount || 0));
+            const dueAmountVal = parseFloat(String(booking.due_amount || 0));
+            const advancePaid = bookingAmountVal - dueAmountVal;
+
             const bookingData = {
                 participantName: booking.contact_person_name || "Guest",
                 experienceTitle: experience?.title || "Activity",
@@ -172,7 +177,7 @@ export const BookingQuickActionsModal = ({
                     ? booking.pickup_location || experience?.location2
                     : "",
                 totalParticipants: booking.total_participants || 1,
-                amountPaid: String(booking.booking_amount || 0),
+                amountPaid: String(advancePaid),
                 amountToBePaid: String(booking.due_amount || 0),
                 currency: experience?.currency || "INR",
                 logoUrl: logoUrl || undefined,

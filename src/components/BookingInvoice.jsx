@@ -14,6 +14,7 @@ import DownloadPdfButton from "./DownloadPdfButton";
  * @param {number} [props.totalParticipants=2]
  * @param {string} [props.amountPaid="1.17"]
  * @param {string} [props.amountToBePaid="10.53"]
+ * @param {string} [props.advancePlusDiscount=""]
  * @param {string} [props.currency="INR"]
  * @param {boolean} [props.showDownloadButton=true]
  * @param {string} [props.logoUrl=""]
@@ -30,6 +31,7 @@ const PaymentLayout = ({
   totalParticipants = 2,
   amountPaid = "1.17",
   amountToBePaid = "10.53",
+  advancePlusDiscount = "",
   currency = "INR",
   showDownloadButton = true,
   isForPdf = false,
@@ -267,6 +269,11 @@ const PaymentLayout = ({
                   } ${amountToBePaid}`,
                 strong: true,
               },
+              ...(advancePlusDiscount ? [{
+                label: "Advance + Discount:",
+                value: `${currency === "INR" ? "Rs." : currency} ${advancePlusDiscount}`,
+                strong: false,
+              }] : []),
             ].map((item, index) => (
               <div
                 key={index}
