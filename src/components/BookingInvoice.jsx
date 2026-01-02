@@ -5,6 +5,7 @@ import DownloadPdfButton from "./DownloadPdfButton";
 /**
  * @param {Object} props
  * @param {string} [props.participantName="divyam"]
+ * @param {string} [props.experienceTitle="Experience Title"]
  * @param {string} [props.activityName="9 Km"]
  * @param {string} [props.dateTime="20/12/2025 - 10:00 AM - 12:00 PM"]
  * @param {string} [props.pickUpLocation="-"]
@@ -19,6 +20,7 @@ import DownloadPdfButton from "./DownloadPdfButton";
  */
 const PaymentLayout = ({
   participantName = "divyam",
+  experienceTitle = "Experience Title",
   activityName = "9 Km",
   dateTime = "20/12/2025 - 10:00 AM - 12:00 PM",
   pickUpLocation = "-",
@@ -195,6 +197,7 @@ const PaymentLayout = ({
             className="booking-details-text"
           >
             {[
+              { label: "Experience:", value: experienceTitle },
               { label: "Activity:", value: activityName },
               {
                 label: "Date & Time:",
