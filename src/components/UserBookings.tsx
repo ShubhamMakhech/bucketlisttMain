@@ -31,6 +31,7 @@ import {
   Edit,
   Save,
   XCircle,
+  MoreVertical,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -110,8 +111,10 @@ export const UserBookings = () => {
   >(null);
 
   // Quick Actions State
-  const [quickActionsModalOpen, setQuickActionsModalOpen] = React.useState(false);
-  const [selectedBookingForActions, setSelectedBookingForActions] = React.useState<any>(null);
+  const [quickActionsModalOpen, setQuickActionsModalOpen] =
+    React.useState(false);
+  const [selectedBookingForActions, setSelectedBookingForActions] =
+    React.useState<any>(null);
 
   // Excel-like column filters state
   const [columnFilters, setColumnFilters] = React.useState<
@@ -248,7 +251,7 @@ export const UserBookings = () => {
     "Advance + discount",
     "Booking Created At",
     "Admin Note",
-    "Quick Actions",
+    "Actions",
   ];
 
   // Function to toggle column visibility
@@ -377,13 +380,14 @@ export const UserBookings = () => {
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-          profile?.phone_number ||
-          booking?.booking_participants?.[0]?.phone_number ? (
+        profile?.phone_number ||
+        booking?.booking_participants?.[0]?.phone_number ? (
           <a
-            href={`tel:${booking.contact_person_number ||
+            href={`tel:${
+              booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-              }`}
+            }`}
             className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
@@ -409,11 +413,11 @@ export const UserBookings = () => {
         if (bookingTypeRender === "canceled") return "Canceled";
         return timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-            timeslot.end_time
-          )}`
+              timeslot.end_time
+            )}`
           : isOfflineBooking
-            ? "Offline"
-            : "N/A";
+          ? "Offline"
+          : "N/A";
       },
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
@@ -443,8 +447,8 @@ export const UserBookings = () => {
               bookedByProfile?.first_name && bookedByProfile?.last_name
                 ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                 : bookedByProfile?.email ||
-                bookedByProfile?.first_name ||
-                "Agent";
+                  bookedByProfile?.first_name ||
+                  "Agent";
           } else {
             bookingTypeDisplay = "offline";
           }
@@ -461,14 +465,15 @@ export const UserBookings = () => {
 
         return (
           <span
-            className={`px-2 py-1 rounded text-xs font-medium ${isCanceled
-              ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-              : isOffline
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              isCanceled
+                ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                : isOffline
                 ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                 : isAgentBooking
-                  ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                  : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-              }`}
+                ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+            }`}
           >
             {bookingTypeDisplay}
           </span>
@@ -529,16 +534,17 @@ export const UserBookings = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+            className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
             onClick={() => {
               setSelectedBookingForActions(booking);
               setQuickActionsModalOpen(true);
             }}
+            title="Quick Actions"
           >
-            View Details
+            <MoreVertical className="h-4 w-4" />
           </Button>
         );
-      }
+      },
     ];
 
     return cells[columnIndex] ? cells[columnIndex]() : "N/A";
@@ -1000,11 +1006,11 @@ export const UserBookings = () => {
                 const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                  ? "Offline"
+                  : "";
               }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
@@ -1032,8 +1038,8 @@ export const UserBookings = () => {
                       bookedByProfile?.last_name
                       ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                       : bookedByProfile?.email ||
-                      bookedByProfile?.first_name ||
-                      "Agent";
+                          bookedByProfile?.first_name ||
+                          "Agent";
                   }
                 }
                 return "offline";
@@ -1127,8 +1133,8 @@ export const UserBookings = () => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                  b2bPrice4 * booking.total_participants -
-                  (bookingAmount5 - dueAmount3)
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -1263,8 +1269,8 @@ export const UserBookings = () => {
               if (bookingTypeSort === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : "";
             case 7: // Date
               return new Date(booking.booking_date).getTime();
@@ -1292,8 +1298,8 @@ export const UserBookings = () => {
                     bookedByProfile?.last_name
                     ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                     : bookedByProfile?.email ||
-                    bookedByProfile?.first_name ||
-                    "Agent";
+                        bookedByProfile?.first_name ||
+                        "Agent";
                 }
               }
               return "offline";
@@ -1650,8 +1656,8 @@ export const UserBookings = () => {
             bookedByProfile?.first_name && bookedByProfile?.last_name
               ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
               : bookedByProfile?.email ||
-              bookedByProfile?.first_name ||
-              "Agent";
+                bookedByProfile?.first_name ||
+                "Agent";
           return agentName;
         }
       }
@@ -1814,11 +1820,11 @@ export const UserBookings = () => {
               if (bookingTypeUnique === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : isOffline
-                  ? "Offline"
-                  : "";
+                ? "Offline"
+                : "";
             case 7:
               return format(new Date(booking.booking_date), "MMM d, yyyy");
             case 8:
@@ -1845,8 +1851,8 @@ export const UserBookings = () => {
                     bookedByProfile?.last_name
                     ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                     : bookedByProfile?.email ||
-                    bookedByProfile?.first_name ||
-                    "Agent";
+                        bookedByProfile?.first_name ||
+                        "Agent";
                 }
               }
               return "offline";
@@ -1936,8 +1942,8 @@ export const UserBookings = () => {
               return formatCurrency(
                 currency,
                 bookingAmount -
-                b2bPrice * booking.total_participants -
-                (bookingAmount - dueAmount)
+                  b2bPrice * booking.total_participants -
+                  (bookingAmount - dueAmount)
               );
             }
             case 21: {
@@ -2156,8 +2162,9 @@ export const UserBookings = () => {
 
     return (
       <Card
-        className={`h-full ${isCanceled ? "bg-red-50 border-red-200 dark:bg-red-950/20" : ""
-          }`}
+        className={`h-full ${
+          isCanceled ? "bg-red-50 border-red-200 dark:bg-red-950/20" : ""
+        }`}
         id=""
       >
         <CardHeader className="pb-0 p-0">
@@ -2230,13 +2237,14 @@ export const UserBookings = () => {
                 <span className="mobile-info-label">Contact</span>
                 <span className="mobile-info-value">
                   {booking.contact_person_number ||
-                    profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number ? (
+                  profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ? (
                     <a
-                      href={`tel:${booking.contact_person_number ||
+                      href={`tel:${
+                        booking.contact_person_number ||
                         profile?.phone_number ||
                         booking?.booking_participants?.[0]?.phone_number
-                        }`}
+                      }`}
                       className="mobile-contact-link"
                     >
                       {booking.contact_person_number ||
@@ -2393,7 +2401,7 @@ export const UserBookings = () => {
                           currency,
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2405,7 +2413,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           booking.time_slots?.activities?.price *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2417,7 +2425,7 @@ export const UserBookings = () => {
                           (booking.time_slots?.activities?.price -
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice)) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2442,7 +2450,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (Number(bookingAmount) - dueAmount)
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -2454,10 +2462,10 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (booking.b2bPrice ||
-                            booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants -
-                          (Number(bookingAmount) - dueAmount)
+                            (booking.b2bPrice ||
+                              booking.time_slots?.activities?.b2bPrice) *
+                              booking.total_participants -
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -2519,7 +2527,7 @@ export const UserBookings = () => {
                       setShowDateRangePicker(false);
                     }
                   }}
-                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                  // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
                   Columns
                 </Button>
@@ -2544,10 +2552,11 @@ export const UserBookings = () => {
                         return (
                           <label
                             key={index}
-                            className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
-                              ? "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer hover:bg-muted/30"
-                              }`}
+                            className={`flex items-center gap-2 p-2 rounded ${
+                              isHiddenForAgent
+                                ? "opacity-50 cursor-not-allowed"
+                                : "cursor-pointer hover:bg-muted/30"
+                            }`}
                           >
                             <input
                               type="checkbox"
@@ -2639,7 +2648,7 @@ export const UserBookings = () => {
                   >
                     {selectedTimeslotId
                       ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                        ?.displayName || "Timeslot"
+                          ?.displayName || "Timeslot"
                       : "Timeslot"}
                   </Button>
                 </PopoverTrigger>
@@ -2701,8 +2710,8 @@ export const UserBookings = () => {
                   >
                     {selectedActivityId
                       ? uniqueActivities.find(
-                        (a) => a.id === selectedActivityId
-                      )?.name || "Activity"
+                          (a) => a.id === selectedActivityId
+                        )?.name || "Activity"
                       : "Activity"}
                   </Button>
                 </PopoverTrigger>
@@ -2767,8 +2776,8 @@ export const UserBookings = () => {
                       ? selectedBookingType === "canceled"
                         ? "Canceled"
                         : selectedBookingType === "offline"
-                          ? "Offline"
-                          : "Bucketlistt"
+                        ? "Offline"
+                        : "Bucketlistt"
                       : "Booking Type"}
                   </Button>
                 </PopoverTrigger>
@@ -2880,11 +2889,11 @@ export const UserBookings = () => {
                     value={
                       selectedDate
                         ? [
-                          dayjs(selectedDate),
-                          selectedEndDate
-                            ? dayjs(selectedEndDate)
-                            : dayjs(selectedDate),
-                        ]
+                            dayjs(selectedDate),
+                            selectedEndDate
+                              ? dayjs(selectedEndDate)
+                              : dayjs(selectedDate),
+                          ]
                         : null
                     }
                     onChange={(dates, dateStrings) => {
@@ -3125,7 +3134,7 @@ export const UserBookings = () => {
                               dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                              } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
+                            } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
                             style={{ width: columnWidths[originalIndex] }}
                             draggable={true}
                             onDragStart={() =>
@@ -3167,7 +3176,9 @@ export const UserBookings = () => {
                                     className="filter-icon cursor-pointer hover:bg-gray-200 rounded p-0.5 transition-colors duration-150"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (openFilterDropdown === originalIndex) {
+                                      if (
+                                        openFilterDropdown === originalIndex
+                                      ) {
                                         setOpenFilterDropdown(null);
                                       } else {
                                         const headerElement =
@@ -3194,11 +3205,12 @@ export const UserBookings = () => {
                                     title="Filter"
                                   >
                                     <Filter
-                                      className={`w-3 h-3 ${columnFilters[originalIndex] &&
+                                      className={`w-3 h-3 ${
+                                        columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length > 0
-                                        ? "text-blue-600"
-                                        : "text-gray-400"
-                                        }`}
+                                          ? "text-blue-600"
+                                          : "text-gray-400"
+                                      }`}
                                     />
                                   </span>
                                 )}
@@ -3231,7 +3243,7 @@ export const UserBookings = () => {
                                       </span>
                                       {columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length >
-                                        0 && (
+                                          0 && (
                                           <Button
                                             variant="ghost"
                                             size="sm"
@@ -3253,11 +3265,12 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
                                           sortOrder === "asc"
-                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                          : "hover:bg-gray-200"
-                                          }`}
+                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                            : "hover:bg-gray-200"
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -3279,11 +3292,12 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
                                           sortOrder === "desc"
-                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                          : "hover:bg-gray-200"
-                                          }`}
+                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                            : "hover:bg-gray-200"
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -3359,8 +3373,8 @@ export const UserBookings = () => {
                                   {/* Filter Options List */}
                                   <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
                                     {getUniqueColumnValues[originalIndex] &&
-                                      getUniqueColumnValues[originalIndex]
-                                        .length > 0 ? (
+                                    getUniqueColumnValues[originalIndex]
+                                      .length > 0 ? (
                                       (() => {
                                         const searchQuery =
                                           filterSearchQueries[
@@ -3437,12 +3451,6 @@ export const UserBookings = () => {
                           </th>
                         )
                     )}
-                    {/* Cancel Button Column Header - Admin Only */}
-                    {isAdmin && (
-                      <th className="px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap bg-white">
-                        Actions
-                      </th>
-                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -3518,8 +3526,8 @@ export const UserBookings = () => {
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                        ? booking.note_for_guide || ""
-                                        : ""
+                                      ? booking.note_for_guide || ""
+                                      : ""
                                   }
                                 >
                                   {renderCellContent(
@@ -3544,36 +3552,6 @@ export const UserBookings = () => {
                                   )}
                                 </td>
                               )
-                          )}
-                          {/* Cancel Button Column - Admin Only */}
-                          {isAdmin && (
-                            <td className="px-1 py-0.5 text-xs text-left">
-                              {!isCanceled ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() => {
-                                    setBookingToCancel({
-                                      id: booking.id,
-                                      title:
-                                        experience?.title || "this booking",
-                                    });
-                                    setCancelBookingDialogOpen(true);
-                                  }}
-                                  disabled={cancelingBookingId === booking.id}
-                                >
-                                  <XCircle className="h-3 w-3 mr-1" />
-                                  {cancelingBookingId === booking.id
-                                    ? "Canceling..."
-                                    : "Cancel"}
-                                </Button>
-                              ) : (
-                                <span className="text-xs text-red-600 font-medium">
-                                  Canceled
-                                </span>
-                              )}
-                            </td>
                           )}
                         </tr>
                       );
