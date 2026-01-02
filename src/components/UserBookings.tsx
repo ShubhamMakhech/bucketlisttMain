@@ -2113,12 +2113,355 @@ export const UserBookings = () => {
 
   const isDateRangeActive = selectedDate || selectedEndDate;
 
-  // Calculate count of today's bookings
+  // Calculate count of today's bookings with all filters applied (except showTodayOnly)
   const todayBookingsCount = React.useMemo(() => {
-    return bookings.filter((booking) =>
+    let filtered = bookings;
+
+    // Apply date filter (supports range) - but not showTodayOnly
+    if (selectedDate) {
+      filtered = filtered.filter((booking) => {
+        const bookingDate = format(
+          new Date(booking.booking_date),
+          "yyyy-MM-dd"
+        );
+
+        if (selectedEndDate) {
+          // Date range filter
+          return bookingDate >= selectedDate && bookingDate <= selectedEndDate;
+        } else {
+          // Single date filter
+          return bookingDate === selectedDate;
+        }
+      });
+    }
+
+    // Apply timeslot filter
+    if (selectedTimeslotId) {
+      filtered = filtered.filter((booking) => {
+        return booking.time_slots?.id === selectedTimeslotId;
+      });
+    }
+
+    // Apply activity filter
+    if (selectedActivityId) {
+      filtered = filtered.filter((booking) => {
+        const activity = (booking.time_slots?.activities ||
+          (booking as any).activities) as any;
+        return activity?.id === selectedActivityId;
+      });
+    }
+
+    // Apply experience filter (admin only)
+    if (isAdmin && selectedExperienceId) {
+      filtered = filtered.filter((booking) => {
+        return booking.experiences?.id === selectedExperienceId;
+      });
+    }
+
+    // Apply agent filter (admin only)
+    if (isAdmin && selectedAgentId) {
+      filtered = filtered.filter((booking) => {
+        return booking.user_id === selectedAgentId;
+      });
+    }
+
+    // Apply vendor filter (admin only)
+    if (isAdmin && selectedVendorId) {
+      filtered = filtered.filter((booking) => {
+        return booking.experiences?.vendor_id === selectedVendorId;
+      });
+    }
+
+    // Apply booking type filter
+    if (selectedBookingType) {
+      filtered = filtered.filter((booking) => {
+        const bookingType = (booking as any)?.type || "online";
+
+        // Handle filter matching
+        if (selectedBookingType === "canceled") {
+          return bookingType === "canceled";
+        } else if (selectedBookingType === "offline") {
+          // Match offline bookings (not canceled)
+          return bookingType === "offline" && bookingType !== "canceled";
+        } else if (selectedBookingType === "online") {
+          return bookingType === "online";
+        }
+        return false;
+      });
+    }
+
+    // Apply Excel-like column filters
+    Object.keys(columnFilters).forEach((colIndexStr) => {
+      const colIndex = parseInt(colIndexStr);
+      const selectedValues = columnFilters[colIndex];
+      if (selectedValues && selectedValues.length > 0) {
+        filtered = filtered.filter((booking) => {
+          const profile = profileMap[booking.user_id];
+          // For offline bookings, activities are directly linked; for online, through time_slots
+          const activity = (booking.time_slots?.activities ||
+            (booking as any).activities) as any;
+          const timeslot = booking.time_slots;
+          const experience = booking.experiences;
+          const currency =
+            activity?.currency || booking?.experiences?.currency || "INR";
+
+          // Get cell value for this column
+          const getCellValue = (colIdx: number): string => {
+            // Access maps from outer scope - these will be available when useMemo runs
+            const roleMap = bookedByRoleMap || {};
+            const profileMapForBookedBy = bookedByProfileMap || {};
+            switch (colIdx) {
+              case 0: // Title
+                return experience?.title || "";
+              case 1: // Activity
+                return activity?.name || "";
+              case 2: // Contact Number
+                return (
+                  (booking as any).contact_person_number ||
+                  profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ||
+                  ""
+                );
+              case 3: // Contact Name
+                return (
+                  (booking as any).contact_person_name ||
+                  (profile
+                    ? `${profile.first_name} ${profile.last_name}`.trim()
+                    : "") ||
+                  booking?.booking_participants?.[0]?.name ||
+                  ""
+                );
+              case 4: // Email
+                return (
+                  (booking as any).contact_person_email ||
+                  profile?.email ||
+                  booking?.booking_participants?.[0]?.email ||
+                  ""
+                );
+              case 5: // Referred by
+                return (
+                  (booking as any)?.referral_code ||
+                  (booking as any)?.referred_by ||
+                  ""
+                );
+              case 6: {
+                // Timeslot
+                const bookingTypeFilter = (booking as any)?.type || "online";
+                if (bookingTypeFilter === "canceled") return "Canceled";
+                const isOfflineFilter = bookingTypeFilter === "offline";
+                return timeslot?.start_time && timeslot?.end_time
+                  ? `${formatTime12Hour(
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
+                  : isOfflineFilter
+                  ? "Offline"
+                  : "";
+              }
+              case 7: // Date
+                return format(new Date(booking.booking_date), "MMM d, yyyy");
+              case 8: // No. Of Participants
+                return String(booking?.total_participants || "");
+              case 9: // Notes for guides
+                return booking.note_for_guide || "";
+              case 10: {
+                // Booking Type - use inline logic with maps from outer scope
+                const bookingType = (booking as any)?.type || "online";
+                const bookedBy = (booking as any)?.booked_by;
+
+                if (bookingType === "canceled") return "Canceled";
+                if (bookingType === "online") return "Bucketlistt";
+                if (bookingType === "offline" && bookedBy) {
+                  const bookedByRole = roleMap[bookedBy];
+                  if (bookedByRole === "admin") return "Admin-offline";
+                  if (bookedByRole === "vendor") return "offline";
+                  if (
+                    bookedByRole === "agent" ||
+                    (booking as any)?.isAgentBooking
+                  ) {
+                    const bookedByProfile = profileMapForBookedBy[bookedBy];
+                    return bookedByProfile?.first_name &&
+                      bookedByProfile?.last_name
+                      ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                      : bookedByProfile?.email ||
+                          bookedByProfile?.first_name ||
+                          "Agent";
+                  }
+                }
+                return "offline";
+              }
+              case 11: // Official Price/ Original Price
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const originalPrice = activity?.price || experience?.price || 0;
+                return formatCurrency(
+                  currency,
+                  originalPrice * booking.total_participants
+                );
+              case 12: // B2B Price
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const b2bPrice =
+                  (booking as any).b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(
+                  currency,
+                  b2bPrice * booking.total_participants
+                );
+              case 13: // Commission as per vendor
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const originalPrice2 =
+                  activity?.price || experience?.price || 0;
+                const b2bPrice2 =
+                  (booking as any).b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(
+                  currency,
+                  (originalPrice2 - b2bPrice2) * booking.total_participants
+                );
+              case 14: // Website Price
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const discountedPrice = activity?.discounted_price || 0;
+                return formatCurrency(
+                  currency,
+                  discountedPrice * booking.total_participants
+                );
+              case 15: // Discount Coupon
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const originalPrice3 =
+                  activity?.price || experience?.price || 0;
+                const officialPrice =
+                  originalPrice * booking.total_participants;
+                const bookingAmount = (booking as any)?.booking_amount || 0;
+                const discountCoupon =
+                  officialPrice - bookingAmount > 0
+                    ? officialPrice - bookingAmount
+                    : 0;
+                return formatCurrency(currency, discountCoupon);
+              case 16: // Ticket Price (customer cost)
+                return formatCurrency(
+                  currency,
+                  (booking as any)?.booking_amount || 0
+                );
+              case 17: // Advance paid to bucketlistt (10%)
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const bookingAmount2 = (booking as any)?.booking_amount || 0;
+                const dueAmount = (booking as any)?.due_amount || 0;
+                return formatCurrency(currency, bookingAmount2 - dueAmount);
+              case 18: // Payment to be collected by vendor
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const bookingAmount3 = (booking as any)?.booking_amount || 0;
+                const dueAmount2 = (booking as any)?.due_amount || 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount3 - (bookingAmount3 - dueAmount2)
+                );
+              case 19: // Actual Commission to bucketlistt (Net profit)
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const bookingAmount4 = (booking as any)?.booking_amount || 0;
+                const b2bPrice3 = booking.b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount4 - b2bPrice3 * booking.total_participants
+                );
+              case 20: // Amount to be collected from vendor/ '- to be paid'
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const bookingAmount5 = (booking as any)?.booking_amount || 0;
+                const b2bPrice4 = booking.b2bPrice || activity?.b2bPrice || 0;
+                const dueAmount3 = (booking as any)?.due_amount || 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount5 -
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
+                );
+              case 21: // Advance + discount (vendor needs this)
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const bookingAmount6 = (booking as any)?.booking_amount || 0;
+                const dueAmount4 = (booking as any)?.due_amount || 0;
+                const originalPrice4 =
+                  activity?.price || experience?.price || 0;
+                const officialPrice2 =
+                  originalPrice4 * booking.total_participants;
+                const discountCoupon2 =
+                  officialPrice2 - bookingAmount6 > 0
+                    ? officialPrice2 - bookingAmount6
+                    : 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount6 - dueAmount4 + discountCoupon2
+                );
+              case 22: // Booking Created At
+                if (booking?.created_at) {
+                  return format(new Date(booking.created_at), "dd/MM/yyyy");
+                }
+                return "";
+              case 23: // Admin Note
+                if (!isAdmin) return "";
+                return (booking as any)?.admin_note || "";
+              default:
+                return "";
+            }
+          };
+
+          const cellValue = getCellValue(colIndex);
+          return selectedValues.includes(cellValue);
+        });
+      }
+    });
+
+    // Apply search filter
+    if (globalFilter) {
+      filtered = filtered.filter((booking) => {
+        const searchTerm = globalFilter.toLowerCase();
+        return (
+          booking.experiences?.title?.toLowerCase().includes(searchTerm) ||
+          (
+            (booking.time_slots?.activities ||
+              (booking as any).activities) as any
+          )?.name
+            ?.toLowerCase()
+            .includes(searchTerm) ||
+          booking.status?.toLowerCase().includes(searchTerm) ||
+          (booking as any)?.contact_person_name
+            ?.toLowerCase()
+            .includes(searchTerm) ||
+          (booking as any)?.contact_person_email
+            ?.toLowerCase()
+            .includes(searchTerm) ||
+          (booking as any)?.contact_person_number
+            ?.toLowerCase()
+            .includes(searchTerm)
+        );
+      });
+    }
+
+    // Filter for today's bookings only
+    return filtered.filter((booking) =>
       isSameDay(new Date(booking.booking_date), new Date())
     ).length;
-  }, [bookings]);
+  }, [
+    bookings,
+    selectedDate,
+    selectedEndDate,
+    selectedTimeslotId,
+    selectedActivityId,
+    selectedExperienceId,
+    selectedAgentId,
+    selectedVendorId,
+    selectedBookingType,
+    isAdmin,
+    globalFilter,
+    columnFilters,
+    profileMap,
+    bookedByRoleMap,
+    bookedByProfileMap,
+  ]);
 
   // Get unique timeslots from bookings
   const uniqueTimeslots = React.useMemo(() => {
