@@ -5,6 +5,7 @@ import BookingInvoice from "@/components/BookingInvoice";
 
 interface BookingInvoiceData {
   participantName: string;
+  experienceTitle: string;
   activityName: string;
   dateTime: string;
   pickUpLocation: string;
