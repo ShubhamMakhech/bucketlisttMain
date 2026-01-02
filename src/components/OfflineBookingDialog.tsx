@@ -94,6 +94,7 @@ export const OfflineBookingDialog = ({
   const [selectedSlotId, setSelectedSlotId] = useState<string | undefined>(
     undefined
   );
+  const [showB2BPrice, setShowB2BPrice] = useState(false);
 
   const form = useForm<OfflineBookingFormData>({
     resolver: zodResolver(offlineBookingSchema),
@@ -258,6 +259,7 @@ export const OfflineBookingDialog = ({
       form.reset();
       setSelectedDate(undefined);
       setSelectedSlotId(undefined);
+      setShowB2BPrice(false);
     }
   }, [isOpen, form]);
 
@@ -365,11 +367,14 @@ export const OfflineBookingDialog = ({
         pdfUrl = await generateInvoicePdf(
           {
             participantName: data.contact_person_name,
+            experienceTitle: experienceDetails?.title || experience?.title || "Activity",
             activityName: activity?.name || "",
             dateTime: formattedDateTime,
             pickUpLocation: experienceDetails?.location || "-",
             spotLocation: experienceDetails?.location2 || "-",
-            spotLocationUrl: experienceDetails?.location2?.startsWith("http") ? experienceDetails.location2 : "",
+            spotLocationUrl: experienceDetails?.location2?.startsWith("http")
+              ? experienceDetails.location2
+              : "",
             totalParticipants: data.total_participants,
             amountPaid: (bookingAmount - dueAmount).toFixed(2),
             amountToBePaid: dueAmount.toFixed(2),
@@ -1240,13 +1245,30 @@ export const OfflineBookingDialog = ({
                               </Button>
                             </div>
                           ) : (
+                            <>
+                          {!showB2BPrice ? (
                             <div className="summary-row">
                               <span className="summary-label">B2B Price</span>
-                              <span className="summary-value">
-                                {selectedActivity.currency}{" "}
-                                {selectedActivity.b2bPrice.toLocaleString()}
-                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                onClick={() => setShowB2BPrice(true)}
+                              >
+                                View B2B Price
+                              </Button>
                             </div>
+                          ) : (
+                            <div className="summary-row">
+                                  <span className="summary-label">B2B Price</span>
+                                  <span className="summary-value">
+                                    {selectedActivity.currency}{" "}
+                                    {selectedActivity.b2bPrice.toLocaleString()}
+                                  </span>
+                                </div>
+                          )}
+                        </>
                           )}
                         </>
                       )}

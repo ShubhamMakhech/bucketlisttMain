@@ -450,6 +450,7 @@ export const BookingDialog = ({
         pdfUrl = await generateInvoicePdf(
           {
             participantName: data.participant.name,
+            experienceTitle: timeSlot?.experiences?.title || "Activity",
             activityName: timeSlot?.activities.name || "",
             dateTime: formattedDateTime,
             pickUpLocation: timeSlot?.experiences?.location || "-",
