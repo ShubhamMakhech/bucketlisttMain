@@ -94,6 +94,7 @@ export const OfflineBookingDialog = ({
   const [selectedSlotId, setSelectedSlotId] = useState<string | undefined>(
     undefined
   );
+  const [showB2BPrice, setShowB2BPrice] = useState(false);
 
   const form = useForm<OfflineBookingFormData>({
     resolver: zodResolver(offlineBookingSchema),
@@ -258,6 +259,7 @@ export const OfflineBookingDialog = ({
       form.reset();
       setSelectedDate(undefined);
       setSelectedSlotId(undefined);
+      setShowB2BPrice(false);
     }
   }, [isOpen, form]);
 
@@ -327,7 +329,8 @@ export const OfflineBookingDialog = ({
       // Get agent name for WhatsApp messages (only for agents, not admins)
       const agentName =
         isAgent && !isAdmin && agentProfile
-          ? `${agentProfile.first_name || ""} ${agentProfile.last_name || ""
+          ? `${agentProfile.first_name || ""} ${
+              agentProfile.last_name || ""
             }`.trim()
           : "";
 
@@ -369,7 +372,9 @@ export const OfflineBookingDialog = ({
             dateTime: formattedDateTime,
             pickUpLocation: experienceDetails?.location || "-",
             spotLocation: experienceDetails?.location2 || "-",
-            spotLocationUrl: experienceDetails?.location2?.startsWith("http") ? experienceDetails.location2 : "",
+            spotLocationUrl: experienceDetails?.location2?.startsWith("http")
+              ? experienceDetails.location2
+              : "",
             totalParticipants: data.total_participants,
             amountPaid: (bookingAmount - dueAmount).toFixed(2),
             amountToBePaid: dueAmount.toFixed(2),
@@ -415,12 +420,12 @@ export const OfflineBookingDialog = ({
                   components: {
                     ...(pdfUrl
                       ? {
-                        header_1: {
-                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                          type: "document",
-                          value: pdfUrl,
-                        },
-                      }
+                          header_1: {
+                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
                       : {}),
                     body_1: {
                       type: "text",
@@ -481,12 +486,12 @@ export const OfflineBookingDialog = ({
                   components: {
                     ...(pdfUrl
                       ? {
-                        header_1: {
-                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                          type: "document",
-                          value: pdfUrl,
-                        },
-                      }
+                          header_1: {
+                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
                       : {}),
                     body_1: {
                       type: "text",
@@ -676,13 +681,13 @@ export const OfflineBookingDialog = ({
                 formattedDateTime: formattedDateTime,
                 timeSlot: selectedSlotId
                   ? (() => {
-                    const selectedSlot = timeSlots.find(
-                      (slot: any) => slot.id === selectedSlotId
-                    );
-                    return selectedSlot
-                      ? `${selectedSlot.start_time} - ${selectedSlot.end_time}`
-                      : "Offline Booking";
-                  })()
+                      const selectedSlot = timeSlots.find(
+                        (slot: any) => slot.id === selectedSlotId
+                      );
+                      return selectedSlot
+                        ? `${selectedSlot.start_time} - ${selectedSlot.end_time}`
+                        : "Offline Booking";
+                    })()
                   : "Offline Booking",
                 location: experienceDetails?.location || "",
                 location2: experienceDetails?.location2 || null,
@@ -990,12 +995,13 @@ export const OfflineBookingDialog = ({
                               }
                             }}
                             disabled={!isAvailable}
-                            className={`p-3 rounded-lg border-2 text-left transition-all ${isSelected
-                              ? "border-brand-primary bg-brand-primary/10"
-                              : isAvailable
+                            className={`p-3 rounded-lg border-2 text-left transition-all ${
+                              isSelected
+                                ? "border-brand-primary bg-brand-primary/10"
+                                : isAvailable
                                 ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                                 : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
-                              }`}
+                            }`}
                           >
                             <div className="flex items-center gap-2">
                               <Clock className="h-3.5 w-3.5 theme-purple-text" />
@@ -1225,13 +1231,30 @@ export const OfflineBookingDialog = ({
                         </span>
                       </div>
                       {isAgent && selectedActivity.b2bPrice && (
-                        <div className="summary-row">
-                          <span className="summary-label">B2B Price</span>
-                          <span className="summary-value">
-                            {selectedActivity.currency}{" "}
-                            {selectedActivity.b2bPrice.toLocaleString()}
-                          </span>
-                        </div>
+                        <>
+                          {!showB2BPrice ? (
+                            <div className="summary-row">
+                              <span className="summary-label">B2B Price</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                onClick={() => setShowB2BPrice(true)}
+                              >
+                                View B2B Price
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="summary-row">
+                              <span className="summary-label">B2B Price</span>
+                              <span className="summary-value">
+                                {selectedActivity.currency}{" "}
+                                {selectedActivity.b2bPrice.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                        </>
                       )}
                       <div className="summary-row">
                         <span className="summary-label">Total Amount</span>
@@ -1266,8 +1289,8 @@ export const OfflineBookingDialog = ({
                           {Math.max(
                             0,
                             (form.watch("booking_amount_per_person") || 0) *
-                            participantCount -
-                            (form.watch("advance_amount") || 0)
+                              participantCount -
+                              (form.watch("advance_amount") || 0)
                           ).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
