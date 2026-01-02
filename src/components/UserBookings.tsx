@@ -573,7 +573,7 @@ export const UserBookings = () => {
             <MoreVertical className="h-4 w-4" />
           </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-72 p-2 z-[9999]" onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DropdownMenuContent align="end" className="w-53 p-2 z-[9999]" onCloseAutoFocus={(e) => e.preventDefault()}>
               <DropdownMenuItem
                 onSelect={(e) => {
                   e.preventDefault();
@@ -583,7 +583,7 @@ export const UserBookings = () => {
                   });
                   setAdminNoteDialogOpen(true);
                 }}
-                className="justify-start h-auto py-2 px-6 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200"
+                className="justify-start h-auto py-1 px-3 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200"
               >
                 <span className="font-semibold FontSetPerfect">Edit Admin Note</span>
               </DropdownMenuItem>
@@ -678,7 +678,7 @@ export const UserBookings = () => {
                   }
                 }}
                 disabled={isGeneratingPdf}
-                className="justify-start h-auto py-2 px-6 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="justify-start h-auto py-1 px-3 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isGeneratingPdf ? (
                   <>
@@ -702,13 +702,13 @@ export const UserBookings = () => {
                   setAdvance((bookingAmt - dueAmt).toString());
                   setEditBookingDialogOpen(true);
                 }}
-                className="justify-start h-auto py-2 px-6 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200"
+                className="justify-start h-auto py-1 px-3 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200"
               >
                 <span className="font-semibold FontSetPerfect">Edit Booking</span>
               </DropdownMenuItem>
               {!isCanceled && (
                 <>
-                  <DropdownMenuSeparator className="my-2" />
+                  {/* <DropdownMenuSeparator className="my-2" /> */}
                   <DropdownMenuItem
                     onSelect={(e) => {
                       e.preventDefault();
@@ -718,7 +718,7 @@ export const UserBookings = () => {
                       });
                       setCancelBookingDialogOpen(true);
                     }}
-                    className="justify-start h-auto py-2 px-6 font-normal hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-red-200"
+                    className="justify-start h-auto py-1 px-3 font-normal hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-red-200"
                   >
                     <span className="font-semibold FontSetPerfect">Cancel Booking</span>
                   </DropdownMenuItem>
