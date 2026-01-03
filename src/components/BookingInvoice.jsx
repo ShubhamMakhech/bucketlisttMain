@@ -5,6 +5,7 @@ import DownloadPdfButton from "./DownloadPdfButton";
 /**
  * @param {Object} props
  * @param {string} [props.participantName="divyam"]
+ * @param {string} [props.experienceTitle="Experience Title"]
  * @param {string} [props.activityName="9 Km"]
  * @param {string} [props.dateTime="20/12/2025 - 10:00 AM - 12:00 PM"]
  * @param {string} [props.pickUpLocation="-"]
@@ -13,12 +14,15 @@ import DownloadPdfButton from "./DownloadPdfButton";
  * @param {number} [props.totalParticipants=2]
  * @param {string} [props.amountPaid="1.17"]
  * @param {string} [props.amountToBePaid="10.53"]
+ * @param {string} [props.advancePlusDiscount=""]
  * @param {string} [props.currency="INR"]
  * @param {boolean} [props.showDownloadButton=true]
+ * @param {string} [props.logoUrl=""]
  * 
  */
 const PaymentLayout = ({
   participantName = "divyam",
+  experienceTitle = "Experience Title",
   activityName = "9 Km",
   dateTime = "20/12/2025 - 10:00 AM - 12:00 PM",
   pickUpLocation = "-",
@@ -27,9 +31,11 @@ const PaymentLayout = ({
   totalParticipants = 2,
   amountPaid = "1.17",
   amountToBePaid = "10.53",
+  advancePlusDiscount = "",
   currency = "INR",
   showDownloadButton = true,
   isForPdf = false,
+  logoUrl = "",
 }) => {
   const invoiceRef = useRef(null);
   // const isForPdf = props.isForPdf; 
@@ -76,49 +82,63 @@ const PaymentLayout = ({
                 gap: "8px",
               }}
             >
-              <div
-                style={{
-                  width: "26px",
-                  height: "26px",
-                  borderRadius: "8px",
-                  background: "#940fdb",
-                  fontSize: "16px",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
-                }}
-              >
-                <div
-                  style={{
-                    // backgroundColor: "red",
-                    marginTop:"-10px",
-                    width: "15px",
-                    height: "15px",
-                    borderRadius: "4px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    color: "#fff",
-                    lineHeight: 1,
-                    paddingBottom: "2px" // Minor adjustment for visual centering of lowercase b
-                  }}
-                >
-                  b
-                </div>
-              </div>
+              {!logoUrl && (
+                <>
+                  <div
+                    style={{
+                      width: "26px",
+                      height: "26px",
+                      borderRadius: "8px",
+                      background: "#940fdb",
+                      fontSize: "16px",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "relative",
+                    }}
+                  >
+                    <div
+                      style={{
+                        // backgroundColor: "red",
+                        marginTop: "-10px",
+                        width: "15px",
+                        height: "15px",
+                        borderRadius: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        color: "#fff",
+                        lineHeight: 1,
+                        paddingBottom: "2px" // Minor adjustment for visual centering of lowercase b
+                      }}
+                    >
+                      b
+                    </div>
+                  </div>
 
-              <img
-                src="/Images/BucketlisttLogo.png"
-                alt="Bucketlistt Logo"
-                style={{
-                  height: "60px",
-                  objectFit: "contain",
-                }}
-              />
+                  <img
+                    src="/Images/BucketlisttLogo.png"
+                    alt="Bucketlistt Logo"
+                    style={{
+                      height: "60px",
+                      objectFit: "contain",
+                    }}
+                  />
+                </>
+              )}
+              {logoUrl && (
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  style={{
+                    height: "100px",
+                    objectFit: "contain",
+                  }}
+                />
+              )}
             </div>
             {/* Download PDF Button */}
             {showDownloadButton && (
@@ -195,17 +215,36 @@ const PaymentLayout = ({
             className="booking-details-text"
           >
             {[
+              { label: "Experience:", value: experienceTitle },
               { label: "Activity:", value: activityName },
               {
                 label: "Date & Time:",
                 value: dateTime,
               },
-              { label: "Pick up location:", value: pickUpLocation },
+              {
+                label: "Pick up location:",
+                value: (pickUpLocation && pickUpLocation !== "-") ? (
+                  pickUpLocation.startsWith("http") ? (
+                    <a
+                      href={pickUpLocation}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: "#940fdb", textDecoration: "none" }}
+                    >
+                      Open in Maps
+                    </a>
+                  ) : (
+                    pickUpLocation
+                  )
+                ) : (
+                  "-"
+                )
+              },
               {
                 label: "Spot Location:",
-                value: spotLocationUrl ? (
+                value: (spotLocationUrl || (spotLocation && spotLocation.startsWith("http"))) ? (
                   <a
-                    href={spotLocationUrl}
+                    href={spotLocationUrl || spotLocation}
                     target="_blank"
                     rel="noreferrer"
                     style={{ color: "#940fdb", textDecoration: "none" }}
@@ -230,6 +269,11 @@ const PaymentLayout = ({
                   } ${amountToBePaid}`,
                 strong: true,
               },
+              ...(advancePlusDiscount ? [{
+                label: "Advance + Discount:",
+                value: `${currency === "INR" ? "Rs." : currency} ${advancePlusDiscount}`,
+                strong: false,
+              }] : []),
             ].map((item, index) => (
               <div
                 key={index}
@@ -346,6 +390,22 @@ const PaymentLayout = ({
             </div>
           </div>
         </section>
+
+        {/* Powered by bucketlistt text - only show if logoUrl is provided */}
+        {logoUrl && (
+          <div
+            style={{
+              marginTop: "20px",
+              textAlign: "center",
+              fontSize: "14px",
+              color: "#6b7280",
+              paddingTop: "16px",
+              borderTop: "1px solid #e5e7eb",
+            }}
+          >
+            <p style={{ margin: 0 }}>powered by bucketlistt</p>
+          </div>
+        )}
       </div>
     </div>
   );

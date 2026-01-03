@@ -142,12 +142,12 @@ export const useDiscountCoupon = () => {
     }
   };
 
-  const getCouponsForExperience = async (experienceId: string) => {
+  const getCouponsForExperience = async (experienceId?: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("discount_coupons")
         .select(
           `
@@ -160,12 +160,18 @@ export const useDiscountCoupon = () => {
           used_count,
           valid_from,
           valid_until,
-          created_at
+          created_at,
+          experience_id
         `
         )
-        .eq("experience_id", experienceId)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
+
+      if (experienceId) {
+        query = query.eq("experience_id", experienceId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;

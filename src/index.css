@@ -318,7 +318,7 @@
   label,
   .text-xs,
   .text-sm,
-  .text-base,
+  /* .text-base, */
   .text-lg,
   .text-xl,
   .text-2xl,
@@ -808,6 +808,10 @@ h6 {
   gap: 5px;
   flex-direction: row;
   /* display: none; */
+}
+
+#UserBookingsDesktopLayout{
+  margin-top: 10px !important;
 }
 
 

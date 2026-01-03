@@ -30,6 +30,12 @@ import {
   ArrowUpDown,
   Edit,
   Save,
+  XCircle,
+  MoreVertical,
+  Copy,
+  FileText,
+  DollarSign,
+  Loader2,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -37,11 +43,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { DatePicker, ConfigProvider } from "antd";
 import dayjs from "dayjs";
 import "./UserBookingsMobileCard.css";
+import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
+import { Label } from "@/components/ui/label";
 
 interface BookingWithDueAmount {
   due_amount?: number;
@@ -63,6 +78,12 @@ export const UserBookings = () => {
     note: string;
   } | null>(null);
   const [adminNoteDialogOpen, setAdminNoteDialogOpen] = React.useState(false);
+  const [cancelBookingDialogOpen, setCancelBookingDialogOpen] =
+    React.useState(false);
+  const [bookingToCancel, setBookingToCancel] = React.useState<{
+    id: string;
+    title?: string;
+  } | null>(null);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sortBy, setSortBy] = React.useState<
     number | "booking_date" | "title" | "status"
@@ -92,6 +113,33 @@ export const UserBookings = () => {
     null
   );
   const [showVendorFilter, setShowVendorFilter] = React.useState(false);
+  const [selectedBookingType, setSelectedBookingType] = React.useState<
+    "online" | "offline" | "admin-offline" | "agent" | "canceled" | null
+  >(null);
+  const [showBookingTypeFilter, setShowBookingTypeFilter] =
+    React.useState(false);
+  const [cancelingBookingId, setCancelingBookingId] = React.useState<
+    string | null
+  >(null);
+
+  // Edit Booking Dialog State
+  const [editBookingDialogOpen, setEditBookingDialogOpen] =
+    React.useState(false);
+  const [bookingToEdit, setBookingToEdit] = React.useState<any>(null);
+  const [isUpdatingBooking, setIsUpdatingBooking] = React.useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
+
+  // Edit booking form state
+  const [contactPersonName, setContactPersonName] = React.useState("");
+  const [contactPersonNumber, setContactPersonNumber] = React.useState("");
+  const [bookingAmount, setBookingAmount] = React.useState("");
+  const [advance, setAdvance] = React.useState("");
+  const [totalParticipants, setTotalParticipants] = React.useState("");
+
+  // Dropdown open state for backdrop
+  const [isActionsDropdownOpen, setIsActionsDropdownOpen] = React.useState<
+    Record<string, boolean>
+  >({});
 
   // Excel-like column filters state
   const [columnFilters, setColumnFilters] = React.useState<
@@ -115,7 +163,7 @@ export const UserBookings = () => {
   );
 
   // Column width state for resizable columns
-  const columnCount = 24; // Total number of columns (added Admin Note)
+  const columnCount = 25; // Total number of columns (added Admin Note + Quick Actions)
   const [columnWidths, setColumnWidths] = React.useState<number[]>(
     Array(columnCount).fill(100) // Default width 100px for each column (compact)
   );
@@ -146,15 +194,18 @@ export const UserBookings = () => {
     // Admin Note - only visible to admins
     if (isAdmin) {
       visibility[23] = true; // Admin Note
+      visibility[24] = true; // Quick Actions
     }
 
     // Ensure agent restrictions are applied
     if (isAgent) {
+      visibility[10] = false; // Booking Type - not visible to agents
       visibility[11] = false; // Official Price/ Original Price (shifted by 1)
       visibility[13] = false; // Commission as per vendor (shifted by 1)
       visibility[14] = false; // Website Price (shifted by 1)
       visibility[15] = false; // Discount Coupon (shifted by 1)
       visibility[23] = false; // Admin Note - not visible to agents
+      visibility[24] = false; // Quick Actions - not visible to agents
     }
     return visibility;
   }, [isAgent, isAdmin, columnCount]);
@@ -168,6 +219,7 @@ export const UserBookings = () => {
       const newVisibility = [...prev];
       // Ensure agent restrictions are applied
       if (isAgent) {
+        newVisibility[10] = false; // Booking Type - not visible to agents
         newVisibility[11] = false; // Official Price/ Original Price (shifted by 1)
         newVisibility[13] = false; // Commission as per vendor (shifted by 1)
         newVisibility[14] = false; // Website Price (shifted by 1)
@@ -177,8 +229,10 @@ export const UserBookings = () => {
       // Admin Note - only visible to admins
       if (isAdmin) {
         newVisibility[23] = true; // Admin Note
+        newVisibility[24] = true; // Quick Actions
       } else if (!isAdmin) {
         newVisibility[23] = false; // Hide Admin Note for non-admins
+        newVisibility[24] = false; // Hide Quick Actions for non-admins
       }
       return newVisibility;
     });
@@ -207,7 +261,7 @@ export const UserBookings = () => {
     "Email",
     "Referred by",
     "Timeslot",
-    "Date",
+    "Activity Date",
     "No. Of Participants",
     "Notes for guides",
     "Booking Type",
@@ -220,10 +274,11 @@ export const UserBookings = () => {
     "Advance paid",
     "Pending amount from customer",
     "Net Commission",
-    "Net from agent / (- to agent)'",
+    "( - Net from agent) / to agent",
     "Advance + discount",
     "Booking Created At",
     "Admin Note",
+    "Actions",
   ];
 
   // Function to toggle column visibility
@@ -236,7 +291,7 @@ export const UserBookings = () => {
       return; // Don't allow toggling these columns for agents
     }
     // Prevent non-admins from showing admin note
-    if (index === 23 && !isAdmin) {
+    if ((index === 23 || index === 24) && !isAdmin) {
       return; // Don't allow toggling admin note for non-admins
     }
     const newVisibility = [...columnVisibility];
@@ -337,8 +392,13 @@ export const UserBookings = () => {
     }
 
     // For offline bookings, show "-" for calculation columns except ticket price
+    // But show all fields for admins viewing offline bookings
     const calculationColumns = [11, 12, 13, 14, 15, 17, 18, 19, 20, 21]; // Official Price, B2B Price, Commission, Website Price, Discount Coupon, Advance, Payment to collect, Commission Net, Amount to collect, Advance+Discount
-    if (isOfflineBooking && calculationColumns.includes(columnIndex)) {
+    if (
+      isOfflineBooking &&
+      calculationColumns.includes(columnIndex) &&
+      !isAdmin
+    ) {
       return "-";
     }
 
@@ -347,13 +407,14 @@ export const UserBookings = () => {
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-          profile?.phone_number ||
-          booking?.booking_participants?.[0]?.phone_number ? (
+        profile?.phone_number ||
+        booking?.booking_participants?.[0]?.phone_number ? (
           <a
-            href={`tel:${booking.contact_person_number ||
+            href={`tel:${
+              booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-              }`}
+            }`}
             className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
@@ -374,27 +435,74 @@ export const UserBookings = () => {
         "N/A",
       () =>
         (booking as any)?.referral_code || (booking as any)?.referred_by || "-",
-      () =>
-        timeslot?.start_time && timeslot?.end_time
+      () => {
+        const bookingTypeRender = (booking as any)?.type || "online";
+        if (bookingTypeRender === "canceled") return "Canceled";
+        return timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-            timeslot.end_time
-          )}`
+              timeslot.end_time
+            )}`
           : isOfflineBooking
-            ? "Offline"
-            : "N/A",
+          ? "Offline"
+          : "N/A";
+      },
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
       () => booking.note_for_guide || "-",
       () => {
+        // Inline logic to get booking type display
         const bookingType = (booking as any)?.type || "online";
+        const bookedBy = (booking as any)?.booked_by;
+        let bookingTypeDisplay = "";
+
+        if (bookingType === "canceled") {
+          bookingTypeDisplay = "Canceled";
+        } else if (bookingType === "online") {
+          bookingTypeDisplay = "Bucketlistt";
+        } else if (bookingType === "offline" && bookedBy) {
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          if (bookedByRole === "admin") {
+            bookingTypeDisplay = "Admin-offline";
+          } else if (bookedByRole === "vendor") {
+            bookingTypeDisplay = "offline";
+          } else if (
+            bookedByRole === "agent" ||
+            (booking as any)?.isAgentBooking
+          ) {
+            const bookedByProfile = bookedByProfileMap?.[bookedBy];
+            bookingTypeDisplay =
+              bookedByProfile?.first_name && bookedByProfile?.last_name
+                ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                : bookedByProfile?.email ||
+                  bookedByProfile?.first_name ||
+                  "Agent";
+          } else {
+            bookingTypeDisplay = "offline";
+          }
+        } else {
+          bookingTypeDisplay = "offline";
+        }
+
+        const isCanceled = bookingTypeDisplay === "Canceled";
+        const isOffline =
+          bookingTypeDisplay.includes("offline") ||
+          bookingTypeDisplay.includes("Admin-offline");
+        const isAgentBooking =
+          !isCanceled && !isOffline && bookingTypeDisplay !== "Bucketlistt";
+
         return (
           <span
-            className={`px-2 py-1 rounded text-xs font-medium ${bookingType === "offline"
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              isCanceled
+                ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                : isOffline
                 ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                : isAgentBooking
+                ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
                 : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-              }`}
+            }`}
           >
-            {bookingType === "offline" ? "Offline" : "Online"}
+            {bookingTypeDisplay}
           </span>
         );
       },
@@ -422,14 +530,6 @@ export const UserBookings = () => {
         const adminNote = (booking as any)?.admin_note || "";
 
         // Debug log to check if admin_note is being accessed
-        if (isAdmin && booking.id) {
-          console.log("Rendering admin note for booking:", {
-            bookingId: booking.id,
-            adminNote: adminNote,
-            hasAdminNote: !!adminNote,
-            bookingKeys: Object.keys(booking),
-          });
-        }
 
         return (
           <div className="flex items-center gap-2">
@@ -451,6 +551,225 @@ export const UserBookings = () => {
               <Edit className="h-3 w-3" />
             </Button>
           </div>
+        );
+      },
+      () => {
+        // Quick Actions Column - Admin only
+        if (!isAdmin) return "";
+
+        const isCanceled = (booking as any)?.type === "canceled";
+
+        return (
+          <DropdownMenu
+            open={isActionsDropdownOpen[booking.id] || false}
+            onOpenChange={(open) => {
+              setIsActionsDropdownOpen((prev) => ({
+                ...prev,
+                [booking.id]: open,
+              }));
+            }}
+          >
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                title="Quick Actions"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-53 p-2 z-[9999]"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setEditingAdminNote({
+                    bookingId: booking.id,
+                    note: (booking as any)?.admin_note || "",
+                  });
+                  setAdminNoteDialogOpen(true);
+                }}
+                className="justify-start h-auto py-1 px-3 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200"
+              >
+                <span className="font-semibold FontSetPerfect">
+                  Edit Admin Note
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={async (e) => {
+                  e.preventDefault();
+                  setIsGeneratingPdf(true);
+                  try {
+                    const experience = booking.experiences;
+                    const activity =
+                      booking.time_slots?.activities || booking.activities;
+
+                    // Fetch logo_url from vendor profile if vendor_id is available
+                    let logoUrl = "";
+                    if (experience?.vendor_id) {
+                      try {
+                        const { data: vendorProfile } = await supabase
+                          .from("profiles")
+                          .select("logo_url")
+                          .eq("id", experience.vendor_id)
+                          .single();
+
+                        logoUrl = (vendorProfile as any)?.logo_url || "";
+                      } catch (error) {
+                        console.error("Error fetching vendor logo_url:", error);
+                      }
+                    }
+
+                    // Fallback: Extract logoUrl from booking data
+                    if (!logoUrl) {
+                      logoUrl =
+                        (booking as any)?.logoUrl ||
+                        experience?.logoUrl ||
+                        (experience as any)?.logo_url ||
+                        ((booking as any)?.experiences as any)?.logoUrl ||
+                        ((booking as any)?.experiences as any)?.logo_url ||
+                        "";
+                    }
+
+                    // Calculate Advance + Discount
+                    const bookingAmountVal = parseFloat(
+                      String(booking.booking_amount || 0)
+                    );
+                    const dueAmountVal = parseFloat(
+                      String(booking.due_amount || 0)
+                    );
+                    const originalPriceVal =
+                      activity?.price || experience?.price || 0;
+                    const officialPriceVal =
+                      originalPriceVal * (booking.total_participants || 1);
+
+                    // Calculate Discount: Official Price - Booking Amount (if positive)
+                    const discountCouponVal =
+                      officialPriceVal - bookingAmountVal > 0
+                        ? officialPriceVal - bookingAmountVal
+                        : 0;
+
+                    // Advance Paid = Booking Amount - Due Amount
+                    const advancePaid = bookingAmountVal - dueAmountVal;
+                    const advancePlusDiscountVal =
+                      advancePaid + discountCouponVal;
+
+                    const bookingData = {
+                      participantName: booking.contact_person_name || "Guest",
+                      experienceTitle: experience?.title || "Activity",
+                      activityName: activity?.name || "",
+                      dateTime: booking.time_slots
+                        ? `${format(
+                            new Date(booking.booking_date),
+                            "dd/MM/yyyy"
+                          )} - ${booking.time_slots.start_time} - ${
+                            booking.time_slots.end_time
+                          }`
+                        : format(new Date(booking.booking_date), "dd/MM/yyyy"),
+                      pickUpLocation: experience?.location || "-",
+                      spotLocation:
+                        booking.pickup_location || experience?.location2 || "-",
+                      spotLocationUrl: (
+                        booking.pickup_location || experience?.location2
+                      )?.startsWith("http")
+                        ? booking.pickup_location || experience?.location2
+                        : "",
+                      totalParticipants: booking.total_participants || 1,
+                      amountPaid: String(advancePaid),
+                      amountToBePaid: String(booking.due_amount || 0),
+                      advancePlusDiscount: String(advancePlusDiscountVal),
+                      currency: experience?.currency || "INR",
+                      logoUrl: logoUrl || undefined,
+                    };
+
+                    const pdfUrl = await generateInvoicePdf(
+                      bookingData,
+                      booking.id
+                    );
+                    window.open(pdfUrl, "_blank");
+
+                    toast({
+                      title: "Success",
+                      description: "PDF generated successfully",
+                    });
+                  } catch (error) {
+                    console.error("Error generating PDF:", error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to generate PDF",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setIsGeneratingPdf(false);
+                  }
+                }}
+                disabled={isGeneratingPdf}
+                className="justify-start h-auto py-1 px-3 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <span className="font-semibold FontSetPerfect">
+                      Download Ticket PDF
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-semibold FontSetPerfect">
+                    Download Ticket PDF
+                  </span>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setBookingToEdit(booking);
+                  setContactPersonName(booking.contact_person_name || "");
+                  setContactPersonNumber(booking.contact_person_number || "");
+                  setBookingAmount(booking.booking_amount?.toString() || "0");
+                  setTotalParticipants(
+                    booking.total_participants?.toString() || "1"
+                  );
+                  const bookingAmt = parseFloat(
+                    booking.booking_amount?.toString() || "0"
+                  );
+                  const dueAmt = parseFloat(
+                    booking.due_amount?.toString() || "0"
+                  );
+                  setAdvance((bookingAmt - dueAmt).toString());
+                  setEditBookingDialogOpen(true);
+                }}
+                className="justify-start h-auto py-1 px-3 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200"
+              >
+                <span className="font-semibold FontSetPerfect">
+                  Edit Booking
+                </span>
+              </DropdownMenuItem>
+              {!isCanceled && (
+                <>
+                  {/* <DropdownMenuSeparator className="my-2" /> */}
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setBookingToCancel({
+                        id: booking.id,
+                        title: booking.experiences?.title || "this booking",
+                      });
+                      setCancelBookingDialogOpen(true);
+                    }}
+                    className="justify-start h-auto py-1 px-3 font-normal hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-red-200"
+                  >
+                    <span className="font-semibold FontSetPerfect">
+                      Cancel Booking
+                    </span>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     ];
@@ -534,14 +853,17 @@ export const UserBookings = () => {
             `
             *,
             admin_note,
+            booked_by,
             experiences (
               id,
               title,
               location,
+              location2,
               price,
               currency,
               vendor_id,
-              is_active
+              is_active,
+              logo_url
             ),
             time_slots (
               id,
@@ -702,6 +1024,71 @@ export const UserBookings = () => {
     }, {} as Record<string, any>);
   }, [profiles]);
 
+  // Fetch profiles for booked_by users (to get agent/admin names) - MOVED BEFORE filteredAndSortedBookings
+  const bookedByUserIds = React.useMemo(() => {
+    const userIds = bookings
+      .map((booking) => (booking as any)?.booked_by)
+      .filter(Boolean);
+    return [...new Set(userIds)];
+  }, [bookings]);
+
+  const { data: bookedByProfiles = [] } = useQuery({
+    queryKey: ["booked-by-profiles", bookedByUserIds],
+    queryFn: async () => {
+      if (bookedByUserIds.length === 0) return [];
+
+      const { data: profiles, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", bookedByUserIds);
+
+      if (error) {
+        console.error("Error fetching booked_by profiles:", error);
+        return [];
+      }
+
+      return profiles || [];
+    },
+    enabled: bookedByUserIds.length > 0,
+  });
+
+  // Fetch roles for booked_by users
+  const { data: bookedByRoles = [] } = useQuery({
+    queryKey: ["booked-by-roles", bookedByUserIds],
+    queryFn: async () => {
+      if (bookedByUserIds.length === 0) return [];
+
+      const { data: roles, error } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", bookedByUserIds);
+
+      if (error) {
+        console.error("Error fetching booked_by roles:", error);
+        return [];
+      }
+
+      return roles || [];
+    },
+    enabled: bookedByUserIds.length > 0,
+  });
+
+  // Create a map of booked_by user_id to profile
+  const bookedByProfileMap = React.useMemo(() => {
+    return bookedByProfiles.reduce((acc, profile) => {
+      acc[profile.id] = profile;
+      return acc;
+    }, {} as Record<string, any>);
+  }, [bookedByProfiles]);
+
+  // Create a map of booked_by user_id to role
+  const bookedByRoleMap = React.useMemo(() => {
+    return bookedByRoles.reduce((acc, role) => {
+      acc[role.user_id] = role.role;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [bookedByRoles]);
+
   // Filter and sort bookings
   const filteredAndSortedBookings = React.useMemo(() => {
     let filtered = bookings;
@@ -768,6 +1155,40 @@ export const UserBookings = () => {
       });
     }
 
+    // Apply booking type filter
+    if (selectedBookingType) {
+      filtered = filtered.filter((booking) => {
+        const bookingType = (booking as any)?.type || "online";
+        const bookedBy = (booking as any)?.booked_by;
+
+        // Handle filter matching
+        if (selectedBookingType === "canceled") {
+          return bookingType === "canceled";
+        } else if (selectedBookingType === "online") {
+          return bookingType === "online";
+        } else if (selectedBookingType === "admin-offline") {
+          // Match offline bookings created by admin
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "admin";
+        } else if (selectedBookingType === "offline") {
+          // Match offline bookings created by vendor (not admin, not agent)
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "vendor";
+        } else if (selectedBookingType === "agent") {
+          // Match offline bookings created by agents
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "agent" || (booking as any)?.isAgentBooking;
+        }
+        return false;
+      });
+    }
+
     // Apply Excel-like column filters
     Object.keys(columnFilters).forEach((colIndexStr) => {
       const colIndex = parseInt(colIndexStr);
@@ -785,6 +1206,9 @@ export const UserBookings = () => {
 
           // Get cell value for this column
           const getCellValue = (colIdx: number): string => {
+            // Access maps from outer scope - these will be available when useMemo runs
+            const roleMap = bookedByRoleMap || {};
+            const profileMapForBookedBy = bookedByProfileMap || {};
             switch (colIdx) {
               case 0: // Title
                 return experience?.title || "";
@@ -819,34 +1243,62 @@ export const UserBookings = () => {
                   (booking as any)?.referred_by ||
                   ""
                 );
-              case 6: // Timeslot
-                const isOfflineFilter = (booking as any)?.type === "offline";
+              case 6: {
+                // Timeslot
+                const bookingTypeFilter = (booking as any)?.type || "online";
+                if (bookingTypeFilter === "canceled") return "Canceled";
+                const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                  ? "Offline"
+                  : "";
+              }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
               case 8: // No. Of Participants
                 return String(booking?.total_participants || "");
               case 9: // Notes for guides
                 return booking.note_for_guide || "";
-              case 10: // Booking Type
-                return (booking as any)?.type === "offline"
-                  ? "Offline"
-                  : "Online";
+              case 10: {
+                // Booking Type - use inline logic with maps from outer scope
+                const bookingType = (booking as any)?.type || "online";
+                const bookedBy = (booking as any)?.booked_by;
+
+                if (bookingType === "canceled") return "Canceled";
+                if (bookingType === "online") return "Bucketlistt";
+                if (bookingType === "offline" && bookedBy) {
+                  const bookedByRole = roleMap[bookedBy];
+                  if (bookedByRole === "admin") return "Admin-offline";
+                  if (bookedByRole === "vendor") return "offline";
+                  if (
+                    bookedByRole === "agent" ||
+                    (booking as any)?.isAgentBooking
+                  ) {
+                    const bookedByProfile = profileMapForBookedBy[bookedBy];
+                    return bookedByProfile?.first_name &&
+                      bookedByProfile?.last_name
+                      ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                      : bookedByProfile?.email ||
+                          bookedByProfile?.first_name ||
+                          "Agent";
+                  }
+                }
+                return "offline";
+              }
               case 11: // Official Price/ Original Price
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const originalPrice = activity?.price || experience?.price || 0;
                 return formatCurrency(
                   currency,
                   originalPrice * booking.total_participants
                 );
               case 12: // B2B Price
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const b2bPrice =
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
                 return formatCurrency(
@@ -854,7 +1306,8 @@ export const UserBookings = () => {
                   b2bPrice * booking.total_participants
                 );
               case 13: // Commission as per vendor
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const originalPrice2 =
                   activity?.price || experience?.price || 0;
                 const b2bPrice2 =
@@ -864,14 +1317,16 @@ export const UserBookings = () => {
                   (originalPrice2 - b2bPrice2) * booking.total_participants
                 );
               case 14: // Website Price
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const discountedPrice = activity?.discounted_price || 0;
                 return formatCurrency(
                   currency,
                   discountedPrice * booking.total_participants
                 );
               case 15: // Discount Coupon
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const originalPrice3 =
                   activity?.price || experience?.price || 0;
                 const officialPrice =
@@ -888,12 +1343,14 @@ export const UserBookings = () => {
                   (booking as any)?.booking_amount || 0
                 );
               case 17: // Advance paid to bucketlistt (10%)
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const bookingAmount2 = (booking as any)?.booking_amount || 0;
                 const dueAmount = (booking as any)?.due_amount || 0;
                 return formatCurrency(currency, bookingAmount2 - dueAmount);
               case 18: // Payment to be collected by vendor
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const bookingAmount3 = (booking as any)?.booking_amount || 0;
                 const dueAmount2 = (booking as any)?.due_amount || 0;
                 return formatCurrency(
@@ -901,7 +1358,8 @@ export const UserBookings = () => {
                   bookingAmount3 - (bookingAmount3 - dueAmount2)
                 );
               case 19: // Actual Commission to bucketlistt (Net profit)
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const bookingAmount4 = (booking as any)?.booking_amount || 0;
                 const b2bPrice3 =
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
@@ -910,7 +1368,8 @@ export const UserBookings = () => {
                   bookingAmount4 - b2bPrice3 * booking.total_participants
                 );
               case 20: // Amount to be collected from vendor/ '- to be paid'
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const bookingAmount5 = (booking as any)?.booking_amount || 0;
                 const b2bPrice4 =
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
@@ -918,11 +1377,12 @@ export const UserBookings = () => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                  b2bPrice4 * booking.total_participants -
-                  (bookingAmount5 - dueAmount3)
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
-                if ((booking as any)?.type === "offline") return "-";
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
                 const bookingAmount6 = (booking as any)?.booking_amount || 0;
                 const dueAmount4 = (booking as any)?.due_amount || 0;
                 const originalPrice4 =
@@ -982,8 +1442,37 @@ export const UserBookings = () => {
       });
     }
 
-    // Apply sorting
+    // Apply sorting - Always sort by booking date and time (descending: latest to earliest)
     filtered.sort((a, b) => {
+      // Helper function to get booking datetime for sorting
+      const getBookingDateTime = (booking: any): number => {
+        const bookingDate = new Date(booking.booking_date);
+        const timeslot = booking.time_slots;
+
+        // If timeslot exists and has start_time, combine date and time
+        if (timeslot?.start_time) {
+          const [hours, minutes, seconds] = timeslot.start_time
+            .split(":")
+            .map(Number);
+          bookingDate.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+        } else {
+          // For offline bookings without timeslot, use end of day (23:59:59)
+          bookingDate.setHours(23, 59, 59, 999);
+        }
+
+        return bookingDate.getTime();
+      };
+
+      const aDateTime = getBookingDateTime(a);
+      const bDateTime = getBookingDateTime(b);
+
+      // Sort in descending order (latest to earliest)
+      return bDateTime - aDateTime;
+    });
+
+    // Legacy sorting code (kept for reference but not used)
+    // Apply sorting
+    /* filtered.sort((a, b) => {
       let aValue: any, bValue: any;
 
       // Handle column index sorting
@@ -1011,6 +1500,9 @@ export const UserBookings = () => {
           experience: any,
           colIndex: number
         ) => {
+          // Access maps from outer scope
+          const roleMap = bookedByRoleMap || {};
+          const profileMapForBookedBy = bookedByProfileMap || {};
           switch (colIndex) {
             case 0: // Title
               return experience?.title || "";
@@ -1046,10 +1538,12 @@ export const UserBookings = () => {
                 ""
               );
             case 6: // Timeslot
+              const bookingTypeSort = (booking as any)?.type || "online";
+              if (bookingTypeSort === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : "";
             case 7: // Date
               return new Date(booking.booking_date).getTime();
@@ -1057,30 +1551,53 @@ export const UserBookings = () => {
               return booking?.total_participants || 0;
             case 9: // Notes for guides
               return booking.note_for_guide || "";
-            case 10: // Booking Type
-              const bookingTypeA = (booking as any)?.type || "online";
-              return bookingTypeA === "offline" ? "Offline" : "Online";
+            case 10: {
+              // Booking Type - use inline logic
+              const bookingType = (booking as any)?.type || "online";
+              const bookedBy = (booking as any)?.booked_by;
+
+              if (bookingType === "canceled") return "Canceled";
+              if (bookingType === "online") return "Bucketlistt";
+              if (bookingType === "offline" && bookedBy) {
+                const bookedByRole = roleMap[bookedBy];
+                if (bookedByRole === "admin") return "Admin-offline";
+                if (bookedByRole === "vendor") return "offline";
+                if (
+                  bookedByRole === "agent" ||
+                  (booking as any)?.isAgentBooking
+                ) {
+                  const bookedByProfile = profileMapForBookedBy[bookedBy];
+                  return bookedByProfile?.first_name &&
+                    bookedByProfile?.last_name
+                    ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                    : bookedByProfile?.email ||
+                        bookedByProfile?.first_name ||
+                        "Agent";
+                }
+              }
+              return "offline";
+            }
             case 11: // Official Price/ Original Price
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const originalPriceA = activity?.price || experience?.price || 0;
               return originalPriceA * booking.total_participants;
             case 12: // B2B Price
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const b2bPriceA = booking.b2bPrice || activity?.b2bPrice || 0;
               return b2bPriceA * booking.total_participants;
             case 13: // Commission as per vendor
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const originalPriceA2 = activity?.price || experience?.price || 0;
               const b2bPriceA2 = booking.b2bPrice || activity?.b2bPrice || 0;
               return (
                 (originalPriceA2 - b2bPriceA2) * booking.total_participants
               );
             case 14: // Website Price
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const discountedPriceA = activity?.discounted_price || 0;
               return discountedPriceA * booking.total_participants;
             case 15: // Discount Coupon
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const originalPriceA3 = activity?.price || experience?.price || 0;
               const officialPriceA =
                 originalPriceA3 * booking.total_participants;
@@ -1091,22 +1608,22 @@ export const UserBookings = () => {
             case 16: // Ticket Price (customer cost)
               return (booking as any)?.booking_amount || 0;
             case 17: // Advance paid to bucketlistt (10%)
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const bookingAmountA2 = (booking as any)?.booking_amount || 0;
               const dueAmountA = booking?.due_amount || 0;
               return bookingAmountA2 - dueAmountA;
             case 18: // Payment to be collected by vendor
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const bookingAmountA3 = (booking as any)?.booking_amount || 0;
               const dueAmountA2 = booking?.due_amount || 0;
               return bookingAmountA3 - (bookingAmountA3 - dueAmountA2);
             case 19: // Actual Commission to bucketlistt (Net profit)
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const bookingAmountA4 = (booking as any)?.booking_amount || 0;
               const b2bPriceA3 = booking.b2bPrice || activity?.b2bPrice || 0;
               return bookingAmountA4 - b2bPriceA3 * booking.total_participants;
             case 20: // Amount to be collected from vendor/ '- to be paid'
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const bookingAmountA5 = (booking as any)?.booking_amount || 0;
               const b2bPriceA4 = booking.b2bPrice || activity?.b2bPrice || 0;
               const dueAmountA3 = booking?.due_amount || 0;
@@ -1116,7 +1633,7 @@ export const UserBookings = () => {
                 (bookingAmountA5 - dueAmountA3)
               );
             case 21: // Advance + discount (vendor needs this)
-              if ((booking as any)?.type === "offline") return "";
+              if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const bookingAmountA6 = (booking as any)?.booking_amount || 0;
               const dueAmountA4 = booking?.due_amount || 0;
               const originalPriceA4 = activity?.price || experience?.price || 0;
@@ -1215,6 +1732,7 @@ export const UserBookings = () => {
         }
       }
     });
+    */
 
     return filtered;
   }, [
@@ -1227,6 +1745,7 @@ export const UserBookings = () => {
     selectedExperienceId,
     selectedAgentId,
     selectedVendorId,
+    selectedBookingType,
     isAdmin,
     globalFilter,
     sortBy,
@@ -1236,10 +1755,251 @@ export const UserBookings = () => {
     columnFilters,
   ]);
 
-  // Get unique activities from bookings - only from active experiences
+  // Helper function to get filtered bookings based on all filters except the one being calculated
+  const getFilteredBookingsForOptions = React.useCallback(
+    (
+      excludeFilter?:
+        | "timeslot"
+        | "activity"
+        | "experience"
+        | "agent"
+        | "vendor"
+        | "bookingType"
+    ) => {
+      let filtered = bookings;
+
+      // Apply today filter
+      if (showTodayOnly) {
+        filtered = filtered.filter((booking) =>
+          isSameDay(new Date(booking.booking_date), new Date())
+        );
+      }
+
+      // Apply date filter (supports range)
+      if (selectedDate) {
+        filtered = filtered.filter((booking) => {
+          const bookingDate = format(
+            new Date(booking.booking_date),
+            "yyyy-MM-dd"
+          );
+
+          if (selectedEndDate) {
+            return (
+              bookingDate >= selectedDate && bookingDate <= selectedEndDate
+            );
+          } else {
+            return bookingDate === selectedDate;
+          }
+        });
+      }
+
+      // Apply timeslot filter (unless we're calculating timeslot options)
+      if (selectedTimeslotId && excludeFilter !== "timeslot") {
+        filtered = filtered.filter((booking) => {
+          return booking.time_slots?.id === selectedTimeslotId;
+        });
+      }
+
+      // Apply activity filter (unless we're calculating activity options)
+      if (selectedActivityId && excludeFilter !== "activity") {
+        filtered = filtered.filter((booking) => {
+          const activity = (booking.time_slots?.activities ||
+            (booking as any).activities) as any;
+          return activity?.id === selectedActivityId;
+        });
+      }
+
+      // Apply experience filter (unless we're calculating experience options)
+      if (isAdmin && selectedExperienceId && excludeFilter !== "experience") {
+        filtered = filtered.filter((booking) => {
+          return booking.experiences?.id === selectedExperienceId;
+        });
+      }
+
+      // Apply agent filter (unless we're calculating agent options)
+      if (isAdmin && selectedAgentId && excludeFilter !== "agent") {
+        filtered = filtered.filter((booking) => {
+          return booking.user_id === selectedAgentId;
+        });
+      }
+
+      // Apply vendor filter (unless we're calculating vendor options)
+      if (isAdmin && selectedVendorId && excludeFilter !== "vendor") {
+        filtered = filtered.filter((booking) => {
+          return booking.experiences?.vendor_id === selectedVendorId;
+        });
+      }
+
+      // Apply booking type filter (unless we're calculating booking type options)
+      if (selectedBookingType && excludeFilter !== "bookingType") {
+        filtered = filtered.filter((booking) => {
+          const bookingType = (booking as any)?.type || "online";
+          const bookedBy = (booking as any)?.booked_by;
+
+          if (selectedBookingType === "canceled") {
+            return bookingType === "canceled";
+          } else if (selectedBookingType === "online") {
+            return bookingType === "online";
+          } else if (selectedBookingType === "admin-offline") {
+            if (bookingType !== "offline") return false;
+            if (!bookedBy) return false;
+            const bookedByRole = bookedByRoleMap?.[bookedBy];
+            return bookedByRole === "admin";
+          } else if (selectedBookingType === "offline") {
+            if (bookingType !== "offline") return false;
+            if (!bookedBy) return false;
+            const bookedByRole = bookedByRoleMap?.[bookedBy];
+            return bookedByRole === "vendor";
+          } else if (selectedBookingType === "agent") {
+            if (bookingType !== "offline") return false;
+            if (!bookedBy) return false;
+            const bookedByRole = bookedByRoleMap?.[bookedBy];
+            return bookedByRole === "agent" || (booking as any)?.isAgentBooking;
+          }
+          return false;
+        });
+      }
+
+      // Apply Excel-like column filters
+      Object.keys(columnFilters).forEach((colIndexStr) => {
+        const colIndex = parseInt(colIndexStr);
+        const selectedValues = columnFilters[colIndex];
+        if (selectedValues && selectedValues.length > 0) {
+          filtered = filtered.filter((booking) => {
+            const profile = profileMap[booking.user_id];
+            const activity = (booking.time_slots?.activities ||
+              (booking as any).activities) as any;
+            const timeslot = booking.time_slots;
+            const experience = booking.experiences;
+            const currency =
+              activity?.currency || booking?.experiences?.currency || "INR";
+
+            // Get cell value for this column (simplified version)
+            const getCellValue = (colIdx: number): string => {
+              const roleMap = bookedByRoleMap || {};
+              const profileMapForBookedBy = bookedByProfileMap || {};
+              switch (colIdx) {
+                case 0:
+                  return experience?.title || "";
+                case 1:
+                  return activity?.name || "";
+                case 2:
+                  return (
+                    (booking as any).contact_person_number ||
+                    profile?.phone_number ||
+                    booking?.booking_participants?.[0]?.phone_number ||
+                    ""
+                  );
+                case 3:
+                  return (
+                    (booking as any).contact_person_name ||
+                    (profile
+                      ? `${profile.first_name} ${profile.last_name}`.trim()
+                      : "") ||
+                    booking?.booking_participants?.[0]?.name ||
+                    ""
+                  );
+                case 6: {
+                  const bookingTypeFilter = (booking as any)?.type || "online";
+                  if (bookingTypeFilter === "canceled") return "Canceled";
+                  const isOfflineFilter = bookingTypeFilter === "offline";
+                  return timeslot?.start_time && timeslot?.end_time
+                    ? `${formatTime12Hour(
+                        timeslot.start_time
+                      )} - ${formatTime12Hour(timeslot.end_time)}`
+                    : isOfflineFilter
+                    ? "Offline"
+                    : "";
+                }
+                case 10: {
+                  const bookingType = (booking as any)?.type || "online";
+                  const bookedBy = (booking as any)?.booked_by;
+                  if (bookingType === "canceled") return "Canceled";
+                  if (bookingType === "online") return "Bucketlistt";
+                  if (bookingType === "offline" && bookedBy) {
+                    const bookedByRole = roleMap[bookedBy];
+                    if (bookedByRole === "admin") return "Admin-offline";
+                    if (bookedByRole === "vendor") return "offline";
+                    if (
+                      bookedByRole === "agent" ||
+                      (booking as any)?.isAgentBooking
+                    ) {
+                      const bookedByProfile = profileMapForBookedBy[bookedBy];
+                      return bookedByProfile?.first_name &&
+                        bookedByProfile?.last_name
+                        ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                        : bookedByProfile?.email ||
+                            bookedByProfile?.first_name ||
+                            "Agent";
+                    }
+                  }
+                  return "offline";
+                }
+                default:
+                  return "";
+              }
+            };
+
+            const cellValue = getCellValue(colIndex);
+            return selectedValues.includes(cellValue);
+          });
+        }
+      });
+
+      // Apply search filter
+      if (globalFilter) {
+        filtered = filtered.filter((booking) => {
+          const searchTerm = globalFilter.toLowerCase();
+          return (
+            booking.experiences?.title?.toLowerCase().includes(searchTerm) ||
+            (
+              (booking.time_slots?.activities ||
+                (booking as any).activities) as any
+            )?.name
+              ?.toLowerCase()
+              .includes(searchTerm) ||
+            booking.status?.toLowerCase().includes(searchTerm) ||
+            (booking as any)?.contact_person_name
+              ?.toLowerCase()
+              .includes(searchTerm) ||
+            (booking as any)?.contact_person_email
+              ?.toLowerCase()
+              .includes(searchTerm) ||
+            (booking as any)?.contact_person_number
+              ?.toLowerCase()
+              .includes(searchTerm)
+          );
+        });
+      }
+
+      return filtered;
+    },
+    [
+      bookings,
+      showTodayOnly,
+      selectedDate,
+      selectedEndDate,
+      selectedTimeslotId,
+      selectedActivityId,
+      selectedExperienceId,
+      selectedAgentId,
+      selectedVendorId,
+      selectedBookingType,
+      isAdmin,
+      globalFilter,
+      columnFilters,
+      profileMap,
+      bookedByRoleMap,
+      bookedByProfileMap,
+      formatTime12Hour,
+    ]
+  );
+
+  // Get unique activities from bookings - only from active experiences, filtered by other filters
   const uniqueActivities = React.useMemo(() => {
+    const filteredBookings = getFilteredBookingsForOptions("activity");
     const activities = new Map();
-    bookings.forEach((booking) => {
+    filteredBookings.forEach((booking) => {
       // Only include activities from active experiences
       if (booking.experiences?.is_active === true) {
         // For offline bookings, activities are directly linked; for online, through time_slots
@@ -1254,12 +2014,13 @@ export const UserBookings = () => {
       }
     });
     return Array.from(activities.values());
-  }, [bookings]);
+  }, [bookings, getFilteredBookingsForOptions]);
 
-  // Get unique experiences from bookings (for admin filter)
+  // Get unique experiences from bookings (for admin filter), filtered by other filters
   const uniqueExperiences = React.useMemo(() => {
+    const filteredBookings = getFilteredBookingsForOptions("experience");
     const experiences = new Map();
-    bookings.forEach((booking) => {
+    filteredBookings.forEach((booking) => {
       const experience = booking.experiences;
       if (experience && experience.id && experience.title) {
         experiences.set(experience.id, {
@@ -1269,7 +2030,7 @@ export const UserBookings = () => {
       }
     });
     return Array.from(experiences.values());
-  }, [bookings]);
+  }, [bookings, getFilteredBookingsForOptions]);
 
   // Fetch all vendors from user_roles and their profiles (admin only)
   const { data: vendorProfiles = [] } = useQuery({
@@ -1374,7 +2135,56 @@ export const UserBookings = () => {
     }));
   }, [vendorProfiles, isAdmin]);
 
+  // Helper function to get booking type display
+  const getBookingTypeDisplay = React.useCallback(
+    (booking: BookingWithDueAmount): string => {
+      const bookingType = (booking as any)?.type || "online";
+      const bookedBy = (booking as any)?.booked_by;
 
+      // If canceled, return "Canceled"
+      if (bookingType === "canceled") {
+        return "Canceled";
+      }
+
+      // If online booking, return "Bucketlistt"
+      if (bookingType === "online") {
+        return "Bucketlistt";
+      }
+
+      // If offline booking, check who booked it
+      if (bookingType === "offline" && bookedBy) {
+        const bookedByRole = bookedByRoleMap[bookedBy];
+
+        // Check if admin
+        if (bookedByRole === "admin") {
+          return "Admin-offline";
+        }
+
+        // Check if vendor
+        if (bookedByRole === "vendor") {
+          return "offline";
+        }
+
+        // Check if agent
+        if (bookedByRole === "agent" || (booking as any)?.isAgentBooking) {
+          const bookedByProfile = bookedByProfileMap[bookedBy];
+          const agentName =
+            bookedByProfile?.first_name && bookedByProfile?.last_name
+              ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+              : bookedByProfile?.email ||
+                bookedByProfile?.first_name ||
+                "Agent";
+          return agentName;
+        }
+      }
+
+      // Default for offline bookings
+      return "offline";
+    },
+    [bookedByRoleMap, bookedByProfileMap]
+  );
+
+  // Filter and sort bookings
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -1389,6 +2199,55 @@ export const UserBookings = () => {
     }
   };
 
+  // Cancel booking function (admin only)
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!isAdmin) {
+      toast({
+        title: "Unauthorized",
+        description: "Only admins can cancel bookings.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCancelingBookingId(bookingId);
+
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ type: "canceled" })
+        .eq("id", bookingId);
+
+      if (error) {
+        console.error("Error canceling booking:", error);
+        throw error;
+      }
+
+      toast({
+        title: "Booking canceled",
+        description: "The booking has been canceled successfully.",
+      });
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({
+        queryKey: ["user-bookings"],
+      });
+
+      // Close dialog after successful cancellation
+      setCancelBookingDialogOpen(false);
+      setBookingToCancel(null);
+    } catch (error) {
+      console.error("Error canceling booking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel booking. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancelingBookingId(null);
+    }
+  };
+
   const handleSort = (field: "booking_date" | "title" | "status") => {
     if (sortBy === field) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -1400,6 +2259,7 @@ export const UserBookings = () => {
 
   // Excel-like sorting by column index
   const handleColumnSort = (columnIndex: number) => {
+    if (columnIndex === 24) return;
     if (sortBy === columnIndex) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
@@ -1421,6 +2281,26 @@ export const UserBookings = () => {
     const valuesMap: Record<number, string[]> = {};
 
     bookings.forEach((booking) => {
+      // Apply date range filter if set - only process bookings within the date range
+      if (selectedDate) {
+        const bookingDate = format(
+          new Date(booking.booking_date),
+          "yyyy-MM-dd"
+        );
+
+        if (selectedEndDate) {
+          // Date range filter
+          if (bookingDate < selectedDate || bookingDate > selectedEndDate) {
+            return; // Skip this booking if outside date range
+          }
+        } else {
+          // Single date filter
+          if (bookingDate !== selectedDate) {
+            return; // Skip this booking if not matching selected date
+          }
+        }
+      }
+
       const profile = profileMap[booking.user_id];
       // For offline bookings, activities are directly linked; for online, through time_slots
       const activity = (booking.time_slots?.activities ||
@@ -1472,25 +2352,49 @@ export const UserBookings = () => {
                 ""
               );
             case 6:
+              const bookingTypeUnique = (booking as any)?.type || "online";
+              if (bookingTypeUnique === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : isOffline
-                  ? "Offline"
-                  : "";
+                ? "Offline"
+                : "";
             case 7:
               return format(new Date(booking.booking_date), "MMM d, yyyy");
             case 8:
               return String(booking?.total_participants || "");
             case 9:
               return booking.note_for_guide || "";
-            case 10:
-              return (booking as any)?.type === "offline"
-                ? "Offline"
-                : "Online";
+            case 10: {
+              // Booking Type - use inline logic
+              const bookingType = (booking as any)?.type || "online";
+              const bookedBy = (booking as any)?.booked_by;
+
+              if (bookingType === "canceled") return "Canceled";
+              if (bookingType === "online") return "Bucketlistt";
+              if (bookingType === "offline" && bookedBy) {
+                const bookedByRole = bookedByRoleMap[bookedBy];
+                if (bookedByRole === "admin") return "Admin-offline";
+                if (bookedByRole === "vendor") return "offline";
+                if (
+                  bookedByRole === "agent" ||
+                  (booking as any)?.isAgentBooking
+                ) {
+                  const bookedByProfile = bookedByProfileMap[bookedBy];
+                  return bookedByProfile?.first_name &&
+                    bookedByProfile?.last_name
+                    ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                    : bookedByProfile?.email ||
+                        bookedByProfile?.first_name ||
+                        "Agent";
+                }
+              }
+              return "offline";
+            }
             case 11: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const originalPrice = activity?.price || experience?.price || 0;
               return formatCurrency(
                 currency,
@@ -1498,7 +2402,7 @@ export const UserBookings = () => {
               );
             }
             case 12: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const b2bPrice =
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
               return formatCurrency(
@@ -1507,7 +2411,7 @@ export const UserBookings = () => {
               );
             }
             case 13: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const originalPrice = activity?.price || experience?.price || 0;
               const b2bPrice =
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
@@ -1517,7 +2421,7 @@ export const UserBookings = () => {
               );
             }
             case 14: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const discountedPrice = activity?.discounted_price || 0;
               return formatCurrency(
                 currency,
@@ -1525,7 +2429,7 @@ export const UserBookings = () => {
               );
             }
             case 15: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const originalPrice = activity?.price || experience?.price || 0;
               const officialPrice = originalPrice * booking.total_participants;
               const bookingAmount = (booking as any)?.booking_amount || 0;
@@ -1541,13 +2445,13 @@ export const UserBookings = () => {
                 (booking as any)?.booking_amount || 0
               );
             case 17: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
               const dueAmount = (booking as any)?.due_amount || 0;
               return formatCurrency(currency, bookingAmount - dueAmount);
             }
             case 18: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
               const dueAmount = (booking as any)?.due_amount || 0;
               return formatCurrency(
@@ -1556,7 +2460,7 @@ export const UserBookings = () => {
               );
             }
             case 19: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
               const b2bPrice =
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
@@ -1566,7 +2470,7 @@ export const UserBookings = () => {
               );
             }
             case 20: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
               const b2bPrice =
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
@@ -1574,12 +2478,12 @@ export const UserBookings = () => {
               return formatCurrency(
                 currency,
                 bookingAmount -
-                b2bPrice * booking.total_participants -
-                (bookingAmount - dueAmount)
+                  b2bPrice * booking.total_participants -
+                  (bookingAmount - dueAmount)
               );
             }
             case 21: {
-              if (isOffline) return "-";
+              if (isOffline && !isAdmin) return "-";
               const bookingAmount = (booking as any)?.booking_amount || 0;
               const dueAmount = (booking as any)?.due_amount || 0;
               const originalPrice = activity?.price || experience?.price || 0;
@@ -1621,7 +2525,7 @@ export const UserBookings = () => {
     });
 
     return valuesMap;
-  }, [bookings, profileMap]);
+  }, [bookings, profileMap, selectedDate, selectedEndDate]);
 
   // Handle filter toggle
   const handleFilterToggle = (columnIndex: number, value: string) => {
@@ -1745,17 +2649,377 @@ export const UserBookings = () => {
 
   const isDateRangeActive = selectedDate || selectedEndDate;
 
-  // Calculate count of today's bookings
+  // Calculate count of today's bookings with all filters applied (except showTodayOnly)
   const todayBookingsCount = React.useMemo(() => {
-    return bookings.filter((booking) =>
+    let filtered = bookings;
+
+    // Apply date filter (supports range) - but not showTodayOnly
+    if (selectedDate) {
+      filtered = filtered.filter((booking) => {
+        const bookingDate = format(
+          new Date(booking.booking_date),
+          "yyyy-MM-dd"
+        );
+
+        if (selectedEndDate) {
+          // Date range filter
+          return bookingDate >= selectedDate && bookingDate <= selectedEndDate;
+        } else {
+          // Single date filter
+          return bookingDate === selectedDate;
+        }
+      });
+    }
+
+    // Apply timeslot filter
+    if (selectedTimeslotId) {
+      filtered = filtered.filter((booking) => {
+        return booking.time_slots?.id === selectedTimeslotId;
+      });
+    }
+
+    // Apply activity filter
+    if (selectedActivityId) {
+      filtered = filtered.filter((booking) => {
+        const activity = (booking.time_slots?.activities ||
+          (booking as any).activities) as any;
+        return activity?.id === selectedActivityId;
+      });
+    }
+
+    // Apply experience filter (admin only)
+    if (isAdmin && selectedExperienceId) {
+      filtered = filtered.filter((booking) => {
+        return booking.experiences?.id === selectedExperienceId;
+      });
+    }
+
+    // Apply agent filter (admin only)
+    if (isAdmin && selectedAgentId) {
+      filtered = filtered.filter((booking) => {
+        return booking.user_id === selectedAgentId;
+      });
+    }
+
+    // Apply vendor filter (admin only)
+    if (isAdmin && selectedVendorId) {
+      filtered = filtered.filter((booking) => {
+        return booking.experiences?.vendor_id === selectedVendorId;
+      });
+    }
+
+    // Apply booking type filter
+    if (selectedBookingType) {
+      filtered = filtered.filter((booking) => {
+        const bookingType = (booking as any)?.type || "online";
+        const bookedBy = (booking as any)?.booked_by;
+
+        // Handle filter matching
+        if (selectedBookingType === "canceled") {
+          return bookingType === "canceled";
+        } else if (selectedBookingType === "online") {
+          return bookingType === "online";
+        } else if (selectedBookingType === "admin-offline") {
+          // Match offline bookings created by admin
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "admin";
+        } else if (selectedBookingType === "offline") {
+          // Match offline bookings created by vendor (not admin, not agent)
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "vendor";
+        } else if (selectedBookingType === "agent") {
+          // Match offline bookings created by agents
+          if (bookingType !== "offline") return false;
+          if (!bookedBy) return false;
+          const bookedByRole = bookedByRoleMap?.[bookedBy];
+          return bookedByRole === "agent" || (booking as any)?.isAgentBooking;
+        }
+        return false;
+      });
+    }
+
+    // Apply Excel-like column filters
+    Object.keys(columnFilters).forEach((colIndexStr) => {
+      const colIndex = parseInt(colIndexStr);
+      const selectedValues = columnFilters[colIndex];
+      if (selectedValues && selectedValues.length > 0) {
+        filtered = filtered.filter((booking) => {
+          const profile = profileMap[booking.user_id];
+          // For offline bookings, activities are directly linked; for online, through time_slots
+          const activity = (booking.time_slots?.activities ||
+            (booking as any).activities) as any;
+          const timeslot = booking.time_slots;
+          const experience = booking.experiences;
+          const currency =
+            activity?.currency || booking?.experiences?.currency || "INR";
+
+          // Get cell value for this column
+          const getCellValue = (colIdx: number): string => {
+            // Access maps from outer scope - these will be available when useMemo runs
+            const roleMap = bookedByRoleMap || {};
+            const profileMapForBookedBy = bookedByProfileMap || {};
+            switch (colIdx) {
+              case 0: // Title
+                return experience?.title || "";
+              case 1: // Activity
+                return activity?.name || "";
+              case 2: // Contact Number
+                return (
+                  (booking as any).contact_person_number ||
+                  profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ||
+                  ""
+                );
+              case 3: // Contact Name
+                return (
+                  (booking as any).contact_person_name ||
+                  (profile
+                    ? `${profile.first_name} ${profile.last_name}`.trim()
+                    : "") ||
+                  booking?.booking_participants?.[0]?.name ||
+                  ""
+                );
+              case 4: // Email
+                return (
+                  (booking as any).contact_person_email ||
+                  profile?.email ||
+                  booking?.booking_participants?.[0]?.email ||
+                  ""
+                );
+              case 5: // Referred by
+                return (
+                  (booking as any)?.referral_code ||
+                  (booking as any)?.referred_by ||
+                  ""
+                );
+              case 6: {
+                // Timeslot
+                const bookingTypeFilter = (booking as any)?.type || "online";
+                if (bookingTypeFilter === "canceled") return "Canceled";
+                const isOfflineFilter = bookingTypeFilter === "offline";
+                return timeslot?.start_time && timeslot?.end_time
+                  ? `${formatTime12Hour(
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
+                  : isOfflineFilter
+                  ? "Offline"
+                  : "";
+              }
+              case 7: // Date
+                return format(new Date(booking.booking_date), "MMM d, yyyy");
+              case 8: // No. Of Participants
+                return String(booking?.total_participants || "");
+              case 9: // Notes for guides
+                return booking.note_for_guide || "";
+              case 10: {
+                // Booking Type - use inline logic with maps from outer scope
+                const bookingType = (booking as any)?.type || "online";
+                const bookedBy = (booking as any)?.booked_by;
+
+                if (bookingType === "canceled") return "Canceled";
+                if (bookingType === "online") return "Bucketlistt";
+                if (bookingType === "offline" && bookedBy) {
+                  const bookedByRole = roleMap[bookedBy];
+                  if (bookedByRole === "admin") return "Admin-offline";
+                  if (bookedByRole === "vendor") return "offline";
+                  if (
+                    bookedByRole === "agent" ||
+                    (booking as any)?.isAgentBooking
+                  ) {
+                    const bookedByProfile = profileMapForBookedBy[bookedBy];
+                    return bookedByProfile?.first_name &&
+                      bookedByProfile?.last_name
+                      ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
+                      : bookedByProfile?.email ||
+                          bookedByProfile?.first_name ||
+                          "Agent";
+                  }
+                }
+                return "offline";
+              }
+              case 11: // Official Price/ Original Price
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const originalPrice = activity?.price || experience?.price || 0;
+                return formatCurrency(
+                  currency,
+                  originalPrice * booking.total_participants
+                );
+              case 12: // B2B Price
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const b2bPrice =
+                  (booking as any).b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(
+                  currency,
+                  b2bPrice * booking.total_participants
+                );
+              case 13: // Commission as per vendor
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const originalPrice2 =
+                  activity?.price || experience?.price || 0;
+                const b2bPrice2 =
+                  (booking as any).b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(
+                  currency,
+                  (originalPrice2 - b2bPrice2) * booking.total_participants
+                );
+              case 14: // Website Price
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const discountedPrice = activity?.discounted_price || 0;
+                return formatCurrency(
+                  currency,
+                  discountedPrice * booking.total_participants
+                );
+              case 15: // Discount Coupon
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const originalPrice3 =
+                  activity?.price || experience?.price || 0;
+                const officialPrice =
+                  originalPrice * booking.total_participants;
+                const bookingAmount = (booking as any)?.booking_amount || 0;
+                const discountCoupon =
+                  officialPrice - bookingAmount > 0
+                    ? officialPrice - bookingAmount
+                    : 0;
+                return formatCurrency(currency, discountCoupon);
+              case 16: // Ticket Price (customer cost)
+                return formatCurrency(
+                  currency,
+                  (booking as any)?.booking_amount || 0
+                );
+              case 17: // Advance paid to bucketlistt (10%)
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const bookingAmount2 = (booking as any)?.booking_amount || 0;
+                const dueAmount = (booking as any)?.due_amount || 0;
+                return formatCurrency(currency, bookingAmount2 - dueAmount);
+              case 18: // Payment to be collected by vendor
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const bookingAmount3 = (booking as any)?.booking_amount || 0;
+                const dueAmount2 = (booking as any)?.due_amount || 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount3 - (bookingAmount3 - dueAmount2)
+                );
+              case 19: // Actual Commission to bucketlistt (Net profit)
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const bookingAmount4 = (booking as any)?.booking_amount || 0;
+                const b2bPrice3 = booking.b2bPrice || activity?.b2bPrice || 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount4 - b2bPrice3 * booking.total_participants
+                );
+              case 20: // Amount to be collected from vendor/ '- to be paid'
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const bookingAmount5 = (booking as any)?.booking_amount || 0;
+                const b2bPrice4 = booking.b2bPrice || activity?.b2bPrice || 0;
+                const dueAmount3 = (booking as any)?.due_amount || 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount5 -
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
+                );
+              case 21: // Advance + discount (vendor needs this)
+                if ((booking as any)?.type === "offline" && !isAdmin)
+                  return "-";
+                const bookingAmount6 = (booking as any)?.booking_amount || 0;
+                const dueAmount4 = (booking as any)?.due_amount || 0;
+                const originalPrice4 =
+                  activity?.price || experience?.price || 0;
+                const officialPrice2 =
+                  originalPrice4 * booking.total_participants;
+                const discountCoupon2 =
+                  officialPrice2 - bookingAmount6 > 0
+                    ? officialPrice2 - bookingAmount6
+                    : 0;
+                return formatCurrency(
+                  currency,
+                  bookingAmount6 - dueAmount4 + discountCoupon2
+                );
+              case 22: // Booking Created At
+                if (booking?.created_at) {
+                  return format(new Date(booking.created_at), "dd/MM/yyyy");
+                }
+                return "";
+              case 23: // Admin Note
+                if (!isAdmin) return "";
+                return (booking as any)?.admin_note || "";
+              default:
+                return "";
+            }
+          };
+
+          const cellValue = getCellValue(colIndex);
+          return selectedValues.includes(cellValue);
+        });
+      }
+    });
+
+    // Apply search filter
+    if (globalFilter) {
+      filtered = filtered.filter((booking) => {
+        const searchTerm = globalFilter.toLowerCase();
+        return (
+          booking.experiences?.title?.toLowerCase().includes(searchTerm) ||
+          (
+            (booking.time_slots?.activities ||
+              (booking as any).activities) as any
+          )?.name
+            ?.toLowerCase()
+            .includes(searchTerm) ||
+          booking.status?.toLowerCase().includes(searchTerm) ||
+          (booking as any)?.contact_person_name
+            ?.toLowerCase()
+            .includes(searchTerm) ||
+          (booking as any)?.contact_person_email
+            ?.toLowerCase()
+            .includes(searchTerm) ||
+          (booking as any)?.contact_person_number
+            ?.toLowerCase()
+            .includes(searchTerm)
+        );
+      });
+    }
+
+    // Filter for today's bookings only
+    return filtered.filter((booking) =>
       isSameDay(new Date(booking.booking_date), new Date())
     ).length;
-  }, [bookings]);
+  }, [
+    bookings,
+    selectedDate,
+    selectedEndDate,
+    selectedTimeslotId,
+    selectedActivityId,
+    selectedExperienceId,
+    selectedAgentId,
+    selectedVendorId,
+    selectedBookingType,
+    isAdmin,
+    globalFilter,
+    columnFilters,
+    profileMap,
+    bookedByRoleMap,
+    bookedByProfileMap,
+  ]);
 
-  // Get unique timeslots from bookings
+  // Get unique timeslots from bookings, filtered by other filters
   const uniqueTimeslots = React.useMemo(() => {
+    const filteredBookings = getFilteredBookingsForOptions("timeslot");
     const timeslots = new Map();
-    bookings.forEach((booking) => {
+    filteredBookings.forEach((booking) => {
       const timeslot = booking.time_slots;
       if (timeslot && timeslot.id) {
         const startTime = formatTime12Hour(timeslot.start_time || "");
@@ -1770,7 +3034,7 @@ export const UserBookings = () => {
       }
     });
     return Array.from(timeslots.values());
-  }, [bookings]);
+  }, [bookings, getFilteredBookingsForOptions]);
 
   const BookingCard = ({
     booking,
@@ -1790,10 +3054,16 @@ export const UserBookings = () => {
       activity?.currency || booking?.experiences?.currency || "INR";
     const bookingAmount = booking?.booking_amount || "N/A";
     const dueAmount = booking?.due_amount || 0;
+    const isCanceled = (booking as any)?.type === "canceled";
 
     return (
-      <Card className="h-full" id="">
-        <CardHeader className="pb-0 p-0">
+      <Card
+        className={`h-full ${
+          isCanceled ? "bg-red-50 border-red-200 dark:bg-red-950/20" : ""
+        }`}
+        id=""
+      >
+        <CardHeader className="pb-0 p-0 relative">
           <div className="flex justify-between items-start">
             {/* <CardTitle className="text-base font-semibold line-clamp-2">
               <span
@@ -1822,6 +3092,111 @@ export const UserBookings = () => {
               {booking.status}
             </Badge> */}
           </div>
+          {/* Copy button - only for admin, vendor, agent - positioned in top right */}
+          {(isAdmin || isVendor || isAgent) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute top-0 right-0 h-8 w-8 p-0 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md z-10"
+              onClick={async () => {
+                try {
+                  const experience = booking.experiences;
+                  const activityData = (booking.time_slots?.activities ||
+                    (booking as any).activities) as any;
+                  const timeslot = booking.time_slots;
+
+                  // Get customer name
+                  const customerName =
+                    booking.contact_person_name ||
+                    (profile
+                      ? `${profile.first_name} ${profile.last_name}`.trim()
+                      : "") ||
+                    booking?.booking_participants?.[0]?.name ||
+                    "N/A";
+
+                  // Get total participants
+                  const totalParticipants = booking.total_participants || 0;
+
+                  // Get customer contact
+                  const customerContact =
+                    booking.contact_person_number ||
+                    profile?.phone_number ||
+                    booking?.booking_participants?.[0]?.phone_number ||
+                    "N/A";
+
+                  // Get experience name
+                  const experienceName = experience?.title || "N/A";
+
+                  // Get activity name
+                  const activityName = activityData?.name || "N/A";
+
+                  // Get date & time
+                  const bookingDate = format(
+                    new Date(booking.booking_date),
+                    "MMM d, yyyy"
+                  );
+                  let dateTime = bookingDate;
+                  if (timeslot?.start_time && timeslot?.end_time) {
+                    const startTime = formatTime12Hour(timeslot.start_time);
+                    const endTime = formatTime12Hour(timeslot.end_time);
+                    dateTime = `${bookingDate} ${startTime} - ${endTime}`;
+                  } else if ((booking as any)?.type === "offline") {
+                    dateTime = `${bookingDate} (Offline)`;
+                  }
+
+                  // Get amount to be collected (due amount)
+                  const amountToBeCollected = booking.due_amount || 0;
+
+                  // Get discount and advance amount
+                  const bookingAmount = parseFloat(
+                    (booking as any)?.booking_amount?.toString() || "0"
+                  );
+                  const dueAmount = parseFloat(
+                    booking?.due_amount?.toString() || "0"
+                  );
+                  const advanceAmount = bookingAmount - dueAmount;
+
+                  // Calculate discount
+                  const originalPrice =
+                    activityData?.price || experience?.price || 0;
+                  const officialPrice = originalPrice * totalParticipants;
+                  const discountAmount =
+                    officialPrice - bookingAmount > 0
+                      ? officialPrice - bookingAmount
+                      : 0;
+                  const discountAndAdvance = advanceAmount + discountAmount;
+
+                  // Format the text
+                  const formattedText = `Customer Name: ${customerName}
+Total Participants: ${totalParticipants}
+Customer Contact: ${customerContact}
+Experience: ${experienceName}
+Activity: ${activityName}
+Date & Time: ${dateTime}
+Amount to be Collected: ${formatCurrency(currency, amountToBeCollected)}
+Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
+
+                  // Copy to clipboard
+                  await navigator.clipboard.writeText(formattedText);
+
+                  toast({
+                    title: "Copied!",
+                    description: "Booking details copied to clipboard",
+                  });
+                } catch (error) {
+                  console.error("Error copying booking details:", error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to copy booking details",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              title="Copy Booking Details"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="mobile-booking-card-content">
           <div className="mobile-card-section">
@@ -1863,13 +3238,14 @@ export const UserBookings = () => {
                 <span className="mobile-info-label">Contact</span>
                 <span className="mobile-info-value">
                   {booking.contact_person_number ||
-                    profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number ? (
+                  profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ? (
                     <a
-                      href={`tel:${booking.contact_person_number ||
+                      href={`tel:${
+                        booking.contact_person_number ||
                         profile?.phone_number ||
                         booking?.booking_participants?.[0]?.phone_number
-                        }`}
+                      }`}
                       className="mobile-contact-link"
                     >
                       {booking.contact_person_number ||
@@ -1978,6 +3354,36 @@ export const UserBookings = () => {
                 </p>
               </div>
             )}
+
+            {/* Cancel Booking Button - Admin Only */}
+            {isAdmin && (
+              <div className="mobile-card-section">
+                {!isCanceled ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+                    onClick={() => {
+                      setBookingToCancel({
+                        id: booking.id,
+                        title: booking.experiences?.title || "this booking",
+                      });
+                      setCancelBookingDialogOpen(true);
+                    }}
+                    disabled={cancelingBookingId === booking.id}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    {cancelingBookingId === booking.id
+                      ? "Canceling..."
+                      : "Cancel Booking"}
+                  </Button>
+                ) : (
+                  <div className="w-full px-3 py-2 bg-red-100 text-red-700 rounded text-sm font-medium text-center">
+                    Booking Canceled
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Vendor Money Calculation Section - Hidden on mobile */}
@@ -1996,7 +3402,7 @@ export const UserBookings = () => {
                           currency,
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2008,7 +3414,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           booking.time_slots?.activities?.price *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2020,7 +3426,7 @@ export const UserBookings = () => {
                           (booking.time_slots?.activities?.price -
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice)) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -2045,7 +3451,7 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (Number(bookingAmount) - dueAmount)
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -2057,10 +3463,10 @@ export const UserBookings = () => {
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (booking.b2bPrice ||
-                            booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants -
-                          (Number(bookingAmount) - dueAmount)
+                            (booking.b2bPrice ||
+                              booking.time_slots?.activities?.b2bPrice) *
+                              booking.total_participants -
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -2075,7 +3481,7 @@ export const UserBookings = () => {
 
   return (
     <div>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-0">
         {/* Mobile Layout: Search + Date Button on top row */}
         {isMobile && (
           <div className="flex gap-2">
@@ -2122,7 +3528,7 @@ export const UserBookings = () => {
                       setShowDateRangePicker(false);
                     }
                   }}
-                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                  // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
                   Columns
                 </Button>
@@ -2141,16 +3547,18 @@ export const UserBookings = () => {
                         const isHiddenForAgent =
                           isAgent &&
                           (index === 10 ||
+                            index === 11 ||
                             index === 12 ||
                             index === 13 ||
                             index === 14);
                         return (
                           <label
                             key={index}
-                            className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
+                            className={`flex items-center gap-2 p-2 rounded ${
+                              isHiddenForAgent
                                 ? "opacity-50 cursor-not-allowed"
                                 : "cursor-pointer hover:bg-muted/30"
-                              }`}
+                            }`}
                           >
                             <input
                               type="checkbox"
@@ -2172,7 +3580,8 @@ export const UserBookings = () => {
                           const newVisibility = Array(columnCount).fill(true);
                           // Keep hidden columns hidden for agents
                           if (isAgent) {
-                            newVisibility[10] = false; // Official Price/ Original Price
+                            newVisibility[10] = false; // Booking Type
+                            newVisibility[11] = false; // Official Price/ Original Price
                             newVisibility[12] = false; // Commission as per vendor
                             newVisibility[13] = false; // Website Price
                             newVisibility[14] = false; // Discount Coupon
@@ -2242,7 +3651,7 @@ export const UserBookings = () => {
                   >
                     {selectedTimeslotId
                       ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                        ?.displayName || "Timeslot"
+                          ?.displayName || "Timeslot"
                       : "Timeslot"}
                   </Button>
                 </PopoverTrigger>
@@ -2304,8 +3713,8 @@ export const UserBookings = () => {
                   >
                     {selectedActivityId
                       ? uniqueActivities.find(
-                        (a) => a.id === selectedActivityId
-                      )?.name || "Activity"
+                          (a) => a.id === selectedActivityId
+                        )?.name || "Activity"
                       : "Activity"}
                   </Button>
                 </PopoverTrigger>
@@ -2346,6 +3755,136 @@ export const UserBookings = () => {
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* Booking Type Filter Button - Hidden for agents */}
+            {!isAgent && (
+              <div className="relative">
+                <Popover
+                  open={showBookingTypeFilter}
+                  onOpenChange={(open) => {
+                    setShowBookingTypeFilter(open);
+                    if (open) {
+                      setShowTimeslotFilter(false);
+                      setShowActivityFilter(false);
+                      setShowDateRangePicker(false);
+                      setShowColumnSelector(false);
+                    }
+                  }}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={selectedBookingType ? "default" : "outline"}
+                      className="text-sm"
+                    >
+                      {selectedBookingType
+                        ? selectedBookingType === "canceled"
+                          ? "Canceled"
+                          : selectedBookingType === "admin-offline"
+                          ? "Admin-offline"
+                          : selectedBookingType === "offline"
+                          ? "Offline"
+                          : selectedBookingType === "agent"
+                          ? "Agent"
+                          : "Bucketlistt"
+                        : "Booking Type"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-4" align="start">
+                    <div className="space-y-2">
+                      <Button
+                        variant={
+                          selectedBookingType === null ? "default" : "outline"
+                        }
+                        size="sm"
+                        onClick={() => {
+                          setSelectedBookingType(null);
+                          setShowBookingTypeFilter(false);
+                        }}
+                        className="w-full justify-start text-xs"
+                      >
+                        All Types
+                      </Button>
+                      <Button
+                        variant={
+                          selectedBookingType === "online"
+                            ? "default"
+                            : "outline"
+                        }
+                        size="sm"
+                        onClick={() => {
+                          setSelectedBookingType("online");
+                          setShowBookingTypeFilter(false);
+                        }}
+                        className="w-full justify-start text-xs"
+                      >
+                        Bucketlistt
+                      </Button>
+                      <Button
+                        variant={
+                          selectedBookingType === "admin-offline"
+                            ? "default"
+                            : "outline"
+                        }
+                        size="sm"
+                        onClick={() => {
+                          setSelectedBookingType("admin-offline");
+                          setShowBookingTypeFilter(false);
+                        }}
+                        className="w-full justify-start text-xs"
+                      >
+                        Admin-offline
+                      </Button>
+                      <Button
+                        variant={
+                          selectedBookingType === "offline"
+                            ? "default"
+                            : "outline"
+                        }
+                        size="sm"
+                        onClick={() => {
+                          setSelectedBookingType("offline");
+                          setShowBookingTypeFilter(false);
+                        }}
+                        className="w-full justify-start text-xs"
+                      >
+                        Offline
+                      </Button>
+                      <Button
+                        variant={
+                          selectedBookingType === "agent"
+                            ? "default"
+                            : "outline"
+                        }
+                        size="sm"
+                        onClick={() => {
+                          setSelectedBookingType("agent");
+                          setShowBookingTypeFilter(false);
+                        }}
+                        className="w-full justify-start text-xs"
+                      >
+                        Agent
+                      </Button>
+                      <Button
+                        variant={
+                          selectedBookingType === "canceled"
+                            ? "default"
+                            : "outline"
+                        }
+                        size="sm"
+                        onClick={() => {
+                          setSelectedBookingType("canceled");
+                          setShowBookingTypeFilter(false);
+                        }}
+                        className="w-full justify-start text-xs"
+                      >
+                        Canceled
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
             <div className="relative">
               <ConfigProvider
                 theme={{
@@ -2391,11 +3930,11 @@ export const UserBookings = () => {
                     value={
                       selectedDate
                         ? [
-                          dayjs(selectedDate),
-                          selectedEndDate
-                            ? dayjs(selectedEndDate)
-                            : dayjs(selectedDate),
-                        ]
+                            dayjs(selectedDate),
+                            selectedEndDate
+                              ? dayjs(selectedEndDate)
+                              : dayjs(selectedDate),
+                          ]
                         : null
                     }
                     onChange={(dates, dateStrings) => {
@@ -2607,17 +4146,16 @@ export const UserBookings = () => {
               />
             ))}
           </div>
-
           {/* Desktop: Table Layout */}
           <div id="UserBookingsDesktopLayout" className="hidden">
             {/* Column Selector Button */}
 
-            <div className="overflow-x-auto overflow-y-visible">
+            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-300px)]">
               <table
                 className="w-full text-xs"
                 style={{ tableLayout: "fixed" }}
               >
-                <thead>
+                <thead className="sticky top-0 z-10 bg-white shadow-sm">
                   <tr>
                     {columnOrder.map(
                       (originalIndex) =>
@@ -2628,13 +4166,15 @@ export const UserBookings = () => {
                               headerRefs.current[originalIndex] = el;
                             }}
                             data-column-index={originalIndex}
-                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none ${draggedColumnIndex === originalIndex
+                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none bg-white ${
+                              draggedColumnIndex === originalIndex
                                 ? "opacity-50"
                                 : ""
-                              } ${dragOverColumnIndex === originalIndex
+                            } ${
+                              dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                              } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
+                            } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
                             style={{ width: columnWidths[originalIndex] }}
                             draggable={true}
                             onDragStart={() =>
@@ -2671,44 +4211,49 @@ export const UserBookings = () => {
                                 {columnHeaders[originalIndex]}
                               </span>
                               <div className="flex items-center gap-1 flex-shrink-0">
-                                <span
-                                  className="filter-icon cursor-pointer hover:bg-gray-200 rounded p-0.5 transition-colors duration-150"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (openFilterDropdown === originalIndex) {
-                                      setOpenFilterDropdown(null);
-                                    } else {
-                                      const headerElement =
-                                        headerRefs.current[originalIndex];
-                                      if (headerElement) {
-                                        const rect =
-                                          headerElement.getBoundingClientRect();
-                                        setFilterDropdownPosition({
-                                          top: rect.bottom + 4,
-                                          left: rect.left,
-                                        });
+                                {originalIndex !== 24 && (
+                                  <span
+                                    className="filter-icon cursor-pointer hover:bg-gray-200 rounded p-0.5 transition-colors duration-150"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (
+                                        openFilterDropdown === originalIndex
+                                      ) {
+                                        setOpenFilterDropdown(null);
+                                      } else {
+                                        const headerElement =
+                                          headerRefs.current[originalIndex];
+                                        if (headerElement) {
+                                          const rect =
+                                            headerElement.getBoundingClientRect();
+                                          setFilterDropdownPosition({
+                                            top: rect.bottom + 4,
+                                            left: rect.left,
+                                          });
+                                        }
+                                        setOpenFilterDropdown(originalIndex);
                                       }
-                                      setOpenFilterDropdown(originalIndex);
-                                    }
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor =
-                                      "#e5e7eb";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor =
-                                      "transparent";
-                                  }}
-                                  title="Filter"
-                                >
-                                  <Filter
-                                    className={`w-3 h-3 ${columnFilters[originalIndex] &&
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor =
+                                        "#e5e7eb";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor =
+                                        "transparent";
+                                    }}
+                                    title="Filter"
+                                  >
+                                    <Filter
+                                      className={`w-3 h-3 ${
+                                        columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length > 0
-                                        ? "text-blue-600"
-                                        : "text-gray-400"
+                                          ? "text-blue-600"
+                                          : "text-gray-400"
                                       }`}
-                                  />
-                                </span>
+                                    />
+                                  </span>
+                                )}
                               </div>
                             </span>
                             {/* Filter Dropdown */}
@@ -2738,7 +4283,7 @@ export const UserBookings = () => {
                                       </span>
                                       {columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length >
-                                        0 && (
+                                          0 && (
                                           <Button
                                             variant="ghost"
                                             size="sm"
@@ -2760,11 +4305,12 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
-                                            sortOrder === "asc"
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
+                                          sortOrder === "asc"
                                             ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                                             : "hover:bg-gray-200"
-                                          }`}
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -2786,11 +4332,12 @@ export const UserBookings = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
-                                            sortOrder === "desc"
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
+                                          sortOrder === "desc"
                                             ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                                             : "hover:bg-gray-200"
-                                          }`}
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -2866,8 +4413,8 @@ export const UserBookings = () => {
                                   {/* Filter Options List */}
                                   <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
                                     {getUniqueColumnValues[originalIndex] &&
-                                      getUniqueColumnValues[originalIndex]
-                                        .length > 0 ? (
+                                    getUniqueColumnValues[originalIndex]
+                                      .length > 0 ? (
                                       (() => {
                                         const searchQuery =
                                           filterSearchQueries[
@@ -2998,8 +4545,17 @@ export const UserBookings = () => {
                       const advancePlusDiscount =
                         advancePaid10 + discountCoupon;
 
+                      const isCanceled = (booking as any)?.type === "canceled";
+
                       return (
-                        <tr key={booking.id}>
+                        <tr
+                          key={booking.id}
+                          className={
+                            isCanceled
+                              ? "bg-red-50 hover:bg-red-100 dark:bg-red-950/20"
+                              : ""
+                          }
+                        >
                           {columnOrder.map(
                             (originalIndex) =>
                               columnVisibility[originalIndex] && (
@@ -3010,8 +4566,8 @@ export const UserBookings = () => {
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                        ? booking.note_for_guide || ""
-                                        : ""
+                                      ? booking.note_for_guide || ""
+                                      : ""
                                   }
                                 >
                                   {renderCellContent(
@@ -3164,6 +4720,337 @@ export const UserBookings = () => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Cancel Booking Confirmation Dialog */}
+      {isAdmin && (
+        <Dialog
+          open={cancelBookingDialogOpen}
+          onOpenChange={(open) => {
+            setCancelBookingDialogOpen(open);
+            if (!open) {
+              setBookingToCancel(null);
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <XCircle className="h-5 w-5" />
+                Cancel Booking
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="text-sm text-gray-700">
+                Are you sure you want to cancel this booking?
+                {bookingToCancel?.title && (
+                  <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                    <span className="font-medium">Booking:</span>{" "}
+                    {bookingToCancel.title}
+                  </div>
+                )}
+              </div>
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-xs text-red-800">
+                  <strong>Note:</strong> This action cannot be undone. The
+                  booking will be marked as canceled.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCancelBookingDialogOpen(false);
+                  setBookingToCancel(null);
+                }}
+                disabled={cancelingBookingId === bookingToCancel?.id}
+              >
+                Keep Booking
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (bookingToCancel?.id) {
+                    handleCancelBooking(bookingToCancel.id);
+                  }
+                }}
+                disabled={cancelingBookingId === bookingToCancel?.id}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {cancelingBookingId === bookingToCancel?.id ? (
+                  <>
+                    <XCircle className="h-4 w-4 mr-2 animate-spin" />
+                    Canceling...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Cancel Booking
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Backdrop for Actions Dropdown */}
+      {Object.values(isActionsDropdownOpen).some((isOpen) => isOpen) && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-[9998]"
+          onClick={() => {
+            setIsActionsDropdownOpen({});
+          }}
+        />
+      )}
+
+      {/* Edit Booking Dialog */}
+      <Dialog
+        open={editBookingDialogOpen}
+        onOpenChange={(open) => {
+          setEditBookingDialogOpen(open);
+          if (!open) {
+            setBookingToEdit(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Booking</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editContactName">Contact Person Name *</Label>
+              <Input
+                id="editContactName"
+                placeholder="Enter contact person name"
+                value={contactPersonName}
+                onChange={(e) => setContactPersonName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editContactNumber">Contact Person Number *</Label>
+              <Input
+                id="editContactNumber"
+                placeholder="Enter contact person number"
+                value={contactPersonNumber}
+                onChange={(e) => setContactPersonNumber(e.target.value)}
+                maxLength={10}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editTotalParticipants">Participants *</Label>
+              <Input
+                id="editTotalParticipants"
+                type="number"
+                placeholder="Enter number of participants"
+                value={totalParticipants}
+                onChange={(e) => setTotalParticipants(e.target.value)}
+                min="1"
+                max="50"
+                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editBookingAmount">Booking Amount *</Label>
+              <Input
+                id="editBookingAmount"
+                type="number"
+                placeholder="Enter booking amount"
+                value={bookingAmount}
+                onChange={(e) => setBookingAmount(e.target.value)}
+                min="0"
+                step="0.01"
+                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editAdvance">Advance *</Label>
+              <Input
+                id="editAdvance"
+                type="number"
+                placeholder="Enter advance amount"
+                value={advance}
+                onChange={(e) => setAdvance(e.target.value)}
+                min="0"
+                step="0.01"
+                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Due Amount:{" "}
+                {(() => {
+                  const booking = parseFloat(bookingAmount) || 0;
+                  const adv = parseFloat(advance) || 0;
+                  return (booking - adv).toFixed(2);
+                })()}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditBookingDialogOpen(false);
+                setBookingToEdit(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!bookingToEdit) return;
+
+                // Validate inputs
+                if (!contactPersonName.trim()) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Contact person name is required",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (!contactPersonNumber.trim()) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Contact person number is required",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                const bookingAmountNum = parseFloat(bookingAmount) || 0;
+                const advanceNum = parseFloat(advance) || 0;
+                const totalParticipantsNum = parseInt(totalParticipants) || 1;
+
+                if (totalParticipantsNum < 1) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Number of participants must be at least 1",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (totalParticipantsNum > 50) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Number of participants cannot exceed 50",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (bookingAmountNum < 0) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Booking amount cannot be negative",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (advanceNum < 0) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Advance cannot be negative",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (advanceNum > bookingAmountNum) {
+                  toast({
+                    title: "Validation Error",
+                    description:
+                      "Advance cannot be greater than booking amount",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                setIsUpdatingBooking(true);
+                try {
+                  // Calculate due_amount: booking_amount - advance
+                  const dueAmountNum = bookingAmountNum - advanceNum;
+
+                  // Update booking
+                  const { error: bookingError } = await supabase
+                    .from("bookings")
+                    .update({
+                      contact_person_name: contactPersonName.trim(),
+                      contact_person_number: contactPersonNumber.trim(),
+                      booking_amount: bookingAmountNum,
+                      due_amount: dueAmountNum,
+                      total_participants: totalParticipantsNum,
+                    } as any)
+                    .eq("id", bookingToEdit.id);
+
+                  if (bookingError) throw bookingError;
+
+                  // Update booking_participants if they exist
+                  const { data: participants } = await supabase
+                    .from("booking_participants")
+                    .select("id")
+                    .eq("booking_id", bookingToEdit.id);
+
+                  if (participants && participants.length > 0) {
+                    // Update all participants with new contact info
+                    const { error: participantsError } = await supabase
+                      .from("booking_participants")
+                      .update({
+                        name: contactPersonName.trim(),
+                        phone_number: contactPersonNumber.trim(),
+                      })
+                      .eq("booking_id", bookingToEdit.id);
+
+                    if (participantsError) {
+                      console.error(
+                        "Error updating participants:",
+                        participantsError
+                      );
+                      // Don't throw - booking update succeeded
+                    }
+                  }
+
+                  toast({
+                    title: "Success",
+                    description: "Booking updated successfully",
+                  });
+                  queryClient.invalidateQueries({
+                    queryKey: ["user-bookings"],
+                  });
+                  setEditBookingDialogOpen(false);
+                  setBookingToEdit(null);
+                } catch (error) {
+                  console.error("Error updating booking:", error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to update booking",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setIsUpdatingBooking(false);
+                }
+              }}
+              disabled={isUpdatingBooking}
+              className="bg-brand-primary"
+            >
+              {isUpdatingBooking ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

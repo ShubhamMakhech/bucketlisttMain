@@ -65,6 +65,10 @@ const offlineBookingSchema = z.object({
     .number()
     .min(0, "Amount per person must be positive")
     .optional(),
+  advance_amount: z
+    .number()
+    .min(0, "Advance amount must be positive")
+    .optional(),
   booking_date: z.date({ required_error: "Please select a date" }),
   note_for_guide: z.string().optional(),
 });
@@ -83,13 +87,14 @@ export const OfflineBookingDialog = ({
   onBookingSuccess,
 }: OfflineBookingDialogProps) => {
   const { user } = useAuth();
-  const { isVendor, isAgent } = useUserRole();
+  const { isVendor, isAgent, isAdmin } = useUserRole();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedSlotId, setSelectedSlotId] = useState<string | undefined>(
     undefined
   );
+  const [showB2BPrice, setShowB2BPrice] = useState(false);
 
   const form = useForm<OfflineBookingFormData>({
     resolver: zodResolver(offlineBookingSchema),
@@ -103,6 +108,7 @@ export const OfflineBookingDialog = ({
       contact_person_email: "",
       total_participants: 1,
       booking_amount_per_person: 0,
+      advance_amount: 0,
       note_for_guide: "",
     },
   });
@@ -125,9 +131,15 @@ export const OfflineBookingDialog = ({
     enabled: !!user?.id && isAgent,
   });
 
-  // Fetch experiences - vendor's own experiences OR all active experiences for agents
+  // Fetch experiences - vendor's own experiences OR all active experiences for agents/admins
   const { data: experiences = [] } = useQuery({
-    queryKey: ["offline-booking-experiences", user?.id, isVendor, isAgent],
+    queryKey: [
+      "offline-booking-experiences",
+      user?.id,
+      isVendor,
+      isAgent,
+      isAdmin,
+    ],
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -136,11 +148,11 @@ export const OfflineBookingDialog = ({
         .select("id, title, currency")
         .eq("is_active", true);
 
-      // For vendors, filter by vendor_id; for agents, get all active experiences
+      // For vendors, filter by vendor_id; for agents/admins, get all active experiences
       if (isVendor) {
         query = query.eq("vendor_id", user.id);
       }
-      // For agents, no filter - get all active experiences
+      // For agents/admins, no filter - get all active experiences
 
       query = query.order("title", { ascending: true });
 
@@ -149,7 +161,7 @@ export const OfflineBookingDialog = ({
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id && (isVendor || isAgent),
+    enabled: !!user?.id && (isVendor || isAgent || isAdmin),
   });
 
   const selectedExperienceId = form.watch("experience_id");
@@ -247,21 +259,22 @@ export const OfflineBookingDialog = ({
       form.reset();
       setSelectedDate(undefined);
       setSelectedSlotId(undefined);
+      setShowB2BPrice(false);
     }
   }, [isOpen, form]);
 
-  // Validate vendor/agent access
+  // Validate vendor/agent/admin access
   useEffect(() => {
-    if (!isVendor && !isAgent && user) {
-      //   console.log("isVendor", isVendor, "isAgent", isAgent, user);
+    if (!isVendor && !isAgent && !isAdmin && user) {
+      //   console.log("isVendor", isVendor, "isAgent", isAgent, "isAdmin", isAdmin, user);
       //   toast({
       //     title: "Access Denied",
-      //     description: "Only vendors and agents can create offline bookings.",
+      //     description: "Only vendors, agents, and admins can create offline bookings.",
       //     variant: "destructive",
       //   });
       onClose();
     }
-  }, [isVendor, isAgent, user, toast, onClose]);
+  }, [isVendor, isAgent, isAdmin, user, toast, onClose]);
 
   const handleClose = () => {
     form.reset();
@@ -308,12 +321,14 @@ export const OfflineBookingDialog = ({
       const bookingAmount =
         (data.booking_amount_per_person || 0) * data.total_participants ||
         (activity?.price ? activity.price * data.total_participants : 0);
+      const advanceAmount = data.advance_amount || 0;
+      const dueAmount = Math.max(0, bookingAmount - advanceAmount) || 0;
       const bookingDate = selectedDate || new Date();
       const formattedDate = moment(bookingDate).format("DD/MM/YYYY");
 
-      // Get agent name for WhatsApp messages
+      // Get agent name for WhatsApp messages (only for agents, not admins)
       const agentName =
-        isAgent && agentProfile
+        isAgent && !isAdmin && agentProfile
           ? `${agentProfile.first_name || ""} ${
               agentProfile.last_name || ""
             }`.trim()
@@ -339,8 +354,8 @@ export const OfflineBookingDialog = ({
         }
       }
 
-      // Add agent name in brackets to date/time strings if agent
-      if (isAgent && agentName) {
+      // Add agent name in brackets to date/time strings if agent (not admin)
+      if (isAgent && !isAdmin && agentName) {
         timeSlotText = `${timeSlotText} (${agentName})`;
         formattedDateTime = `${formattedDateTime} (${agentName})`;
       }
@@ -353,14 +368,18 @@ export const OfflineBookingDialog = ({
         pdfUrl = await generateInvoicePdf(
           {
             participantName: data.contact_person_name,
+            experienceTitle:
+              experienceDetails?.title || experience?.title || "Activity",
             activityName: activity?.name || "",
             dateTime: formattedDateTime,
             pickUpLocation: experienceDetails?.location || "-",
-            spotLocation: experienceDetails?.location2 || "",
-            spotLocationUrl: locationUrl,
+            spotLocation: experienceDetails?.location2 || "-",
+            spotLocationUrl: experienceDetails?.location2?.startsWith("http")
+              ? experienceDetails.location2
+              : "",
             totalParticipants: data.total_participants,
-            amountPaid: bookingAmount.toFixed(2),
-            amountToBePaid: "0",
+            amountPaid: (bookingAmount - dueAmount).toFixed(2),
+            amountToBePaid: dueAmount.toFixed(2),
             currency:
               activity?.currency || experienceDetails?.currency || "INR",
           },
@@ -436,11 +455,11 @@ export const OfflineBookingDialog = ({
                     },
                     body_7: {
                       type: "text",
-                      value: bookingAmount.toFixed(2).toString(),
+                      value: (bookingAmount - dueAmount).toFixed(2).toString(),
                     },
                     body_8: {
                       type: "text",
-                      value: "0",
+                      value: dueAmount.toFixed(2).toString() || "0",
                     },
                   },
                 },
@@ -498,11 +517,11 @@ export const OfflineBookingDialog = ({
                     },
                     body_6: {
                       type: "text",
-                      value: bookingAmount.toFixed(2).toString(),
+                      value: (bookingAmount - dueAmount).toFixed(2).toString(),
                     },
                     body_7: {
                       type: "text",
-                      value: "0",
+                      value: dueAmount.toFixed(2).toString() || "0",
                     },
                   },
                 },
@@ -514,7 +533,11 @@ export const OfflineBookingDialog = ({
 
       // Send customer WhatsApp
       await SendWhatsappMessage(customerWhatsappBody);
+      const activityPrice = activity?.price * data.total_participants || 0;
+      const discountAmount = activityPrice - bookingAmount || 0;
+      const advancePlusDiscountAmount = advanceAmount + discountAmount;
 
+      const discountPlusAdvanceAmount = 0;
       // Vendor WhatsApp message
       const vendorWhatsappBody = {
         integrated_number: "919274046332",
@@ -563,11 +586,12 @@ export const OfflineBookingDialog = ({
                   },
                   body_7: {
                     type: "text",
-                    value: "0",
+                    value: dueAmount.toFixed(2).toString() || "0",
                   },
                   body_8: {
                     type: "text",
-                    value: bookingAmount.toFixed(2).toString(),
+                    value:
+                      advancePlusDiscountAmount.toFixed(2).toString() || "0",
                   },
                 },
               },
@@ -623,11 +647,12 @@ export const OfflineBookingDialog = ({
                   },
                   body_7: {
                     type: "text",
-                    value: "0",
+                    value: dueAmount.toFixed(2).toString() || "0",
                   },
                   body_8: {
                     type: "text",
-                    value: bookingAmount.toFixed(2).toString(),
+                    value:
+                      advancePlusDiscountAmount.toFixed(2).toString() || "0",
                   },
                 },
               },
@@ -670,8 +695,8 @@ export const OfflineBookingDialog = ({
                 location2: experienceDetails?.location2 || null,
                 totalParticipants: data.total_participants,
                 totalAmount: bookingAmount,
-                upfrontAmount: bookingAmount,
-                dueAmount: "0",
+                upfrontAmount: advanceAmount,
+                dueAmount: dueAmount.toFixed(2),
                 partialPayment: false,
                 currency:
                   activity?.currency || experienceDetails?.currency || "INR",
@@ -706,10 +731,11 @@ export const OfflineBookingDialog = ({
   };
 
   const onSubmit = async (data: OfflineBookingFormData) => {
-    if (!user || (!isVendor && !isAgent)) {
+    if (!user || (!isVendor && !isAgent && !isAdmin)) {
       toast({
         title: "Access Denied",
-        description: "Only vendors and agents can create offline bookings.",
+        description:
+          "Only vendors, agents, and admins can create offline bookings.",
         variant: "destructive",
       });
       return;
@@ -736,9 +762,17 @@ export const OfflineBookingDialog = ({
 
     try {
       // Create offline booking
-      // For offline bookings, user_id can be the vendor's/agent's ID since customer didn't book online
+      // For offline bookings, user_id can be the vendor's/agent's/admin's ID since customer didn't book online
+      const totalBookingAmount =
+        (data.booking_amount_per_person || 0) * data.total_participants ||
+        (selectedActivity?.price
+          ? selectedActivity.price * data.total_participants
+          : 0);
+      const advanceAmount = data.advance_amount || 0;
+      const dueAmount = Math.max(0, totalBookingAmount - advanceAmount);
+
       const bookingData = {
-        user_id: user.id, // Vendor's/Agent's user_id (customer didn't book online)
+        user_id: user.id, // Vendor's/Agent's/Admin's user_id (customer didn't book online)
         experience_id: data.experience_id,
         activity_id: data.activity_id, // Direct activity reference for offline bookings
         booking_date: selectedDate?.toISOString() || new Date().toISOString(),
@@ -747,18 +781,16 @@ export const OfflineBookingDialog = ({
         isAgentBooking: isAgent ? true : false,
         contact_person_number: data.contact_person_number,
         contact_person_email: data.contact_person_email || null,
-        booking_amount:
-          (data.booking_amount_per_person || 0) * data.total_participants ||
-          (selectedActivity?.price
-            ? selectedActivity.price * data.total_participants
-            : 0),
-        due_amount: 0, // No payment needed for offline bookings
+        booking_amount: totalBookingAmount,
+        due_amount: dueAmount, // Calculate: (price per person * participants) - advance amount
         status: "confirmed",
         terms_accepted: true,
+        b2bPrice: selectedActivity?.b2bPrice || 0,
         note_for_guide: data.note_for_guide || null,
-        booked_by: user.id, // Vendor/Agent who created the booking
+        booked_by: user.id, // Vendor/Agent/Admin who created the booking
         type: "offline" as const,
         time_slot_id: selectedSlotId || null, // Optional time slot for offline bookings
+        admin_note: isAdmin ? "admin booking" : null, // Set default admin note for admin bookings
       };
 
       const { data: booking, error: bookingError } = await supabase
@@ -792,22 +824,32 @@ export const OfflineBookingDialog = ({
         throw participantsError;
       }
 
-      // Send WhatsApp messages and email
-      await sendBookingConfirmation(
-        data,
-        booking.id,
-        experience,
-        selectedActivity
-      );
-
+      // Show success immediately after booking is created
       toast({
         title: "Offline Booking Created!",
         description:
-          "The offline booking has been successfully created. Notifications have been sent.",
+          "The offline booking has been successfully created. Notifications are being sent in the background.",
       });
 
+      // Close dialog and refresh immediately
       onBookingSuccess();
       handleClose();
+
+      // Run confirmations in the background (non-blocking)
+      // Use setTimeout to ensure it runs after the UI updates
+      setTimeout(() => {
+        sendBookingConfirmation(
+          data,
+          booking.id,
+          experience,
+          selectedActivity
+        ).catch((error) => {
+          // Log background errors but don't show to user (booking is already created)
+          console.error("Background notification error:", error);
+          // Optionally, you could show a subtle notification that some notifications failed
+          // but the booking was still created successfully
+        });
+      }, 100);
     } catch (error: any) {
       console.error("Offline booking creation error:", error);
       toast({
@@ -824,7 +866,7 @@ export const OfflineBookingDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="offline-booking-dialog max-h-[95vh] overflow-y-auto">
+      <DialogContent className="offline-booking-dialog">
         <div className="offline-booking-header">
           <h2 className="offline-booking-title">Create Offline Booking</h2>
         </div>
@@ -849,7 +891,7 @@ export const OfflineBookingDialog = ({
                       value={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="h-11">
+                        <SelectTrigger className="form-input-trigger">
                           <SelectValue placeholder="Select Experience *" />
                         </SelectTrigger>
                       </FormControl>
@@ -877,7 +919,7 @@ export const OfflineBookingDialog = ({
                       disabled={!selectedExperienceId}
                     >
                       <FormControl>
-                        <SelectTrigger className="h-11">
+                        <SelectTrigger className="form-input-trigger">
                           <SelectValue placeholder="Select Activity *" />
                         </SelectTrigger>
                       </FormControl>
@@ -902,7 +944,7 @@ export const OfflineBookingDialog = ({
                     <FormControl>
                       <div className="relative">
                         <DatePicker
-                          className="h-11 w-full"
+                          className="form-date-picker"
                           value={selectedDate ? dayjs(selectedDate) : null}
                           onChange={(date) => {
                             const d = date ? date.toDate() : undefined;
@@ -911,9 +953,14 @@ export const OfflineBookingDialog = ({
                             form.setValue("time_slot_id", "");
                             field.onChange(d);
                           }}
-                          disabledDate={(current) =>
-                            current && current < dayjs().startOf("day")
-                          }
+                          disabledDate={(current) => {
+                            // Admins can create backdated bookings, other roles cannot
+                            if (isAdmin) {
+                              return false; // No date restrictions for admins
+                            }
+                            // For vendors and agents, prevent selecting past dates
+                            return current && current < dayjs().startOf("day");
+                          }}
                           placeholder="Select Date *"
                           format="YYYY-MM-DD"
                         />
@@ -932,11 +979,11 @@ export const OfflineBookingDialog = ({
                 name="time_slot_id"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-slate-700">
+                    <div className="time-slots-header">
+                      <span className="time-slots-label">
                         Available Time Slots
                       </span>
-                      <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+                      <span className="selected-date-badge">
                         {format(selectedDate, "MMM d, yyyy")}
                       </span>
                     </div>
@@ -968,8 +1015,8 @@ export const OfflineBookingDialog = ({
                                 : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
                             }`}
                           >
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-3.5 w-3.5 theme-purple-text" />
+                            <div className="time-slot-content">
+                              <Clock className="time-slot-icon" />
                               <span className="time-slot-time">
                                 {formatTime(slot.start_time)}
                               </span>
@@ -992,7 +1039,7 @@ export const OfflineBookingDialog = ({
               <span className="contact-details-title">
                 Customer Information
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="contact-fields-grid">
                 <FormField
                   control={form.control}
                   name="contact_person_name"
@@ -1001,7 +1048,7 @@ export const OfflineBookingDialog = ({
                       <FormControl>
                         <Input
                           placeholder="Full Name *"
-                          className="bg-white"
+                          className="form-input"
                           {...field}
                         />
                       </FormControl>
@@ -1017,7 +1064,7 @@ export const OfflineBookingDialog = ({
                       <FormControl>
                         <Input
                           placeholder="Phone Number *"
-                          className="bg-white"
+                          className="form-input"
                           {...field}
                           maxLength={10}
                         />
@@ -1035,7 +1082,7 @@ export const OfflineBookingDialog = ({
                         <Input
                           type="email"
                           placeholder="Email Address"
-                          className="bg-white"
+                          className="form-input"
                           {...field}
                         />
                       </FormControl>
@@ -1047,56 +1094,90 @@ export const OfflineBookingDialog = ({
 
             {/* Booking Details & Summary */}
             <div className="booking-info-layout">
-              <div className="space-y-4">
+              <div className="booking-fields-stack">
                 <div className="MobileFlexOnly">
-                  <FormField
-                    control={form.control}
-                    name="total_participants"
-                    render={({ field }) => (
-                      <FormItem>
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
-                          Participants
-                        </label>
-                        <div className="participants-control">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg"
-                            onClick={() =>
-                              field.onChange(Math.max(1, field.value - 1))
-                            }
-                            disabled={field.value <= 1}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="font-bold text-lg min-w-[2rem] text-center">
-                            {field.value}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg"
-                            onClick={() =>
-                              field.onChange(Math.min(50, field.value + 1))
-                            }
-                            disabled={field.value >= 50}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
+                  <div className="GridSetPCMobileAdjust">
+                    <FormField
+                      control={form.control}
+                      name="total_participants"
+                      render={({ field }) => (
+                        <FormItem>
+                          <label className="field-label-compact">
+                            Participants
+                          </label>
+                          <div className="participants-control">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="participant-btn"
+                              onClick={() =>
+                                field.onChange(Math.max(1, field.value - 1))
+                              }
+                              disabled={field.value <= 1}
+                            >
+                              <Minus className="participant-icon" />
+                            </Button>
+                            <span className="participant-count">
+                              {field.value}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="participant-btn"
+                              onClick={() =>
+                                field.onChange(Math.min(50, field.value + 1))
+                              }
+                              disabled={field.value >= 50}
+                            >
+                              <Plus className="participant-icon" />
+                            </Button>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
 
+                    <FormField
+                      control={form.control}
+                      name="booking_amount_per_person"
+                      render={({ field }) => (
+                        <FormItem>
+                          <label className="field-label-compact">
+                            Amount Per Person
+                          </label>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                                {selectedActivity?.currency || "INR"}
+                              </span>
+                              <Input
+                                type="number"
+                                className="pl-12 h-11"
+                                placeholder="0.00"
+                                {...field}
+                                value={field.value || ""}
+                                onChange={(e) =>
+                                  field.onChange(
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                              />
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+                <div className="FlexOnly">
                   <FormField
                     control={form.control}
-                    name="booking_amount_per_person"
+                    name="advance_amount"
                     render={({ field }) => (
                       <FormItem>
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block">
-                          Amount Per Person
+                        <label className="field-label-compact">
+                          Advance Amount
                         </label>
                         <FormControl>
                           <div className="relative">
@@ -1118,36 +1199,33 @@ export const OfflineBookingDialog = ({
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="note_for_guide"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            placeholder="Note for Guide (Optional)"
+                            className="form-input"
+                            {...field}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="note_for_guide"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          placeholder="Note for Guide (Optional)"
-                          className="h-11"
-                          {...field}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
               </div>
 
               {/* Summary Card */}
               {selectedActivity && (
                 <div className="summary-card">
                   <div className="summary-content">
-                    <h4 className="text-sm font-bold text-slate-800 mb-4 border-b pb-2">
-                      Booking Summary
-                    </h4>
+                    <h4 className="summary-title">Booking Summary</h4>
                     <div className="space-y-3">
                       <div className="summary-row">
                         <span className="summary-label">Activity</span>
-                        <span className="summary-value text-right max-w-[150px] truncate">
+                        <span className="summary-value text-right-truncate">
                           {selectedActivity.name}
                         </span>
                       </div>
@@ -1167,21 +1245,77 @@ export const OfflineBookingDialog = ({
                         </span>
                       </div>
                       {isAgent && selectedActivity.b2bPrice && (
-                        <div className="summary-row">
-                          <span className="summary-label">B2B Price</span>
-                          <span className="summary-value">
-                            {selectedActivity.currency}{" "}
-                            {selectedActivity.b2bPrice.toLocaleString()}
-                          </span>
-                        </div>
+                        <>
+                          {!showB2BPrice ? (
+                            <div className="summary-row">
+                              <span className="summary-label">B2B Price</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="b2b-view-btn"
+                                onClick={() => setShowB2BPrice(true)}
+                              >
+                                View B2B Price
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="summary-row">
+                              <span className="summary-label">B2B Price</span>
+                              <div className="flex items-center gap-2">
+                                <span className="summary-value">
+                                  {selectedActivity.currency}{" "}
+                                  {selectedActivity.b2bPrice.toLocaleString()}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                  onClick={() => setShowB2BPrice(false)}
+                                >
+                                  Hide
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
-                      <div className="summary-total">
-                        <span className="total-label">Total Amount</span>
-                        <span className="total-value">
+                      <div className="summary-row">
+                        <span className="summary-label">Total Amount</span>
+                        <span className="summary-value">
                           {selectedActivity.currency}{" "}
                           {(
                             (form.watch("booking_amount_per_person") || 0) *
                             participantCount
+                          ).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                      <div className="summary-row">
+                        <span className="summary-label">Advance Amount</span>
+                        <span className="summary-value">
+                          {selectedActivity.currency}{" "}
+                          {(form.watch("advance_amount") || 0).toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
+                        </span>
+                      </div>
+                      <div className="summary-total">
+                        <span className="total-label">Due Amount</span>
+                        <span className="total-value">
+                          {selectedActivity.currency}{" "}
+                          {Math.max(
+                            0,
+                            (form.watch("booking_amount_per_person") || 0) *
+                              participantCount -
+                              (form.watch("advance_amount") || 0)
                           ).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
@@ -1199,7 +1333,7 @@ export const OfflineBookingDialog = ({
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                className="flex-1 btn-secondary-custom"
+                className="btn-secondary-custom"
                 disabled={isSubmitting}
               >
                 Cancel
@@ -1207,7 +1341,7 @@ export const OfflineBookingDialog = ({
               <Button
                 type="submit"
                 // disabled={isSubmitting}
-                className="flex-1 btn-primary-custom"
+                className="btn-primary-custom"
               >
                 {isSubmitting ? "Creating..." : "Create Booking"}
               </Button>

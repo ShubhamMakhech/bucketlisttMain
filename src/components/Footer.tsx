@@ -30,14 +30,10 @@ export function Footer() {
                 )
               }
             >
-              <svg
-                className="h-5 w-5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
               </svg>
-              <span style={{ fontSize: '16px' }}>Follow us on Instagram</span>
+              <span style={{ fontSize: "16px" }}>Follow us on Instagram</span>
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -47,8 +43,6 @@ export function Footer() {
         <div className="FooterMainSection">
           {/* Left Side: Navigation Links */}
           <div className="FooterLinksSection">
-
-
             <div className="FooterLinksColumn">
               <h3 className="FooterColumnHeader">CITIES</h3>
               <ul className="FooterLinksList">
@@ -110,10 +104,7 @@ export function Footer() {
                   </Button>
                 </li>
                 <li>
-                  <Button
-                    variant="link"
-                    className="FooterLink"
-                  >
+                  <Button variant="link" className="FooterLink">
                     Coming soon...
                   </Button>
                 </li>
@@ -212,16 +203,16 @@ export function Footer() {
                     className="FooterLink"
                     onClick={() => navigate("/contact")}
                   >
-                    contact@bucketlistt.com
+                    founder@bucketlistt.com
                   </Button>
                 </li>
                 <li>
                   <Button
                     variant="link"
                     className="FooterLink"
-                    onClick={() => window.open("tel:+918200362890")}
+                    onClick={() => window.open("tel:+918511838237")}
                   >
-                    +91 820 036 2890
+                    +91 85118 38237
                   </Button>
                 </li>
               </ul>
@@ -243,7 +234,9 @@ export function Footer() {
         {/* Bottom Section: Copyright and Payment Methods */}
         <div className="FooterBottomSection">
           <div className="FooterBottomLeft">
-            <span className="FooterCopyright">© 2025 bucketlistt. All rights reserved.</span>
+            <span className="FooterCopyright">
+              © 2025 Kovans Ventures Private Limited. All rights reserved..
+            </span>
             <Button
               variant="link"
               className="FooterBottomLink"
@@ -251,16 +244,10 @@ export function Footer() {
             >
               Terms of usage
             </Button>
-            <Button
-              variant="link"
-              className="FooterBottomLink"
-            >
+            <Button variant="link" className="FooterBottomLink">
               Privacy policy
             </Button>
-            <Button
-              variant="link"
-              className="FooterBottomLink"
-            >
+            <Button variant="link" className="FooterBottomLink">
               Company details
             </Button>
           </div>
@@ -268,22 +255,40 @@ export function Footer() {
             {/* <h4 className="FooterPaymentHeader">WE ACCEPT</h4> */}
             <div className="FooterPaymentMethods">
               <div className="FooterPaymentIcon">
-                <SiVisa className="w-full h-full" style={{ color: '#1A1F71' }} />
+                <SiVisa
+                  className="w-full h-full"
+                  style={{ color: "#1A1F71" }}
+                />
               </div>
               <div className="FooterPaymentIcon">
-                <SiMastercard className="w-full h-full" style={{ color: '#EB001B' }} />
+                <SiMastercard
+                  className="w-full h-full"
+                  style={{ color: "#EB001B" }}
+                />
               </div>
               <div className="FooterPaymentIcon">
-                <SiAmericanexpress className="w-full h-full" style={{ color: '#006FCF' }} />
+                <SiAmericanexpress
+                  className="w-full h-full"
+                  style={{ color: "#006FCF" }}
+                />
               </div>
               <div className="FooterPaymentIcon">
-                <SiGooglepay className="w-full h-full" style={{ color: '#4285F4' }} />
+                <SiGooglepay
+                  className="w-full h-full"
+                  style={{ color: "#4285F4" }}
+                />
               </div>
               <div className="FooterPaymentIcon">
-                <SiPhonepe className="w-full h-full" style={{ color: '#5F259F' }} />
+                <SiPhonepe
+                  className="w-full h-full"
+                  style={{ color: "#5F259F" }}
+                />
               </div>
               <div className="FooterPaymentIcon">
-                <SiPaytm className="w-full h-full" style={{ color: '#002E6E' }} />
+                <SiPaytm
+                  className="w-full h-full"
+                  style={{ color: "#002E6E" }}
+                />
               </div>
             </div>
           </div>

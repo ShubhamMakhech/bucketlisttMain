@@ -30,25 +30,65 @@ export function Hero() {
       if (!searchQuery.trim() || searchQuery.length < 2)
         return { destinations: [], experiences: [] };
 
+      // Normalize search query: remove spaces for flexible matching
+      const normalizedQuery = searchQuery.replace(/\s+/g, "").toLowerCase();
+      const originalQuery = searchQuery.toLowerCase();
+
+      // Fetch all results and filter client-side for flexible space-insensitive matching
+      // This allows "riverrafting" to match "river rafting" and vice versa
       const [destinationsResponse, experiencesResponse] = await Promise.all([
-        supabase
-          .from("destinations")
-          .select("id, title, subtitle")
-          .or(`title.ilike.%${searchQuery}%,subtitle.ilike.%${searchQuery}%`)
-          .limit(3),
+        supabase.from("destinations").select("id, title, subtitle").limit(50), // Fetch more to filter client-side
         supabase
           .from("experiences")
           .select("id, title, category, location")
           .eq("is_active", true)
-          .or(
-            `title.ilike.%${searchQuery}%,category.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%`
-          )
-          .limit(3),
+          .limit(50), // Fetch more to filter client-side
       ]);
 
+      // Helper function to normalize text (remove spaces, lowercase)
+      const normalizeText = (text: string) =>
+        (text || "").replace(/\s+/g, "").toLowerCase();
+
+      // Filter destinations: match if normalized title/subtitle contains normalized query
+      const filteredDestinations = (destinationsResponse.data || [])
+        .filter((dest) => {
+          const normalizedTitle = normalizeText(dest.title);
+          const normalizedSubtitle = normalizeText(dest.subtitle);
+          const normalizedSearch = normalizeText(searchQuery);
+
+          return (
+            normalizedTitle.includes(normalizedSearch) ||
+            normalizedSubtitle.includes(normalizedSearch) ||
+            // Also check original query for exact matches
+            dest.title?.toLowerCase().includes(originalQuery) ||
+            dest.subtitle?.toLowerCase().includes(originalQuery)
+          );
+        })
+        .slice(0, 3); // Limit to 3 results
+
+      // Filter experiences: match if normalized title/category/location contains normalized query
+      const filteredExperiences = (experiencesResponse.data || [])
+        .filter((exp) => {
+          const normalizedTitle = normalizeText(exp.title);
+          const normalizedCategory = normalizeText(exp.category);
+          const normalizedLocation = normalizeText(exp.location);
+          const normalizedSearch = normalizeText(searchQuery);
+
+          return (
+            normalizedTitle.includes(normalizedSearch) ||
+            normalizedCategory.includes(normalizedSearch) ||
+            normalizedLocation.includes(normalizedSearch) ||
+            // Also check original query for exact matches
+            exp.title?.toLowerCase().includes(originalQuery) ||
+            exp.category?.toLowerCase().includes(originalQuery) ||
+            exp.location?.toLowerCase().includes(originalQuery)
+          );
+        })
+        .slice(0, 3); // Limit to 3 results
+
       return {
-        destinations: destinationsResponse.data || [],
-        experiences: experiencesResponse.data || [],
+        destinations: filteredDestinations,
+        experiences: filteredExperiences,
       };
     },
     enabled: searchQuery.length >= 2,
@@ -177,15 +217,18 @@ export function Hero() {
     (suggestions.destinations.length > 0 || suggestions.experiences.length > 0);
 
   return (
-    <section id="HeroVideoContainer" className="relative h-screen flex items-center justify-center overflow-hidden -mt-16 ">
+    <section
+      id="HeroVideoContainer"
+      className="relative h-screen flex items-center justify-center overflow-hidden -mt-16 "
+    >
       {/* Background - Video for Both Desktop and Mobile */}
-      <div className="absolute inset-0 w-full h-full z-0 overflow-hidden parallax-container" >
+      <div className="absolute inset-0 w-full h-full z-0 overflow-hidden parallax-container">
         {/* YouTube Video Background for all devices */}
         <div
-
           className="absolute inset-0 w-full h-full"
           style={{
-            background: "linear-gradient(135deg, hsl(var(--gradient-secondary-start)) 0%, hsl(var(--gradient-secondary-end)) 100%)", // Fallback gradient
+            background:
+              "linear-gradient(135deg, hsl(var(--gradient-secondary-start)) 0%, hsl(var(--gradient-secondary-end)) 100%)", // Fallback gradient
           }}
         >
           <video
@@ -201,15 +244,19 @@ export function Hero() {
             poster="data:image/gif,AAAA"
             className="absolute top-1/2 left-1/2 pointer-events-none transition-transform duration-75 ease-out parallax-video"
             style={{
-              transform: `translate(-50%, calc(-50% + ${scrollTranslateY}px)) scale(${videoScale * scrollZoomScale})`,
+              transform: `translate(-50%, calc(-50% + ${scrollTranslateY}px)) scale(${
+                videoScale * scrollZoomScale
+              })`,
               transformOrigin: "center center",
-              objectFit: "cover"
+              objectFit: "cover",
             }}
             onLoadedData={() => {
               // Force play on data loaded to prevent native controls
-              const video = document.querySelector('video.parallax-video') as HTMLVideoElement;
+              const video = document.querySelector(
+                "video.parallax-video"
+              ) as HTMLVideoElement;
               if (video) {
-                video.play().catch(() => { });
+                video.play().catch(() => {});
               }
             }}
           />
@@ -241,17 +288,24 @@ export function Hero() {
       </div>
 
       {/* Content - Perfectly centered */}
-      <div id="MobileChangeAlignment" className="relative max-w-7xl z-20 w-full px-4 text-center flex flex-col items-center justify-center">
+      <div
+        id="MobileChangeAlignment"
+        className="relative max-w-7xl z-20 w-full px-4 text-center flex flex-col items-center justify-center"
+      >
         <div className=" MobileChangeAlignmentContainer">
           {/* Main Heading */}
           <div className="HeroHomeContentContainer">
             {/* <div className="LogoHeroStyle">
               <img src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt+(1).png" alt="" />
             </div> */}
-            <h1 id="MobileTextFontSize" className={`CommonH1  text-white leading-tight mb-4 ${isMobile ? "text-start" : ""}`}>
+            <h1
+              id="MobileTextFontSize"
+              className={`CommonH1  text-white leading-tight mb-4 ${
+                isMobile ? "text-start" : ""
+              }`}
+            >
               India’s trusted platform for curated experiences
               {/* <br /> */}
-
             </h1>
           </div>
 
@@ -265,18 +319,32 @@ export function Hero() {
           >
             <form onSubmit={handleSearch}>
               <div className="relative" ref={searchContainerRef}>
-                <div className={`flex items-stretch bg-white/95 backdrop-blur-sm shadow-2xl transition-all duration-300 ${isMobile
-                  ? "flex-col rounded-0xl p-0 gap-4 border border-white/20"
-                  : "flex-row rounded-lg p-2 gap-2 sm:gap-0"
-                  }`}>
-                  <div className={`flex items-center flex-1 ${isMobile
-                    ? "px-4 py-1 bg-gray-50/80 border border-gray-200/50"
-                    : "px-4 py-2 sm:py-0"
-                    }`}>
-                    <Search id="SearchBarAdjustContainerIcon" className={`text-gray-400 mr-3 flex-shrink-0  ${isMobile ? "h-6 w-6" : "h-5 w-5"
-                      }`} />
+                <div
+                  className={`flex items-stretch bg-white/95 backdrop-blur-sm shadow-2xl transition-all duration-300 ${
+                    isMobile
+                      ? "flex-col rounded-0xl p-0 gap-4 border border-white/20"
+                      : "flex-row rounded-lg p-2 gap-2 sm:gap-0"
+                  }`}
+                >
+                  <div
+                    className={`flex items-center flex-1 ${
+                      isMobile
+                        ? "px-4 py-1 bg-gray-50/80 border border-gray-200/50"
+                        : "px-4 py-2 sm:py-0"
+                    }`}
+                  >
+                    <Search
+                      id="SearchBarAdjustContainerIcon"
+                      className={`text-gray-400 mr-3 flex-shrink-0  ${
+                        isMobile ? "h-6 w-6" : "h-5 w-5"
+                      }`}
+                    />
                     <Input
-                      placeholder={isMobile ? "Search for experiences and cities..." : "Search for experiences and cities..."}
+                      placeholder={
+                        isMobile
+                          ? "Search for experiences and cities..."
+                          : "Search for experiences and cities..."
+                      }
                       value={searchQuery}
                       onChange={handleInputChange}
                       onFocus={() => {
@@ -293,8 +361,9 @@ export function Hero() {
                           }
                         }
                       }}
-                      className={`border-0 bg-transparent text-gray-800 placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 font-medium !border-none !outline-none w-full ${isMobile ? " py-1" : "text-base"
-                        }`}
+                      className={`border-0 bg-transparent text-gray-800 placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 font-medium !border-none !outline-none w-full ${
+                        isMobile ? " py-1" : "text-base"
+                      }`}
                     />
                   </div>
                   {/* <Button

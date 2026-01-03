@@ -701,7 +701,7 @@ const Index = () => {
                   duration={600}
                 >
                   <h2 className="CommonH2 TextAlignment">
-                    And we are ATOAI certified
+                    And We follow ATOAI guidelines
                   </h2>
                   <img
                     className="LogoATOAIStyles"
