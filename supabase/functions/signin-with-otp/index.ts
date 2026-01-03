@@ -36,11 +36,20 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verify OTP first
+    // Format identifier BEFORE verifying OTP (OTP was stored with formatted identifier)
+    let formattedIdentifier = identifier;
+    if (type === "sms") {
+      formattedIdentifier = identifier.replace(/\D/g, "");
+      if (!formattedIdentifier.startsWith("91")) {
+        formattedIdentifier = "91" + formattedIdentifier;
+      }
+    }
+
+    // Verify OTP first - use formatted identifier
     const { data: otpData, error: fetchError } = await supabase
       .from("otp_verifications")
       .select("*")
-      .eq("identifier", identifier)
+      .eq("identifier", formattedIdentifier)
       .eq("type", type)
       .eq("otp", otp)
       .eq("verified", false)
@@ -85,18 +94,34 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("id", otpData.id);
 
     // Find user by identifier in profiles table (not auth.users)
+    // Use the same logic as check-user-exists to ensure consistency
     let profile: any = null;
     let userEmail: string | null = null;
 
     if (type === "email") {
-      // Find user by email in profiles
-      const { data: profileData, error: profileError } = await supabase
+      // Find user by email in profiles - try exact match
+      let { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("id, email, phone_number")
-        .eq("email", identifier)
-        .single();
+        .eq("email", identifier.trim())
+        .limit(1);
 
-      if (profileError || !profileData) {
+      if (profileError) {
+        console.error("Error finding profile by email:", profileError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Error finding user account. Please try again.",
+            details: profileError.message,
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
+
+      if (!profileData || profileData.length === 0) {
         return new Response(
           JSON.stringify({
             success: false,
@@ -109,28 +134,97 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      profile = profileData;
+      profile = profileData[0];
       userEmail = profile.email;
     } else {
       // Find user by phone number in profiles
-      // Format phone number - add 91 if not present
-      let formattedIdentifier = identifier.replace(/\D/g, "");
-      if (!formattedIdentifier.startsWith("91")) {
-        formattedIdentifier = "91" + formattedIdentifier;
-      }
+      // Use the same logic as check-user-exists
+      let formattedPhone = formattedIdentifier;
+      const withoutCountryCode = formattedPhone.startsWith("91")
+        ? formattedPhone.slice(2)
+        : formattedPhone;
+      const withCountryCode = formattedPhone.startsWith("91")
+        ? formattedPhone
+        : "91" + formattedPhone;
 
-      const { data: profileData, error: profileError } = await supabase
+      console.log("Looking for phone:", {
+        formattedPhone,
+        withoutCountryCode,
+        withCountryCode,
+      });
+
+      // Try exact match first with formatted phone
+      let { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("id, email, phone_number")
-        .eq("phone_number", formattedIdentifier)
-        .single();
+        .eq("phone_number", formattedPhone)
+        .limit(1);
 
-      if (profileError || !profileData) {
+      console.log("First query result:", { profileData, profileError });
+
+      // If not found, try without country code
+      if (
+        (!profileData || profileData.length === 0) &&
+        !profileError &&
+        withoutCountryCode !== formattedPhone
+      ) {
+        const result = await supabase
+          .from("profiles")
+          .select("id, email, phone_number")
+          .eq("phone_number", withoutCountryCode)
+          .limit(1);
+        profileData = result.data;
+        profileError = result.error;
+        console.log("Second query result (without country code):", {
+          profileData,
+          profileError,
+        });
+      }
+
+      // If still not found, try with country code
+      if (
+        (!profileData || profileData.length === 0) &&
+        !profileError &&
+        withCountryCode !== formattedPhone
+      ) {
+        const result = await supabase
+          .from("profiles")
+          .select("id, email, phone_number")
+          .eq("phone_number", withCountryCode)
+          .limit(1);
+        profileData = result.data;
+        profileError = result.error;
+        console.log("Third query result (with country code):", {
+          profileData,
+          profileError,
+        });
+      }
+
+      if (profileError) {
+        console.error("Error finding profile by phone:", profileError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Error finding user account. Please try again.",
+            details: profileError.message,
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
+
+      if (!profileData || profileData.length === 0) {
         return new Response(
           JSON.stringify({
             success: false,
             error:
               "No account found with this phone number. Please sign up first.",
+            debug: {
+              searchedFor: formattedPhone,
+              alsoTried: [withoutCountryCode, withCountryCode],
+            },
           }),
           {
             status: 404,
@@ -139,8 +233,9 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      profile = profileData;
+      profile = profileData[0];
       userEmail = profile.email;
+      console.log("Found profile:", { id: profile.id, email: userEmail });
     }
 
     if (!userEmail || !profile) {
@@ -209,8 +304,8 @@ const handler = async (req: Request): Promise<Response> => {
     // Generate session for the user
     const user = authUser?.user || { id: profile.id, email: userEmail };
 
-    // Generate a session token for the user
-    // We'll use Supabase's admin API to generate a session
+    // Create a session using generateLink with magiclink type
+    // This will create a magic link that we can use to sign in
     const { data: sessionData, error: sessionError } =
       await supabase.auth.admin.generateLink({
         type: "magiclink",
@@ -222,6 +317,7 @@ const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({
           success: false,
           error: "Failed to create session",
+          details: sessionError?.message,
         }),
         {
           status: 500,
@@ -230,11 +326,33 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Return the session link - client will extract tokens from it
+    // Extract the token from the recovery link
+    const recoveryLink = sessionData.properties?.action_link;
+    if (!recoveryLink) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Failed to generate session link",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Parse the recovery link to extract the token
+    const url = new URL(recoveryLink);
+    const token = url.searchParams.get("token");
+    const tokenHash = url.searchParams.get("token_hash");
+
+    // Return the token and link for the client to use
     return new Response(
       JSON.stringify({
         success: true,
-        sessionLink: sessionData.properties?.action_link,
+        sessionLink: recoveryLink,
+        token: token,
+        tokenHash: tokenHash,
         user: {
           id: user.id,
           email: user.email,

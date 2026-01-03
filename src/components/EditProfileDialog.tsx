@@ -32,6 +32,7 @@ export function EditProfileDialog({
     firstName: userProfile?.first_name || "",
     lastName: userProfile?.last_name || "",
     phoneNumber: userProfile?.phone_number || "",
+    email: user?.email || "",
   });
 
   useEffect(() => {
@@ -39,8 +40,9 @@ export function EditProfileDialog({
       firstName: userProfile?.first_name || "",
       lastName: userProfile?.last_name || "",
       phoneNumber: userProfile?.phone_number || "",
+      email: user?.email || "",
     });
-  }, [userProfile]);
+  }, [userProfile, user]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -50,6 +52,7 @@ export function EditProfileDialog({
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
       phoneNumber: formData.phoneNumber.trim(),
+      email: formData.email.trim().toLowerCase(),
     };
 
     // Basic validation
@@ -57,6 +60,26 @@ export function EditProfileDialog({
       toast({
         title: "Validation Error",
         description: "First name and last name are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Email validation
+    if (!trimmedData.email) {
+      toast({
+        title: "Validation Error",
+        description: "Email is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedData.email)) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid email address.",
         variant: "destructive",
       });
       return;
@@ -77,20 +100,61 @@ export function EditProfileDialog({
 
     setLoading(true);
     try {
-      const { error } = await supabase.from("profiles").upsert({
+      // Check if email has changed
+      const emailChanged = trimmedData.email !== user?.email;
+
+      // Update email using Edge Function if it has changed (bypasses email verification)
+      if (emailChanged) {
+        const { data: emailUpdateData, error: emailUpdateError } =
+          await supabase.functions.invoke("update-user-email", {
+            body: {
+              userId: user.id,
+              newEmail: trimmedData.email,
+            },
+          });
+
+        if (emailUpdateError) {
+          throw emailUpdateError;
+        }
+
+        if (!emailUpdateData?.success) {
+          throw new Error(emailUpdateData?.error || "Failed to update email");
+        }
+
+        // Refresh the user session to get the updated email
+        // This ensures the frontend reflects the change immediately
+        const {
+          data: { user: updatedUser },
+          error: refreshError,
+        } = await supabase.auth.getUser();
+
+        if (refreshError) {
+          console.error("Error refreshing user:", refreshError);
+          // Continue anyway - the email is updated in the database
+        } else if (updatedUser) {
+          // The user object is automatically updated via onAuthStateChange listener
+          // But we can also manually refresh the session to ensure it's updated
+          await supabase.auth.refreshSession();
+        }
+      }
+
+      // Update profile information (email is already updated by Edge Function, but update other fields)
+      const { error: profileError } = await supabase.from("profiles").upsert({
         id: user.id,
-        email: user.email!,
+        email: trimmedData.email, // Update email in profiles too
         first_name: trimmedData.firstName,
         last_name: trimmedData.lastName,
         phone_number: trimmedData.phoneNumber || null,
         updated_at: new Date().toISOString(),
       });
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
       toast({
         title: "Profile updated",
-        description: "Your personal information has been updated successfully.",
+        description: emailChanged
+          ? "Your email and profile have been updated successfully."
+          : "Your personal information has been updated successfully.",
       });
 
       onProfileUpdate();
@@ -160,12 +224,14 @@ export function EditProfileDialog({
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              value={user?.email || ""}
-              disabled
-              className="bg-gray-100 cursor-not-allowed"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange("email", e.target.value)}
+              placeholder="Enter your email address"
+              required
             />
             <p className="text-xs text-muted-foreground">
-              Email cannot be changed from here
+              Your email will be updated immediately
             </p>
           </div>
           <div className="flex justify-end gap-2 pt-4">

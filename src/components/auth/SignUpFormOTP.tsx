@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,9 +41,32 @@ export function SignUpFormOTP({ onToggleMode }: SignUpFormOTPProps) {
   const [loading, setLoading] = useState(false);
   const [sendingOTP, setSendingOTP] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const { sendOTP, verifyOTP, signUpWithOTP } = useAuth();
+  const { sendOTP, verifyOTP, signUpWithOTP, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Reset form state when component mounts
+  useEffect(() => {
+    // Reset all form state on mount
+    setIdentifier("");
+    setOtp("");
+    setStep("input");
+    setLoading(false);
+    setSendingOTP(false);
+    setCountdown(0);
+  }, []); // Run only on mount
+
+  // Also reset when user is authenticated (after successful signup)
+  useEffect(() => {
+    if (user) {
+      setIdentifier("");
+      setOtp("");
+      setStep("input");
+      setLoading(false);
+      setSendingOTP(false);
+      setCountdown(0);
+    }
+  }, [user]);
 
   const inputType = identifier ? detectInputType(identifier) : "email";
 

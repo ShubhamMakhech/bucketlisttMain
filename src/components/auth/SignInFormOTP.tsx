@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,8 +55,49 @@ export function SignInFormOTP({
   const [showPassword, setShowPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  const { signIn, signInWithOTP, sendOTP } = useAuth();
+  const { signIn, signInWithOTP, sendOTP, user } = useAuth();
   const { toast } = useToast();
+
+  // Reset form state when component mounts
+  useEffect(() => {
+    // Reset all form state on mount
+    setOtpIdentifier("");
+    setOtp("");
+    setOtpStep("input");
+    setSendingOTP(false);
+    setVerifyingOTP(false);
+    setOtpCountdown(0);
+    setEmail("");
+    setPassword("");
+    setShowPassword(false);
+    setPasswordLoading(false);
+    setActiveTab("otp");
+  }, []); // Run only on mount
+
+  // Also reset when user is not authenticated (logged out)
+  useEffect(() => {
+    if (!user) {
+      setOtpIdentifier("");
+      setOtp("");
+      setOtpStep("input");
+      setSendingOTP(false);
+      setVerifyingOTP(false);
+      setOtpCountdown(0);
+      setEmail("");
+      setPassword("");
+      setShowPassword(false);
+      setPasswordLoading(false);
+      setActiveTab("otp");
+    }
+  }, [user]);
+
+  // Reset OTP step when switching tabs
+  useEffect(() => {
+    setOtpStep("input");
+    setOtp("");
+    setOtpIdentifier("");
+    setOtpCountdown(0);
+  }, [activeTab]);
 
   const otpInputType = otpIdentifier ? detectInputType(otpIdentifier) : "email";
 

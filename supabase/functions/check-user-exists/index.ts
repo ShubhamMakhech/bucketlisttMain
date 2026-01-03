@@ -23,7 +23,29 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, phoneNumber }: CheckUserRequest = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Handle both camelCase and snake_case field names
+    const email = body.email || body.Email;
+    const phoneNumber =
+      body.phoneNumber || body.phone_number || body.PhoneNumber;
+
+    // Debug logging
+    console.log("Received request body:", JSON.stringify(body));
+    console.log("Email:", email);
+    console.log("PhoneNumber:", phoneNumber);
 
     if (!email && !phoneNumber) {
       return new Response(
@@ -35,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    let existingProfiles = null;
+    let existingProfiles: any[] | null = null;
     let error = null;
 
     // Check if user exists in profiles table only (not auth.users)
@@ -48,19 +70,52 @@ const handler = async (req: Request): Promise<Response> => {
       existingProfiles = result.data;
       error = result.error;
     } else if (phoneNumber) {
-      // Format phone number - add 91 if not present
+      // Format phone number - check both with and without 91
       let formattedPhone = phoneNumber.replace(/\D/g, "");
-      if (!formattedPhone.startsWith("91")) {
-        formattedPhone = "91" + formattedPhone;
-      }
+      const withoutCountryCode = formattedPhone.startsWith("91")
+        ? formattedPhone.slice(2)
+        : formattedPhone;
+      const withCountryCode = formattedPhone.startsWith("91")
+        ? formattedPhone
+        : "91" + formattedPhone;
 
-      const result = await supabase
+      // Try exact match first with formatted phone
+      let result = await supabase
         .from("profiles")
         .select("id, phone_number")
         .eq("phone_number", formattedPhone)
         .limit(1);
+
       existingProfiles = result.data;
       error = result.error;
+
+      // If not found, try without country code
+      if (
+        (!existingProfiles || existingProfiles.length === 0) &&
+        withoutCountryCode !== formattedPhone
+      ) {
+        result = await supabase
+          .from("profiles")
+          .select("id, phone_number")
+          .eq("phone_number", withoutCountryCode)
+          .limit(1);
+        existingProfiles = result.data;
+        error = result.error;
+      }
+
+      // If still not found, try with country code
+      if (
+        (!existingProfiles || existingProfiles.length === 0) &&
+        withCountryCode !== formattedPhone
+      ) {
+        result = await supabase
+          .from("profiles")
+          .select("id, phone_number")
+          .eq("phone_number", withCountryCode)
+          .limit(1);
+        existingProfiles = result.data;
+        error = result.error;
+      }
     }
 
     if (error) {

@@ -42,17 +42,46 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verify OTP first
-    const { data: otpData, error: fetchError } = await supabase
+    // Verify OTP first - check for both verified and unverified OTPs
+    // This handles the case where OTP might have been verified in a previous step
+    let { data: otpData, error: fetchError } = await supabase
       .from("otp_verifications")
       .select("*")
       .eq("identifier", identifier)
       .eq("type", type)
       .eq("otp", otp)
-      .eq("verified", false)
+      .eq("verified", false) // First try unverified OTPs
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
+
+    // If not found as unverified, check if it was already verified (for retry scenarios)
+    if (!otpData && !fetchError) {
+      const { data: verifiedOtpData, error: verifiedError } = await supabase
+        .from("otp_verifications")
+        .select("*")
+        .eq("identifier", identifier)
+        .eq("type", type)
+        .eq("otp", otp)
+        .eq("verified", true) // Check verified OTPs too
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Only use verified OTP if it was verified very recently (within last minute)
+      // This prevents reuse of old verified OTPs
+      if (verifiedOtpData) {
+        const verifiedAt = new Date(verifiedOtpData.verified_at);
+        const now = new Date();
+        const timeSinceVerification = now.getTime() - verifiedAt.getTime();
+
+        // Allow if verified within last 2 minutes (for retry scenarios)
+        if (timeSinceVerification < 2 * 60 * 1000) {
+          otpData = verifiedOtpData;
+          fetchError = null;
+        }
+      }
+    }
 
     if (fetchError || !otpData) {
       return new Response(
@@ -111,13 +140,45 @@ const handler = async (req: Request): Promise<Response> => {
         existingUser = profiles[0];
       }
     } else {
-      const { data: profiles } = await supabase
+      // Check for both formats (with and without 91) to handle existing users
+      const withoutCountryCode = formattedIdentifier.startsWith("91")
+        ? formattedIdentifier.slice(2)
+        : formattedIdentifier;
+      const withCountryCode = formattedIdentifier;
+
+      // Check for existing user - try exact matches
+      let result = await supabase
         .from("profiles")
         .select("id, phone_number")
         .eq("phone_number", formattedIdentifier)
         .limit(1);
-      if (profiles && profiles.length > 0) {
-        existingUser = profiles[0];
+
+      if (result.data && result.data.length > 0) {
+        existingUser = result.data[0];
+      }
+
+      // If not found, try without country code
+      if (!existingUser && withoutCountryCode !== formattedIdentifier) {
+        result = await supabase
+          .from("profiles")
+          .select("id, phone_number")
+          .eq("phone_number", withoutCountryCode)
+          .limit(1);
+        if (result.data && result.data.length > 0) {
+          existingUser = result.data[0];
+        }
+      }
+
+      // If still not found, try with country code
+      if (!existingUser && withCountryCode !== formattedIdentifier) {
+        result = await supabase
+          .from("profiles")
+          .select("id, phone_number")
+          .eq("phone_number", withCountryCode)
+          .limit(1);
+        if (result.data && result.data.length > 0) {
+          existingUser = result.data[0];
+        }
       }
     }
 
@@ -141,6 +202,38 @@ const handler = async (req: Request): Promise<Response> => {
     const email =
       type === "email" ? identifier : `${formattedIdentifier}@bucketlistt.temp`;
 
+    // Check if auth user already exists with this email
+    let authData: any = null;
+    let authUser: any = null;
+
+    try {
+      // Try to get user by email first
+      const { data: userList, error: listError } =
+        await supabase.auth.admin.listUsers();
+
+      if (!listError && userList) {
+        authUser = userList.users.find((u: any) => u.email === email);
+      }
+    } catch (error) {
+      console.error("Error checking existing auth user:", error);
+    }
+
+    // If auth user already exists, return error
+    if (authUser) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "User already registered",
+          code: "user_already_exists",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Create new auth user
     // Generate a random secure password (user won't need it for OTP login)
     const randomPassword =
       Math.random().toString(36).slice(-12) +
@@ -148,7 +241,7 @@ const handler = async (req: Request): Promise<Response> => {
       "A1!@#";
 
     // Create user in Supabase Auth (no email verification needed)
-    const { data: authData, error: signUpError } =
+    const { data: newAuthData, error: signUpError } =
       await supabase.auth.admin.createUser({
         email,
         password: randomPassword,
@@ -161,7 +254,22 @@ const handler = async (req: Request): Promise<Response> => {
         },
       });
 
-    if (signUpError || !authData.user) {
+    if (signUpError || !newAuthData.user) {
+      // If error is about email already existing, return user already exists error
+      if (signUpError?.message?.includes("already been registered")) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "User already registered",
+            code: "user_already_exists",
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
+
       console.error("Error creating user:", signUpError);
       return new Response(
         JSON.stringify({
@@ -175,20 +283,23 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    authData = newAuthData;
+    authUser = newAuthData.user;
+
     // Profile is automatically created by database trigger
     // But we need to update it with the correct phone number if it was SMS signup
-    if (type === "sms") {
+    if (type === "sms" && authUser) {
       await supabase
         .from("profiles")
         .update({ phone_number: formattedIdentifier })
-        .eq("id", authData.user.id);
+        .eq("id", authUser.id);
     }
 
     // Generate a session for the new user
     const { data: sessionData, error: sessionError } =
       await supabase.auth.admin.generateLink({
         type: "magiclink",
-        email: authData.user.email!,
+        email: authUser.email!,
       });
 
     if (sessionError || !sessionData) {
@@ -214,14 +325,44 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Extract the token from the magic link
+    const magicLink = sessionData.properties?.action_link;
+    if (!magicLink) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Account created successfully",
+          user: {
+            id: authData.user.id,
+            email: authData.user.email,
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
+    // Parse the magic link to extract the token
+    const url = new URL(magicLink);
+    const token = url.searchParams.get("token");
+    const tokenHash = url.searchParams.get("token_hash");
+
+    // Return the token and link for the client to use
     return new Response(
       JSON.stringify({
         success: true,
         message: "Account created successfully",
-        sessionLink: sessionData.properties?.action_link,
+        sessionLink: magicLink,
+        token: token,
+        tokenHash: tokenHash,
         user: {
-          id: authData.user.id,
-          email: authData.user.email,
+          id: authUser.id,
+          email: authUser.email,
         },
       }),
       {
