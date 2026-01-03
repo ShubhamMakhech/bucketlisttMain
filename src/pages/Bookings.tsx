@@ -169,8 +169,80 @@ const Bookings = () => {
         return "offline";
       };
 
+      // Column headers mapping (matching UserBookings.tsx columnHeaders array)
+      const columnHeaders = [
+        "Title",
+        "Activity",
+        "Contact Number",
+        "Contact Name",
+        "Email",
+        "Referred by",
+        "Timeslot",
+        "Activity Date",
+        "No. Of Participants",
+        "Notes for guides",
+        "Booking Type",
+        "Official Price/ Original Price",
+        "B2B Price",
+        "Commission as per vendor",
+        "Website Price",
+        "Discount Coupon",
+        "Ticket Price (customer cost)",
+        "Advance paid",
+        "Pending amount from customer",
+        "Net Commission",
+        "( - Net from agent) / to agent",
+        "Advance + discount",
+        "Booking Created At",
+        "Admin Note",
+        "Actions", // This won't be exported, but included for index alignment
+      ];
+
+      // Determine column visibility based on role (matching UserBookings.tsx logic)
+      const getColumnVisibility = (): boolean[] => {
+        const columnCount = 25;
+        const visibility = Array(columnCount).fill(false);
+
+        // Default visible columns
+        visibility[1] = true; // Activity
+        visibility[2] = true; // Contact Number
+        visibility[3] = true; // Contact Name
+        visibility[7] = true; // Activity Date
+        visibility[6] = true; // Timeslot
+        visibility[8] = true; // No. Of Participants
+        visibility[10] = true; // Booking Type
+        visibility[18] = true; // Payment to be collected by vendor
+        visibility[20] = true; // Amount to be collected from vendor
+        visibility[21] = true; // Advance + discount
+
+        // Admin-only columns
+        if (isAdmin) {
+          visibility[23] = true; // Admin Note
+          visibility[24] = true; // Actions (won't be exported)
+        }
+
+        // Agent restrictions
+        if (isAgent) {
+          visibility[10] = false; // Booking Type
+          visibility[11] = false; // Official Price/ Original Price
+          visibility[13] = false; // Commission as per vendor
+          visibility[14] = false; // Website Price
+          visibility[15] = false; // Discount Coupon
+          visibility[23] = false; // Admin Note
+          visibility[24] = false; // Actions
+        }
+
+        return visibility;
+      };
+
+      // Default column order (matching UserBookings.tsx default columnOrder)
+      const defaultColumnOrder = Array.from({ length: 25 }, (_, i) => i);
+
+      // Get column visibility
+      const columnVisibility = getColumnVisibility();
+
       // Prepare data for Excel
-      const excelData =
+      const excelDataRaw =
         bookings?.map((booking: any) => {
           const customer = booking.booking_participants?.[0];
           const activity = booking.time_slots?.activities || booking.activities;
@@ -204,44 +276,58 @@ const Bookings = () => {
             bookingAmount - b2bPriceTotal - advancePaid;
           const advancePlusDiscount = advancePaid + discountCoupon;
 
-          // Base data object
-          const baseData: Record<string, any> = {
-            "Booking ID": booking.id,
-            Title: experience?.title || "N/A",
-            Activity: activity?.name || "N/A",
-            "Contact Number":
-              booking.contact_person_number || customer?.phone_number || "N/A",
-            "Contact Name":
-              booking.contact_person_name || customer?.name || "N/A",
-            Email: booking.contact_person_email || customer?.email || "N/A",
-            "Referred by": booking.referral_code || booking.referred_by || "-",
-            Timeslot: isCanceled
-              ? "Canceled"
-              : timeslot?.start_time && timeslot?.end_time
-              ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-                  timeslot.end_time
-                )}`
-              : isOffline
-              ? "Offline"
-              : "N/A",
-            "Activity Date": new Date(booking.booking_date).toLocaleDateString(
-              "en-GB",
-              { day: "2-digit", month: "short", year: "numeric" }
-            ),
-            "No. Of Participants": booking.total_participants || 0,
-            "Notes for guides": booking.note_for_guide || "-",
-            "Booking Type": getBookingTypeDisplay(booking),
-            "Ticket Price (customer cost)": bookingAmount,
-            "Booking Created At": booking.created_at
-              ? new Date(booking.created_at).toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                })
-              : "N/A",
-          };
+          // Build all data in an array matching column indices
+          // Index mapping: 0=Title, 1=Activity, 2=Contact Number, etc.
+          const allColumnData: (string | number)[] = Array(25).fill(null);
 
-          // Add role-based columns (exclude for agents viewing agent bookings)
+          allColumnData[0] = experience?.title || "N/A"; // Title
+          allColumnData[1] = activity?.name || "N/A"; // Activity
+          allColumnData[2] =
+            booking.contact_person_number || customer?.phone_number || "N/A"; // Contact Number
+          allColumnData[3] =
+            booking.contact_person_name || customer?.name || "N/A"; // Contact Name
+          allColumnData[4] =
+            booking.contact_person_email || customer?.email || "N/A"; // Email
+          allColumnData[5] =
+            booking.referral_code || booking.referred_by || "-"; // Referred by
+          allColumnData[6] = isCanceled
+            ? "Canceled"
+            : timeslot?.start_time && timeslot?.end_time
+            ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
+                timeslot.end_time
+              )}`
+            : isOffline
+            ? "Offline"
+            : "N/A"; // Timeslot
+          allColumnData[7] = new Date(booking.booking_date).toLocaleDateString(
+            "en-GB",
+            { day: "2-digit", month: "short", year: "numeric" }
+          ); // Activity Date
+          allColumnData[8] = booking.total_participants || 0; // No. Of Participants
+          allColumnData[9] = booking.note_for_guide || "-"; // Notes for guides
+          allColumnData[10] = isAgent ? null : getBookingTypeDisplay(booking); // Booking Type
+          allColumnData[11] = null; // Official Price/ Original Price (will be set if visible)
+          allColumnData[12] = null; // B2B Price (will be set if visible)
+          allColumnData[13] = null; // Commission as per vendor (will be set if visible)
+          allColumnData[14] = null; // Website Price (will be set if visible)
+          allColumnData[15] = null; // Discount Coupon (will be set if visible)
+          allColumnData[16] = bookingAmount; // Ticket Price (customer cost)
+          allColumnData[17] = null; // Advance paid (will be set if visible)
+          allColumnData[18] = null; // Payment to be collected by vendor (will be set if visible)
+          allColumnData[19] = null; // Net Commission (will be set if visible)
+          allColumnData[20] = null; // Amount to be collected from vendor (will be set if visible)
+          allColumnData[21] = null; // Advance + discount (will be set if visible)
+          allColumnData[22] = booking.created_at
+            ? new Date(booking.created_at).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+            : "N/A"; // Booking Created At
+          allColumnData[23] = isAdmin ? booking.admin_note || "-" : null; // Admin Note
+          allColumnData[24] = null; // Actions (not exported)
+
+          // Add role-based financial columns (exclude for agents viewing agent bookings)
           const isAgentBooking = booking.isAgentBooking;
           const shouldShowFinancialColumns =
             isAdmin ||
@@ -249,37 +335,48 @@ const Bookings = () => {
             (isAgent && !isOffline && !isAgentBooking);
 
           if (shouldShowFinancialColumns) {
-            baseData["Official Price/ Original Price"] =
-              isOffline && !isAdmin ? "-" : officialPrice;
-            baseData["B2B Price"] = isOffline && !isAdmin ? "-" : b2bPriceTotal;
-            baseData["Commission as per vendor"] =
-              isOffline && !isAdmin ? "-" : commissionTotal;
-            baseData["Website Price"] =
-              isOffline && !isAdmin ? "-" : websitePrice;
-            baseData["Discount Coupon"] =
-              isOffline && !isAdmin ? "-" : discountCoupon;
-            baseData["Advance paid"] =
-              isOffline && !isAdmin ? "-" : advancePaid;
-            baseData["Pending amount from customer"] =
-              isOffline && !isAdmin ? "-" : dueAmount;
-            baseData["Net Commission"] =
-              isOffline && !isAdmin ? "-" : actualCommissionNet;
-            baseData["( - Net from agent) / to agent"] =
-              isOffline && !isAdmin ? "-" : amountToCollectFromVendor;
-            baseData["Advance + discount"] =
-              isOffline && !isAdmin ? "-" : advancePlusDiscount;
+            allColumnData[11] = isOffline && !isAdmin ? "-" : officialPrice; // Official Price/ Original Price
+            allColumnData[12] = isOffline && !isAdmin ? "-" : b2bPriceTotal; // B2B Price
+            allColumnData[13] = isOffline && !isAdmin ? "-" : commissionTotal; // Commission as per vendor
+            allColumnData[14] = isOffline && !isAdmin ? "-" : websitePrice; // Website Price
+            allColumnData[15] = isOffline && !isAdmin ? "-" : discountCoupon; // Discount Coupon
+            allColumnData[17] = isOffline && !isAdmin ? "-" : advancePaid; // Advance paid
+            allColumnData[18] =
+              isOffline && !isAdmin ? "-" : paymentToCollectByVendor; // Payment to be collected by vendor
+            allColumnData[19] =
+              isOffline && !isAdmin ? "-" : actualCommissionNet; // Net Commission
+            allColumnData[20] =
+              isOffline && !isAdmin ? "-" : amountToCollectFromVendor; // Amount to be collected from vendor
+            allColumnData[21] =
+              isOffline && !isAdmin ? "-" : advancePlusDiscount; // Advance + discount
           }
 
-          // Admin-only columns
-          if (isAdmin) {
-            baseData["Admin Note"] = booking.admin_note || "-";
-          }
-
-          // Add currency column
-          baseData["Currency"] = currency;
-
-          return baseData;
+          return allColumnData;
         }) || [];
+
+      // Filter and reorder columns based on visibility and order
+      const visibleColumnIndices = defaultColumnOrder.filter(
+        (index) => columnVisibility[index] && index !== 24 // Exclude Actions column
+      );
+
+      // Convert array data to object format with only visible columns, maintaining order
+      // Include Booking ID as first column for reference
+      const excelData = excelDataRaw.map((rowData: any[], rowIndex: number) => {
+        const row: Record<string, any> = {
+          "Booking ID": bookings?.[rowIndex]?.id || "",
+        };
+        visibleColumnIndices.forEach((colIndex) => {
+          const columnName = columnHeaders[colIndex];
+          if (
+            columnName &&
+            rowData[colIndex] !== null &&
+            rowData[colIndex] !== undefined
+          ) {
+            row[columnName] = rowData[colIndex];
+          }
+        });
+        return row;
+      });
 
       // Calculate summary totals
       const totalBookings = bookings?.length || 0;
@@ -289,34 +386,62 @@ const Bookings = () => {
           return sum + bookingAmount;
         }, 0) || 0;
 
-      // Create summary row with all possible columns (use first row as template)
-      const firstRow = excelData[0] || {};
+      // Create summary rows with visible columns only
       const summaryRow: Record<string, any> = {};
-      Object.keys(firstRow).forEach((key) => {
-        summaryRow[key] = "";
+      visibleColumnIndices.forEach((colIndex) => {
+        const columnName = columnHeaders[colIndex];
+        if (columnName) {
+          summaryRow[columnName] = "";
+        }
       });
+
+      // Find column names for summary (check if they're visible)
+      const titleColName = visibleColumnIndices.includes(0)
+        ? columnHeaders[0]
+        : "Title";
+      const participantsColName = visibleColumnIndices.includes(8)
+        ? columnHeaders[8]
+        : "No. Of Participants";
+      const ticketPriceColName = visibleColumnIndices.includes(16)
+        ? columnHeaders[16]
+        : "Ticket Price (customer cost)";
+      const createdAtColName = visibleColumnIndices.includes(22)
+        ? columnHeaders[22]
+        : "Booking Created At";
 
       const summaryData = [
         {}, // Empty row
         {
           ...summaryRow,
           "Booking ID": "SUMMARY",
+          [titleColName]: "SUMMARY",
         },
         {
           ...summaryRow,
           "Booking ID": "Total Bookings:",
-          "No. Of Participants": totalBookings,
+          [titleColName]: "Total Bookings:",
+          [participantsColName]: totalBookings,
         },
         {
           ...summaryRow,
           "Booking ID": "Total Revenue:",
-          "Ticket Price (customer cost)": totalRevenue,
+          [titleColName]: "Total Revenue:",
+          [ticketPriceColName]: totalRevenue,
         },
         {
           ...summaryRow,
           "Booking ID": "Export Date:",
-          "Booking Created At": new Date().toLocaleString(),
+          [titleColName]: "Export Date:",
+          [createdAtColName]: new Date().toLocaleString(),
         },
+      ];
+
+      // Get column order based on visible columns (Booking ID first, then visible columns)
+      const columnOrder = [
+        "Booking ID",
+        ...visibleColumnIndices
+          .map((index) => columnHeaders[index])
+          .filter(Boolean),
       ];
 
       // Combine data and summary
@@ -325,14 +450,6 @@ const Bookings = () => {
       // Create workbook
       const workbook = XLSX.utils.book_new();
       const worksheet = XLSX.utils.json_to_sheet(allData);
-
-      // Set column widths dynamically based on actual columns
-      // Get all unique keys from the data
-      const allKeys = new Set<string>();
-      excelData.forEach((row) => {
-        Object.keys(row).forEach((key) => allKeys.add(key));
-      });
-      const columnOrder = Array.from(allKeys).sort();
 
       // Define column widths for known columns
       const widthMap: Record<string, number> = {
@@ -364,7 +481,7 @@ const Bookings = () => {
         Currency: 10,
       };
 
-      // Set column widths
+      // Set column widths based on actual exported columns (in order)
       const colWidths = columnOrder.map((key) => ({
         wch: widthMap[key] || 15,
       }));

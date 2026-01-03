@@ -1158,7 +1158,9 @@ export const OfflineBookingDialog = ({
                                 {...field}
                                 value={field.value || ""}
                                 onChange={(e) =>
-                                  field.onChange(parseFloat(e.target.value) || 0)
+                                  field.onChange(
+                                    parseFloat(e.target.value) || 0
+                                  )
                                 }
                               />
                             </div>
@@ -1167,11 +1169,8 @@ export const OfflineBookingDialog = ({
                       )}
                     />
                   </div>
-
-
                 </div>
                 <div className="FlexOnly">
-
                   <FormField
                     control={form.control}
                     name="advance_amount"
@@ -1222,9 +1221,7 @@ export const OfflineBookingDialog = ({
               {selectedActivity && (
                 <div className="summary-card">
                   <div className="summary-content">
-                    <h4 className="summary-title">
-                      Booking Summary
-                    </h4>
+                    <h4 className="summary-title">Booking Summary</h4>
                     <div className="space-y-3">
                       <div className="summary-row">
                         <span className="summary-label">Activity</span>
@@ -1263,30 +1260,24 @@ export const OfflineBookingDialog = ({
                               </Button>
                             </div>
                           ) : (
-                            <>
-                          {!showB2BPrice ? (
                             <div className="summary-row">
                               <span className="summary-label">B2B Price</span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                                onClick={() => setShowB2BPrice(true)}
-                              >
-                                View B2B Price
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <span className="summary-value">
+                                  {selectedActivity.currency}{" "}
+                                  {selectedActivity.b2bPrice.toLocaleString()}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                  onClick={() => setShowB2BPrice(false)}
+                                >
+                                  Hide
+                                </Button>
+                              </div>
                             </div>
-                          ) : (
-                            <div className="summary-row">
-                                  <span className="summary-label">B2B Price</span>
-                                  <span className="summary-value">
-                                    {selectedActivity.currency}{" "}
-                                    {selectedActivity.b2bPrice.toLocaleString()}
-                                  </span>
-                                </div>
-                          )}
-                        </>
                           )}
                         </>
                       )}

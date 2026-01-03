@@ -34,6 +34,7 @@ export function VendorRouteGuard({ children }: { children: React.ReactNode }) {
           path === "/bookings" ||
           path === "/experience" ||
           path === "/vendor/experiences" ||
+          path === "/profile/calendar" ||
           publicRoutes.includes(path)
         ) {
           return true;
