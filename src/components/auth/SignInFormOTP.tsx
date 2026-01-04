@@ -487,7 +487,7 @@ export function SignInFormOTP({
                               prevInput?.focus();
                             }
                           }}
-                          className="w-8 h-8 md:w-10 md:h-10 text-center text-lg md:text-xl font-mono"
+                          className="h-8 md:h-10 text-center text-lg md:text-xl font-mono"
                           maxLength={1}
                         />
                       ))}
@@ -521,7 +521,7 @@ export function SignInFormOTP({
                 )}
               </CardContent>
 
-              <CardFooter className="flex flex-col pb-0 space-y-0">
+              <CardFooter className="flex flex-col  pb-0">
                 <Button
                   type="submit"
                   className="w-full bg-brand-primary hover:bg-brand-primary-dark text-white"

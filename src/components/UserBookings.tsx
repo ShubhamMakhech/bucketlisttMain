@@ -407,14 +407,13 @@ export const UserBookings = () => {
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-        profile?.phone_number ||
-        booking?.booking_participants?.[0]?.phone_number ? (
+          profile?.phone_number ||
+          booking?.booking_participants?.[0]?.phone_number ? (
           <a
-            href={`tel:${
-              booking.contact_person_number ||
+            href={`tel:${booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-            }`}
+              }`}
             className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
@@ -440,11 +439,11 @@ export const UserBookings = () => {
         if (bookingTypeRender === "canceled") return "Canceled";
         return timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-              timeslot.end_time
-            )}`
+            timeslot.end_time
+          )}`
           : isOfflineBooking
-          ? "Offline"
-          : "N/A";
+            ? "Offline"
+            : "N/A";
       },
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
@@ -474,8 +473,8 @@ export const UserBookings = () => {
               bookedByProfile?.first_name && bookedByProfile?.last_name
                 ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                 : bookedByProfile?.email ||
-                  bookedByProfile?.first_name ||
-                  "Agent";
+                bookedByProfile?.first_name ||
+                "Agent";
           } else {
             bookingTypeDisplay = "offline";
           }
@@ -492,15 +491,14 @@ export const UserBookings = () => {
 
         return (
           <span
-            className={`px-2 py-1 rounded text-xs font-medium ${
-              isCanceled
+            className={`px-2 py-1 rounded text-xs font-medium ${isCanceled
                 ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
                 : isOffline
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                : isAgentBooking
-                ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-            }`}
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                  : isAgentBooking
+                    ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                    : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+              }`}
           >
             {bookingTypeDisplay}
           </span>
@@ -664,11 +662,10 @@ export const UserBookings = () => {
                       activityName: activity?.name || "",
                       dateTime: booking.time_slots
                         ? `${format(
-                            new Date(booking.booking_date),
-                            "dd/MM/yyyy"
-                          )} - ${booking.time_slots.start_time} - ${
-                            booking.time_slots.end_time
-                          }`
+                          new Date(booking.booking_date),
+                          "dd/MM/yyyy"
+                        )} - ${booking.time_slots.start_time} - ${booking.time_slots.end_time
+                        }`
                         : format(new Date(booking.booking_date), "dd/MM/yyyy"),
                       pickUpLocation: experience?.location || "-",
                       spotLocation:
@@ -1250,11 +1247,11 @@ export const UserBookings = () => {
                 const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                      timeslot.start_time
-                    )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                  ? "Offline"
-                  : "";
+                    ? "Offline"
+                    : "";
               }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
@@ -1282,8 +1279,8 @@ export const UserBookings = () => {
                       bookedByProfile?.last_name
                       ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                       : bookedByProfile?.email ||
-                          bookedByProfile?.first_name ||
-                          "Agent";
+                      bookedByProfile?.first_name ||
+                      "Agent";
                   }
                 }
                 return "offline";
@@ -1377,8 +1374,8 @@ export const UserBookings = () => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                    b2bPrice4 * booking.total_participants -
-                    (bookingAmount5 - dueAmount3)
+                  b2bPrice4 * booking.total_participants -
+                  (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -1905,11 +1902,11 @@ export const UserBookings = () => {
                   const isOfflineFilter = bookingTypeFilter === "offline";
                   return timeslot?.start_time && timeslot?.end_time
                     ? `${formatTime12Hour(
-                        timeslot.start_time
-                      )} - ${formatTime12Hour(timeslot.end_time)}`
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
                     : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                      ? "Offline"
+                      : "";
                 }
                 case 10: {
                   const bookingType = (booking as any)?.type || "online";
@@ -1929,8 +1926,8 @@ export const UserBookings = () => {
                         bookedByProfile?.last_name
                         ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                         : bookedByProfile?.email ||
-                            bookedByProfile?.first_name ||
-                            "Agent";
+                        bookedByProfile?.first_name ||
+                        "Agent";
                     }
                   }
                   return "offline";
@@ -2172,8 +2169,8 @@ export const UserBookings = () => {
             bookedByProfile?.first_name && bookedByProfile?.last_name
               ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
               : bookedByProfile?.email ||
-                bookedByProfile?.first_name ||
-                "Agent";
+              bookedByProfile?.first_name ||
+              "Agent";
           return agentName;
         }
       }
@@ -2356,11 +2353,11 @@ export const UserBookings = () => {
               if (bookingTypeUnique === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                  timeslot.start_time
+                )} - ${formatTime12Hour(timeslot.end_time)}`
                 : isOffline
-                ? "Offline"
-                : "";
+                  ? "Offline"
+                  : "";
             case 7:
               return format(new Date(booking.booking_date), "MMM d, yyyy");
             case 8:
@@ -2387,8 +2384,8 @@ export const UserBookings = () => {
                     bookedByProfile?.last_name
                     ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                     : bookedByProfile?.email ||
-                        bookedByProfile?.first_name ||
-                        "Agent";
+                    bookedByProfile?.first_name ||
+                    "Agent";
                 }
               }
               return "offline";
@@ -2478,8 +2475,8 @@ export const UserBookings = () => {
               return formatCurrency(
                 currency,
                 bookingAmount -
-                  b2bPrice * booking.total_participants -
-                  (bookingAmount - dueAmount)
+                b2bPrice * booking.total_participants -
+                (bookingAmount - dueAmount)
               );
             }
             case 21: {
@@ -2803,11 +2800,11 @@ export const UserBookings = () => {
                 const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                      timeslot.start_time
-                    )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                  ? "Offline"
-                  : "";
+                    ? "Offline"
+                    : "";
               }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
@@ -2835,8 +2832,8 @@ export const UserBookings = () => {
                       bookedByProfile?.last_name
                       ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                       : bookedByProfile?.email ||
-                          bookedByProfile?.first_name ||
-                          "Agent";
+                      bookedByProfile?.first_name ||
+                      "Agent";
                   }
                 }
                 return "offline";
@@ -2928,8 +2925,8 @@ export const UserBookings = () => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                    b2bPrice4 * booking.total_participants -
-                    (bookingAmount5 - dueAmount3)
+                  b2bPrice4 * booking.total_participants -
+                  (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -3058,9 +3055,8 @@ export const UserBookings = () => {
 
     return (
       <Card
-        className={`h-full ${
-          isCanceled ? "bg-red-50 border-red-200 dark:bg-red-950/20" : ""
-        }`}
+        className={`h-full ${isCanceled ? "bg-red-50 border-red-200 dark:bg-red-950/20" : ""
+          }`}
         id=""
       >
         <CardHeader className="pb-0 p-0 relative">
@@ -3238,14 +3234,13 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                 <span className="mobile-info-label">Contact</span>
                 <span className="mobile-info-value">
                   {booking.contact_person_number ||
-                  profile?.phone_number ||
-                  booking?.booking_participants?.[0]?.phone_number ? (
+                    profile?.phone_number ||
+                    booking?.booking_participants?.[0]?.phone_number ? (
                     <a
-                      href={`tel:${
-                        booking.contact_person_number ||
+                      href={`tel:${booking.contact_person_number ||
                         profile?.phone_number ||
                         booking?.booking_participants?.[0]?.phone_number
-                      }`}
+                        }`}
                       className="mobile-contact-link"
                     >
                       {booking.contact_person_number ||
@@ -3402,7 +3397,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                           currency,
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                            booking.total_participants
+                          booking.total_participants
                         )}
                       </span>
                     </div>
@@ -3414,7 +3409,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           booking.time_slots?.activities?.price *
-                            booking.total_participants
+                          booking.total_participants
                         )}
                       </span>
                     </div>
@@ -3426,7 +3421,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                           (booking.time_slots?.activities?.price -
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice)) *
-                            booking.total_participants
+                          booking.total_participants
                         )}
                       </span>
                     </div>
@@ -3451,7 +3446,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                            (Number(bookingAmount) - dueAmount)
+                          (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -3463,10 +3458,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                            (booking.b2bPrice ||
-                              booking.time_slots?.activities?.b2bPrice) *
-                              booking.total_participants -
-                            (Number(bookingAmount) - dueAmount)
+                          (booking.b2bPrice ||
+                            booking.time_slots?.activities?.b2bPrice) *
+                          booking.total_participants -
+                          (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -3528,7 +3523,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                       setShowDateRangePicker(false);
                     }
                   }}
-                  // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
                   Columns
                 </Button>
@@ -3554,11 +3549,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         return (
                           <label
                             key={index}
-                            className={`flex items-center gap-2 p-2 rounded ${
-                              isHiddenForAgent
+                            className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
                                 ? "opacity-50 cursor-not-allowed"
                                 : "cursor-pointer hover:bg-muted/30"
-                            }`}
+                              }`}
                           >
                             <input
                               type="checkbox"
@@ -3651,7 +3645,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   >
                     {selectedTimeslotId
                       ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                          ?.displayName || "Timeslot"
+                        ?.displayName || "Timeslot"
                       : "Timeslot"}
                   </Button>
                 </PopoverTrigger>
@@ -3713,8 +3707,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   >
                     {selectedActivityId
                       ? uniqueActivities.find(
-                          (a) => a.id === selectedActivityId
-                        )?.name || "Activity"
+                        (a) => a.id === selectedActivityId
+                      )?.name || "Activity"
                       : "Activity"}
                   </Button>
                 </PopoverTrigger>
@@ -3780,12 +3774,12 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         ? selectedBookingType === "canceled"
                           ? "Canceled"
                           : selectedBookingType === "admin-offline"
-                          ? "Admin-offline"
-                          : selectedBookingType === "offline"
-                          ? "Offline"
-                          : selectedBookingType === "agent"
-                          ? "Agent"
-                          : "Bucketlistt"
+                            ? "Admin-offline"
+                            : selectedBookingType === "offline"
+                              ? "Offline"
+                              : selectedBookingType === "agent"
+                                ? "Agent"
+                                : "Bucketlistt"
                         : "Booking Type"}
                     </Button>
                   </PopoverTrigger>
@@ -3930,11 +3924,11 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                     value={
                       selectedDate
                         ? [
-                            dayjs(selectedDate),
-                            selectedEndDate
-                              ? dayjs(selectedEndDate)
-                              : dayjs(selectedDate),
-                          ]
+                          dayjs(selectedDate),
+                          selectedEndDate
+                            ? dayjs(selectedEndDate)
+                            : dayjs(selectedDate),
+                        ]
                         : null
                     }
                     onChange={(dates, dateStrings) => {
@@ -4166,15 +4160,13 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                               headerRefs.current[originalIndex] = el;
                             }}
                             data-column-index={originalIndex}
-                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none bg-white ${
-                              draggedColumnIndex === originalIndex
+                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none bg-white ${draggedColumnIndex === originalIndex
                                 ? "opacity-50"
                                 : ""
-                            } ${
-                              dragOverColumnIndex === originalIndex
+                              } ${dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                            } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
+                              } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
                             style={{ width: columnWidths[originalIndex] }}
                             draggable={true}
                             onDragStart={() =>
@@ -4245,12 +4237,11 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                     title="Filter"
                                   >
                                     <Filter
-                                      className={`w-3 h-3 ${
-                                        columnFilters[originalIndex] &&
-                                        columnFilters[originalIndex].length > 0
+                                      className={`w-3 h-3 ${columnFilters[originalIndex] &&
+                                          columnFilters[originalIndex].length > 0
                                           ? "text-blue-600"
                                           : "text-gray-400"
-                                      }`}
+                                        }`}
                                     />
                                   </span>
                                 )}
@@ -4283,7 +4274,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                       </span>
                                       {columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length >
-                                          0 && (
+                                        0 && (
                                           <Button
                                             variant="ghost"
                                             size="sm"
@@ -4305,12 +4296,11 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${
-                                          sortBy === originalIndex &&
-                                          sortOrder === "asc"
+                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
+                                            sortOrder === "asc"
                                             ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                                             : "hover:bg-gray-200"
-                                        }`}
+                                          }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -4332,12 +4322,11 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${
-                                          sortBy === originalIndex &&
-                                          sortOrder === "desc"
+                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
+                                            sortOrder === "desc"
                                             ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                                             : "hover:bg-gray-200"
-                                        }`}
+                                          }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -4413,8 +4402,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                   {/* Filter Options List */}
                                   <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
                                     {getUniqueColumnValues[originalIndex] &&
-                                    getUniqueColumnValues[originalIndex]
-                                      .length > 0 ? (
+                                      getUniqueColumnValues[originalIndex]
+                                        .length > 0 ? (
                                       (() => {
                                         const searchQuery =
                                           filterSearchQueries[
@@ -4566,8 +4555,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                      ? booking.note_for_guide || ""
-                                      : ""
+                                        ? booking.note_for_guide || ""
+                                        : ""
                                   }
                                 >
                                   {renderCellContent(

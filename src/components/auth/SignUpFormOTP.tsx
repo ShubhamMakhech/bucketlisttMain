@@ -38,6 +38,7 @@ function detectInputType(input: string): "email" | "phone" {
 export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpFormOTPProps) {
   const [identifier, setIdentifier] = useState("");
   const [otp, setOtp] = useState("");
+  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [step, setStep] = useState<"input" | "verify">("input");
   const [loading, setLoading] = useState(false);
   const [sendingOTP, setSendingOTP] = useState(false);
@@ -59,6 +60,11 @@ export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpForm
     }
   }, []); // Run only on mount
 
+  // Sync otp with otpDigits
+  useEffect(() => {
+    setOtp(otpDigits.join(''));
+  }, [otpDigits]);
+
   // Reset form state when component mounts or when prefilledPhoneNumber changes
   useEffect(() => {
     // Reset auto-send flag when prefilledPhoneNumber changes
@@ -77,6 +83,7 @@ export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpForm
       setIdentifier("");
     }
     setOtp("");
+    setOtpDigits(['', '', '', '', '', '']);
     setStep("input");
     setLoading(false);
     setSendingOTP(false);
@@ -104,6 +111,7 @@ export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpForm
     if (user) {
       setIdentifier("");
       setOtp("");
+      setOtpDigits(['', '', '', '', '', '']);
       setStep("input");
       setLoading(false);
       setSendingOTP(false);
@@ -247,7 +255,7 @@ export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpForm
         </CardDescription>
       </CardHeader>
 
-      {step === "input" ? (
+      {/* {step === "input" ? (
         <div className="space-y-4 p-6">
           <div className="space-y-2">
             <Label htmlFor="identifier">Email or Phone Number</Label>
@@ -281,9 +289,9 @@ export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpForm
             Send OTP
           </Button>
         </div>
-      ) : (
+      ) : ( */}
         <form onSubmit={handleVerifyAndSignUp}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2">
             <div className="space-y-2">
               <Label htmlFor="identifier-display">Email or Phone</Label>
               <Input
@@ -296,20 +304,35 @@ export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpForm
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="otp">Enter OTP</Label>
-              <Input
-                id="otp"
-                type="text"
-                placeholder="000000"
-                value={otp}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, "").slice(0, 6);
-                  setOtp(value);
-                }}
-                maxLength={6}
-                required
-                className="text-center text-2xl tracking-widest font-mono"
-              />
+              <Label htmlFor="otp-input">Enter OTP</Label>
+              <div className="flex gap-2 justify-center">
+                {otpDigits.map((digit, index) => (
+                  <Input
+                    key={index}
+                    id={`otp-${index}`}
+                    type="text"
+                    value={digit}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 1);
+                      const newDigits = [...otpDigits];
+                      newDigits[index] = value;
+                      setOtpDigits(newDigits);
+                      if (value && index < 5) {
+                        const nextInput = document.getElementById(`otp-${index + 1}`);
+                        nextInput?.focus();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace' && !digit && index > 0) {
+                        const prevInput = document.getElementById(`otp-${index - 1}`);
+                        prevInput?.focus();
+                      }
+                    }}
+                    className=" h-8  md:h-10 text-center text-lg font-mono"
+                    maxLength={1}
+                  />
+                ))}
+              </div>
               <p className="text-xs text-gray-500">
                 Enter the 6-digit code sent to your{" "}
                 {inputType === "email" ? "email" : "phone number"}
@@ -338,7 +361,7 @@ export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpForm
             )}
           </CardContent>
 
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="flex flex-col space-y-2">
             <Button
               type="submit"
               className="w-full bg-brand-primary hover:bg-brand-primary-dark text-white"
@@ -350,11 +373,12 @@ export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpForm
 
             <Button
               type="button"
-              variant="ghost"
-              className="w-full"
+              variant="link"
+              className="w-full text-sm p-0 h-auto"
               onClick={() => {
                 setStep("input");
                 setOtp("");
+                setOtpDigits(['', '', '', '', '', '']);
                 setCountdown(0);
               }}
             >
@@ -376,7 +400,7 @@ export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpForm
             </div>
           </CardFooter>
         </form>
-      )}
+      {/* )} */}
     </Card>
   );
 }
