@@ -3204,7 +3204,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
               <div className="mobile-info-item">
                 <span className="mobile-info-label">Activity</span>
                 <span className="mobile-info-value">
-                  {(booking.time_slots?.activities as any)?.name || "N/A"}
+                  {((booking.time_slots?.activities || (booking as any).activities) as any)?.name || "N/A"}
                 </span>
               </div>
               <div className="mobile-info-item">
@@ -3216,7 +3216,15 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
               <div className="mobile-info-item">
                 <span className="mobile-info-label">Start Time</span>
                 <span className="mobile-info-value">
-                  {formatTime12Hour(booking.time_slots?.start_time || "")}
+                  {(() => {
+                    const bookingType = (booking as any)?.type || "online";
+                    if (bookingType === "canceled") return "Canceled";
+                    return booking.time_slots?.start_time && booking.time_slots?.end_time
+                      ? formatTime12Hour(booking.time_slots.start_time)
+                      : bookingType === "offline"
+                      ? "Offline"
+                      : "N/A";
+                  })()}
                 </span>
               </div>
               <div className="mobile-info-item">
