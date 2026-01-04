@@ -44,6 +44,7 @@ export function SignInFormOTP({
   // OTP state
   const [otpIdentifier, setOtpIdentifier] = useState("");
   const [otp, setOtp] = useState("");
+  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [otpStep, setOtpStep] = useState<"input" | "verify">("input");
   const [sendingOTP, setSendingOTP] = useState(false);
   const [verifyingOTP, setVerifyingOTP] = useState(false);
@@ -63,6 +64,7 @@ export function SignInFormOTP({
     // Reset all form state on mount
     setOtpIdentifier("");
     setOtp("");
+    setOtpDigits(['', '', '', '', '', '']);
     setOtpStep("input");
     setSendingOTP(false);
     setVerifyingOTP(false);
@@ -79,6 +81,7 @@ export function SignInFormOTP({
     if (!user) {
       setOtpIdentifier("");
       setOtp("");
+      setOtpDigits(['', '', '', '', '', '']);
       setOtpStep("input");
       setSendingOTP(false);
       setVerifyingOTP(false);
@@ -95,9 +98,15 @@ export function SignInFormOTP({
   useEffect(() => {
     setOtpStep("input");
     setOtp("");
+    setOtpDigits(['', '', '', '', '', '']);
     setOtpIdentifier("");
     setOtpCountdown(0);
   }, [activeTab]);
+
+  // Sync otp with otpDigits
+  useEffect(() => {
+    setOtp(otpDigits.join(''));
+  }, [otpDigits]);
 
   const otpInputType = otpIdentifier ? detectInputType(otpIdentifier) : "email";
 
@@ -229,16 +238,16 @@ export function SignInFormOTP({
   };
 
   return (
-    <Card className="w-full shadow-lg">
-      <CardHeader>
-        <CardTitle>Welcome to bucketlistt</CardTitle>
-        <CardDescription>
+    <Card className="w-full  shadow-lg">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl">Welcome to bucketlistt</CardTitle>
+        <CardDescription className="text-sm">
           Enter your credentials to access your account
         </CardDescription>
       </CardHeader>
 
       {/* Google Sign-in Button */}
-      <div className="px-6 pb-4">
+      <div className="px-6 pb-3">
         <Button
           type="button"
           variant="outline"
@@ -255,15 +264,12 @@ export function SignInFormOTP({
       </div>
 
       {/* Divider */}
-      <div className="relative px-6 pb-4">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-300 dark:border-gray-600" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground font-medium">
-            OR CONTINUE WITH
-          </span>
-        </div>
+      <div className="flex items-center px-6 pb-3">
+        <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+        <span className="px-2 text-xs uppercase text-muted-foreground font-medium bg-background">
+          OR
+        </span>
+        <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
       </div>
 
       {/* Tabs for OTP and Password */}
@@ -277,15 +283,15 @@ export function SignInFormOTP({
         }}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-2 mx-6 mb-4">
+        <TabsList className="grid grid-cols-2 mx-6 mb-2">
           <TabsTrigger value="otp">OTP</TabsTrigger>
           <TabsTrigger value="password">Password</TabsTrigger>
         </TabsList>
 
         {/* OTP Sign-in Tab */}
         <TabsContent value="otp" className="space-y-4">
-          {otpStep === "input" ? (
-            <div className="space-y-4 px-6">
+          {/* {otpStep === "input" ? (
+            <div className="space-y-2 px-6">
               <div className="space-y-2">
                 <Label htmlFor="otp-identifier">Email or Phone Number</Label>
                 <Input
@@ -320,41 +326,56 @@ export function SignInFormOTP({
                 Send OTP
               </Button>
             </div>
-          ) : (
+          ) : ( */}
             <form onSubmit={handleOTPSignIn}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="otp-identifier-display">Email or Phone</Label>
-                  <Input
-                    id="otp-identifier-display"
-                    type="text"
-                    value={otpIdentifier}
-                    disabled
-                    className="bg-gray-50 dark:bg-gray-800"
-                  />
-                </div>
+              <CardContent className="pb-1 space-y-2">
+                <div className="flex flex-col gap-2">
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="otp-identifier-display">Email or Phone</Label>
+                    <Input
+                      id="otp-identifier-display"
+                      type="text"
+                      value={otpIdentifier}
+                      disabled
+                      className="bg-gray-50 dark:bg-gray-800"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="otp-input">Enter OTP</Label>
-                  <Input
-                    id="otp-input"
-                    type="text"
-                    placeholder="000000"
-                    value={otp}
-                    onChange={(e) => {
-                      const value = e.target.value
-                        .replace(/\D/g, "")
-                        .slice(0, 6);
-                      setOtp(value);
-                    }}
-                    maxLength={6}
-                    required
-                    className="text-center text-2xl tracking-widest font-mono"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Enter the 6-digit code sent to your{" "}
-                    {otpInputType === "email" ? "email" : "phone number"}
-                  </p>
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="otp-input">Enter OTP</Label>
+                    <div className="flex gap-2 justify-center">
+                      {otpDigits.map((digit, index) => (
+                        <Input
+                          key={index}
+                          id={`otp-${index}`}
+                          type="text"
+                          value={digit}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 1);
+                            const newDigits = [...otpDigits];
+                            newDigits[index] = value;
+                            setOtpDigits(newDigits);
+                            if (value && index < 5) {
+                              const nextInput = document.getElementById(`otp-${index + 1}`);
+                              nextInput?.focus();
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Backspace' && !digit && index > 0) {
+                              const prevInput = document.getElementById(`otp-${index - 1}`);
+                              prevInput?.focus();
+                            }
+                          }}
+                          className="w-8 h-8 md:w-10 md:h-10 text-center text-lg md:text-xl font-mono"
+                          maxLength={1}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 text-center">
+                      Enter the 6-digit code sent to your{" "}
+                      {otpInputType === "email" ? "email" : "phone number"}
+                    </p>
+                  </div>
                 </div>
 
                 {otpCountdown > 0 && (
@@ -379,7 +400,7 @@ export function SignInFormOTP({
                 )}
               </CardContent>
 
-              <CardFooter className="flex flex-col space-y-4">
+              <CardFooter className="flex flex-col pb-0 space-y-0">
                 <Button
                   type="submit"
                   className="w-full bg-brand-primary hover:bg-brand-primary-dark text-white"
@@ -390,14 +411,15 @@ export function SignInFormOTP({
                   )}
                   Sign In
                 </Button>
-
+<br />
                 <Button
                   type="button"
-                  variant="ghost"
-                  className="w-full"
+                  variant="link"
+                  className="w-full text-sm p-0 h-auto"
                   onClick={() => {
                     setOtpStep("input");
                     setOtp("");
+                    setOtpDigits(['', '', '', '', '', '']);
                     setOtpCountdown(0);
                   }}
                 >
@@ -405,13 +427,13 @@ export function SignInFormOTP({
                 </Button>
               </CardFooter>
             </form>
-          )}
+          {/* )} */}
         </TabsContent>
 
         {/* Password Sign-in Tab */}
         <TabsContent value="password">
           <form onSubmit={handlePasswordSignIn}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -460,7 +482,7 @@ export function SignInFormOTP({
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter className="flex flex-col space-y-2">
               <Button
                 type="submit"
                 className="w-full bg-brand-primary hover:bg-brand-primary-dark text-white"
@@ -476,7 +498,7 @@ export function SignInFormOTP({
         </TabsContent>
       </Tabs>
 
-      <CardFooter className="flex flex-col space-y-4 pt-4">
+      <CardFooter className="flex flex-col space-y-2 pt-4">
         <div className="text-center text-sm">
           <span className="text-gray-600 dark:text-gray-400">
             Don't have an account?{" "}
