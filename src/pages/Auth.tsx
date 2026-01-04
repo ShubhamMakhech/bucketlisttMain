@@ -57,6 +57,16 @@ export default function Auth() {
   // Handle navigation after authentication
   useEffect(() => {
     if (user && !loading && !roleLoading && !isResetMode) {
+      // Check if there's a saved path from AuthModal (like Google SSO)
+      const loggedInPath = localStorage.getItem("loggedInPath");
+      if (loggedInPath) {
+        // Redirect to the saved path and clear it
+        localStorage.removeItem("loggedInPath");
+        window.location.href = loggedInPath;
+        return;
+      }
+      
+      // Default navigation
       if (isVendor) {
         navigate("/profile");
       } else {

@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -284,8 +283,8 @@ export const SlotSelector = ({
     if (slot.available_spots <= 3) {
       return <Badge color="orange">Few Spots Left</Badge>;
     }
-    return ("")
-  }
+    return "";
+  };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -310,7 +309,9 @@ export const SlotSelector = ({
         <>
           {/* Add Activity Selector */}
           <Card className="ContainerBorderSet" bodyStyle={{ padding: "10px" }}>
-            <label className="text-base font-semibold mb-3 block textSmall">Select Activity</label>
+            <label className="text-base font-semibold mb-3 block textSmall">
+              Select Activity
+            </label>
 
             {/* Desktop Activity Swiper Slider */}
             <div className="activity-swiper-container hidden md:block">
@@ -333,24 +334,30 @@ export const SlotSelector = ({
                       overlayStyle={{ maxWidth: "300px" }}
                     >
                       <Card
-                        className={`activity-card cursor-pointer transition-all duration-200 ${selectedActivityId === activity.id
-                          ? "border-[var(--brand-color)] bg-orange-50 shadow-md"
-                          : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                          }`}
+                        className={`activity-card cursor-pointer transition-all duration-200 ${
+                          selectedActivityId === activity.id
+                            ? "border-[var(--brand-color)] bg-orange-50 shadow-md"
+                            : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                        }`}
                         onClick={() => {
                           onActivityChange(activity.id);
                           onSlotChange(undefined); // Reset slot when activity changes
                         }}
-                        style={{ width: "280px", minHeight: "200px", height: "100%" }}
+                        style={{
+                          width: "280px",
+                          minHeight: "200px",
+                          height: "100%",
+                        }}
                       >
                         <div className="flex flex-col h-full p-3">
                           {/* Title */}
                           <div className="mb-3">
                             <h3
-                              className={`text-lg font-bold ${selectedActivityId === activity.id
-                                ? "text-gray-800"
-                                : "text-gray-800"
-                                }`}
+                              className={`text-lg font-bold ${
+                                selectedActivityId === activity.id
+                                  ? "text-gray-800"
+                                  : "text-gray-800"
+                              }`}
                             >
                               {activity.name}
                             </h3>
@@ -359,42 +366,44 @@ export const SlotSelector = ({
                           {/* Price */}
                           <div className="mb-4">
                             {activity.discounted_price &&
-                              activity.discounted_price !== activity.price ? (
+                            activity.discounted_price !== activity.price ? (
                               <div className="flex gap-2">
                                 <div className="text-lg text-muted-foreground line-through opacity-50">
                                   {activity.currency === "USD"
                                     ? "₹"
                                     : activity.currency === "INR"
-                                      ? "₹"
-                                      : activity.currency}{" "}
+                                    ? "₹"
+                                    : activity.currency}{" "}
                                   {activity.price}
                                 </div>
                                 <div
-                                  className={`text-2xl font-bold ${selectedActivityId === activity.id
-                                    ? "text-green-600"
-                                    : "text-green-600"
-                                    }`}
+                                  className={`text-2xl font-bold ${
+                                    selectedActivityId === activity.id
+                                      ? "text-green-600"
+                                      : "text-green-600"
+                                  }`}
                                 >
                                   {activity.currency === "USD"
                                     ? "₹"
                                     : activity.currency === "INR"
-                                      ? "₹"
-                                      : activity.currency}{" "}
+                                    ? "₹"
+                                    : activity.currency}{" "}
                                   {activity.discounted_price}
                                 </div>
                               </div>
                             ) : (
                               <div
-                                className={`text-2xl font-bold ${selectedActivityId === activity.id
-                                  ? "text-[var(--brand-color)]"
-                                  : "text-gray-800"
-                                  }`}
+                                className={`text-2xl font-bold ${
+                                  selectedActivityId === activity.id
+                                    ? "text-[var(--brand-color)]"
+                                    : "text-gray-800"
+                                }`}
                               >
                                 {activity.currency === "USD"
                                   ? "₹"
                                   : activity.currency === "INR"
-                                    ? "₹"
-                                    : activity.currency}{" "}
+                                  ? "₹"
+                                  : activity.currency}{" "}
                                 {activity.price}
                               </div>
                             )}
@@ -403,10 +412,11 @@ export const SlotSelector = ({
                           {/* Select Button */}
                           <div className="mb-4">
                             <Button
-                              className={`w-full rounded-lg border-1 font-semibold ${selectedActivityId === activity.id
-                                ? "border-[var(--brand-color)] bg-[var(--brand-color)] text-white hover:opacity-90"
-                                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                                }`}
+                              className={`w-full rounded-lg border-1 font-semibold ${
+                                selectedActivityId === activity.id
+                                  ? "border-[var(--brand-color)] bg-[var(--brand-color)] text-white hover:opacity-90"
+                                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                              }`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onActivityChange(activity.id);
@@ -430,9 +440,9 @@ export const SlotSelector = ({
                                   {activity.distance
                                     ? activity.distance.length > 80
                                       ? `${activity.distance.substring(
-                                        0,
-                                        80
-                                      )}...`
+                                          0,
+                                          80
+                                        )}...`
                                       : activity.distance
                                     : "Distance information not available"}
                                 </div>
@@ -461,10 +471,11 @@ export const SlotSelector = ({
                   return (
                     <Card
                       key={activity.id}
-                      className={`cursor-pointer transition-all duration-200 ${isSelected
-                        ? "border-[var(--brand-color)] bg-orange-50 shadow-md"
-                        : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                        }`}
+                      className={`cursor-pointer transition-all duration-200 ${
+                        isSelected
+                          ? "border-[var(--brand-color)] bg-orange-50 shadow-md"
+                          : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                      }`}
                       onClick={() => {
                         onActivityChange(activity.id);
                         onSlotChange(undefined);
@@ -475,8 +486,9 @@ export const SlotSelector = ({
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex-1">
                             <h3
-                              className={`text-sm font-semibold ${isSelected ? "text-gray-800" : "text-gray-800"
-                                }`}
+                              className={`text-sm font-semibold ${
+                                isSelected ? "text-gray-800" : "text-gray-800"
+                              }`}
                             >
                               {activity.name}
                             </h3>
@@ -484,52 +496,55 @@ export const SlotSelector = ({
                           <div className="flex items-center gap-2">
                             <div className="text-right">
                               {activity.discounted_price &&
-                                activity.discounted_price !== activity.price ? (
+                              activity.discounted_price !== activity.price ? (
                                 <div className="flex flex-col items-end">
                                   <div className="text-xs text-muted-foreground line-through">
                                     {activity.currency === "USD"
                                       ? "₹"
                                       : activity.currency === "INR"
-                                        ? "₹"
-                                        : activity.currency}{" "}
+                                      ? "₹"
+                                      : activity.currency}{" "}
                                     {activity.price}
                                   </div>
                                   <div
-                                    className={`text-base font-bold ${isSelected
-                                      ? "text-green-600"
-                                      : "text-green-600"
-                                      }`}
+                                    className={`text-base font-bold ${
+                                      isSelected
+                                        ? "text-green-600"
+                                        : "text-green-600"
+                                    }`}
                                   >
                                     {activity.currency === "USD"
                                       ? "₹"
                                       : activity.currency === "INR"
-                                        ? "₹"
-                                        : activity.currency}{" "}
+                                      ? "₹"
+                                      : activity.currency}{" "}
                                     {activity.discounted_price}
                                   </div>
                                 </div>
                               ) : (
                                 <div
-                                  className={`text-base font-bold ${isSelected
-                                    ? "text-[var(--brand-color)]"
-                                    : "text-gray-800"
-                                    }`}
+                                  className={`text-base font-bold ${
+                                    isSelected
+                                      ? "text-[var(--brand-color)]"
+                                      : "text-gray-800"
+                                  }`}
                                 >
                                   {activity.currency === "USD"
                                     ? "₹"
                                     : activity.currency === "INR"
-                                      ? "₹"
-                                      : activity.currency}{" "}
+                                    ? "₹"
+                                    : activity.currency}{" "}
                                   {activity.price}
                                 </div>
                               )}
                             </div>
                             <Button
                               size="small"
-                              className={`px-3 py-1 text-xs font-medium rounded ${isSelected
-                                ? "bg-[var(--brand-color)] text-white"
-                                : "bg-gray-100 text-gray-700"
-                                }`}
+                              className={`px-3 py-1 text-xs font-medium rounded ${
+                                isSelected
+                                  ? "bg-[var(--brand-color)] text-white"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onActivityChange(activity.id);
@@ -622,8 +637,10 @@ export const SlotSelector = ({
           {selectedActivityId && (
             <>
               <Card bodyStyle={{ padding: "10px" }}>
-                <div className='CalenderLayoutContainer'>
-                  <label className="text-base font-medium mb-3 font-semibold block textSmall">Select date</label>
+                <div className="CalenderLayoutContainer">
+                  <label className="text-base font-medium mb-3 font-semibold block textSmall">
+                    Select date
+                  </label>
 
                   {/* Horizontal Date Picker */}
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-1 pb-2 AdjustContainer">
@@ -635,17 +652,19 @@ export const SlotSelector = ({
                       return (
                         <div
                           key={date.toISOString()}
-                          className={`flex-shrink-0 cursor-pointer transition-all duration-200 ${isDisabled
-                            ? "opacity-50 cursor-not-allowed"
-                            : "hover:scale-105"
-                            }`}
+                          className={`flex-shrink-0 cursor-pointer transition-all duration-200 ${
+                            isDisabled
+                              ? "opacity-50 cursor-not-allowed"
+                              : "hover:scale-105"
+                          }`}
                           onClick={() => !isDisabled && onDateChange(date)}
                         >
                           <div
-                            className={`w-full h-15 rounded-lg border-2 p-2 text-center flex flex-col justify-between ${isSelected
-                              ? 'border-[var(--brand-color)] bg-orange-50'
-                              : 'border-gray-200 bg-white hover:border-gray-300'
-                              }`}
+                            className={`w-full h-15 rounded-lg border-2 p-2 text-center flex flex-col justify-between ${
+                              isSelected
+                                ? "border-[var(--brand-color)] bg-orange-50"
+                                : "border-gray-200 bg-white hover:border-gray-300"
+                            }`}
                           >
                             <div className="text-xs text-gray-500 font-medium textSmall">
                               {format(date, "EEE")}
@@ -678,19 +697,24 @@ export const SlotSelector = ({
                       onOpenChange={setShowCalendar}
                       placement="bottomLeft"
                     >
-                      <Button className="flex-shrink-0 w-16 h-100  flex flex-col items-center justify-center gap-1 border-gray-200 hover:border-gray-300 p-2 " style={{ width: "100%" }}>
+                      <Button
+                        className="flex-shrink-0 w-16 h-100  flex flex-col items-center justify-center gap-1 border-gray-200 hover:border-gray-300 p-2 "
+                        style={{ width: "100%" }}
+                      >
                         <CalendarIcon className="h-4 w-4 text-gray-600" />
                         <span className="text-xs text-gray-600">
-                          More
-                          dates
+                          More dates
                         </span>
                       </Button>
                     </Popover>
                   </div>
                 </div>
-              </Card >
+              </Card>
               {selectedDate && (
-                <Card bodyStyle={{ padding: "10px" }} style={{ marginTop: "10px" }}>
+                <Card
+                  bodyStyle={{ padding: "10px" }}
+                  style={{ marginTop: "10px" }}
+                >
                   <label className="text-base font-semibold mb-3 block textSmall">
                     Available Time Slots for{" "}
                     {format(selectedDate, "MMM d, yyyy")}
@@ -714,12 +738,13 @@ export const SlotSelector = ({
                         return (
                           <Card
                             key={slot.id}
-                            className={`cursor-pointer transition-colors ${isSelected
-                              ? "border-[var(--brand-color)] bg-orange-50"
-                              : available
+                            className={`cursor-pointer transition-colors ${
+                              isSelected
+                                ? "border-[var(--brand-color)] bg-orange-50"
+                                : available
                                 ? "hover:border-gray-300"
                                 : "opacity-50 cursor-not-allowed"
-                              }`}
+                            }`}
                             id="time-slot-card"
                             onClick={() =>
                               available &&

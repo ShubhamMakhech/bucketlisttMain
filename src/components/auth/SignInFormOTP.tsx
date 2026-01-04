@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ interface SignInFormOTPProps {
   onToggleMode: () => void;
   onResetMode?: () => void;
   onForgotPassword?: () => void;
+  prefilledPhoneNumber?: string;
 }
 
 // Helper function to detect if input is email or phone
@@ -38,17 +39,26 @@ export function SignInFormOTP({
   onToggleMode,
   onResetMode,
   onForgotPassword,
+  prefilledPhoneNumber,
 }: SignInFormOTPProps) {
   const [activeTab, setActiveTab] = useState<"otp" | "password">("otp");
 
   // OTP state
   const [otpIdentifier, setOtpIdentifier] = useState("");
   const [otp, setOtp] = useState("");
-  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
+  const [otpDigits, setOtpDigits] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [otpStep, setOtpStep] = useState<"input" | "verify">("input");
   const [sendingOTP, setSendingOTP] = useState(false);
   const [verifyingOTP, setVerifyingOTP] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(0);
+  const [otpError, setOtpError] = useState<string | null>(null);
 
   // Password state
   const [email, setEmail] = useState("");
@@ -58,34 +68,118 @@ export function SignInFormOTP({
 
   const { signIn, signInWithOTP, sendOTP, user } = useAuth();
   const { toast } = useToast();
+  const hasAutoSentRef = useRef(false);
+  const formattedPhoneRef = useRef<string | null>(null);
 
-  // Reset form state when component mounts
+  // Initialize identifier with prefilled phone number if provided
   useEffect(() => {
-    // Reset all form state on mount
-    setOtpIdentifier("");
+    if (prefilledPhoneNumber) {
+      // Format phone number: remove non-digits, add 91 if needed
+      let formattedPhone = prefilledPhoneNumber.replace(/\D/g, "");
+      if (!formattedPhone.startsWith("91") && formattedPhone.length === 10) {
+        formattedPhone = "91" + formattedPhone;
+      }
+      formattedPhoneRef.current = formattedPhone;
+      // Use requestAnimationFrame to ensure state update happens
+      requestAnimationFrame(() => {
+        setOtpIdentifier(formattedPhone);
+      });
+    }
+  }, []); // Run only on mount
+
+  // Reset form state when component mounts or when prefilledPhoneNumber changes
+  useEffect(() => {
+    // Reset auto-send flag when prefilledPhoneNumber changes
+    hasAutoSentRef.current = false;
+
+    // Reset all form state, but pre-fill phone if provided
+    if (prefilledPhoneNumber) {
+      // Format phone number: remove non-digits, add 91 if needed
+      let formattedPhone = prefilledPhoneNumber.replace(/\D/g, "");
+      if (!formattedPhone.startsWith("91") && formattedPhone.length === 10) {
+        formattedPhone = "91" + formattedPhone;
+      }
+      formattedPhoneRef.current = formattedPhone;
+      // Use requestAnimationFrame to ensure state update happens after current render
+      requestAnimationFrame(() => {
+        setOtpIdentifier(formattedPhone);
+      });
+    } else {
+      // Clear identifier if no prefilled phone
+      setOtpIdentifier("");
+    }
     setOtp("");
-    setOtpDigits(['', '', '', '', '', '']);
+    setOtpDigits(["", "", "", "", "", ""]);
     setOtpStep("input");
     setSendingOTP(false);
     setVerifyingOTP(false);
     setOtpCountdown(0);
+    setOtpError(null);
     setEmail("");
     setPassword("");
     setShowPassword(false);
     setPasswordLoading(false);
     setActiveTab("otp");
-  }, []); // Run only on mount
+  }, [prefilledPhoneNumber]); // Run when prefilledPhoneNumber changes
+
+  // Separate effect to fix missing identifier (runs when prefilledPhoneNumber changes)
+  useEffect(() => {
+    // Safeguard: If we have a prefilled phone but identifier is empty, set it
+    if (prefilledPhoneNumber && !otpIdentifier && prefilledPhoneNumber.trim()) {
+      let formattedPhone = prefilledPhoneNumber.replace(/\D/g, "");
+      if (!formattedPhone.startsWith("91") && formattedPhone.length === 10) {
+        formattedPhone = "91" + formattedPhone;
+      }
+      formattedPhoneRef.current = formattedPhone;
+      // Force update using requestAnimationFrame to ensure it happens after render
+      requestAnimationFrame(() => {
+        setOtpIdentifier(formattedPhone);
+      });
+    }
+  }, [prefilledPhoneNumber, otpIdentifier]);
+
+  // Auto-send OTP if phone number is prefilled (runs after identifier is set)
+  useEffect(() => {
+    // Use ref value if state is not yet updated
+    const currentIdentifier = otpIdentifier || formattedPhoneRef.current || "";
+
+    // Wait a bit for state to settle after setting identifier
+    if (
+      prefilledPhoneNumber &&
+      currentIdentifier &&
+      otpStep === "input" &&
+      !sendingOTP &&
+      otpCountdown === 0 &&
+      !hasAutoSentRef.current
+    ) {
+      // Check if it's a phone number (not email)
+      if (!currentIdentifier.includes("@")) {
+        hasAutoSentRef.current = true;
+        // Small delay to ensure component is fully mounted and state is settled
+        const timer = setTimeout(() => {
+          // Ensure identifier is set in state before sending
+          if (!otpIdentifier && formattedPhoneRef.current) {
+            setOtpIdentifier(formattedPhoneRef.current);
+          }
+          handleSendOTP();
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefilledPhoneNumber, otpIdentifier, otpStep, sendingOTP, otpCountdown]); // Run when relevant state changes
 
   // Also reset when user is not authenticated (logged out)
   useEffect(() => {
     if (!user) {
       setOtpIdentifier("");
       setOtp("");
-      setOtpDigits(['', '', '', '', '', '']);
+      setOtpDigits(["", "", "", "", "", ""]);
       setOtpStep("input");
       setSendingOTP(false);
       setVerifyingOTP(false);
       setOtpCountdown(0);
+      setOtpError(null);
       setEmail("");
       setPassword("");
       setShowPassword(false);
@@ -98,20 +192,25 @@ export function SignInFormOTP({
   useEffect(() => {
     setOtpStep("input");
     setOtp("");
-    setOtpDigits(['', '', '', '', '', '']);
-    setOtpIdentifier("");
+    setOtpDigits(["", "", "", "", "", ""]);
+    setOtpError(null);
+    // Don't clear identifier when switching tabs if we have a prefilled phone
+    if (!prefilledPhoneNumber) {
+      setOtpIdentifier("");
+    }
     setOtpCountdown(0);
-  }, [activeTab]);
+  }, [activeTab, prefilledPhoneNumber]);
 
   // Sync otp with otpDigits
   useEffect(() => {
-    setOtp(otpDigits.join(''));
+    setOtp(otpDigits.join(""));
   }, [otpDigits]);
 
   const otpInputType = otpIdentifier ? detectInputType(otpIdentifier) : "email";
 
   const handleSendOTP = async () => {
     if (!otpIdentifier.trim()) {
+      setOtpError("Please enter your email or phone number");
       toast({
         title: "Input required",
         description: "Please enter your email or phone number",
@@ -120,6 +219,7 @@ export function SignInFormOTP({
       return;
     }
 
+    setOtpError(null);
     setSendingOTP(true);
     const type = otpInputType === "email" ? "email" : "sms";
 
@@ -127,12 +227,14 @@ export function SignInFormOTP({
       const { error } = await sendOTP(otpIdentifier.trim(), type, true); // true = isSignIn
 
       if (error) {
+        setOtpError(error.message || "Failed to send OTP. Please try again.");
         toast({
           title: "Failed to send OTP",
           description: error.message || "Please try again",
           variant: "destructive",
         });
       } else {
+        setOtpError(null);
         toast({
           title: "OTP sent!",
           description: `We've sent an OTP to your ${
@@ -153,6 +255,9 @@ export function SignInFormOTP({
         }, 1000);
       }
     } catch (error: any) {
+      setOtpError(
+        error.message || "An error occurred. Please try again later."
+      );
       toast({
         title: "An error occurred",
         description: error.message || "Please try again later",
@@ -290,7 +395,7 @@ export function SignInFormOTP({
 
         {/* OTP Sign-in Tab */}
         <TabsContent value="otp" className="space-y-4">
-          {/* {otpStep === "input" ? (
+          {otpStep === "input" ? (
             <div className="space-y-2 px-6">
               <div className="space-y-2">
                 <Label htmlFor="otp-identifier">Email or Phone Number</Label>
@@ -298,8 +403,11 @@ export function SignInFormOTP({
                   id="otp-identifier"
                   type="text"
                   placeholder="email@example.com or +91 9876543210"
-                  value={otpIdentifier}
-                  onChange={(e) => setOtpIdentifier(e.target.value)}
+                  value={otpIdentifier || formattedPhoneRef.current || ""}
+                  onChange={(e) => {
+                    setOtpIdentifier(e.target.value);
+                    formattedPhoneRef.current = e.target.value;
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       handleSendOTP();
@@ -307,6 +415,11 @@ export function SignInFormOTP({
                   }}
                   required
                 />
+                {otpError && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                    {otpError}
+                  </p>
+                )}
                 <p className="text-xs text-gray-500">
                   {otpInputType === "email"
                     ? "We'll send an OTP to your email"
@@ -326,12 +439,14 @@ export function SignInFormOTP({
                 Send OTP
               </Button>
             </div>
-          ) : ( */}
+          ) : (
             <form onSubmit={handleOTPSignIn}>
               <CardContent className="pb-1 space-y-2">
                 <div className="flex flex-col gap-2">
                   <div className="flex-1 space-y-2">
-                    <Label htmlFor="otp-identifier-display">Email or Phone</Label>
+                    <Label htmlFor="otp-identifier-display">
+                      Email or Phone
+                    </Label>
                     <Input
                       id="otp-identifier-display"
                       type="text"
@@ -351,18 +466,24 @@ export function SignInFormOTP({
                           type="text"
                           value={digit}
                           onChange={(e) => {
-                            const value = e.target.value.replace(/\D/g, '').slice(0, 1);
+                            const value = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 1);
                             const newDigits = [...otpDigits];
                             newDigits[index] = value;
                             setOtpDigits(newDigits);
                             if (value && index < 5) {
-                              const nextInput = document.getElementById(`otp-${index + 1}`);
+                              const nextInput = document.getElementById(
+                                `otp-${index + 1}`
+                              );
                               nextInput?.focus();
                             }
                           }}
                           onKeyDown={(e) => {
-                            if (e.key === 'Backspace' && !digit && index > 0) {
-                              const prevInput = document.getElementById(`otp-${index - 1}`);
+                            if (e.key === "Backspace" && !digit && index > 0) {
+                              const prevInput = document.getElementById(
+                                `otp-${index - 1}`
+                              );
                               prevInput?.focus();
                             }
                           }}
@@ -411,7 +532,7 @@ export function SignInFormOTP({
                   )}
                   Sign In
                 </Button>
-<br />
+                <br />
                 <Button
                   type="button"
                   variant="link"
@@ -419,7 +540,7 @@ export function SignInFormOTP({
                   onClick={() => {
                     setOtpStep("input");
                     setOtp("");
-                    setOtpDigits(['', '', '', '', '', '']);
+                    setOtpDigits(["", "", "", "", "", ""]);
                     setOtpCountdown(0);
                   }}
                 >
@@ -427,7 +548,7 @@ export function SignInFormOTP({
                 </Button>
               </CardFooter>
             </form>
-          {/* )} */}
+          )}
         </TabsContent>
 
         {/* Password Sign-in Tab */}

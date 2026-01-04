@@ -25,15 +25,23 @@ const modalStyles = `
 interface AuthModalProps {
     open: boolean
     onClose: () => void
+    prefilledPhoneNumber?: string
 }
 
-export function AuthModal({ open, onClose }: AuthModalProps) {
+export function AuthModal({ open, onClose, prefilledPhoneNumber }: AuthModalProps) {
     const [isSignUp, setIsSignUp] = useState(false)
     const [isVendorMode, setIsVendorMode] = useState(false)
     const [isResetMode, setIsResetMode] = useState(false)
     const [isForgotPassword, setIsForgotPassword] = useState(false)
     const { user, loading } = useAuth()
     const { isVendor, loading: roleLoading } = useUserRole()
+
+    // Save current path when modal opens (like Google SSO does)
+    useEffect(() => {
+        if (open && !user) {
+            localStorage.setItem("loggedInPath", window.location.pathname + window.location.search + window.location.hash)
+        }
+    }, [open, user])
 
     // Handle authentication success
     useEffect(() => {
@@ -121,13 +129,17 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                             <VendorSignUpForm onToggleMode={() => setIsSignUp(false)} />
                         ) : (
                             <SignUpFormOTP
+                                key={`signup-${prefilledPhoneNumber || 'empty'}`}
                                 onToggleMode={() => setIsSignUp(false)}
+                                prefilledPhoneNumber={prefilledPhoneNumber}
                             />
                         )
                     ) : (
                         <SignInFormOTP
+                            key={`signin-${prefilledPhoneNumber || 'empty'}`}
                             onToggleMode={() => setIsSignUp(true)}
                             onForgotPassword={handleForgotPassword}
+                            prefilledPhoneNumber={prefilledPhoneNumber}
                         />
                     )}
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 
 interface SignUpFormOTPProps {
   onToggleMode: () => void;
+  prefilledPhoneNumber?: string;
 }
 
 // Helper function to detect if input is email or phone
@@ -34,7 +35,7 @@ function detectInputType(input: string): "email" | "phone" {
   return "email";
 }
 
-export function SignUpFormOTP({ onToggleMode }: SignUpFormOTPProps) {
+export function SignUpFormOTP({ onToggleMode, prefilledPhoneNumber }: SignUpFormOTPProps) {
   const [identifier, setIdentifier] = useState("");
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<"input" | "verify">("input");
@@ -44,17 +45,59 @@ export function SignUpFormOTP({ onToggleMode }: SignUpFormOTPProps) {
   const { sendOTP, verifyOTP, signUpWithOTP, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const hasAutoSentRef = useRef(false);
 
-  // Reset form state when component mounts
+  // Initialize identifier with prefilled phone number if provided
   useEffect(() => {
-    // Reset all form state on mount
-    setIdentifier("");
+    if (prefilledPhoneNumber && !identifier) {
+      // Format phone number: remove non-digits, add 91 if needed
+      let formattedPhone = prefilledPhoneNumber.replace(/\D/g, "");
+      if (!formattedPhone.startsWith("91") && formattedPhone.length === 10) {
+        formattedPhone = "91" + formattedPhone;
+      }
+      setIdentifier(formattedPhone);
+    }
+  }, []); // Run only on mount
+
+  // Reset form state when component mounts or when prefilledPhoneNumber changes
+  useEffect(() => {
+    // Reset auto-send flag when prefilledPhoneNumber changes
+    hasAutoSentRef.current = false;
+
+    // Reset all form state, but pre-fill phone if provided
+    if (prefilledPhoneNumber) {
+      // Format phone number: remove non-digits, add 91 if needed
+      let formattedPhone = prefilledPhoneNumber.replace(/\D/g, "");
+      if (!formattedPhone.startsWith("91") && formattedPhone.length === 10) {
+        formattedPhone = "91" + formattedPhone;
+      }
+      setIdentifier(formattedPhone);
+    } else {
+      // Clear identifier if no prefilled phone
+      setIdentifier("");
+    }
     setOtp("");
     setStep("input");
     setLoading(false);
     setSendingOTP(false);
     setCountdown(0);
-  }, []); // Run only on mount
+  }, [prefilledPhoneNumber]); // Run when prefilledPhoneNumber changes
+
+  // Auto-send OTP if phone number is prefilled (runs after identifier is set)
+  useEffect(() => {
+    if (prefilledPhoneNumber && identifier && step === "input" && !sendingOTP && countdown === 0 && !hasAutoSentRef.current) {
+      // Check if it's a phone number (not email)
+      if (!identifier.includes("@")) {
+        hasAutoSentRef.current = true;
+        // Small delay to ensure component is fully mounted
+        const timer = setTimeout(() => {
+          handleSendOTP();
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefilledPhoneNumber, identifier, step, sendingOTP, countdown]); // Run when relevant state changes
 
   // Also reset when user is authenticated (after successful signup)
   useEffect(() => {
@@ -178,8 +221,8 @@ export function SignUpFormOTP({ onToggleMode }: SignUpFormOTPProps) {
           description: "Welcome to bucketlistt!",
           variant: "default",
         });
-        // User will be automatically signed in and redirected by Auth.tsx
-        navigate("/");
+        // Don't navigate - let AuthModal close and preserve current page
+        // The booking data will be restored automatically by BookingDialog
       }
     } catch (error: any) {
       toast({
