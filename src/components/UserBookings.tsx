@@ -3,6 +3,7 @@
 "use client";
 
 import * as React from "react";
+import { forwardRef, useImperativeHandle } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -63,7 +64,7 @@ interface BookingWithDueAmount {
   [key: string]: any;
 }
 
-export const UserBookings = () => {
+export const UserBookings = forwardRef((props, ref) => {
   const { user } = useAuth();
   console.log("user", user);
   const { isAgent, isAdmin, isVendor } = useUserRole();
@@ -86,8 +87,8 @@ export const UserBookings = () => {
   } | null>(null);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sortBy, setSortBy] = React.useState<
-    number | "booking_date" | "title" | "status"
-  >(22); // Default to Booking Created At column (index 22)
+    number | "booking_date" | "title" | "status" | "created_at"
+  >("booking_date"); // Default to booking_date for latest activity dates first
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [showTodayOnly, setShowTodayOnly] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState<string>("");
@@ -245,6 +246,13 @@ export const UserBookings = () => {
   const [columnOrder, setColumnOrder] = React.useState<number[]>(
     Array.from({ length: columnCount }, (_, i) => i)
   );
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    getColumnVisibility: () => columnVisibility,
+    getColumnOrder: () => columnOrder,
+  }));
+
   const [draggedColumnIndex, setDraggedColumnIndex] = React.useState<
     number | null
   >(null);
@@ -910,7 +918,9 @@ export const UserBookings = () => {
           query = query.eq("user_id", user.id);
         }
 
-        const { data, error } = await query;
+        const { data, error } = await query.order("created_at", {
+          ascending: false,
+        });
 
         if (error) {
           console.error("Error fetching bookings:", error);
@@ -1705,6 +1715,10 @@ export const UserBookings = () => {
           case "status":
             aValue = a.status || "";
             bValue = b.status || "";
+            break;
+          case "created_at":
+            aValue = a.created_at ? new Date(a.created_at).getTime() : 0;
+            bValue = b.created_at ? new Date(b.created_at).getTime() : 0;
             break;
           default:
             return 0;
@@ -3536,7 +3550,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                       setShowDateRangePicker(false);
                     }
                   }}
-                  // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                  className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
                   Columns
                 </Button>
@@ -5061,4 +5075,6 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
       </Dialog>
     </div>
   );
-};
+});
+
+UserBookings.displayName = "UserBookings";

@@ -4,7 +4,7 @@ import { UserBookings } from "@/components/UserBookings";
 import { OfflineBookingDialog } from "@/components/OfflineBookingDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, Download, Plus, BookOpen } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQueryClient } from "@tanstack/react-query";
+
 
 const Bookings = () => {
   const { user, loading } = useAuth();
@@ -22,6 +23,8 @@ const Bookings = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [isOfflineBookingDialogOpen, setIsOfflineBookingDialogOpen] =
     useState(false);
+
+  const userBookingsRef = useRef<any>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -238,8 +241,9 @@ const Bookings = () => {
       // Default column order (matching UserBookings.tsx default columnOrder)
       const defaultColumnOrder = Array.from({ length: 25 }, (_, i) => i);
 
-      // Get column visibility
-      const columnVisibility = getColumnVisibility();
+      // Get column visibility and order from UserBookings component
+      const columnVisibility = userBookingsRef.current?.getColumnVisibility() || getColumnVisibility();
+      const columnOrder = userBookingsRef.current?.getColumnOrder() || defaultColumnOrder;
 
       // Prepare data for Excel
       const excelDataRaw =
@@ -318,10 +322,13 @@ const Bookings = () => {
           allColumnData[20] = null; // Amount to be collected from vendor (will be set if visible)
           allColumnData[21] = null; // Advance + discount (will be set if visible)
           allColumnData[22] = booking.created_at
-            ? new Date(booking.created_at).toLocaleDateString("en-GB", {
+            ? new Date(booking.created_at).toLocaleString("en-GB", {
                 day: "2-digit",
                 month: "2-digit",
                 year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
               })
             : "N/A"; // Booking Created At
           allColumnData[23] = isAdmin ? booking.admin_note || "-" : null; // Admin Note
@@ -355,9 +362,14 @@ const Bookings = () => {
         }) || [];
 
       // Filter and reorder columns based on visibility and order
-      const visibleColumnIndices = defaultColumnOrder.filter(
+      let visibleColumnIndices = columnOrder.filter(
         (index) => columnVisibility[index] && index !== 24 // Exclude Actions column
       );
+
+      // Always include Booking Created At (index 22) as compulsory
+      if (!visibleColumnIndices.includes(22)) {
+        visibleColumnIndices.push(22);
+      }
 
       // Convert array data to object format with only visible columns, maintaining order
       // Include Booking ID as first column for reference
@@ -437,7 +449,7 @@ const Bookings = () => {
       ];
 
       // Get column order based on visible columns (Booking ID first, then visible columns)
-      const columnOrder = [
+      const exportColumnOrder = [
         "Booking ID",
         ...visibleColumnIndices
           .map((index) => columnHeaders[index])
@@ -482,7 +494,7 @@ const Bookings = () => {
       };
 
       // Set column widths based on actual exported columns (in order)
-      const colWidths = columnOrder.map((key) => ({
+      const colWidths = exportColumnOrder.map((key) => ({
         wch: widthMap[key] || 15,
       }));
       worksheet["!cols"] = colWidths;
@@ -616,7 +628,7 @@ const Bookings = () => {
           </div>
         </div>
 
-        <UserBookings />
+        <UserBookings ref={userBookingsRef} />
 
         {/* Offline Booking Dialog */}
         {(isVendor || isAgent || isAdmin) && (
