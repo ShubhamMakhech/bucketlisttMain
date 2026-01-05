@@ -402,13 +402,13 @@ export const UserBookings = forwardRef((props, ref) => {
     // For offline bookings, show "-" for calculation columns except ticket price
     // But show all fields for admins viewing offline bookings
     const calculationColumns = [11, 12, 13, 14, 15, 17, 18, 19, 20, 21]; // Official Price, B2B Price, Commission, Website Price, Discount Coupon, Advance, Payment to collect, Commission Net, Amount to collect, Advance+Discount
-    if (
-      isOfflineBooking &&
-      calculationColumns.includes(columnIndex) &&
-      !isAdmin
-    ) {
-      return "-";
-    }
+    // if (
+    //   isOfflineBooking &&
+    //   calculationColumns.includes(columnIndex) &&
+    //   !isAdmin
+    // ) {
+    //   return "-";
+    // }
 
     const cells = [
       () => experience?.title || "N/A",

@@ -1554,7 +1554,7 @@ export const BookingDialog = ({
               <div>
                 <h3 className="font-semibold text-lg mb-1">Processing...</h3>
                 <p className="text-sm text-muted-foreground">
-                  Please do not close this window.
+                  Please do not close or refresh this window.
                 </p>
               </div>
             </div>

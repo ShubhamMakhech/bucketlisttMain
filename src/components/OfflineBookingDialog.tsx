@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import { useForm } from "react-hook-form";
@@ -29,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Minus, Plus, Clock, Calendar } from "lucide-react";
+import { Minus, Plus, Clock, Calendar, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -967,32 +968,37 @@ export const OfflineBookingDialog = ({
         throw participantsError;
       }
 
-      // Show success immediately after booking is created
-      toast({
-        title: "Offline Booking Created!",
-        description:
-          "The offline booking has been successfully created. Notifications are being sent in the background.",
-      });
-
-      // Close dialog and refresh immediately
-      onBookingSuccess();
-      handleClose();
-
-      // Run confirmations in the background (non-blocking)
-      // Use setTimeout to ensure it runs after the UI updates
-      setTimeout(() => {
-        sendBookingConfirmation(
+      // Send all confirmations synchronously before closing
+      // Keep isSubmitting true to show processing modal
+      try {
+        await sendBookingConfirmation(
           data,
           booking.id,
           experience,
           selectedActivity
-        ).catch((error) => {
-          // Log background errors but don't show to user (booking is already created)
-          console.error("Background notification error:", error);
-          // Optionally, you could show a subtle notification that some notifications failed
-          // but the booking was still created successfully
+        );
+      } catch (confirmationError) {
+        // Log errors but don't fail the booking
+        console.error("Confirmation sending error:", confirmationError);
+        // Show warning toast but don't block
+        toast({
+          title: "Booking Created",
+          description:
+            "Booking was created successfully, but some notifications may have failed. Please check the booking details.",
+          variant: "default",
         });
-      }, 100);
+      }
+
+      // Show success toast
+      toast({
+        title: "Offline Booking Created!",
+        description:
+          "The offline booking has been successfully created and all notifications have been sent.",
+      });
+
+      // Close dialog and refresh after all confirmations are sent
+      onBookingSuccess();
+      handleClose();
     } catch (error: any) {
       console.error("Offline booking creation error:", error);
       toast({
@@ -1008,286 +1014,337 @@ export const OfflineBookingDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="offline-booking-dialog">
-        <div className="offline-booking-header">
-          <h2 className="offline-booking-title">Create Offline Booking</h2>
-        </div>
-
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="offline-booking-form"
-          >
-            {/* Experience & Activity Selection Group */}
-            <div className="form-section-group">
-              <FormField
-                control={form.control}
-                name="experience_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        form.setValue("activity_id", "");
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="form-input-trigger">
-                          <SelectValue placeholder="Select Experience *" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {experiences.map((exp) => (
-                          <SelectItem key={exp.id} value={exp.id}>
-                            {exp.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="activity_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={!selectedExperienceId}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="form-input-trigger">
-                          <SelectValue placeholder="Select Activity *" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {activities.map((activity) => (
-                          <SelectItem key={activity.id} value={activity.id}>
-                            {activity.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="booking_date"
-                render={({ field }) => (
-                  <FormItem className="form-full-width">
-                    <FormControl>
-                      <div className="relative">
-                        <DatePicker
-                          className="form-date-picker"
-                          value={selectedDate ? dayjs(selectedDate) : null}
-                          onChange={(date) => {
-                            const d = date ? date.toDate() : undefined;
-                            setSelectedDate(d);
-                            setSelectedSlotId(undefined);
-                            form.setValue("time_slot_id", "");
-                            field.onChange(d);
-                          }}
-                          disabledDate={(current) => {
-                            // Admins can create backdated bookings, other roles cannot
-                            if (isAdmin) {
-                              return false; // No date restrictions for admins
-                            }
-                            // For vendors and agents, prevent selecting past dates
-                            return current && current < dayjs().startOf("day");
-                          }}
-                          placeholder="Select Date *"
-                          format="YYYY-MM-DD"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <>
+      {isSubmitting &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center">
+            <div className="bg-white dark:bg-slate-950 p-6 rounded-lg shadow-xl flex flex-col items-center gap-4 max-w-[300px] text-center animate-in fade-in zoom-in duration-300">
+              <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
+              <div>
+                <h3 className="font-semibold text-lg mb-1">Processing...</h3>
+                <p className="text-sm text-muted-foreground">
+                  Please do not close or refresh this window.
+                </p>
+              </div>
             </div>
+          </div>,
+          document.body
+        )}
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="offline-booking-dialog">
+          <div className="offline-booking-header">
+            <h2 className="offline-booking-title">Create Offline Booking</h2>
+          </div>
 
-            {/* Time Slot Selection */}
-            {selectedDate && selectedActivity && timeSlots.length > 0 && (
-              <FormField
-                control={form.control}
-                name="time_slot_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="time-slots-header">
-                      <span className="time-slots-label">
-                        Available Time Slots
-                      </span>
-                      <span className="selected-date-badge">
-                        {format(selectedDate, "MMM d, yyyy")}
-                      </span>
-                    </div>
-                    <div className="time-slots-grid">
-                      {timeSlots.map((slot: any) => {
-                        const isSelected = selectedSlotId === slot.id;
-                        const isAvailable =
-                          slot.available_spots >= participantCount;
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="offline-booking-form"
+            >
+              {/* Experience & Activity Selection Group */}
+              <div className="form-section-group">
+                <FormField
+                  control={form.control}
+                  name="experience_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue("activity_id", "");
+                        }}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="form-input-trigger">
+                            <SelectValue placeholder="Select Experience *" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {experiences.map((exp) => (
+                            <SelectItem key={exp.id} value={exp.id}>
+                              {exp.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                        return (
-                          <button
-                            key={slot.id}
-                            type="button"
-                            onClick={() => {
-                              if (isAvailable) {
-                                const newSlotId = isSelected
-                                  ? undefined
-                                  : slot.id;
-                                setSelectedSlotId(newSlotId);
-                                field.onChange(newSlotId || "");
-                              }
+                <FormField
+                  control={form.control}
+                  name="activity_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={!selectedExperienceId}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="form-input-trigger">
+                            <SelectValue placeholder="Select Activity *" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {activities.map((activity) => (
+                            <SelectItem key={activity.id} value={activity.id}>
+                              {activity.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="booking_date"
+                  render={({ field }) => (
+                    <FormItem className="form-full-width">
+                      <FormControl>
+                        <div className="relative">
+                          <DatePicker
+                            className="form-date-picker"
+                            value={selectedDate ? dayjs(selectedDate) : null}
+                            onChange={(date) => {
+                              const d = date ? date.toDate() : undefined;
+                              setSelectedDate(d);
+                              setSelectedSlotId(undefined);
+                              form.setValue("time_slot_id", "");
+                              field.onChange(d);
                             }}
-                            disabled={!isAvailable}
-                            className={`p-3 rounded-lg border-2 text-left transition-all ${
-                              isSelected
-                                ? "border-brand-primary bg-brand-primary/10"
-                                : isAvailable
-                                ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                                : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
-                            }`}
-                          >
-                            <div className="time-slot-content">
-                              <Clock className="time-slot-icon" />
-                              <span className="time-slot-time">
-                                {formatTime(slot.start_time)}
-                              </span>
-                            </div>
-                            {/* <span className="time-slot-spots">
-                              {slot.available_spots} spots left
-                            </span> */}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Contact Details Section */}
-            <div className="contact-details-container">
-              <span className="contact-details-title">
-                Customer Information
-              </span>
-              <div className="contact-fields-grid">
-                <FormField
-                  control={form.control}
-                  name="contact_person_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          placeholder="Full Name *"
-                          className="form-input"
-                          {...field}
-                        />
+                            disabledDate={(current) => {
+                              // Admins can create backdated bookings, other roles cannot
+                              if (isAdmin) {
+                                return false; // No date restrictions for admins
+                              }
+                              // For vendors and agents, prevent selecting past dates
+                              return (
+                                current && current < dayjs().startOf("day")
+                              );
+                            }}
+                            placeholder="Select Date *"
+                            format="YYYY-MM-DD"
+                          />
+                        </div>
                       </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="contact_person_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          placeholder="Phone Number *"
-                          className="form-input"
-                          {...field}
-                          maxLength={10}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="contact_person_email"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="Email Address"
-                          className="form-input"
-                          {...field}
-                        />
-                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-            </div>
 
-            {/* Booking Details & Summary */}
-            <div className="booking-info-layout">
-              <div className="booking-fields-stack">
-                <div className="MobileFlexOnly">
-                  <div className="GridSetPCMobileAdjust">
+              {/* Time Slot Selection */}
+              {selectedDate && selectedActivity && timeSlots.length > 0 && (
+                <FormField
+                  control={form.control}
+                  name="time_slot_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="time-slots-header">
+                        <span className="time-slots-label">
+                          Available Time Slots
+                        </span>
+                        <span className="selected-date-badge">
+                          {format(selectedDate, "MMM d, yyyy")}
+                        </span>
+                      </div>
+                      <div className="time-slots-grid">
+                        {timeSlots.map((slot: any) => {
+                          const isSelected = selectedSlotId === slot.id;
+                          const isAvailable =
+                            slot.available_spots >= participantCount;
+
+                          return (
+                            <button
+                              key={slot.id}
+                              type="button"
+                              onClick={() => {
+                                if (isAvailable) {
+                                  const newSlotId = isSelected
+                                    ? undefined
+                                    : slot.id;
+                                  setSelectedSlotId(newSlotId);
+                                  field.onChange(newSlotId || "");
+                                }
+                              }}
+                              disabled={!isAvailable}
+                              className={`p-3 rounded-lg border-2 text-left transition-all ${
+                                isSelected
+                                  ? "border-brand-primary bg-brand-primary/10"
+                                  : isAvailable
+                                  ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                  : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
+                              }`}
+                            >
+                              <div className="time-slot-content">
+                                <Clock className="time-slot-icon" />
+                                <span className="time-slot-time">
+                                  {formatTime(slot.start_time)}
+                                </span>
+                              </div>
+                              {/* <span className="time-slot-spots">
+                              {slot.available_spots} spots left
+                            </span> */}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Contact Details Section */}
+              <div className="contact-details-container">
+                <span className="contact-details-title">
+                  Customer Information
+                </span>
+                <div className="contact-fields-grid">
+                  <FormField
+                    control={form.control}
+                    name="contact_person_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            placeholder="Full Name *"
+                            className="form-input"
+                            {...field}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="contact_person_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            placeholder="Phone Number *"
+                            className="form-input"
+                            {...field}
+                            maxLength={10}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="contact_person_email"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Email Address"
+                            className="form-input"
+                            {...field}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Booking Details & Summary */}
+              <div className="booking-info-layout">
+                <div className="booking-fields-stack">
+                  <div className="MobileFlexOnly">
+                    <div className="GridSetPCMobileAdjust">
+                      <FormField
+                        control={form.control}
+                        name="total_participants"
+                        render={({ field }) => (
+                          <FormItem>
+                            <label className="field-label-compact">
+                              Participants
+                            </label>
+                            <div className="participants-control">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="participant-btn"
+                                onClick={() =>
+                                  field.onChange(Math.max(1, field.value - 1))
+                                }
+                                disabled={field.value <= 1}
+                              >
+                                <Minus className="participant-icon" />
+                              </Button>
+                              <span className="participant-count">
+                                {field.value}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="participant-btn"
+                                onClick={() =>
+                                  field.onChange(Math.min(50, field.value + 1))
+                                }
+                                disabled={field.value >= 50}
+                              >
+                                <Plus className="participant-icon" />
+                              </Button>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="booking_amount_per_person"
+                        render={({ field }) => (
+                          <FormItem>
+                            <label className="field-label-compact">
+                              Amount Per Person
+                            </label>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                                  {selectedActivity?.currency || "INR"}
+                                </span>
+                                <Input
+                                  type="number"
+                                  className="pl-12 h-11"
+                                  placeholder="0.00"
+                                  {...field}
+                                  value={field.value || ""}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                />
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  <div className="FlexOnly">
                     <FormField
                       control={form.control}
-                      name="total_participants"
+                      name="advance_amount"
                       render={({ field }) => (
                         <FormItem>
                           <label className="field-label-compact">
-                            Participants
-                          </label>
-                          <div className="participants-control">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="participant-btn"
-                              onClick={() =>
-                                field.onChange(Math.max(1, field.value - 1))
-                              }
-                              disabled={field.value <= 1}
-                            >
-                              <Minus className="participant-icon" />
-                            </Button>
-                            <span className="participant-count">
-                              {field.value}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="participant-btn"
-                              onClick={() =>
-                                field.onChange(Math.min(50, field.value + 1))
-                              }
-                              disabled={field.value >= 50}
-                            >
-                              <Plus className="participant-icon" />
-                            </Button>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="booking_amount_per_person"
-                      render={({ field }) => (
-                        <FormItem>
-                          <label className="field-label-compact">
-                            Amount Per Person
+                            Advance Amount
                           </label>
                           <FormControl>
                             <div className="relative">
@@ -1311,187 +1368,159 @@ export const OfflineBookingDialog = ({
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="note_for_guide"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              placeholder="Note for Guide (Optional)"
+                              className="form-input"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
-                <div className="FlexOnly">
-                  <FormField
-                    control={form.control}
-                    name="advance_amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <label className="field-label-compact">
-                          Advance Amount
-                        </label>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
-                              {selectedActivity?.currency || "INR"}
-                            </span>
-                            <Input
-                              type="number"
-                              className="pl-12 h-11"
-                              placeholder="0.00"
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(parseFloat(e.target.value) || 0)
-                              }
-                            />
-                          </div>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="note_for_guide"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            placeholder="Note for Guide (Optional)"
-                            className="form-input"
-                            {...field}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
 
-              {/* Summary Card */}
-              {selectedActivity && (
-                <div className="summary-card">
-                  <div className="summary-content">
-                    <h4 className="summary-title">Booking Summary</h4>
-                    <div className="space-y-3">
-                      <div className="summary-row">
-                        <span className="summary-label">Activity</span>
-                        <span className="summary-value text-right-truncate">
-                          {selectedActivity.name}
-                        </span>
-                      </div>
-                      <div className="summary-row">
-                        <span className="summary-label">Participants</span>
-                        <span className="summary-value">
-                          {participantCount}
-                        </span>
-                      </div>
-                      <div className="summary-row">
-                        <span className="summary-label">Price per person</span>
-                        <span className="summary-value">
-                          {selectedActivity.currency}{" "}
-                          {(
-                            form.watch("booking_amount_per_person") || 0
-                          ).toLocaleString()}
-                        </span>
-                      </div>
-                      {isAgent && selectedActivity.b2bPrice && (
-                        <>
-                          {!showB2BPrice ? (
-                            <div className="summary-row">
-                              <span className="summary-label">B2B Price</span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="b2b-view-btn"
-                                onClick={() => setShowB2BPrice(true)}
-                              >
-                                View B2B Price
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="summary-row">
-                              <span className="summary-label">B2B Price</span>
-                              <div className="flex items-center gap-2">
-                                <span className="summary-value">
-                                  {selectedActivity.currency}{" "}
-                                  {selectedActivity.b2bPrice.toLocaleString()}
-                                </span>
+                {/* Summary Card */}
+                {selectedActivity && (
+                  <div className="summary-card">
+                    <div className="summary-content">
+                      <h4 className="summary-title">Booking Summary</h4>
+                      <div className="space-y-3">
+                        <div className="summary-row">
+                          <span className="summary-label">Activity</span>
+                          <span className="summary-value text-right-truncate">
+                            {selectedActivity.name}
+                          </span>
+                        </div>
+                        <div className="summary-row">
+                          <span className="summary-label">Participants</span>
+                          <span className="summary-value">
+                            {participantCount}
+                          </span>
+                        </div>
+                        <div className="summary-row">
+                          <span className="summary-label">
+                            Price per person
+                          </span>
+                          <span className="summary-value">
+                            {selectedActivity.currency}{" "}
+                            {(
+                              form.watch("booking_amount_per_person") || 0
+                            ).toLocaleString()}
+                          </span>
+                        </div>
+                        {isAgent && selectedActivity.b2bPrice && (
+                          <>
+                            {!showB2BPrice ? (
+                              <div className="summary-row">
+                                <span className="summary-label">B2B Price</span>
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                                  onClick={() => setShowB2BPrice(false)}
+                                  className="b2b-view-btn"
+                                  onClick={() => setShowB2BPrice(true)}
                                 >
-                                  Hide
+                                  View B2B Price
                                 </Button>
                               </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      <div className="summary-row">
-                        <span className="summary-label">Total Amount</span>
-                        <span className="summary-value">
-                          {selectedActivity.currency}{" "}
-                          {(
-                            (form.watch("booking_amount_per_person") || 0) *
-                            participantCount
-                          ).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
-                      </div>
-                      <div className="summary-row">
-                        <span className="summary-label">Advance Amount</span>
-                        <span className="summary-value">
-                          {selectedActivity.currency}{" "}
-                          {(form.watch("advance_amount") || 0).toLocaleString(
-                            undefined,
-                            {
+                            ) : (
+                              <div className="summary-row">
+                                <span className="summary-label">B2B Price</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="summary-value">
+                                    {selectedActivity.currency}{" "}
+                                    {selectedActivity.b2bPrice.toLocaleString()}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                    onClick={() => setShowB2BPrice(false)}
+                                  >
+                                    Hide
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        <div className="summary-row">
+                          <span className="summary-label">Total Amount</span>
+                          <span className="summary-value">
+                            {selectedActivity.currency}{" "}
+                            {(
+                              (form.watch("booking_amount_per_person") || 0) *
+                              participantCount
+                            ).toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
-                            }
-                          )}
-                        </span>
-                      </div>
-                      <div className="summary-total">
-                        <span className="total-label">Due Amount</span>
-                        <span className="total-value">
-                          {selectedActivity.currency}{" "}
-                          {Math.max(
-                            0,
-                            (form.watch("booking_amount_per_person") || 0) *
-                              participantCount -
-                              (form.watch("advance_amount") || 0)
-                          ).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
+                            })}
+                          </span>
+                        </div>
+                        <div className="summary-row">
+                          <span className="summary-label">Advance Amount</span>
+                          <span className="summary-value">
+                            {selectedActivity.currency}{" "}
+                            {(form.watch("advance_amount") || 0).toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}
+                          </span>
+                        </div>
+                        <div className="summary-total">
+                          <span className="total-label">Due Amount</span>
+                          <span className="total-value">
+                            {selectedActivity.currency}{" "}
+                            {Math.max(
+                              0,
+                              (form.watch("booking_amount_per_person") || 0) *
+                                participantCount -
+                                (form.watch("advance_amount") || 0)
+                            ).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            <div className="action-footer">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="btn-secondary-custom"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                // disabled={isSubmitting}
-                className="btn-primary-custom"
-              >
-                {isSubmitting ? "Creating..." : "Create Booking"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+              <div className="action-footer">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClose}
+                  className="btn-secondary-custom"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  // disabled={isSubmitting}
+                  className="btn-primary-custom"
+                >
+                  {isSubmitting ? "Creating..." : "Create Booking"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
