@@ -360,34 +360,134 @@ export const OfflineBookingDialog = ({
         formattedDateTime = `${formattedDateTime} (${agentName})`;
       }
 
-      // Generate PDF invoice
+      // Generate PDF invoice with retry mechanism
       let pdfUrl = "";
+      let pdfGenerationError = null;
+      const maxRetries = 2;
+
+      const generatePdfWithRetry = async (retryCount = 0): Promise<string> => {
+        try {
+          const locationUrl = experienceDetails?.location;
+          const location2Url = experienceDetails?.location2;
+          const generatedUrl = await generateInvoicePdf(
+            {
+              participantName: data.contact_person_name,
+              experienceTitle:
+                experienceDetails?.title || experience?.title || "Activity",
+              activityName: activity?.name || "",
+              dateTime: formattedDateTime,
+              pickUpLocation: experienceDetails?.location || "-",
+              spotLocation: experienceDetails?.location2 || "-",
+              spotLocationUrl: experienceDetails?.location2?.startsWith("http")
+                ? experienceDetails.location2
+                : "",
+              totalParticipants: data.total_participants,
+              amountPaid: (bookingAmount - dueAmount).toFixed(2),
+              amountToBePaid: dueAmount.toFixed(2),
+              currency:
+                activity?.currency || experienceDetails?.currency || "INR",
+            },
+            bookingId
+          );
+
+          // Validate PDF URL was generated
+          if (!generatedUrl || generatedUrl.trim() === "") {
+            throw new Error("PDF generation returned empty URL");
+          }
+
+          // Validate URL format
+          if (!generatedUrl.startsWith("http")) {
+            throw new Error(`PDF URL is not a valid HTTP URL: ${generatedUrl}`);
+          }
+
+          return generatedUrl;
+        } catch (error: any) {
+          if (retryCount < maxRetries) {
+            console.warn(
+              `PDF generation attempt ${retryCount + 1} failed, retrying...`,
+              {
+                bookingId,
+                error: error?.message || String(error),
+              }
+            );
+            // Wait 500ms before retry
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            return generatePdfWithRetry(retryCount + 1);
+          }
+          throw error;
+        }
+      };
+
       try {
-        const locationUrl = experienceDetails?.location;
-        const location2Url = experienceDetails?.location2;
-        pdfUrl = await generateInvoicePdf(
-          {
-            participantName: data.contact_person_name,
-            experienceTitle:
-              experienceDetails?.title || experience?.title || "Activity",
-            activityName: activity?.name || "",
-            dateTime: formattedDateTime,
-            pickUpLocation: experienceDetails?.location || "-",
-            spotLocation: experienceDetails?.location2 || "-",
-            spotLocationUrl: experienceDetails?.location2?.startsWith("http")
-              ? experienceDetails.location2
-              : "",
-            totalParticipants: data.total_participants,
-            amountPaid: (bookingAmount - dueAmount).toFixed(2),
-            amountToBePaid: dueAmount.toFixed(2),
-            currency:
-              activity?.currency || experienceDetails?.currency || "INR",
-          },
-          bookingId
+        pdfUrl = await generatePdfWithRetry();
+      } catch (pdfError: any) {
+        pdfGenerationError = pdfError;
+        // Log comprehensive error details (non-blocking)
+        const errorLog = {
+          bookingId,
+          customerName: data.contact_person_name,
+          customerPhone: data.contact_person_number,
+          experienceId: data.experience_id,
+          activityId: data.activity_id,
+          error: pdfError?.message || String(pdfError),
+          stack: pdfError?.stack,
+          timestamp: new Date().toISOString(),
+          retriesAttempted: maxRetries,
+        };
+
+        // Log to console (non-blocking)
+        console.error(
+          "PDF generation failed for offline booking after retries:",
+          errorLog
         );
-      } catch (pdfError) {
-        console.error("PDF generation failed:", pdfError);
-        // Continue without PDF - WhatsApp will be sent without attachment
+
+        // Log to Supabase for tracking (fire-and-forget, non-blocking)
+        // Use setTimeout to ensure it doesn't block the main flow
+        setTimeout(() => {
+          supabase
+            .from("logs")
+            .insert({
+              type: "pdf_generation_error",
+              booking_id: bookingId,
+              error_message: pdfError?.message || String(pdfError),
+              metadata: {
+                customer_name: data.contact_person_name,
+                customer_phone: data.contact_person_number,
+                experience_id: data.experience_id,
+                activity_id: data.activity_id,
+                retries_attempted: maxRetries,
+                error_stack: pdfError?.stack,
+              },
+              created_at: new Date().toISOString(),
+            })
+            .then(({ error: logError }) => {
+              if (logError) {
+                // Table might not exist, just log to console
+                console.error(
+                  "Failed to log PDF error to database (table may not exist):",
+                  logError
+                );
+              }
+            })
+            .catch((logError) => {
+              // Ignore logging errors - table might not exist
+              console.error("Error logging to database:", logError);
+            });
+        }, 0);
+      }
+
+      // Validate PDF URL before sending WhatsApp
+      const hasValidPdfUrl =
+        pdfUrl && pdfUrl.trim() !== "" && pdfUrl.startsWith("http");
+
+      if (!hasValidPdfUrl && !pdfGenerationError) {
+        // If PDF URL is empty but no error was caught, log it (non-blocking)
+        console.error("PDF URL is invalid or empty:", {
+          bookingId,
+          pdfUrl,
+          customerName: data.contact_person_name,
+          customerPhone: data.contact_person_number,
+        });
       }
 
       // Customer WhatsApp message
@@ -420,7 +520,8 @@ export const OfflineBookingDialog = ({
                 {
                   to: [phoneNumber],
                   components: {
-                    ...(pdfUrl
+                    // Always include header_1 if we have a valid PDF URL
+                    ...(hasValidPdfUrl
                       ? {
                           header_1: {
                             filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
@@ -486,7 +587,8 @@ export const OfflineBookingDialog = ({
                 {
                   to: [phoneNumber],
                   components: {
-                    ...(pdfUrl
+                    // Always include header_1 if we have a valid PDF URL
+                    ...(hasValidPdfUrl
                       ? {
                           header_1: {
                             filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
@@ -529,6 +631,47 @@ export const OfflineBookingDialog = ({
             },
           },
         };
+      }
+
+      // Log WhatsApp body structure before sending (for debugging) - non-blocking
+      if (!hasValidPdfUrl) {
+        const warningMessage = {
+          bookingId,
+          customerName: data.contact_person_name,
+          customerPhone: data.contact_person_number,
+          experienceId: data.experience_id,
+          activityId: data.activity_id,
+          hasHeader1: hasValidPdfUrl,
+          pdfUrl: pdfUrl || "EMPTY",
+          pdfError: pdfGenerationError?.message || "Unknown error",
+          timestamp: new Date().toISOString(),
+          warning:
+            "WhatsApp message will be sent WITHOUT header_1 (PDF document). This may cause template format mismatch errors.",
+        };
+
+        // Log to console (non-blocking)
+        console.error(
+          "⚠️ CRITICAL: Sending WhatsApp without PDF header_1:",
+          warningMessage
+        );
+
+        // Log to database (fire-and-forget, non-blocking)
+        // Use setTimeout to ensure it doesn't block the main flow
+        setTimeout(() => {
+          supabase
+            .from("logs")
+            .insert({
+              type: "whatsapp_missing_pdf_header",
+              booking_id: bookingId,
+              error_message:
+                "PDF generation failed, header_1 not included in WhatsApp message",
+              metadata: warningMessage,
+              created_at: new Date().toISOString(),
+            })
+            .catch(() => {
+              // Ignore if table doesn't exist or any other error
+            });
+        }, 0);
       }
 
       // Send customer WhatsApp
