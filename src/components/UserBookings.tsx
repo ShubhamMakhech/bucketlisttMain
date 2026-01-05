@@ -1452,32 +1452,14 @@ export const UserBookings = forwardRef((props, ref) => {
       });
     }
 
-    // Apply sorting - Always sort by booking date and time (descending: latest to earliest)
+    // Apply sorting - Always sort by created_at (descending: latest to earliest)
+    // This preserves the initial Supabase query order
     filtered.sort((a, b) => {
-      // Helper function to get booking datetime for sorting
-      const getBookingDateTime = (booking: any): number => {
-        const bookingDate = new Date(booking.booking_date);
-        const timeslot = booking.time_slots;
-
-        // If timeslot exists and has start_time, combine date and time
-        if (timeslot?.start_time) {
-          const [hours, minutes, seconds] = timeslot.start_time
-            .split(":")
-            .map(Number);
-          bookingDate.setHours(hours || 0, minutes || 0, seconds || 0, 0);
-        } else {
-          // For offline bookings without timeslot, use end of day (23:59:59)
-          bookingDate.setHours(23, 59, 59, 999);
-        }
-
-        return bookingDate.getTime();
-      };
-
-      const aDateTime = getBookingDateTime(a);
-      const bDateTime = getBookingDateTime(b);
+      const aCreatedAt = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bCreatedAt = b.created_at ? new Date(b.created_at).getTime() : 0;
 
       // Sort in descending order (latest to earliest)
-      return bDateTime - aDateTime;
+      return bCreatedAt - aCreatedAt;
     });
 
     // Legacy sorting code (kept for reference but not used)
@@ -3218,7 +3200,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
               <div className="mobile-info-item">
                 <span className="mobile-info-label">Activity</span>
                 <span className="mobile-info-value">
-                  {((booking.time_slots?.activities || (booking as any).activities) as any)?.name || "N/A"}
+                  {(
+                    (booking.time_slots?.activities ||
+                      (booking as any).activities) as any
+                  )?.name || "N/A"}
                 </span>
               </div>
               <div className="mobile-info-item">
@@ -3233,7 +3218,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   {(() => {
                     const bookingType = (booking as any)?.type || "online";
                     if (bookingType === "canceled") return "Canceled";
-                    return booking.time_slots?.start_time && booking.time_slots?.end_time
+                    return booking.time_slots?.start_time &&
+                      booking.time_slots?.end_time
                       ? formatTime12Hour(booking.time_slots.start_time)
                       : bookingType === "offline"
                       ? "Offline"
