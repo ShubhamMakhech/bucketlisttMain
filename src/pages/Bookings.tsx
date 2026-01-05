@@ -542,7 +542,7 @@ const Bookings = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <div className="container mx-auto px-4 py-2">
+      <div className="container mx-auto px-1 py-2">
         <div className="mb-0">
           {/* <Button
             variant="ghost"
@@ -578,7 +578,7 @@ const Bookings = () => {
                     <Button
                       onClick={() => navigate("/profile/calendar")}
                       variant="outline"
-                      className="border-brand-primary text-brand-primary hover:bg-brand-primary/10"
+                      className="border-brand-primary text-brand-primary hover:bg-brand-primary/10 CalenderBtn"
                       size="default"
                     >
                       <Calendar className="h-4 w-4 mr-2" />
