@@ -37,17 +37,32 @@ serve(async (req) => {
       });
     }
 
-    // Check if user is a vendor
-    const { data: userRole } = await supabaseClient
+    // Check if user is a vendor or admin
+    const { data: userRoles, error: rolesError } = await supabaseClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "vendor")
-      .single();
+      .eq("user_id", user.id);
 
-    if (!userRole) {
+    if (rolesError) {
+      console.error("Error fetching user roles:", rolesError);
       return new Response(
-        JSON.stringify({ error: "Only vendors can manage experiences" }),
+        JSON.stringify({ error: "Error checking user permissions" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const roles = userRoles?.map((r) => r.role) || [];
+    const isVendor = roles.includes("vendor");
+    const isAdmin = roles.includes("admin");
+
+    if (!isVendor && !isAdmin) {
+      return new Response(
+        JSON.stringify({
+          error: "Only vendors and admins can manage experiences",
+        }),
         {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -67,13 +82,30 @@ serve(async (req) => {
       );
     }
 
-    // Verify the experience belongs to the vendor
-    const { data: experience, error: experienceError } = await supabaseClient
+    // For toggleForAgent, only admins can do this
+    if (action === "toggleForAgent" && !isAdmin) {
+      return new Response(
+        JSON.stringify({ error: "Only admins can toggle for_agent status" }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Verify the experience exists
+    let experienceQuery = supabaseClient
       .from("experiences")
-      .select("id, vendor_id, is_active")
-      .eq("id", experienceId)
-      .eq("vendor_id", user.id)
-      .single();
+      .select("id, vendor_id, is_active, for_agent")
+      .eq("id", experienceId);
+
+    // For vendors (not admins), verify the experience belongs to them
+    if (isVendor && !isAdmin) {
+      experienceQuery = experienceQuery.eq("vendor_id", user.id);
+    }
+
+    const { data: experience, error: experienceError } =
+      await experienceQuery.single();
 
     if (experienceError || !experience) {
       return new Response(
@@ -83,6 +115,19 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    }
+
+    // For toggle action, only vendors can toggle their own experiences (or admins can toggle any)
+    if (action === "toggle" && isVendor && !isAdmin) {
+      if (experience.vendor_id !== user.id) {
+        return new Response(
+          JSON.stringify({ error: "You can only toggle your own experiences" }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
     }
 
     let result;
@@ -97,9 +142,22 @@ serve(async (req) => {
 
       if (error) throw error;
       result = data;
+    } else if (action === "toggleForAgent") {
+      // Toggle the for_agent status (only admins can do this)
+      const { data, error } = await supabaseClient
+        .from("experiences")
+        .update({ for_agent: !experience.for_agent })
+        .eq("id", experienceId)
+        .select("id, for_agent")
+        .single();
+
+      if (error) throw error;
+      result = data;
     } else {
       return new Response(
-        JSON.stringify({ error: 'Invalid action. Use "toggle"' }),
+        JSON.stringify({
+          error: 'Invalid action. Use "toggle" or "toggleForAgent"',
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -116,6 +174,10 @@ serve(async (req) => {
             ? `Experience ${
                 result.is_active ? "activated" : "deactivated"
               } successfully`
+            : action === "toggleForAgent"
+            ? `Experience ${
+                result.for_agent ? "enabled" : "disabled"
+              } for agents successfully`
             : "Experience status updated successfully",
       }),
       {

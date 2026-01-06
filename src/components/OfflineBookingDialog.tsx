@@ -149,11 +149,14 @@ export const OfflineBookingDialog = ({
         .select("id, title, currency")
         .eq("is_active", true);
 
-      // For vendors, filter by vendor_id; for agents/admins, get all active experiences
+      // For vendors, filter by vendor_id; for agents, get only experiences with for_agent=true; for admins, get all active experiences
       if (isVendor) {
         query = query.eq("vendor_id", user.id);
+      } else if (isAgent && !isAdmin) {
+        // For agents (not admins), only show experiences where for_agent is true
+        query = query.eq("for_agent", true);
       }
-      // For agents/admins, no filter - get all active experiences
+      // For admins, no filter - get all active experiences
 
       query = query.order("title", { ascending: true });
 
