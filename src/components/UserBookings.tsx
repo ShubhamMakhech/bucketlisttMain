@@ -88,7 +88,7 @@ export const UserBookings = forwardRef((props, ref) => {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sortBy, setSortBy] = React.useState<
     number | "booking_date" | "title" | "status" | "created_at"
-  >("booking_date"); // Default to booking_date for latest activity dates first
+  >(22); // Default to "Booking Created At" (index 22) latest on top
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [showTodayOnly, setShowTodayOnly] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState<string>("");
@@ -1449,19 +1449,8 @@ export const UserBookings = forwardRef((props, ref) => {
       });
     }
 
-    // Apply sorting - Always sort by created_at (descending: latest to earliest)
-    // This preserves the initial Supabase query order
-    filtered.sort((a, b) => {
-      const aCreatedAt = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const bCreatedAt = b.created_at ? new Date(b.created_at).getTime() : 0;
-
-      // Sort in descending order (latest to earliest)
-      return bCreatedAt - aCreatedAt;
-    });
-
-    // Legacy sorting code (kept for reference but not used)
     // Apply sorting
-    /* filtered.sort((a, b) => {
+    filtered.sort((a, b) => {
       let aValue: any, bValue: any;
 
       // Handle column index sorting
@@ -1531,8 +1520,8 @@ export const UserBookings = forwardRef((props, ref) => {
               if (bookingTypeSort === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                  timeslot.start_time
+                )} - ${formatTime12Hour(timeslot.end_time)}`
                 : "";
             case 7: // Date
               return new Date(booking.booking_date).getTime();
@@ -1560,8 +1549,8 @@ export const UserBookings = forwardRef((props, ref) => {
                     bookedByProfile?.last_name
                     ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                     : bookedByProfile?.email ||
-                        bookedByProfile?.first_name ||
-                        "Agent";
+                    bookedByProfile?.first_name ||
+                    "Agent";
                 }
               }
               return "offline";
@@ -1663,23 +1652,6 @@ export const UserBookings = forwardRef((props, ref) => {
           experienceB,
           sortBy
         );
-
-        aValue = getCellValue(
-          a,
-          profileA,
-          activityA,
-          timeslotA,
-          experienceA,
-          sortBy
-        );
-        bValue = getCellValue(
-          b,
-          profileB,
-          activityB,
-          timeslotB,
-          experienceB,
-          sortBy
-        );
       } else {
         // Handle legacy string-based sorting
         switch (sortBy) {
@@ -1725,7 +1697,6 @@ export const UserBookings = forwardRef((props, ref) => {
         }
       }
     });
-    */
 
     return filtered;
   }, [
@@ -4220,7 +4191,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                 <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                               </svg>
                               <span className="flex-1 whitespace-normal">
-                                {columnHeaders[originalIndex]}
+                                {columnHeaders[originalIndex]} {getSortIndicator(originalIndex)}
                               </span>
                               <div className="flex items-center gap-1 flex-shrink-0">
                                 {originalIndex !== 24 && (
