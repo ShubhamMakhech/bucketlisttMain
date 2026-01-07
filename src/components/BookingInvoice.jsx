@@ -403,7 +403,20 @@ const PaymentLayout = ({
               borderTop: "1px solid #e5e7eb",
             }}
           >
-            <p style={{ margin: 0 }}>powered by bucketlistt</p>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              lineHeight: 1
+            }}>
+              <span style={{ margin: 0, color: "#6b7280" }}>powered by</span>
+              <img
+                src="/Images/BucketlisttLogo.png"
+                alt="bucketlistt"
+                style={{ height: "40px", width: "auto", objectFit: "contain", display: "block" ,marginTop:"14px"}}
+              />
+            </div>
           </div>
         )}
       </div>
