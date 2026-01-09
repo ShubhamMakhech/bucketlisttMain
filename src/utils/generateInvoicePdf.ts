@@ -20,6 +20,120 @@ interface BookingInvoiceData {
 }
 
 /**
+ * Helper function to log debug information to Supabase logs table (non-blocking)
+ */
+async function logDebug(
+  type: string,
+  bookingId: string,
+  message: string,
+  metadata: any = {}
+) {
+  // Fire-and-forget logging - don't block the main flow
+  setTimeout(() => {
+    const userAgent = navigator.userAgent || "unknown";
+    const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent) || false;
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent) || false;
+    const isAndroid = /Android/i.test(userAgent) || false;
+
+    // @ts-ignore - logs table exists but may not be in TypeScript schema
+    const logsQuery = supabase.from("logs").insert({
+      type,
+      booking_id: bookingId,
+      error_message: message,
+      metadata: {
+        ...metadata,
+        device_info: {
+          user_agent: userAgent,
+          is_mobile: isMobile,
+          is_ios: isIOS,
+          is_android: isAndroid,
+          platform: navigator?.platform || "unknown",
+          language: navigator?.language || "unknown",
+          screen_width: window?.screen?.width || "unknown",
+          screen_height: window?.screen?.height || "unknown",
+          window_width: window?.innerWidth || "unknown",
+          window_height: window?.innerHeight || "unknown",
+          connection_type:
+            (navigator as any)?.connection?.effectiveType || "unknown",
+        },
+        timestamp: new Date().toISOString(),
+      },
+      created_at: new Date().toISOString(),
+    });
+
+    // Handle the promise - cast to any to avoid TypeScript issues
+    (logsQuery as any)
+      ?.then(() => {
+        // Successfully logged
+      })
+      ?.catch((error: any) => {
+        // Silently fail - table might not exist
+        console.error("Failed to log debug info:", error);
+      });
+  }, 0);
+}
+
+/**
+ * Helper function to dynamically import a module with retry logic for mobile browsers
+ */
+async function importWithRetry<T>(
+  importFn: () => Promise<T>,
+  moduleName: string,
+  maxRetries = 3,
+  retryDelay = 500,
+  bookingId?: string
+): Promise<T> {
+  let lastError: any;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const result = await importFn();
+      return result;
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries - 1) {
+        // Exponential backoff: 500ms, 1000ms, 2000ms
+        const delay = retryDelay * Math.pow(2, attempt);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  // Enhanced error message with device/browser info
+  const userAgent = navigator?.userAgent || "unknown";
+  const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent) || false;
+  const errorMessage = `Failed to load ${moduleName} after ${maxRetries} attempts${
+    isMobile ? " (mobile browser)" : ""
+  }`;
+
+  // Log final failure
+  if (bookingId) {
+    await logDebug(
+      "pdf_import_failed",
+      bookingId,
+      `Failed to import ${moduleName} after all retries`,
+      {
+        module: moduleName,
+        attempts: maxRetries,
+        error:
+          lastError instanceof Error ? lastError.message : String(lastError),
+        error_stack: lastError instanceof Error ? lastError.stack : undefined,
+      }
+    );
+  }
+
+  console.error(errorMessage, {
+    module: moduleName,
+    attempts: maxRetries,
+    userAgent,
+    isMobile,
+    originalError: lastError,
+  });
+
+  throw new Error(errorMessage);
+}
+
+/**
  * Generates a PDF invoice from booking data and uploads it to Supabase storage
  * @param bookingData - The booking data to populate the invoice
  * @param bookingId - The booking ID to use in the filename
@@ -29,30 +143,9 @@ export async function generateInvoicePdf(
   bookingData: BookingInvoiceData,
   bookingId: string
 ): Promise<string> {
+  const startTime = Date.now();
+
   try {
-    // Dynamically import html2pdf
-    let html2pdf: any;
-    try {
-      // @ts-expect-error - html2pdf.js doesn't have type definitions
-      const html2pdfModule = await import("html2pdf.js");
-      html2pdf =
-        html2pdfModule.default ||
-        html2pdfModule.html2pdf ||
-        html2pdfModule ||
-        (window as any).html2pdf;
-
-      if (!html2pdf && (window as any).html2pdf) {
-        html2pdf = (window as any).html2pdf;
-      }
-
-      if (!html2pdf) {
-        throw new Error("html2pdf.js module not found");
-      }
-    } catch (importError) {
-      console.error("Failed to import html2pdf:", importError);
-      throw new Error("Failed to load PDF library");
-    }
-
     // Create a temporary container to render the invoice
     const container = document.createElement("div");
     container.style.position = "absolute";
@@ -89,6 +182,12 @@ export async function generateInvoicePdf(
         ) as HTMLElement;
       }
       if (!element) {
+        await logDebug(
+          "pdf_element_not_found",
+          bookingId,
+          "Invoice element not found after render",
+          { container_html: container.innerHTML.substring(0, 500) }
+        );
         root.unmount();
         document.body.removeChild(container);
         throw new Error("Invoice element not found");
@@ -129,9 +228,24 @@ export async function generateInvoicePdf(
       setTimeout(resolve, 5000);
     });
 
-    // Import html2canvas and jsPDF
-    const html2canvas = (await import("html2canvas")).default;
-    const { jsPDF } = await import("jspdf");
+    // Import html2canvas and jsPDF with retry logic for mobile browsers
+    const html2canvas = (
+      await importWithRetry(
+        () => import("html2canvas"),
+        "html2canvas",
+        3,
+        500,
+        bookingId
+      )
+    ).default;
+
+    const { jsPDF } = await importWithRetry(
+      () => import("jspdf"),
+      "jspdf",
+      3,
+      500,
+      bookingId
+    );
 
     // Capture element as image using html2canvas
     const canvas = await html2canvas(element, {
@@ -182,8 +296,14 @@ export async function generateInvoicePdf(
       doc.addImage(imgData, "JPEG", centerX, marginY, finalWidth, finalHeight);
     }
 
-    // Add clickable links using pdf-lib
-    const { PDFDocument, PDFName, PDFString } = await import("pdf-lib");
+    // Add clickable links using pdf-lib with retry logic
+    const { PDFDocument, PDFName, PDFString } = await importWithRetry(
+      () => import("pdf-lib"),
+      "pdf-lib",
+      3,
+      500,
+      bookingId
+    );
 
     // Convert to PDFDocument for link manipulation
     const pdfBytes = doc.output("arraybuffer");
@@ -304,7 +424,21 @@ export async function generateInvoicePdf(
       .from("booking-invoices")
       .upload(fileName, pdfBlob);
 
-    if (error) throw error;
+    if (error) {
+      await logDebug(
+        "pdf_upload_failed",
+        bookingId,
+        "PDF upload to storage failed",
+        {
+          error: error.message,
+          error_details: error,
+          file_name: fileName,
+          blob_size: pdfBlob.size,
+          total_time_ms: Date.now() - startTime,
+        }
+      );
+      throw error;
+    }
 
     const {
       data: { publicUrl },
@@ -312,7 +446,29 @@ export async function generateInvoicePdf(
 
     return publicUrl;
   } catch (error) {
+    const errorTime = Date.now();
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
     console.error("PDF generation error:", error);
+
+    // Log comprehensive error details
+    await logDebug(
+      "pdf_generation_error",
+      bookingId,
+      `PDF generation failed: ${errorMessage}`,
+      {
+        error: errorMessage,
+        error_stack: errorStack,
+        total_time_ms: errorTime - startTime,
+        booking_data: {
+          participant_name: bookingData.participantName,
+          experience_title: bookingData.experienceTitle,
+          activity_name: bookingData.activityName,
+        },
+      }
+    );
+
     throw error;
   }
 }

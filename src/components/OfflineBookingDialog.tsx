@@ -426,6 +426,13 @@ export const OfflineBookingDialog = ({
         pdfUrl = await generatePdfWithRetry();
       } catch (pdfError: any) {
         pdfGenerationError = pdfError;
+
+        // Detect device/browser information for better debugging
+        const userAgent = navigator.userAgent || "unknown";
+        const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+        const isAndroid = /Android/i.test(userAgent);
+
         // Log comprehensive error details (non-blocking)
         const errorLog = {
           bookingId,
@@ -437,6 +444,14 @@ export const OfflineBookingDialog = ({
           stack: pdfError?.stack,
           timestamp: new Date().toISOString(),
           retriesAttempted: maxRetries,
+          deviceInfo: {
+            userAgent,
+            isMobile,
+            isIOS,
+            isAndroid,
+            platform: navigator.platform || "unknown",
+            language: navigator.language || "unknown",
+          },
         };
 
         // Log to console (non-blocking)
@@ -461,6 +476,14 @@ export const OfflineBookingDialog = ({
                 activity_id: data.activity_id,
                 retries_attempted: maxRetries,
                 error_stack: pdfError?.stack,
+                device_info: {
+                  user_agent: userAgent,
+                  is_mobile: isMobile,
+                  is_ios: isIOS,
+                  is_android: isAndroid,
+                  platform: navigator.platform || "unknown",
+                  language: navigator.language || "unknown",
+                },
               },
               created_at: new Date().toISOString(),
             })
