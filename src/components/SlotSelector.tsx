@@ -53,6 +53,7 @@ interface Activity {
 export const SlotSelector = ({
   experienceId,
   selectedDate,
+  experienceTitle,
   selectedSlotId,
   selectedActivityId, // Add this
   participantCount,
@@ -254,6 +255,10 @@ export const SlotSelector = ({
           }
           // For future dates, include all slots
           return true;
+        })
+        .sort((a, b) => {
+          // Sort by start_time in ascending order
+          return timeToMinutes(a.start_time) - timeToMinutes(b.start_time);
         });
 
       return slotsWithAvailability as TimeSlot[];
@@ -639,7 +644,9 @@ export const SlotSelector = ({
               <Card bodyStyle={{ padding: "10px" }}>
                 <div className="CalenderLayoutContainer">
                   <label className="text-base font-medium mb-3 font-semibold block textSmall">
-                    Select date
+                    {experienceTitle == "Bike on Rent in Rishikesh"
+                      ? `Select Pickup date `
+                      : "Select date"}
                   </label>
 
                   {/* Horizontal Date Picker */}

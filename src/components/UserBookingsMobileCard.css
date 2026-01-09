@@ -258,6 +258,9 @@
     #ExportToExcelButtonStyles {
         display: none !important;
     }
+    .mobile-card-section{
+        margin-top: 5px;
+    }
 
 }
 

@@ -3,6 +3,7 @@
 "use client";
 
 import * as React from "react";
+import { forwardRef, useImperativeHandle } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -63,7 +64,7 @@ interface BookingWithDueAmount {
   [key: string]: any;
 }
 
-export const UserBookings = () => {
+export const UserBookings = forwardRef((props, ref) => {
   const { user } = useAuth();
   console.log("user", user);
   const { isAgent, isAdmin, isVendor } = useUserRole();
@@ -86,8 +87,8 @@ export const UserBookings = () => {
   } | null>(null);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sortBy, setSortBy] = React.useState<
-    number | "booking_date" | "title" | "status"
-  >(22); // Default to Booking Created At column (index 22)
+    number | "booking_date" | "title" | "status" | "created_at"
+  >(22); // Default to "Booking Created At" (index 22) latest on top
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("desc");
   const [showTodayOnly, setShowTodayOnly] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState<string>("");
@@ -165,7 +166,7 @@ export const UserBookings = () => {
   // Column width state for resizable columns
   const columnCount = 25; // Total number of columns (added Admin Note + Quick Actions)
   const [columnWidths, setColumnWidths] = React.useState<number[]>(
-    Array(columnCount).fill(100) // Default width 100px for each column (compact)
+    Array(columnCount).fill(150) // Default width 150px for each column
   );
 
   // Column visibility state - default visible columns only
@@ -245,6 +246,13 @@ export const UserBookings = () => {
   const [columnOrder, setColumnOrder] = React.useState<number[]>(
     Array.from({ length: columnCount }, (_, i) => i)
   );
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    getColumnVisibility: () => columnVisibility,
+    getColumnOrder: () => columnOrder,
+  }));
+
   const [draggedColumnIndex, setDraggedColumnIndex] = React.useState<
     number | null
   >(null);
@@ -394,13 +402,13 @@ export const UserBookings = () => {
     // For offline bookings, show "-" for calculation columns except ticket price
     // But show all fields for admins viewing offline bookings
     const calculationColumns = [11, 12, 13, 14, 15, 17, 18, 19, 20, 21]; // Official Price, B2B Price, Commission, Website Price, Discount Coupon, Advance, Payment to collect, Commission Net, Amount to collect, Advance+Discount
-    if (
-      isOfflineBooking &&
-      calculationColumns.includes(columnIndex) &&
-      !isAdmin
-    ) {
-      return "-";
-    }
+    // if (
+    //   isOfflineBooking &&
+    //   calculationColumns.includes(columnIndex) &&
+    //   !isAdmin
+    // ) {
+    //   return "-";
+    // }
 
     const cells = [
       () => experience?.title || "N/A",
@@ -492,12 +500,12 @@ export const UserBookings = () => {
         return (
           <span
             className={`px-2 py-1 rounded text-xs font-medium ${isCanceled
-                ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-                : isOffline
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  : isAgentBooking
-                    ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                    : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+              ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+              : isOffline
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                : isAgentBooking
+                  ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                  : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
               }`}
           >
             {bookingTypeDisplay}
@@ -907,7 +915,9 @@ export const UserBookings = () => {
           query = query.eq("user_id", user.id);
         }
 
-        const { data, error } = await query;
+        const { data, error } = await query.order("created_at", {
+          ascending: false,
+        });
 
         if (error) {
           console.error("Error fetching bookings:", error);
@@ -1568,8 +1578,8 @@ export const UserBookings = () => {
                     bookedByProfile?.last_name
                     ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                     : bookedByProfile?.email ||
-                        bookedByProfile?.first_name ||
-                        "Agent";
+                    bookedByProfile?.first_name ||
+                    "Agent";
                 }
               }
               return "offline";
@@ -1671,23 +1681,6 @@ export const UserBookings = () => {
           experienceB,
           sortBy
         );
-
-        aValue = getCellValue(
-          a,
-          profileA,
-          activityA,
-          timeslotA,
-          experienceA,
-          sortBy
-        );
-        bValue = getCellValue(
-          b,
-          profileB,
-          activityB,
-          timeslotB,
-          experienceB,
-          sortBy
-        );
       } else {
         // Handle legacy string-based sorting
         switch (sortBy) {
@@ -1702,6 +1695,10 @@ export const UserBookings = () => {
           case "status":
             aValue = a.status || "";
             bValue = b.status || "";
+            break;
+          case "created_at":
+            aValue = a.created_at ? new Date(a.created_at).getTime() : 0;
+            bValue = b.created_at ? new Date(b.created_at).getTime() : 0;
             break;
           default:
             return 0;
@@ -3200,7 +3197,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
               <div className="mobile-info-item">
                 <span className="mobile-info-label">Activity</span>
                 <span className="mobile-info-value">
-                  {(booking.time_slots?.activities as any)?.name || "N/A"}
+                  {(
+                    (booking.time_slots?.activities ||
+                      (booking as any).activities) as any
+                  )?.name || "N/A"}
                 </span>
               </div>
               <div className="mobile-info-item">
@@ -3212,7 +3212,16 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
               <div className="mobile-info-item">
                 <span className="mobile-info-label">Start Time</span>
                 <span className="mobile-info-value">
-                  {formatTime12Hour(booking.time_slots?.start_time || "")}
+                  {(() => {
+                    const bookingType = (booking as any)?.type || "online";
+                    if (bookingType === "canceled") return "Canceled";
+                    return booking.time_slots?.start_time &&
+                      booking.time_slots?.end_time
+                      ? formatTime12Hour(booking.time_slots.start_time)
+                      : bookingType === "offline"
+                        ? "Offline"
+                        : "N/A";
+                  })()}
                 </span>
               </div>
               <div className="mobile-info-item">
@@ -3523,7 +3532,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                       setShowDateRangePicker(false);
                     }
                   }}
-                // className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+                  className="px-4 py-2 text-sm border border-border rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
                 >
                   Columns
                 </Button>
@@ -3550,8 +3559,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                           <label
                             key={index}
                             className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
-                                ? "opacity-50 cursor-not-allowed"
-                                : "cursor-pointer hover:bg-muted/30"
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-muted/30"
                               }`}
                           >
                             <input
@@ -3766,7 +3775,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   }}
                 >
                   <PopoverTrigger asChild>
-                    <Button
+                    {/* <Button
                       variant={selectedBookingType ? "default" : "outline"}
                       className="text-sm"
                     >
@@ -3774,14 +3783,14 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         ? selectedBookingType === "canceled"
                           ? "Canceled"
                           : selectedBookingType === "admin-offline"
-                            ? "Admin-offline"
-                            : selectedBookingType === "offline"
-                              ? "Offline"
-                              : selectedBookingType === "agent"
-                                ? "Agent"
-                                : "Bucketlistt"
+                          ? "Admin-offline"
+                          : selectedBookingType === "offline"
+                          ? "Offline"
+                          : selectedBookingType === "agent"
+                          ? "Agent"
+                          : "Bucketlistt"
                         : "Booking Type"}
-                    </Button>
+                    </Button> */}
                   </PopoverTrigger>
                   <PopoverContent className="w-[200px] p-4" align="start">
                     <div className="space-y-2">
@@ -3889,35 +3898,43 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                 }}
               >
                 {isMobile ? (
-                  <div className="flex flex-col gap-2 w-full">
+                  <div className="flex flex-row gap-2 w-full">
                     <DatePicker
-                      placeholder="Start Date"
+                      placeholder="Select Date"
                       value={selectedDate ? dayjs(selectedDate) : null}
                       onChange={(date, dateString) => {
                         if (dateString) {
                           setSelectedDate(dateString as string);
+                          if (isVendor) {
+                            setSelectedEndDate("");
+                          }
                         } else {
                           setSelectedDate("");
+                          if (isVendor) {
+                            setSelectedEndDate("");
+                          }
                         }
                       }}
                       format="YYYY-MM-DD"
-                      className="h-9 text-sm"
+                      className="h-9 text-sm flex-1"
                       allowClear
                     />
-                    <DatePicker
-                      placeholder="End Date"
-                      value={selectedEndDate ? dayjs(selectedEndDate) : null}
-                      onChange={(date, dateString) => {
-                        if (dateString) {
-                          setSelectedEndDate(dateString as string);
-                        } else {
-                          setSelectedEndDate("");
-                        }
-                      }}
-                      format="YYYY-MM-DD"
-                      className="h-9 text-sm"
-                      allowClear
-                    />
+                    {!isVendor && (
+                      <DatePicker
+                        placeholder="End Date"
+                        value={selectedEndDate ? dayjs(selectedEndDate) : null}
+                        onChange={(date, dateString) => {
+                          if (dateString) {
+                            setSelectedEndDate(dateString as string);
+                          } else {
+                            setSelectedEndDate("");
+                          }
+                        }}
+                        format="YYYY-MM-DD"
+                        className="h-9 text-sm flex-1"
+                        allowClear
+                      />
+                    )}
                   </div>
                 ) : (
                   <DatePicker.RangePicker
@@ -4150,7 +4167,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                 style={{ tableLayout: "fixed" }}
               >
                 <thead className="sticky top-0 z-10 bg-white shadow-sm">
-                  <tr>
+                  <tr style={{ height: "40px" }}>
                     {columnOrder.map(
                       (originalIndex) =>
                         columnVisibility[originalIndex] && (
@@ -4160,14 +4177,18 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                               headerRefs.current[originalIndex] = el;
                             }}
                             data-column-index={originalIndex}
-                            className={`px-1 py-0.5 text-left font-medium text-xs whitespace-nowrap relative cursor-pointer hover:bg-gray-100 select-none bg-white ${draggedColumnIndex === originalIndex
-                                ? "opacity-50"
-                                : ""
+                            className={`px-[10px] py-0.5 text-left font-medium text-xs whitespace-normal relative cursor-pointer hover:bg-gray-100 select-none bg-white ${draggedColumnIndex === originalIndex
+                              ? "opacity-50"
+                              : ""
                               } ${dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
                               } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
-                            style={{ width: columnWidths[originalIndex] }}
+                            style={{
+                              width: columnWidths[originalIndex],
+                              paddingLeft: "10px",
+                              paddingRight: "10px"
+                            }}
                             draggable={true}
                             onDragStart={() =>
                               handleColumnDragStart(originalIndex)
@@ -4199,8 +4220,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                               >
                                 <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                               </svg>
-                              <span className="flex-1 truncate">
-                                {columnHeaders[originalIndex]}
+                              <span className="flex-1 whitespace-normal">
+                                {columnHeaders[originalIndex]} {getSortIndicator(originalIndex)}
                               </span>
                               <div className="flex items-center gap-1 flex-shrink-0">
                                 {originalIndex !== 24 && (
@@ -4238,9 +4259,9 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                   >
                                     <Filter
                                       className={`w-3 h-3 ${columnFilters[originalIndex] &&
-                                          columnFilters[originalIndex].length > 0
-                                          ? "text-blue-600"
-                                          : "text-gray-400"
+                                        columnFilters[originalIndex].length > 0
+                                        ? "text-blue-600"
+                                        : "text-gray-400"
                                         }`}
                                     />
                                   </span>
@@ -4297,9 +4318,9 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                         variant="ghost"
                                         size="sm"
                                         className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
-                                            sortOrder === "asc"
-                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                            : "hover:bg-gray-200"
+                                          sortOrder === "asc"
+                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                          : "hover:bg-gray-200"
                                           }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
@@ -4323,9 +4344,9 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                         variant="ghost"
                                         size="sm"
                                         className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
-                                            sortOrder === "desc"
-                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                            : "hover:bg-gray-200"
+                                          sortOrder === "desc"
+                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                          : "hover:bg-gray-200"
                                           }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
@@ -5042,4 +5063,6 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
       </Dialog>
     </div>
   );
-};
+});
+
+UserBookings.displayName = "UserBookings";

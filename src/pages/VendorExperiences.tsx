@@ -81,7 +81,7 @@ const VendorExperiences = () => {
       action,
     }: {
       experienceId: string;
-      action: "toggle";
+      action: "toggle" | "toggleForAgent";
     }) => {
       const { data, error } = await supabase.functions.invoke(
         "manage-experience",
@@ -110,6 +110,10 @@ const VendorExperiences = () => {
 
   const handleToggleStatus = (experienceId: string) => {
     manageExperienceMutation.mutate({ experienceId, action: "toggle" });
+  };
+
+  const handleToggleForAgent = (experienceId: string) => {
+    manageExperienceMutation.mutate({ experienceId, action: "toggleForAgent" });
   };
 
   return (
@@ -172,6 +176,7 @@ const VendorExperiences = () => {
                       {isAdmin && <th className="px-4 py-3">Vendor ID</th>}
                       <th className="px-4 py-3">Price</th>
                       <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">For Agent</th>
                       <th className="px-4 py-3">Bookings</th>
                       <th className="px-4 py-3">Revenue</th>
                       <th className="px-4 py-3">Rating</th>
@@ -227,6 +232,24 @@ const VendorExperiences = () => {
                                 : "Inactive"}
                             </Badge>
                           </td>
+                          <td className="px-4 py-3">
+                            <Badge
+                              variant={
+                                Boolean((experience as any).for_agent)
+                                  ? "default"
+                                  : "secondary"
+                              }
+                              className={
+                                Boolean((experience as any).for_agent)
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-600"
+                              }
+                            >
+                              {Boolean((experience as any).for_agent)
+                                ? "Yes"
+                                : "No"}
+                            </Badge>
+                          </td>
                           <td className="px-4 py-3">{stats.totalBookings}</td>
                           <td className="px-4 py-3 text-blue-600">
                             ₹{stats.totalRevenue.toFixed(0)}
@@ -248,12 +271,14 @@ const VendorExperiences = () => {
                                 size="sm"
                                 onClick={() => {
                                   // Use url_name if available, otherwise fall back to generating slug from title
-                                  const experienceName = experience.url_name || experience.title
-                                    .toLowerCase()
-                                    .replace(/[^a-z0-9\s-]/g, "")
-                                    .replace(/\s+/g, "-")
-                                    .replace(/-+/g, "-")
-                                    .trim();
+                                  const experienceName =
+                                    experience.url_name ||
+                                    experience.title
+                                      .toLowerCase()
+                                      .replace(/[^a-z0-9\s-]/g, "")
+                                      .replace(/\s+/g, "-")
+                                      .replace(/-+/g, "-")
+                                      .trim();
                                   navigate(`/experience/${experienceName}`, {
                                     state: {
                                       experienceData: experience,
@@ -287,6 +312,21 @@ const VendorExperiences = () => {
                                     : "Activate"
                                 }
                               />
+                              {isAdmin && (
+                                <Switch
+                                  checked={Boolean(
+                                    (experience as any).for_agent
+                                  )}
+                                  onCheckedChange={() =>
+                                    handleToggleForAgent(experience.id)
+                                  }
+                                  title={
+                                    Boolean((experience as any).for_agent)
+                                      ? "Disable for Agents"
+                                      : "Enable for Agents"
+                                  }
+                                />
+                              )}
                             </div>
                           </td>
                         </tr>

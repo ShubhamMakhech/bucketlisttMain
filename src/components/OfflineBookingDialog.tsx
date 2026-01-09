@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import { useForm } from "react-hook-form";
@@ -29,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Minus, Plus, Clock, Calendar } from "lucide-react";
+import { Minus, Plus, Clock, Calendar, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -148,9 +149,12 @@ export const OfflineBookingDialog = ({
         .select("id, title, currency")
         .eq("is_active", true);
 
-      // For vendors, filter by vendor_id; for agents/admins, get all active experiences
+      // For vendors, filter by vendor_id; for agents, get only experiences with for_agent=true; for admins, get all active experiences
       if (isVendor) {
         query = query.eq("vendor_id", user.id);
+      } else if (isAgent && !isAdmin) {
+        // For agents (not admins), only show experiences where for_agent is true
+        query = query.eq("for_agent", true);
       }
       // For agents/admins, no filter - get all active experiences
 
@@ -360,34 +364,134 @@ export const OfflineBookingDialog = ({
         formattedDateTime = `${formattedDateTime} (${agentName})`;
       }
 
-      // Generate PDF invoice
+      // Generate PDF invoice with retry mechanism
       let pdfUrl = "";
+      let pdfGenerationError = null;
+      const maxRetries = 2;
+
+      const generatePdfWithRetry = async (retryCount = 0): Promise<string> => {
+        try {
+          const locationUrl = experienceDetails?.location;
+          const location2Url = experienceDetails?.location2;
+          const generatedUrl = await generateInvoicePdf(
+            {
+              participantName: data.contact_person_name,
+              experienceTitle:
+                experienceDetails?.title || experience?.title || "Activity",
+              activityName: activity?.name || "",
+              dateTime: formattedDateTime,
+              pickUpLocation: experienceDetails?.location || "-",
+              spotLocation: experienceDetails?.location2 || "-",
+              spotLocationUrl: experienceDetails?.location2?.startsWith("http")
+                ? experienceDetails.location2
+                : "",
+              totalParticipants: data.total_participants,
+              amountPaid: (bookingAmount - dueAmount).toFixed(2),
+              amountToBePaid: dueAmount.toFixed(2),
+              currency:
+                activity?.currency || experienceDetails?.currency || "INR",
+            },
+            bookingId
+          );
+
+          // Validate PDF URL was generated
+          if (!generatedUrl || generatedUrl.trim() === "") {
+            throw new Error("PDF generation returned empty URL");
+          }
+
+          // Validate URL format
+          if (!generatedUrl.startsWith("http")) {
+            throw new Error(`PDF URL is not a valid HTTP URL: ${generatedUrl}`);
+          }
+
+          return generatedUrl;
+        } catch (error: any) {
+          if (retryCount < maxRetries) {
+            console.warn(
+              `PDF generation attempt ${retryCount + 1} failed, retrying...`,
+              {
+                bookingId,
+                error: error?.message || String(error),
+              }
+            );
+            // Wait 500ms before retry
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            return generatePdfWithRetry(retryCount + 1);
+          }
+          throw error;
+        }
+      };
+
       try {
-        const locationUrl = experienceDetails?.location;
-        const location2Url = experienceDetails?.location2;
-        pdfUrl = await generateInvoicePdf(
-          {
-            participantName: data.contact_person_name,
-            experienceTitle:
-              experienceDetails?.title || experience?.title || "Activity",
-            activityName: activity?.name || "",
-            dateTime: formattedDateTime,
-            pickUpLocation: experienceDetails?.location || "-",
-            spotLocation: experienceDetails?.location2 || "-",
-            spotLocationUrl: experienceDetails?.location2?.startsWith("http")
-              ? experienceDetails.location2
-              : "",
-            totalParticipants: data.total_participants,
-            amountPaid: (bookingAmount - dueAmount).toFixed(2),
-            amountToBePaid: dueAmount.toFixed(2),
-            currency:
-              activity?.currency || experienceDetails?.currency || "INR",
-          },
-          bookingId
+        pdfUrl = await generatePdfWithRetry();
+      } catch (pdfError: any) {
+        pdfGenerationError = pdfError;
+        // Log comprehensive error details (non-blocking)
+        const errorLog = {
+          bookingId,
+          customerName: data.contact_person_name,
+          customerPhone: data.contact_person_number,
+          experienceId: data.experience_id,
+          activityId: data.activity_id,
+          error: pdfError?.message || String(pdfError),
+          stack: pdfError?.stack,
+          timestamp: new Date().toISOString(),
+          retriesAttempted: maxRetries,
+        };
+
+        // Log to console (non-blocking)
+        console.error(
+          "PDF generation failed for offline booking after retries:",
+          errorLog
         );
-      } catch (pdfError) {
-        console.error("PDF generation failed:", pdfError);
-        // Continue without PDF - WhatsApp will be sent without attachment
+
+        // Log to Supabase for tracking (fire-and-forget, non-blocking)
+        // Use setTimeout to ensure it doesn't block the main flow
+        setTimeout(() => {
+          supabase
+            .from("logs")
+            .insert({
+              type: "pdf_generation_error",
+              booking_id: bookingId,
+              error_message: pdfError?.message || String(pdfError),
+              metadata: {
+                customer_name: data.contact_person_name,
+                customer_phone: data.contact_person_number,
+                experience_id: data.experience_id,
+                activity_id: data.activity_id,
+                retries_attempted: maxRetries,
+                error_stack: pdfError?.stack,
+              },
+              created_at: new Date().toISOString(),
+            })
+            .then(({ error: logError }) => {
+              if (logError) {
+                // Table might not exist, just log to console
+                console.error(
+                  "Failed to log PDF error to database (table may not exist):",
+                  logError
+                );
+              }
+            })
+            .catch((logError) => {
+              // Ignore logging errors - table might not exist
+              console.error("Error logging to database:", logError);
+            });
+        }, 0);
+      }
+
+      // Validate PDF URL before sending WhatsApp
+      const hasValidPdfUrl =
+        pdfUrl && pdfUrl.trim() !== "" && pdfUrl.startsWith("http");
+
+      if (!hasValidPdfUrl && !pdfGenerationError) {
+        // If PDF URL is empty but no error was caught, log it (non-blocking)
+        console.error("PDF URL is invalid or empty:", {
+          bookingId,
+          pdfUrl,
+          customerName: data.contact_person_name,
+          customerPhone: data.contact_person_number,
+        });
       }
 
       // Customer WhatsApp message
@@ -396,139 +500,313 @@ export const OfflineBookingDialog = ({
         data.contact_person_number.toString().length !== 10
           ? data.contact_person_number
           : "+91" + data.contact_person_number.toString();
-      if (
-        experienceDetails?.location !== null &&
-        experienceDetails?.location2 !== null &&
-        experienceDetails?.location2 !== "" &&
-        experienceDetails?.location !== ""
-      ) {
-        // Two location template with PDF
-        customerWhatsappBody = {
-          integrated_number: "919274046332",
-          content_type: "template",
-          payload: {
-            messaging_product: "whatsapp",
-            type: "template",
-            template: {
-              name: "user_ticket_confirmation_two_location_v2",
-              language: {
-                code: "en",
-                policy: "deterministic",
-              },
-              namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
-              to_and_components: [
-                {
-                  to: [phoneNumber],
-                  components: {
-                    ...(pdfUrl
-                      ? {
-                          header_1: {
-                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                            type: "document",
-                            value: pdfUrl,
-                          },
-                        }
-                      : {}),
-                    body_1: {
-                      type: "text",
-                      value: data.contact_person_name,
-                    },
-                    body_2: {
-                      type: "text",
-                      value: activity?.name || "",
-                    },
-                    body_3: {
-                      type: "text",
-                      value: formattedDateTime,
-                    },
-                    body_4: {
-                      type: "text",
-                      value: experienceDetails?.location || "",
-                    },
-                    body_5: {
-                      type: "text",
-                      value: experienceDetails?.location2 || "",
-                    },
-                    body_6: {
-                      type: "text",
-                      value: data.total_participants.toString(),
-                    },
-                    body_7: {
-                      type: "text",
-                      value: (bookingAmount - dueAmount).toFixed(2).toString(),
-                    },
-                    body_8: {
-                      type: "text",
-                      value: dueAmount.toFixed(2).toString() || "0",
+      if (hasValidPdfUrl) {
+        if (
+          experienceDetails?.location !== null &&
+          experienceDetails?.location2 !== null &&
+          experienceDetails?.location2 !== "" &&
+          experienceDetails?.location !== ""
+        ) {
+          // Two location template with PDF
+          customerWhatsappBody = {
+            integrated_number: "919274046332",
+            content_type: "template",
+            payload: {
+              messaging_product: "whatsapp",
+              type: "template",
+              template: {
+                name: "user_ticket_confirmation_two_location_v2",
+                language: {
+                  code: "en",
+                  policy: "deterministic",
+                },
+                namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+                to_and_components: [
+                  {
+                    to: [phoneNumber],
+                    components: {
+                      // Always include header_1 if we have a valid PDF URL
+                      ...(hasValidPdfUrl
+                        ? {
+                            header_1: {
+                              filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                              type: "document",
+                              value: pdfUrl,
+                            },
+                          }
+                        : {}),
+                      body_1: {
+                        type: "text",
+                        value: data.contact_person_name,
+                      },
+                      body_2: {
+                        type: "text",
+                        value: activity?.name || "",
+                      },
+                      body_3: {
+                        type: "text",
+                        value: formattedDateTime,
+                      },
+                      body_4: {
+                        type: "text",
+                        value: experienceDetails?.location || "",
+                      },
+                      body_5: {
+                        type: "text",
+                        value: experienceDetails?.location2 || "",
+                      },
+                      body_6: {
+                        type: "text",
+                        value: data.total_participants.toString(),
+                      },
+                      body_7: {
+                        type: "text",
+                        value: (bookingAmount - dueAmount)
+                          .toFixed(2)
+                          .toString(),
+                      },
+                      body_8: {
+                        type: "text",
+                        value: dueAmount.toFixed(2).toString() || "0",
+                      },
                     },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-        };
+          };
+        } else {
+          // Single location template with PDF
+          customerWhatsappBody = {
+            integrated_number: "919274046332",
+            content_type: "template",
+            payload: {
+              messaging_product: "whatsapp",
+              type: "template",
+              template: {
+                name: "confirmation_user_with_ticket",
+                language: {
+                  code: "en",
+                  policy: "deterministic",
+                },
+                namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+                to_and_components: [
+                  {
+                    to: [phoneNumber],
+                    components: {
+                      // Always include header_1 if we have a valid PDF URL
+                      ...(hasValidPdfUrl
+                        ? {
+                            header_1: {
+                              filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                              type: "document",
+                              value: pdfUrl,
+                            },
+                          }
+                        : {}),
+                      body_1: {
+                        type: "text",
+                        value: data.contact_person_name,
+                      },
+                      body_2: {
+                        type: "text",
+                        value: activity?.name || "",
+                      },
+                      body_3: {
+                        type: "text",
+                        value: formattedDateTime,
+                      },
+                      body_4: {
+                        type: "text",
+                        value: experienceDetails?.location || "",
+                      },
+                      body_5: {
+                        type: "text",
+                        value: data.total_participants.toString(),
+                      },
+                      body_6: {
+                        type: "text",
+                        value: (bookingAmount - dueAmount)
+                          .toFixed(2)
+                          .toString(),
+                      },
+                      body_7: {
+                        type: "text",
+                        value: dueAmount.toFixed(2).toString() || "0",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          };
+        }
       } else {
-        // Single location template with PDF
-        customerWhatsappBody = {
-          integrated_number: "919274046332",
-          content_type: "template",
-          payload: {
-            messaging_product: "whatsapp",
-            type: "template",
-            template: {
-              name: "confirmation_user_with_ticket",
-              language: {
-                code: "en",
-                policy: "deterministic",
-              },
-              namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
-              to_and_components: [
-                {
-                  to: [phoneNumber],
-                  components: {
-                    ...(pdfUrl
-                      ? {
-                          header_1: {
-                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                            type: "document",
-                            value: pdfUrl,
-                          },
-                        }
-                      : {}),
-                    body_1: {
-                      type: "text",
-                      value: data.contact_person_name,
-                    },
-                    body_2: {
-                      type: "text",
-                      value: activity?.name || "",
-                    },
-                    body_3: {
-                      type: "text",
-                      value: formattedDateTime,
-                    },
-                    body_4: {
-                      type: "text",
-                      value: experienceDetails?.location || "",
-                    },
-                    body_5: {
-                      type: "text",
-                      value: data.total_participants.toString(),
-                    },
-                    body_6: {
-                      type: "text",
-                      value: (bookingAmount - dueAmount).toFixed(2).toString(),
-                    },
-                    body_7: {
-                      type: "text",
-                      value: dueAmount.toFixed(2).toString() || "0",
+        if (
+          experienceDetails?.location !== null &&
+          experienceDetails?.location2 !== null &&
+          experienceDetails?.location2 !== "" &&
+          experienceDetails?.location !== ""
+        ) {
+          customerWhatsappBody = {
+            integrated_number: "919274046332",
+            content_type: "template",
+            payload: {
+              messaging_product: "whatsapp",
+              type: "template",
+              template: {
+                name: "booking_confirmation_two_location",
+                language: {
+                  code: "en",
+                  policy: "deterministic",
+                },
+                namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+                to_and_components: [
+                  {
+                    to: [phoneNumber],
+                    components: {
+                      // Always include header_1 if we have a valid PDF URL
+                      body_1: {
+                        type: "text",
+                        value: data.contact_person_name,
+                      },
+                      body_2: {
+                        type: "text",
+                        value: activity?.name || "",
+                      },
+                      body_3: {
+                        type: "text",
+                        value: formattedDateTime,
+                      },
+                      body_4: {
+                        type: "text",
+                        value: experienceDetails?.location || "",
+                      },
+                      body_5: {
+                        type: "text",
+                        value: experienceDetails?.location2 || "",
+                      },
+                      body_6: {
+                        type: "text",
+                        value: data.total_participants.toString(),
+                      },
+                      body_7: {
+                        type: "text",
+                        value: (bookingAmount - dueAmount)
+                          .toFixed(2)
+                          .toString(),
+                      },
+                      body_8: {
+                        type: "text",
+                        value: dueAmount.toFixed(2).toString() || "0",
+                      },
                     },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
+          };
+        } else {
+          customerWhatsappBody = {
+            integrated_number: "919274046332",
+            content_type: "template",
+            payload: {
+              messaging_product: "whatsapp",
+              type: "template",
+              template: {
+                name: "booking_confirmation_two_location",
+                language: {
+                  code: "en",
+                  policy: "deterministic",
+                },
+                namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+                to_and_components: [
+                  {
+                    to: [phoneNumber],
+                    components: {
+                      // Always include header_1 if we have a valid PDF URL
+                      body_1: {
+                        type: "text",
+                        value: data.contact_person_name,
+                      },
+                      body_2: {
+                        type: "text",
+                        value: activity?.name || "",
+                      },
+                      body_3: {
+                        type: "text",
+                        value: formattedDateTime,
+                      },
+                      body_4: {
+                        type: "text",
+                        value: "",
+                      },
+                      body_5: {
+                        type: "text",
+                        value: experienceDetails?.location || "",
+                      },
+                      body_6: {
+                        type: "text",
+                        value: data.total_participants.toString(),
+                      },
+                      body_7: {
+                        type: "text",
+                        value: (bookingAmount - dueAmount)
+                          .toFixed(2)
+                          .toString(),
+                      },
+                      body_8: {
+                        type: "text",
+                        value: dueAmount.toFixed(2).toString() || "0",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          };
+        }
+      }
+
+      // Log WhatsApp body structure before sending (for debugging) - non-blocking
+      if (!hasValidPdfUrl) {
+        const warningMessage = {
+          bookingId,
+          customerName: data.contact_person_name,
+          customerPhone: data.contact_person_number,
+          experienceId: data.experience_id,
+          activityId: data.activity_id,
+          hasHeader1: hasValidPdfUrl,
+          pdfUrl: pdfUrl || "EMPTY",
+          pdfError: pdfGenerationError?.message || "Unknown error",
+          timestamp: new Date().toISOString(),
+          warning:
+            "WhatsApp message will be sent WITHOUT header_1 (PDF document). This may cause template format mismatch errors.",
         };
+
+        // Log to console (non-blocking)
+        console.error(
+          "⚠️ CRITICAL: Sending WhatsApp without PDF header_1:",
+          warningMessage
+        );
+
+        // Log to database (fire-and-forget, non-blocking)
+        // Use setTimeout to ensure it doesn't block the main flow
+        setTimeout(() => {
+          supabase
+            .from("logs")
+            .insert({
+              type: "whatsapp_missing_pdf_header",
+              booking_id: bookingId,
+              error_message:
+                "PDF generation failed, header_1 not included in WhatsApp message",
+              metadata: warningMessage,
+              created_at: new Date().toISOString(),
+            })
+            .catch(() => {
+              // Ignore if table doesn't exist or any other error
+            });
+        }, 0);
       }
 
       // Send customer WhatsApp
@@ -824,14 +1102,35 @@ export const OfflineBookingDialog = ({
         throw participantsError;
       }
 
-      // Show success immediately after booking is created
+      // Send all confirmations synchronously before closing
+      // Keep isSubmitting true to show processing modal
+      try {
+        await sendBookingConfirmation(
+          data,
+          booking.id,
+          experience,
+          selectedActivity
+        );
+      } catch (confirmationError) {
+        // Log errors but don't fail the booking
+        console.error("Confirmation sending error:", confirmationError);
+        // Show warning toast but don't block
+        toast({
+          title: "Booking Created",
+          description:
+            "Booking was created successfully, but some notifications may have failed. Please check the booking details.",
+          variant: "default",
+        });
+      }
+
+      // Show success toast
       toast({
         title: "Offline Booking Created!",
         description:
-          "The offline booking has been successfully created. Notifications are being sent in the background.",
+          "The offline booking has been successfully created and all notifications have been sent.",
       });
 
-      // Close dialog and refresh immediately
+      // Close dialog and refresh after all confirmations are sent
       onBookingSuccess();
       handleClose();
 
@@ -865,286 +1164,337 @@ export const OfflineBookingDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="offline-booking-dialog">
-        <div className="offline-booking-header">
-          <h2 className="offline-booking-title">Create Offline Booking</h2>
-        </div>
-
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="offline-booking-form"
-          >
-            {/* Experience & Activity Selection Group */}
-            <div className="form-section-group">
-              <FormField
-                control={form.control}
-                name="experience_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        form.setValue("activity_id", "");
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="form-input-trigger">
-                          <SelectValue placeholder="Select Experience *" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {experiences.map((exp) => (
-                          <SelectItem key={exp.id} value={exp.id}>
-                            {exp.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="activity_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={!selectedExperienceId}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="form-input-trigger">
-                          <SelectValue placeholder="Select Activity *" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {activities.map((activity) => (
-                          <SelectItem key={activity.id} value={activity.id}>
-                            {activity.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="booking_date"
-                render={({ field }) => (
-                  <FormItem className="form-full-width">
-                    <FormControl>
-                      <div className="relative">
-                        <DatePicker
-                          className="form-date-picker"
-                          value={selectedDate ? dayjs(selectedDate) : null}
-                          onChange={(date) => {
-                            const d = date ? date.toDate() : undefined;
-                            setSelectedDate(d);
-                            setSelectedSlotId(undefined);
-                            form.setValue("time_slot_id", "");
-                            field.onChange(d);
-                          }}
-                          disabledDate={(current) => {
-                            // Admins can create backdated bookings, other roles cannot
-                            if (isAdmin) {
-                              return false; // No date restrictions for admins
-                            }
-                            // For vendors and agents, prevent selecting past dates
-                            return current && current < dayjs().startOf("day");
-                          }}
-                          placeholder="Select Date *"
-                          format="YYYY-MM-DD"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <>
+      {isSubmitting &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center">
+            <div className="bg-white dark:bg-slate-950 p-6 rounded-lg shadow-xl flex flex-col items-center gap-4 max-w-[300px] text-center animate-in fade-in zoom-in duration-300">
+              <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
+              <div>
+                <h3 className="font-semibold text-lg mb-1">Processing...</h3>
+                <p className="text-sm text-muted-foreground">
+                  Please do not close or refresh this window.
+                </p>
+              </div>
             </div>
+          </div>,
+          document.body
+        )}
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="offline-booking-dialog">
+          <div className="offline-booking-header">
+            <h2 className="offline-booking-title">Create Offline Booking</h2>
+          </div>
 
-            {/* Time Slot Selection */}
-            {selectedDate && selectedActivity && timeSlots.length > 0 && (
-              <FormField
-                control={form.control}
-                name="time_slot_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="time-slots-header">
-                      <span className="time-slots-label">
-                        Available Time Slots
-                      </span>
-                      <span className="selected-date-badge">
-                        {format(selectedDate, "MMM d, yyyy")}
-                      </span>
-                    </div>
-                    <div className="time-slots-grid">
-                      {timeSlots.map((slot: any) => {
-                        const isSelected = selectedSlotId === slot.id;
-                        const isAvailable =
-                          slot.available_spots >= participantCount;
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="offline-booking-form"
+            >
+              {/* Experience & Activity Selection Group */}
+              <div className="form-section-group">
+                <FormField
+                  control={form.control}
+                  name="experience_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue("activity_id", "");
+                        }}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="form-input-trigger">
+                            <SelectValue placeholder="Select Experience *" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {experiences.map((exp) => (
+                            <SelectItem key={exp.id} value={exp.id}>
+                              {exp.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                        return (
-                          <button
-                            key={slot.id}
-                            type="button"
-                            onClick={() => {
-                              if (isAvailable) {
-                                const newSlotId = isSelected
-                                  ? undefined
-                                  : slot.id;
-                                setSelectedSlotId(newSlotId);
-                                field.onChange(newSlotId || "");
-                              }
+                <FormField
+                  control={form.control}
+                  name="activity_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={!selectedExperienceId}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="form-input-trigger">
+                            <SelectValue placeholder="Select Activity *" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {activities.map((activity) => (
+                            <SelectItem key={activity.id} value={activity.id}>
+                              {activity.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="booking_date"
+                  render={({ field }) => (
+                    <FormItem className="form-full-width">
+                      <FormControl>
+                        <div className="relative">
+                          <DatePicker
+                            className="form-date-picker"
+                            value={selectedDate ? dayjs(selectedDate) : null}
+                            onChange={(date) => {
+                              const d = date ? date.toDate() : undefined;
+                              setSelectedDate(d);
+                              setSelectedSlotId(undefined);
+                              form.setValue("time_slot_id", "");
+                              field.onChange(d);
                             }}
-                            disabled={!isAvailable}
-                            className={`p-3 rounded-lg border-2 text-left transition-all ${
-                              isSelected
-                                ? "border-brand-primary bg-brand-primary/10"
-                                : isAvailable
-                                ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                                : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
-                            }`}
-                          >
-                            <div className="time-slot-content">
-                              <Clock className="time-slot-icon" />
-                              <span className="time-slot-time">
-                                {formatTime(slot.start_time)}
-                              </span>
-                            </div>
-                            {/* <span className="time-slot-spots">
-                              {slot.available_spots} spots left
-                            </span> */}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Contact Details Section */}
-            <div className="contact-details-container">
-              <span className="contact-details-title">
-                Customer Information
-              </span>
-              <div className="contact-fields-grid">
-                <FormField
-                  control={form.control}
-                  name="contact_person_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          placeholder="Full Name *"
-                          className="form-input"
-                          {...field}
-                        />
+                            disabledDate={(current) => {
+                              // Admins can create backdated bookings, other roles cannot
+                              if (isAdmin) {
+                                return false; // No date restrictions for admins
+                              }
+                              // For vendors and agents, prevent selecting past dates
+                              return (
+                                current && current < dayjs().startOf("day")
+                              );
+                            }}
+                            placeholder="Select Date *"
+                            format="YYYY-MM-DD"
+                          />
+                        </div>
                       </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="contact_person_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          placeholder="Phone Number *"
-                          className="form-input"
-                          {...field}
-                          maxLength={10}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="contact_person_email"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="Email Address"
-                          className="form-input"
-                          {...field}
-                        />
-                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-            </div>
 
-            {/* Booking Details & Summary */}
-            <div className="booking-info-layout">
-              <div className="booking-fields-stack">
-                <div className="MobileFlexOnly">
-                  <div className="GridSetPCMobileAdjust">
+              {/* Time Slot Selection */}
+              {selectedDate && selectedActivity && timeSlots.length > 0 && (
+                <FormField
+                  control={form.control}
+                  name="time_slot_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="time-slots-header">
+                        <span className="time-slots-label">
+                          Available Time Slots
+                        </span>
+                        <span className="selected-date-badge">
+                          {format(selectedDate, "MMM d, yyyy")}
+                        </span>
+                      </div>
+                      <div className="time-slots-grid">
+                        {timeSlots.map((slot: any) => {
+                          const isSelected = selectedSlotId === slot.id;
+                          const isAvailable =
+                            slot.available_spots >= participantCount;
+
+                          return (
+                            <button
+                              key={slot.id}
+                              type="button"
+                              onClick={() => {
+                                if (isAvailable) {
+                                  const newSlotId = isSelected
+                                    ? undefined
+                                    : slot.id;
+                                  setSelectedSlotId(newSlotId);
+                                  field.onChange(newSlotId || "");
+                                }
+                              }}
+                              disabled={!isAvailable}
+                              className={`p-3 rounded-lg border-2 text-left transition-all ${
+                                isSelected
+                                  ? "border-brand-primary bg-brand-primary/10"
+                                  : isAvailable
+                                  ? "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                  : "border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed"
+                              }`}
+                            >
+                              <div className="time-slot-content">
+                                <Clock className="time-slot-icon" />
+                                <span className="time-slot-time">
+                                  {formatTime(slot.start_time)}
+                                </span>
+                              </div>
+                              {/* <span className="time-slot-spots">
+                              {slot.available_spots} spots left
+                            </span> */}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Contact Details Section */}
+              <div className="contact-details-container">
+                <span className="contact-details-title">
+                  Customer Information
+                </span>
+                <div className="contact-fields-grid">
+                  <FormField
+                    control={form.control}
+                    name="contact_person_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            placeholder="Full Name *"
+                            className="form-input"
+                            {...field}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="contact_person_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            placeholder="Phone Number *"
+                            className="form-input"
+                            {...field}
+                            maxLength={10}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="contact_person_email"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Email Address"
+                            className="form-input"
+                            {...field}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Booking Details & Summary */}
+              <div className="booking-info-layout">
+                <div className="booking-fields-stack">
+                  <div className="MobileFlexOnly">
+                    <div className="GridSetPCMobileAdjust">
+                      <FormField
+                        control={form.control}
+                        name="total_participants"
+                        render={({ field }) => (
+                          <FormItem>
+                            <label className="field-label-compact">
+                              Participants
+                            </label>
+                            <div className="participants-control">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="participant-btn"
+                                onClick={() =>
+                                  field.onChange(Math.max(1, field.value - 1))
+                                }
+                                disabled={field.value <= 1}
+                              >
+                                <Minus className="participant-icon" />
+                              </Button>
+                              <span className="participant-count">
+                                {field.value}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="participant-btn"
+                                onClick={() =>
+                                  field.onChange(Math.min(50, field.value + 1))
+                                }
+                                disabled={field.value >= 50}
+                              >
+                                <Plus className="participant-icon" />
+                              </Button>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="booking_amount_per_person"
+                        render={({ field }) => (
+                          <FormItem>
+                            <label className="field-label-compact">
+                              Amount Per Person
+                            </label>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                                  {selectedActivity?.currency || "INR"}
+                                </span>
+                                <Input
+                                  type="number"
+                                  className="pl-12 h-11"
+                                  placeholder="0.00"
+                                  {...field}
+                                  value={field.value || ""}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                />
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  <div className="FlexOnly">
                     <FormField
                       control={form.control}
-                      name="total_participants"
+                      name="advance_amount"
                       render={({ field }) => (
                         <FormItem>
                           <label className="field-label-compact">
-                            Participants
-                          </label>
-                          <div className="participants-control">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="participant-btn"
-                              onClick={() =>
-                                field.onChange(Math.max(1, field.value - 1))
-                              }
-                              disabled={field.value <= 1}
-                            >
-                              <Minus className="participant-icon" />
-                            </Button>
-                            <span className="participant-count">
-                              {field.value}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="participant-btn"
-                              onClick={() =>
-                                field.onChange(Math.min(50, field.value + 1))
-                              }
-                              disabled={field.value >= 50}
-                            >
-                              <Plus className="participant-icon" />
-                            </Button>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="booking_amount_per_person"
-                      render={({ field }) => (
-                        <FormItem>
-                          <label className="field-label-compact">
-                            Amount Per Person
+                            Advance Amount
                           </label>
                           <FormControl>
                             <div className="relative">
@@ -1168,187 +1518,159 @@ export const OfflineBookingDialog = ({
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="note_for_guide"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              placeholder="Note for Guide (Optional)"
+                              className="form-input"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
-                <div className="FlexOnly">
-                  <FormField
-                    control={form.control}
-                    name="advance_amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <label className="field-label-compact">
-                          Advance Amount
-                        </label>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
-                              {selectedActivity?.currency || "INR"}
-                            </span>
-                            <Input
-                              type="number"
-                              className="pl-12 h-11"
-                              placeholder="0.00"
-                              {...field}
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(parseFloat(e.target.value) || 0)
-                              }
-                            />
-                          </div>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="note_for_guide"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            placeholder="Note for Guide (Optional)"
-                            className="form-input"
-                            {...field}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
 
-              {/* Summary Card */}
-              {selectedActivity && (
-                <div className="summary-card">
-                  <div className="summary-content">
-                    <h4 className="summary-title">Booking Summary</h4>
-                    <div className="space-y-3">
-                      <div className="summary-row">
-                        <span className="summary-label">Activity</span>
-                        <span className="summary-value text-right-truncate">
-                          {selectedActivity.name}
-                        </span>
-                      </div>
-                      <div className="summary-row">
-                        <span className="summary-label">Participants</span>
-                        <span className="summary-value">
-                          {participantCount}
-                        </span>
-                      </div>
-                      <div className="summary-row">
-                        <span className="summary-label">Price per person</span>
-                        <span className="summary-value">
-                          {selectedActivity.currency}{" "}
-                          {(
-                            form.watch("booking_amount_per_person") || 0
-                          ).toLocaleString()}
-                        </span>
-                      </div>
-                      {isAgent && selectedActivity.b2bPrice && (
-                        <>
-                          {!showB2BPrice ? (
-                            <div className="summary-row">
-                              <span className="summary-label">B2B Price</span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="b2b-view-btn"
-                                onClick={() => setShowB2BPrice(true)}
-                              >
-                                View B2B Price
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="summary-row">
-                              <span className="summary-label">B2B Price</span>
-                              <div className="flex items-center gap-2">
-                                <span className="summary-value">
-                                  {selectedActivity.currency}{" "}
-                                  {selectedActivity.b2bPrice.toLocaleString()}
-                                </span>
+                {/* Summary Card */}
+                {selectedActivity && (
+                  <div className="summary-card">
+                    <div className="summary-content">
+                      <h4 className="summary-title">Booking Summary</h4>
+                      <div className="space-y-3">
+                        <div className="summary-row">
+                          <span className="summary-label">Activity</span>
+                          <span className="summary-value text-right-truncate">
+                            {selectedActivity.name}
+                          </span>
+                        </div>
+                        <div className="summary-row">
+                          <span className="summary-label">Participants</span>
+                          <span className="summary-value">
+                            {participantCount}
+                          </span>
+                        </div>
+                        <div className="summary-row">
+                          <span className="summary-label">
+                            Price per person
+                          </span>
+                          <span className="summary-value">
+                            {selectedActivity.currency}{" "}
+                            {(
+                              form.watch("booking_amount_per_person") || 0
+                            ).toLocaleString()}
+                          </span>
+                        </div>
+                        {isAgent && selectedActivity.b2bPrice && (
+                          <>
+                            {!showB2BPrice ? (
+                              <div className="summary-row">
+                                <span className="summary-label">B2B Price</span>
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                                  onClick={() => setShowB2BPrice(false)}
+                                  className="b2b-view-btn"
+                                  onClick={() => setShowB2BPrice(true)}
                                 >
-                                  Hide
+                                  View B2B Price
                                 </Button>
                               </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      <div className="summary-row">
-                        <span className="summary-label">Total Amount</span>
-                        <span className="summary-value">
-                          {selectedActivity.currency}{" "}
-                          {(
-                            (form.watch("booking_amount_per_person") || 0) *
-                            participantCount
-                          ).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
-                      </div>
-                      <div className="summary-row">
-                        <span className="summary-label">Advance Amount</span>
-                        <span className="summary-value">
-                          {selectedActivity.currency}{" "}
-                          {(form.watch("advance_amount") || 0).toLocaleString(
-                            undefined,
-                            {
+                            ) : (
+                              <div className="summary-row">
+                                <span className="summary-label">B2B Price</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="summary-value">
+                                    {selectedActivity.currency}{" "}
+                                    {selectedActivity.b2bPrice.toLocaleString()}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                    onClick={() => setShowB2BPrice(false)}
+                                  >
+                                    Hide
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        <div className="summary-row">
+                          <span className="summary-label">Total Amount</span>
+                          <span className="summary-value">
+                            {selectedActivity.currency}{" "}
+                            {(
+                              (form.watch("booking_amount_per_person") || 0) *
+                              participantCount
+                            ).toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
-                            }
-                          )}
-                        </span>
-                      </div>
-                      <div className="summary-total">
-                        <span className="total-label">Due Amount</span>
-                        <span className="total-value">
-                          {selectedActivity.currency}{" "}
-                          {Math.max(
-                            0,
-                            (form.watch("booking_amount_per_person") || 0) *
-                              participantCount -
-                              (form.watch("advance_amount") || 0)
-                          ).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
+                            })}
+                          </span>
+                        </div>
+                        <div className="summary-row">
+                          <span className="summary-label">Advance Amount</span>
+                          <span className="summary-value">
+                            {selectedActivity.currency}{" "}
+                            {(form.watch("advance_amount") || 0).toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}
+                          </span>
+                        </div>
+                        <div className="summary-total">
+                          <span className="total-label">Due Amount</span>
+                          <span className="total-value">
+                            {selectedActivity.currency}{" "}
+                            {Math.max(
+                              0,
+                              (form.watch("booking_amount_per_person") || 0) *
+                                participantCount -
+                                (form.watch("advance_amount") || 0)
+                            ).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            <div className="action-footer">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="btn-secondary-custom"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                // disabled={isSubmitting}
-                className="btn-primary-custom"
-              >
-                {isSubmitting ? "Creating..." : "Create Booking"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+              <div className="action-footer">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClose}
+                  className="btn-secondary-custom"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  // disabled={isSubmitting}
+                  className="btn-primary-custom"
+                >
+                  {isSubmitting ? "Creating..." : "Create Booking"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

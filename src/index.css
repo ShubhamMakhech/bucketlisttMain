@@ -874,6 +874,7 @@ h6 {
     display: block;
     justify-content: start;
     margin-bottom: 10px;
+    margin-top: 10px;
   }
 
   #UserBookingsSortButtonStyles button{

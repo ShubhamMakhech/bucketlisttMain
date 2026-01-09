@@ -177,6 +177,10 @@ export const BookingDialog = ({
     undefined
   );
   const prefilledPhoneRef = useRef<string | undefined>(undefined);
+  // State for Bike on Rent in Rishikesh - separate counters for vehicles and days
+  const [numberOfVehicles, setNumberOfVehicles] = useState(1);
+  const [numberOfDays, setNumberOfDays] = useState(1);
+  const isBikeRent = experience.title === "Bike on Rent in Rishikesh";
   const form = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
     mode: "onBlur",
@@ -277,6 +281,39 @@ export const BookingDialog = ({
   // }, []);
 
   const participantCount = form.watch("participant_count");
+
+  // For Bike on Rent, update participant_count and note_for_guide when vehicles or days change
+  useEffect(() => {
+    if (isBikeRent) {
+      const calculatedCount = numberOfDays * numberOfVehicles;
+      form.setValue("participant_count", calculatedCount);
+
+      // Update note_for_guide with vehicle and days info
+      const bikeRentNote = `${numberOfVehicles} ${
+        numberOfVehicles === 1 ? "vehicle" : "vehicles"
+      } for ${numberOfDays} ${numberOfDays === 1 ? "day" : "days"}`;
+      const currentNote = form.getValues("note_for_guide") || "";
+
+      // Remove any existing vehicle/days info lines and add updated one
+      const lines = currentNote.split("\n");
+      const userNotes = lines.filter(
+        (line) =>
+          !line.trim().includes("vehicle") &&
+          !line.trim().includes("vehicles") &&
+          !line
+            .trim()
+            .match(/^\d+\s+(vehicle|vehicles)\s+for\s+\d+\s+(day|days)$/)
+      );
+
+      // Combine user notes with vehicle/days info
+      const userNoteText = userNotes.join("\n").trim();
+      const finalNote = userNoteText
+        ? `${userNoteText}\n${bikeRentNote}`
+        : bikeRentNote;
+
+      form.setValue("note_for_guide", finalNote);
+    }
+  }, [numberOfDays, numberOfVehicles, isBikeRent, form]);
 
   // Helper function to get activity price (discounted if available)
   const getActivityPrice = (activity: any) => {
@@ -1221,6 +1258,10 @@ export const BookingDialog = ({
   const onSubmit = async (data: BookingFormData) => {
     // console.log("Upfront amount (what user pays now):", upfrontAmount);
     // console.log("Due amount https://www.bucketlistt.com/destination/rishikesh(what user pays on-site):", dueAmount);
+
+    // Note: For Bike on Rent, note_for_guide is already updated in useEffect
+    // when vehicles or days change, so no need to update it here again
+
     if (!user) {
       // saving data in local storage
 
@@ -1559,7 +1600,7 @@ export const BookingDialog = ({
               <div>
                 <h3 className="font-semibold text-lg mb-1">Processing...</h3>
                 <p className="text-sm text-muted-foreground">
-                  Please do not close this window.
+                  Please do not close or refresh this window.
                 </p>
               </div>
             </div>
@@ -1587,6 +1628,7 @@ export const BookingDialog = ({
                 <SlotSelector
                   experienceId={experience.id}
                   selectedDate={selectedDate}
+                  experienceTitle={experience.title}
                   selectedSlotId={selectedSlotId}
                   selectedActivityId={selectedActivityId}
                   participantCount={participantCount}
@@ -1600,6 +1642,7 @@ export const BookingDialog = ({
               // Desktop: Activity + Date + Time Selection (original behavior)
               <SlotSelector
                 experienceId={experience.id}
+                experienceTitle={experience.title}
                 selectedDate={selectedDate}
                 selectedSlotId={selectedSlotId}
                 selectedActivityId={selectedActivityId}
@@ -1641,6 +1684,7 @@ export const BookingDialog = ({
               {/* <h3 className="text-lg font-semibold mb-4">Select Date & Time</h3> */}
               <SlotSelector
                 experienceId={experience.id}
+                experienceTitle={experience.title}
                 selectedDate={selectedDate}
                 selectedSlotId={selectedSlotId}
                 selectedActivityId={selectedActivityId}
@@ -1756,14 +1800,19 @@ export const BookingDialog = ({
                           </div>
                         </div>
                         <span className="summary-people-count">
-                          {participantCount}{" "}
-                          {experience.title === "Bike on Rent in Rishikesh"
-                            ? participantCount === 1
-                              ? "day"
-                              : "days"
-                            : participantCount === 1
-                            ? "Person"
-                            : "People"}
+                          {isBikeRent ? (
+                            <>
+                              {numberOfVehicles}{" "}
+                              {numberOfVehicles === 1 ? "vehicle" : "vehicles"}{" "}
+                              for {numberOfDays}{" "}
+                              {numberOfDays === 1 ? "day" : "days"}
+                            </>
+                          ) : (
+                            <>
+                              {participantCount}{" "}
+                              {participantCount === 1 ? "Person" : "People"}
+                            </>
+                          )}
                         </span>
                         <div className="summary-price-container">
                           {(selectedActivity as any)?.discounted_price &&
@@ -1935,129 +1984,270 @@ export const BookingDialog = ({
                     {/* <h3 className="text-lg font-semibold">Participants</h3> */}
 
                     {/* Participant Count Selector */}
-                    <FormField
-                      control={form.control}
-                      name="participant_count"
-                      render={({ field }) => {
-                        const [inputValue, setInputValue] = useState(
-                          field.value.toString()
-                        );
-
-                        return (
-                          <>
+                    {isBikeRent ? (
+                      // Two counters for Bike on Rent: Vehicles and Days
+                      <FormField
+                        control={form.control}
+                        name="participant_count"
+                        render={({ field }) => {
+                          return (
                             <FormItem id="participant-count-form-item">
-                              <div className="flex items-center gap-2 justify-between">
-                                <Card
-                                  style={{ width: "100%", padding: "3px 10px" }}
-                                  id="ParticipantCountCard"
-                                >
-                                  <div>
-                                    <FormLabel>
-                                      {experience.title ==
-                                      "Bike on Rent in Rishikesh"
-                                        ? "Number of days"
-                                        : "Number of Participants"}
-                                    </FormLabel>
-                                    {selectedSlotId &&
-                                      availableSpots !== undefined && (
-                                        // <p className="text-xs text-muted-foreground mt-1">
-                                        //   {availableSpots > 0
-                                        //     ? `${availableSpots} spot${
-                                        //         availableSpots !== 1 ? "s" : ""
-                                        //       } available`
-                                        //     : "No spots available"}
-                                        // </p>
-                                        <></>
-                                      )}
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      {/* Minus Button */}
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-10 w-10 shrink-0"
-                                        onClick={() => {
-                                          if (field.value > 1) {
-                                            const newValue = field.value - 1;
-                                            field.onChange(newValue);
-                                            setInputValue(newValue.toString());
-                                          }
-                                        }}
-                                        disabled={field.value <= 1}
-                                      >
-                                        <Minus className="h-4 w-4" />
-                                      </Button>
-
-                                      {/* Input Field */}
-                                      <FormControl>
-                                        <Input
-                                          type="number"
-                                          min="1"
-                                          max={maxParticipants}
-                                          value={inputValue}
-                                          disabled={true}
-                                          onChange={(e) => {
-                                            setInputValue(e.target.value);
-                                          }}
-                                          onBlur={(e) => {
-                                            const value = parseInt(
-                                              e.target.value
-                                            );
-                                            if (isNaN(value) || value < 1) {
-                                              field.onChange(1);
-                                              setInputValue("1");
-                                            } else if (
-                                              value > maxParticipants
-                                            ) {
-                                              field.onChange(maxParticipants);
-                                              setInputValue(
-                                                maxParticipants.toString()
+                              <div className="space-y-4">
+                                {/* Number of Vehicles */}
+                                <div className="flex items-center gap-2 justify-between">
+                                  <Card
+                                    style={{
+                                      width: "100%",
+                                      padding: "3px 10px",
+                                    }}
+                                    id="ParticipantCountCard"
+                                  >
+                                    <div>
+                                      <FormLabel>Number of Vehicles</FormLabel>
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (numberOfVehicles > 1) {
+                                              setNumberOfVehicles(
+                                                numberOfVehicles - 1
                                               );
-                                            } else {
-                                              field.onChange(value);
-                                              setInputValue(value.toString());
                                             }
                                           }}
-                                          className="text-center font-medium"
-                                          placeholder="1"
-                                        />
-                                      </FormControl>
-
-                                      {/* Plus Button */}
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-10 w-10 shrink-0"
-                                        onClick={() => {
-                                          if (field.value < maxParticipants) {
-                                            const newValue = field.value + 1;
-                                            field.onChange(newValue);
-                                            setInputValue(newValue.toString());
-                                          }
-                                        }}
-                                        disabled={
-                                          field.value >= maxParticipants ||
-                                          availableSpots === 0
-                                        }
-                                      >
-                                        <Plus className="h-4 w-4" />
-                                      </Button>
+                                          disabled={numberOfVehicles <= 1}
+                                        >
+                                          <Minus className="h-4 w-4" />
+                                        </Button>
+                                        <FormControl>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            max={50}
+                                            value={numberOfVehicles}
+                                            disabled={true}
+                                            className="text-center font-medium"
+                                            readOnly
+                                          />
+                                        </FormControl>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (numberOfVehicles < 50) {
+                                              setNumberOfVehicles(
+                                                numberOfVehicles + 1
+                                              );
+                                            }
+                                          }}
+                                          disabled={numberOfVehicles >= 50}
+                                        >
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                      </div>
                                     </div>
-                                  </div>
-                                </Card>
+                                  </Card>
+                                </div>
+
+                                {/* Number of Days */}
+                                <div className="flex items-center gap-2 justify-between">
+                                  <Card
+                                    style={{
+                                      width: "100%",
+                                      padding: "3px 10px",
+                                    }}
+                                    id="ParticipantCountCard"
+                                  >
+                                    <div>
+                                      <FormLabel>Number of Days</FormLabel>
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (numberOfDays > 1) {
+                                              setNumberOfDays(numberOfDays - 1);
+                                            }
+                                          }}
+                                          disabled={numberOfDays <= 1}
+                                        >
+                                          <Minus className="h-4 w-4" />
+                                        </Button>
+                                        <FormControl>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            max={50}
+                                            value={numberOfDays}
+                                            disabled={true}
+                                            className="text-center font-medium"
+                                            readOnly
+                                          />
+                                        </FormControl>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (numberOfDays < 50) {
+                                              setNumberOfDays(numberOfDays + 1);
+                                            }
+                                          }}
+                                          disabled={numberOfDays >= 50}
+                                        >
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                </div>
+
+                                {/* Display calculated total */}
+                                <div className="text-sm text-muted-foreground text-center">
+                                  Total: {numberOfDays * numberOfVehicles}{" "}
+                                  {numberOfDays * numberOfVehicles === 1
+                                    ? "day"
+                                    : "days"}{" "}
+                                  ({numberOfVehicles}{" "}
+                                  {numberOfVehicles === 1
+                                    ? "vehicle"
+                                    : "vehicles"}{" "}
+                                  × {numberOfDays}{" "}
+                                  {numberOfDays === 1 ? "day" : "days"})
+                                </div>
                               </div>
-                              {/* <div className="text-sm text-muted-foreground text-center">
-                            {field.value}{" "}
-                            {field.value === 1 ? "Person" : "People"}
-                          </div> */}
                             </FormItem>
-                          </>
-                        );
-                      }}
-                    />
+                          );
+                        }}
+                      />
+                    ) : (
+                      // Regular participant count for other experiences
+                      <FormField
+                        control={form.control}
+                        name="participant_count"
+                        render={({ field }) => {
+                          const [inputValue, setInputValue] = useState(
+                            field.value.toString()
+                          );
+
+                          return (
+                            <>
+                              <FormItem id="participant-count-form-item">
+                                <div className="flex items-center gap-2 justify-between">
+                                  <Card
+                                    style={{
+                                      width: "100%",
+                                      padding: "3px 10px",
+                                    }}
+                                    id="ParticipantCountCard"
+                                  >
+                                    <div>
+                                      <FormLabel>
+                                        Number of Participants
+                                      </FormLabel>
+                                      {selectedSlotId &&
+                                        availableSpots !== undefined && <></>}
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        {/* Minus Button */}
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (field.value > 1) {
+                                              const newValue = field.value - 1;
+                                              field.onChange(newValue);
+                                              setInputValue(
+                                                newValue.toString()
+                                              );
+                                            }
+                                          }}
+                                          disabled={field.value <= 1}
+                                        >
+                                          <Minus className="h-4 w-4" />
+                                        </Button>
+
+                                        {/* Input Field */}
+                                        <FormControl>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            max={maxParticipants}
+                                            value={inputValue}
+                                            disabled={true}
+                                            onChange={(e) => {
+                                              setInputValue(e.target.value);
+                                            }}
+                                            onBlur={(e) => {
+                                              const value = parseInt(
+                                                e.target.value
+                                              );
+                                              if (isNaN(value) || value < 1) {
+                                                field.onChange(1);
+                                                setInputValue("1");
+                                              } else if (
+                                                value > maxParticipants
+                                              ) {
+                                                field.onChange(maxParticipants);
+                                                setInputValue(
+                                                  maxParticipants.toString()
+                                                );
+                                              } else {
+                                                field.onChange(value);
+                                                setInputValue(value.toString());
+                                              }
+                                            }}
+                                            className="text-center font-medium"
+                                            placeholder="1"
+                                          />
+                                        </FormControl>
+
+                                        {/* Plus Button */}
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (field.value < maxParticipants) {
+                                              const newValue = field.value + 1;
+                                              field.onChange(newValue);
+                                              setInputValue(
+                                                newValue.toString()
+                                              );
+                                            }
+                                          }}
+                                          disabled={
+                                            field.value >= maxParticipants ||
+                                            availableSpots === 0
+                                          }
+                                        >
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                </div>
+                              </FormItem>
+                            </>
+                          );
+                        }}
+                      />
+                    )}
 
                     {/* Single Participant Form */}
                     <Card id="primary-contact-details-card">
