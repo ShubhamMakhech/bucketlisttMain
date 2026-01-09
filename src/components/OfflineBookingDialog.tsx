@@ -500,141 +500,272 @@ export const OfflineBookingDialog = ({
         data.contact_person_number.toString().length !== 10
           ? data.contact_person_number
           : "+91" + data.contact_person_number.toString();
-      if (
-        experienceDetails?.location !== null &&
-        experienceDetails?.location2 !== null &&
-        experienceDetails?.location2 !== "" &&
-        experienceDetails?.location !== ""
-      ) {
-        // Two location template with PDF
-        customerWhatsappBody = {
-          integrated_number: "919274046332",
-          content_type: "template",
-          payload: {
-            messaging_product: "whatsapp",
-            type: "template",
-            template: {
-              name: "user_ticket_confirmation_two_location_v2",
-              language: {
-                code: "en",
-                policy: "deterministic",
-              },
-              namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
-              to_and_components: [
-                {
-                  to: [phoneNumber],
-                  components: {
-                    // Always include header_1 if we have a valid PDF URL
-                    ...(hasValidPdfUrl
-                      ? {
-                          header_1: {
-                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                            type: "document",
-                            value: pdfUrl,
-                          },
-                        }
-                      : {}),
-                    body_1: {
-                      type: "text",
-                      value: data.contact_person_name,
-                    },
-                    body_2: {
-                      type: "text",
-                      value: activity?.name || "",
-                    },
-                    body_3: {
-                      type: "text",
-                      value: formattedDateTime,
-                    },
-                    body_4: {
-                      type: "text",
-                      value: experienceDetails?.location || "",
-                    },
-                    body_5: {
-                      type: "text",
-                      value: experienceDetails?.location2 || "",
-                    },
-                    body_6: {
-                      type: "text",
-                      value: data.total_participants.toString(),
-                    },
-                    body_7: {
-                      type: "text",
-                      value: (bookingAmount - dueAmount).toFixed(2).toString(),
-                    },
-                    body_8: {
-                      type: "text",
-                      value: dueAmount.toFixed(2).toString() || "0",
+      if (hasValidPdfUrl) {
+        if (
+          experienceDetails?.location !== null &&
+          experienceDetails?.location2 !== null &&
+          experienceDetails?.location2 !== "" &&
+          experienceDetails?.location !== ""
+        ) {
+          // Two location template with PDF
+          customerWhatsappBody = {
+            integrated_number: "919274046332",
+            content_type: "template",
+            payload: {
+              messaging_product: "whatsapp",
+              type: "template",
+              template: {
+                name: "user_ticket_confirmation_two_location_v2",
+                language: {
+                  code: "en",
+                  policy: "deterministic",
+                },
+                namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+                to_and_components: [
+                  {
+                    to: [phoneNumber],
+                    components: {
+                      // Always include header_1 if we have a valid PDF URL
+                      ...(hasValidPdfUrl
+                        ? {
+                            header_1: {
+                              filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                              type: "document",
+                              value: pdfUrl,
+                            },
+                          }
+                        : {}),
+                      body_1: {
+                        type: "text",
+                        value: data.contact_person_name,
+                      },
+                      body_2: {
+                        type: "text",
+                        value: activity?.name || "",
+                      },
+                      body_3: {
+                        type: "text",
+                        value: formattedDateTime,
+                      },
+                      body_4: {
+                        type: "text",
+                        value: experienceDetails?.location || "",
+                      },
+                      body_5: {
+                        type: "text",
+                        value: experienceDetails?.location2 || "",
+                      },
+                      body_6: {
+                        type: "text",
+                        value: data.total_participants.toString(),
+                      },
+                      body_7: {
+                        type: "text",
+                        value: (bookingAmount - dueAmount)
+                          .toFixed(2)
+                          .toString(),
+                      },
+                      body_8: {
+                        type: "text",
+                        value: dueAmount.toFixed(2).toString() || "0",
+                      },
                     },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-        };
+          };
+        } else {
+          // Single location template with PDF
+          customerWhatsappBody = {
+            integrated_number: "919274046332",
+            content_type: "template",
+            payload: {
+              messaging_product: "whatsapp",
+              type: "template",
+              template: {
+                name: "confirmation_user_with_ticket",
+                language: {
+                  code: "en",
+                  policy: "deterministic",
+                },
+                namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+                to_and_components: [
+                  {
+                    to: [phoneNumber],
+                    components: {
+                      // Always include header_1 if we have a valid PDF URL
+                      ...(hasValidPdfUrl
+                        ? {
+                            header_1: {
+                              filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                              type: "document",
+                              value: pdfUrl,
+                            },
+                          }
+                        : {}),
+                      body_1: {
+                        type: "text",
+                        value: data.contact_person_name,
+                      },
+                      body_2: {
+                        type: "text",
+                        value: activity?.name || "",
+                      },
+                      body_3: {
+                        type: "text",
+                        value: formattedDateTime,
+                      },
+                      body_4: {
+                        type: "text",
+                        value: experienceDetails?.location || "",
+                      },
+                      body_5: {
+                        type: "text",
+                        value: data.total_participants.toString(),
+                      },
+                      body_6: {
+                        type: "text",
+                        value: (bookingAmount - dueAmount)
+                          .toFixed(2)
+                          .toString(),
+                      },
+                      body_7: {
+                        type: "text",
+                        value: dueAmount.toFixed(2).toString() || "0",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          };
+        }
       } else {
-        // Single location template with PDF
-        customerWhatsappBody = {
-          integrated_number: "919274046332",
-          content_type: "template",
-          payload: {
-            messaging_product: "whatsapp",
-            type: "template",
-            template: {
-              name: "confirmation_user_with_ticket",
-              language: {
-                code: "en",
-                policy: "deterministic",
-              },
-              namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
-              to_and_components: [
-                {
-                  to: [phoneNumber],
-                  components: {
-                    // Always include header_1 if we have a valid PDF URL
-                    ...(hasValidPdfUrl
-                      ? {
-                          header_1: {
-                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                            type: "document",
-                            value: pdfUrl,
-                          },
-                        }
-                      : {}),
-                    body_1: {
-                      type: "text",
-                      value: data.contact_person_name,
-                    },
-                    body_2: {
-                      type: "text",
-                      value: activity?.name || "",
-                    },
-                    body_3: {
-                      type: "text",
-                      value: formattedDateTime,
-                    },
-                    body_4: {
-                      type: "text",
-                      value: experienceDetails?.location || "",
-                    },
-                    body_5: {
-                      type: "text",
-                      value: data.total_participants.toString(),
-                    },
-                    body_6: {
-                      type: "text",
-                      value: (bookingAmount - dueAmount).toFixed(2).toString(),
-                    },
-                    body_7: {
-                      type: "text",
-                      value: dueAmount.toFixed(2).toString() || "0",
+        if (
+          experienceDetails?.location !== null &&
+          experienceDetails?.location2 !== null &&
+          experienceDetails?.location2 !== "" &&
+          experienceDetails?.location !== ""
+        ) {
+          customerWhatsappBody = {
+            integrated_number: "919274046332",
+            content_type: "template",
+            payload: {
+              messaging_product: "whatsapp",
+              type: "template",
+              template: {
+                name: "booking_confirmation_two_location",
+                language: {
+                  code: "en",
+                  policy: "deterministic",
+                },
+                namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+                to_and_components: [
+                  {
+                    to: [phoneNumber],
+                    components: {
+                      // Always include header_1 if we have a valid PDF URL
+                      body_1: {
+                        type: "text",
+                        value: data.contact_person_name,
+                      },
+                      body_2: {
+                        type: "text",
+                        value: activity?.name || "",
+                      },
+                      body_3: {
+                        type: "text",
+                        value: formattedDateTime,
+                      },
+                      body_4: {
+                        type: "text",
+                        value: experienceDetails?.location || "",
+                      },
+                      body_5: {
+                        type: "text",
+                        value: experienceDetails?.location2 || "",
+                      },
+                      body_6: {
+                        type: "text",
+                        value: data.total_participants.toString(),
+                      },
+                      body_7: {
+                        type: "text",
+                        value: (bookingAmount - dueAmount)
+                          .toFixed(2)
+                          .toString(),
+                      },
+                      body_8: {
+                        type: "text",
+                        value: dueAmount.toFixed(2).toString() || "0",
+                      },
                     },
                   },
-                },
-              ],
+                ],
+              },
             },
-          },
-        };
+          };
+        } else {
+          customerWhatsappBody = {
+            integrated_number: "919274046332",
+            content_type: "template",
+            payload: {
+              messaging_product: "whatsapp",
+              type: "template",
+              template: {
+                name: "booking_confirmation_two_location",
+                language: {
+                  code: "en",
+                  policy: "deterministic",
+                },
+                namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+                to_and_components: [
+                  {
+                    to: [phoneNumber],
+                    components: {
+                      // Always include header_1 if we have a valid PDF URL
+                      body_1: {
+                        type: "text",
+                        value: data.contact_person_name,
+                      },
+                      body_2: {
+                        type: "text",
+                        value: activity?.name || "",
+                      },
+                      body_3: {
+                        type: "text",
+                        value: formattedDateTime,
+                      },
+                      body_4: {
+                        type: "text",
+                        value: "",
+                      },
+                      body_5: {
+                        type: "text",
+                        value: experienceDetails?.location || "",
+                      },
+                      body_6: {
+                        type: "text",
+                        value: data.total_participants.toString(),
+                      },
+                      body_7: {
+                        type: "text",
+                        value: (bookingAmount - dueAmount)
+                          .toFixed(2)
+                          .toString(),
+                      },
+                      body_8: {
+                        type: "text",
+                        value: dueAmount.toFixed(2).toString() || "0",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          };
+        }
       }
 
       // Log WhatsApp body structure before sending (for debugging) - non-blocking
