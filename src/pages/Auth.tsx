@@ -3,7 +3,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { SignInForm } from "@/components/auth/SignInForm";
+import { SignInFormOTP } from '@/components/auth/SignInFormOTP'
 import { SignUpForm } from "@/components/auth/SignUpForm";
+import { SignUpFormOTP } from '@/components/auth/SignUpFormOTP'
 import { VendorSignUpForm } from "@/components/auth/VendorSignUpForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { Home } from "lucide-react";
@@ -55,6 +57,16 @@ export default function Auth() {
   // Handle navigation after authentication
   useEffect(() => {
     if (user && !loading && !roleLoading && !isResetMode) {
+      // Check if there's a saved path from AuthModal (like Google SSO)
+      const loggedInPath = localStorage.getItem("loggedInPath");
+      if (loggedInPath) {
+        // Redirect to the saved path and clear it
+        localStorage.removeItem("loggedInPath");
+        window.location.href = loggedInPath;
+        return;
+      }
+      
+      // Default navigation
       if (isVendor) {
         navigate("/profile");
       } else {
@@ -109,10 +121,10 @@ export default function Auth() {
           isVendorMode ? (
             <VendorSignUpForm onToggleMode={() => setIsSignUp(false)} />
           ) : (
-            <SignUpForm onToggleMode={() => setIsSignUp(false)} />
+            <SignUpFormOTP onToggleMode={() => setIsSignUp(false)} />
           )
         ) : (
-          <SignInForm onToggleMode={() => setIsSignUp(true)} />
+          <SignInFormOTP onToggleMode={() => setIsSignUp(true)} />
         )}
       </div>
     </div>

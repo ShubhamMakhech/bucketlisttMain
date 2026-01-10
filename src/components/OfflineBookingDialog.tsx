@@ -156,7 +156,7 @@ export const OfflineBookingDialog = ({
         // For agents (not admins), only show experiences where for_agent is true
         query = query.eq("for_agent", true);
       }
-      // For admins, no filter - get all active experiences
+      // For agents/admins, no filter - get all active experiences
 
       query = query.order("title", { ascending: true });
 
@@ -1156,6 +1156,22 @@ export const OfflineBookingDialog = ({
       // Close dialog and refresh after all confirmations are sent
       onBookingSuccess();
       handleClose();
+
+      // Run confirmations in the background (non-blocking)
+      // Use setTimeout to ensure it runs after the UI updates
+      setTimeout(() => {
+        sendBookingConfirmation(
+          data,
+          booking.id,
+          experience,
+          selectedActivity
+        ).catch((error) => {
+          // Log background errors but don't show to user (booking is already created)
+          console.error("Background notification error:", error);
+          // Optionally, you could show a subtle notification that some notifications failed
+          // but the booking was still created successfully
+        });
+      }, 100);
     } catch (error: any) {
       console.error("Offline booking creation error:", error);
       toast({

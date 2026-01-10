@@ -173,6 +173,10 @@ export const BookingDialog = ({
   const [advancePayment, setAdvancePayment] = useState<number>(0);
   const [isReferralCodeExpanded, setIsReferralCodeExpanded] = useState(false);
   const [isCouponCodeExpanded, setIsCouponCodeExpanded] = useState(false);
+  const [prefilledPhone, setPrefilledPhone] = useState<string | undefined>(
+    undefined
+  );
+  const prefilledPhoneRef = useRef<string | undefined>(undefined);
   // State for Bike on Rent in Rishikesh - separate counters for vehicles and days
   const [numberOfVehicles, setNumberOfVehicles] = useState(1);
   const [numberOfDays, setNumberOfDays] = useState(1);
@@ -221,6 +225,42 @@ export const BookingDialog = ({
       setIsBookingDialogOpen(true);
     }
   }, [form]);
+
+  // Restore booking data when user becomes authenticated (after OTP sign-up/sign-in)
+  useEffect(() => {
+    if (user) {
+      const bookingModalData = localStorage.getItem("bookingModalData");
+      if (bookingModalData) {
+        const data = JSON.parse(bookingModalData);
+
+        // Set form values individually
+        form.setValue("participant.name", data.data.participant.name);
+        form.setValue("participant.email", data.data.participant.email);
+        form.setValue(
+          "participant.phone_number",
+          data.data.participant.phone_number
+        );
+        form.setValue("participant_count", data.data.participant_count);
+        form.setValue("note_for_guide", data.data.note_for_guide || "");
+        form.setValue("terms_accepted", data.data.terms_accepted);
+        form.setValue("referral_code", data.data.referral_code || "");
+        form.setValue("coupon_code", data.data.coupon_code || "");
+        form.setValue("booking_date", new Date(data.selectedDate));
+        form.setValue("time_slot_id", data.selectedSlotId);
+
+        // Set other state values
+        setSelectedDate(new Date(data.selectedDate));
+        setSelectedSlotId(data.selectedSlotId);
+        setSelectedActivityId(data.selectedActivityId);
+        setCurrentStep(3);
+
+        // Clear localStorage
+        localStorage.removeItem("bookingModalData");
+        setIsBookingDialogOpen(true);
+        setIsAuthModalOpen(false); // Close auth modal if it's still open
+      }
+    }
+  }, [user, form]);
 
   // useEffect(() => {
   //   const bookingModalData = localStorage.getItem('bookingModalData');
@@ -1236,6 +1276,12 @@ export const BookingDialog = ({
         "bookingModalData",
         JSON.stringify(bookingModalData)
       );
+
+      // Store phone number for pre-filling in auth modal
+      const phoneNumber = data.participant.phone_number;
+      // Use both state and ref to ensure it's available immediately
+      setPrefilledPhone(phoneNumber);
+      prefilledPhoneRef.current = phoneNumber;
       setIsAuthModalOpen(true);
       return;
     }
@@ -2683,7 +2729,26 @@ export const BookingDialog = ({
         )}
         <AuthModal
           open={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
+          onClose={() => {
+            console.log(
+              "[BookingDialog] Closing auth modal, clearing prefilledPhone"
+            );
+            setIsAuthModalOpen(false);
+            setPrefilledPhone(undefined); // Clear prefilled phone when modal closes
+            prefilledPhoneRef.current = undefined;
+          }}
+          prefilledPhoneNumber={(() => {
+            const phone = prefilledPhone || prefilledPhoneRef.current;
+            console.log(
+              "[BookingDialog] Passing to AuthModal - prefilledPhone state:",
+              prefilledPhone,
+              "ref:",
+              prefilledPhoneRef.current,
+              "final:",
+              phone
+            );
+            return phone;
+          })()}
         />
 
         {/* Hidden Dummy Invoice for PDF Generation */}

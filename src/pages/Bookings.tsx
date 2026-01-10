@@ -18,6 +18,7 @@ const Bookings = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const { isVendor, isAgent, isAdmin } = useUserRole();
   const queryClient = useQueryClient();
   const [isExporting, setIsExporting] = useState(false);

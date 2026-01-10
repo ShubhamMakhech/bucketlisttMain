@@ -5,6 +5,7 @@ import DownloadPdfButton from "./DownloadPdfButton";
 /**
  * @param {Object} props
  * @param {string} [props.participantName="divyam"]
+//  * @param {string} [props.experienceTitle="Experience Title"]
  * @param {string} [props.experienceTitle="Experience Title"]
  * @param {string} [props.activityName="9 Km"]
  * @param {string} [props.dateTime="20/12/2025 - 10:00 AM - 12:00 PM"]

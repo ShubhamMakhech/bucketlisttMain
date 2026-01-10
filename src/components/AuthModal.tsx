@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { Modal } from 'antd'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUserRole } from '@/hooks/useUserRole'
-import { SignInForm } from '@/components/auth/SignInForm'
-import { SignUpForm } from '@/components/auth/SignUpForm'
+import { SignInFormOTP } from '@/components/auth/SignInFormOTP'
+import { SignUpFormOTP } from '@/components/auth/SignUpFormOTP'
 import { VendorSignUpForm } from '@/components/auth/VendorSignUpForm'
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm'
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
@@ -25,15 +25,23 @@ const modalStyles = `
 interface AuthModalProps {
     open: boolean
     onClose: () => void
+    prefilledPhoneNumber?: string
 }
 
-export function AuthModal({ open, onClose }: AuthModalProps) {
+export function AuthModal({ open, onClose, prefilledPhoneNumber }: AuthModalProps) {
     const [isSignUp, setIsSignUp] = useState(false)
     const [isVendorMode, setIsVendorMode] = useState(false)
     const [isResetMode, setIsResetMode] = useState(false)
     const [isForgotPassword, setIsForgotPassword] = useState(false)
     const { user, loading } = useAuth()
     const { isVendor, loading: roleLoading } = useUserRole()
+
+    // Save current path when modal opens (like Google SSO does)
+    useEffect(() => {
+        if (open && !user) {
+            localStorage.setItem("loggedInPath", window.location.pathname + window.location.search + window.location.hash)
+        }
+    }, [open, user])
 
     // Handle authentication success
     useEffect(() => {
@@ -120,16 +128,18 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
                         isVendorMode ? (
                             <VendorSignUpForm onToggleMode={() => setIsSignUp(false)} />
                         ) : (
-                            <SignUpForm
+                            <SignUpFormOTP
+                                key={`signup-${prefilledPhoneNumber || 'empty'}`}
                                 onToggleMode={() => setIsSignUp(false)}
-                                onVendorMode={handleVendorMode}
+                                prefilledPhoneNumber={prefilledPhoneNumber}
                             />
                         )
                     ) : (
-                        <SignInForm
+                        <SignInFormOTP
+                            key={`signin-${prefilledPhoneNumber || 'empty'}`}
                             onToggleMode={() => setIsSignUp(true)}
-                            onResetMode={handleResetMode}
                             onForgotPassword={handleForgotPassword}
+                            prefilledPhoneNumber={prefilledPhoneNumber}
                         />
                     )}
                 </div>

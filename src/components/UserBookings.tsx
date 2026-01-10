@@ -1449,8 +1449,37 @@ export const UserBookings = forwardRef((props, ref) => {
       });
     }
 
-    // Apply sorting
+    // Apply sorting - Always sort by booking date and time (descending: latest to earliest)
     filtered.sort((a, b) => {
+      // Helper function to get booking datetime for sorting
+      const getBookingDateTime = (booking: any): number => {
+        const bookingDate = new Date(booking.booking_date);
+        const timeslot = booking.time_slots;
+
+        // If timeslot exists and has start_time, combine date and time
+        if (timeslot?.start_time) {
+          const [hours, minutes, seconds] = timeslot.start_time
+            .split(":")
+            .map(Number);
+          bookingDate.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+        } else {
+          // For offline bookings without timeslot, use end of day (23:59:59)
+          bookingDate.setHours(23, 59, 59, 999);
+        }
+
+        return bookingDate.getTime();
+      };
+
+      const aDateTime = getBookingDateTime(a);
+      const bDateTime = getBookingDateTime(b);
+
+      // Sort in descending order (latest to earliest)
+      return bDateTime - aDateTime;
+    });
+
+    // Legacy sorting code (kept for reference but not used)
+    // Apply sorting
+    /* filtered.sort((a, b) => {
       let aValue: any, bValue: any;
 
       // Handle column index sorting
@@ -1520,8 +1549,8 @@ export const UserBookings = forwardRef((props, ref) => {
               if (bookingTypeSort === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : "";
             case 7: // Date
               return new Date(booking.booking_date).getTime();
@@ -1697,6 +1726,7 @@ export const UserBookings = forwardRef((props, ref) => {
         }
       }
     });
+    */
 
     return filtered;
   }, [
@@ -3174,7 +3204,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                 </span>
               </div>
               <div className="mobile-info-item">
-                <span className="mobile-info-label">Date</span>
+                <span className="mobile-info-label">  Date</span>
                 <span className="mobile-info-value">
                   {format(new Date(booking.booking_date), "MMM d, yyyy")}
                 </span>
