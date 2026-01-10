@@ -58,6 +58,8 @@ import dayjs from "dayjs";
 import "./UserBookingsMobileCard.css";
 import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
 import { Label } from "@/components/ui/label";
+import { BookingTimeline } from "@/components/BookingTimeline";
+import { FileText as FileTextIcon } from "lucide-react";
 
 interface BookingWithDueAmount {
   due_amount?: number;
@@ -66,7 +68,7 @@ interface BookingWithDueAmount {
 
 export const UserBookings = forwardRef((props, ref) => {
   const { user } = useAuth();
-  console.log("user", user);
+
   const { isAgent, isAdmin, isVendor } = useUserRole();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -122,6 +124,7 @@ export const UserBookings = forwardRef((props, ref) => {
   const [cancelingBookingId, setCancelingBookingId] = React.useState<
     string | null
   >(null);
+  const [cancellationNote, setCancellationNote] = React.useState("");
 
   // Edit Booking Dialog State
   const [editBookingDialogOpen, setEditBookingDialogOpen] =
@@ -129,6 +132,9 @@ export const UserBookings = forwardRef((props, ref) => {
   const [bookingToEdit, setBookingToEdit] = React.useState<any>(null);
   const [isUpdatingBooking, setIsUpdatingBooking] = React.useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
+  const [timelineDialogOpen, setTimelineDialogOpen] = React.useState(false);
+  const [selectedBookingForTimeline, setSelectedBookingForTimeline] =
+    React.useState<string | null>(null);
 
   // Edit booking form state
   const [contactPersonName, setContactPersonName] = React.useState("");
@@ -415,13 +421,14 @@ export const UserBookings = forwardRef((props, ref) => {
       () => activityData?.name || "N/A",
       () =>
         booking.contact_person_number ||
-          profile?.phone_number ||
-          booking?.booking_participants?.[0]?.phone_number ? (
+        profile?.phone_number ||
+        booking?.booking_participants?.[0]?.phone_number ? (
           <a
-            href={`tel:${booking.contact_person_number ||
+            href={`tel:${
+              booking.contact_person_number ||
               profile?.phone_number ||
               booking?.booking_participants?.[0]?.phone_number
-              }`}
+            }`}
             className="text-blue-600 hover:underline text-xs"
           >
             {booking.contact_person_number ||
@@ -447,11 +454,11 @@ export const UserBookings = forwardRef((props, ref) => {
         if (bookingTypeRender === "canceled") return "Canceled";
         return timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-            timeslot.end_time
-          )}`
+              timeslot.end_time
+            )}`
           : isOfflineBooking
-            ? "Offline"
-            : "N/A";
+          ? "Offline"
+          : "N/A";
       },
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
@@ -481,8 +488,8 @@ export const UserBookings = forwardRef((props, ref) => {
               bookedByProfile?.first_name && bookedByProfile?.last_name
                 ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                 : bookedByProfile?.email ||
-                bookedByProfile?.first_name ||
-                "Agent";
+                  bookedByProfile?.first_name ||
+                  "Agent";
           } else {
             bookingTypeDisplay = "offline";
           }
@@ -499,14 +506,15 @@ export const UserBookings = forwardRef((props, ref) => {
 
         return (
           <span
-            className={`px-2 py-1 rounded text-xs font-medium ${isCanceled
-              ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-              : isOffline
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              isCanceled
+                ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                : isOffline
                 ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                 : isAgentBooking
-                  ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                  : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-              }`}
+                ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+            }`}
           >
             {bookingTypeDisplay}
           </span>
@@ -670,10 +678,11 @@ export const UserBookings = forwardRef((props, ref) => {
                       activityName: activity?.name || "",
                       dateTime: booking.time_slots
                         ? `${format(
-                          new Date(booking.booking_date),
-                          "dd/MM/yyyy"
-                        )} - ${booking.time_slots.start_time} - ${booking.time_slots.end_time
-                        }`
+                            new Date(booking.booking_date),
+                            "dd/MM/yyyy"
+                          )} - ${booking.time_slots.start_time} - ${
+                            booking.time_slots.end_time
+                          }`
                         : format(new Date(booking.booking_date), "dd/MM/yyyy"),
                       pickUpLocation: experience?.location || "-",
                       spotLocation:
@@ -753,6 +762,25 @@ export const UserBookings = forwardRef((props, ref) => {
                   Edit Booking
                 </span>
               </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setIsActionsDropdownOpen((prev) => ({
+                      ...prev,
+                      [booking.id]: false,
+                    }));
+                    setSelectedBookingForTimeline(booking.id);
+                    setTimelineDialogOpen(true);
+                  }}
+                  className="justify-start h-auto py-1 px-3 font-normal hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-blue-200"
+                >
+                  {/* <FileTextIcon className="mr-2 h-4 w-4" /> */}
+                  <span className="font-semibold FontSetPerfect">
+                    View Timeline
+                  </span>
+                </DropdownMenuItem>
+              )}
               {!isCanceled && (
                 <>
                   {/* <DropdownMenuSeparator className="my-2" /> */}
@@ -932,20 +960,9 @@ export const UserBookings = forwardRef((props, ref) => {
           throw error;
         }
 
-        console.log("Bookings fetched successfully:", {
-          count: data?.length || 0,
-          isAdmin,
-          userId: user.id,
-        });
-
         // Debug: Log first booking to check if admin_note is present
         if (data && data.length > 0 && isAdmin) {
-          console.log("Sample booking with admin_note:", {
-            bookingId: data[0].id,
-            hasAdminNote: !!(data[0] as any)?.admin_note,
-            adminNote: (data[0] as any)?.admin_note,
-            allKeys: Object.keys(data[0] || {}),
-          });
+         
         }
 
         return data || [];
@@ -1257,11 +1274,11 @@ export const UserBookings = forwardRef((props, ref) => {
                 const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                  ? "Offline"
+                  : "";
               }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
@@ -1289,8 +1306,8 @@ export const UserBookings = forwardRef((props, ref) => {
                       bookedByProfile?.last_name
                       ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                       : bookedByProfile?.email ||
-                      bookedByProfile?.first_name ||
-                      "Agent";
+                          bookedByProfile?.first_name ||
+                          "Agent";
                   }
                 }
                 return "offline";
@@ -1384,8 +1401,8 @@ export const UserBookings = forwardRef((props, ref) => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                  b2bPrice4 * booking.total_participants -
-                  (bookingAmount5 - dueAmount3)
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -1899,11 +1916,11 @@ export const UserBookings = forwardRef((props, ref) => {
                   const isOfflineFilter = bookingTypeFilter === "offline";
                   return timeslot?.start_time && timeslot?.end_time
                     ? `${formatTime12Hour(
-                      timeslot.start_time
-                    )} - ${formatTime12Hour(timeslot.end_time)}`
+                        timeslot.start_time
+                      )} - ${formatTime12Hour(timeslot.end_time)}`
                     : isOfflineFilter
-                      ? "Offline"
-                      : "";
+                    ? "Offline"
+                    : "";
                 }
                 case 10: {
                   const bookingType = (booking as any)?.type || "online";
@@ -1923,8 +1940,8 @@ export const UserBookings = forwardRef((props, ref) => {
                         bookedByProfile?.last_name
                         ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                         : bookedByProfile?.email ||
-                        bookedByProfile?.first_name ||
-                        "Agent";
+                            bookedByProfile?.first_name ||
+                            "Agent";
                     }
                   }
                   return "offline";
@@ -2166,8 +2183,8 @@ export const UserBookings = forwardRef((props, ref) => {
             bookedByProfile?.first_name && bookedByProfile?.last_name
               ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
               : bookedByProfile?.email ||
-              bookedByProfile?.first_name ||
-              "Agent";
+                bookedByProfile?.first_name ||
+                "Agent";
           return agentName;
         }
       }
@@ -2209,7 +2226,10 @@ export const UserBookings = forwardRef((props, ref) => {
     try {
       const { error } = await supabase
         .from("bookings")
-        .update({ type: "canceled" })
+        .update({
+          type: "canceled",
+          cancellation_note: cancellationNote.trim() || null,
+        })
         .eq("id", bookingId);
 
       if (error) {
@@ -2230,6 +2250,7 @@ export const UserBookings = forwardRef((props, ref) => {
       // Close dialog after successful cancellation
       setCancelBookingDialogOpen(false);
       setBookingToCancel(null);
+      setCancellationNote("");
     } catch (error) {
       console.error("Error canceling booking:", error);
       toast({
@@ -2350,11 +2371,11 @@ export const UserBookings = forwardRef((props, ref) => {
               if (bookingTypeUnique === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                  timeslot.start_time
-                )} - ${formatTime12Hour(timeslot.end_time)}`
+                    timeslot.start_time
+                  )} - ${formatTime12Hour(timeslot.end_time)}`
                 : isOffline
-                  ? "Offline"
-                  : "";
+                ? "Offline"
+                : "";
             case 7:
               return format(new Date(booking.booking_date), "MMM d, yyyy");
             case 8:
@@ -2381,8 +2402,8 @@ export const UserBookings = forwardRef((props, ref) => {
                     bookedByProfile?.last_name
                     ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                     : bookedByProfile?.email ||
-                    bookedByProfile?.first_name ||
-                    "Agent";
+                        bookedByProfile?.first_name ||
+                        "Agent";
                 }
               }
               return "offline";
@@ -2472,8 +2493,8 @@ export const UserBookings = forwardRef((props, ref) => {
               return formatCurrency(
                 currency,
                 bookingAmount -
-                b2bPrice * booking.total_participants -
-                (bookingAmount - dueAmount)
+                  b2bPrice * booking.total_participants -
+                  (bookingAmount - dueAmount)
               );
             }
             case 21: {
@@ -2797,11 +2818,11 @@ export const UserBookings = forwardRef((props, ref) => {
                 const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                    timeslot.start_time
-                  )} - ${formatTime12Hour(timeslot.end_time)}`
+                      timeslot.start_time
+                    )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                  ? "Offline"
+                  : "";
               }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
@@ -2829,8 +2850,8 @@ export const UserBookings = forwardRef((props, ref) => {
                       bookedByProfile?.last_name
                       ? `${bookedByProfile.first_name} ${bookedByProfile.last_name}`.trim()
                       : bookedByProfile?.email ||
-                      bookedByProfile?.first_name ||
-                      "Agent";
+                          bookedByProfile?.first_name ||
+                          "Agent";
                   }
                 }
                 return "offline";
@@ -2922,8 +2943,8 @@ export const UserBookings = forwardRef((props, ref) => {
                 return formatCurrency(
                   currency,
                   bookingAmount5 -
-                  b2bPrice4 * booking.total_participants -
-                  (bookingAmount5 - dueAmount3)
+                    b2bPrice4 * booking.total_participants -
+                    (bookingAmount5 - dueAmount3)
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -3052,8 +3073,9 @@ export const UserBookings = forwardRef((props, ref) => {
 
     return (
       <Card
-        className={`h-full ${isCanceled ? "bg-red-50 border-red-200 dark:bg-red-950/20" : ""
-          }`}
+        className={`h-full ${
+          isCanceled ? "bg-red-50 border-red-200 dark:bg-red-950/20" : ""
+        }`}
         id=""
       >
         <CardHeader className="pb-0 p-0 relative">
@@ -3204,7 +3226,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                 </span>
               </div>
               <div className="mobile-info-item">
-                <span className="mobile-info-label">  Date</span>
+                <span className="mobile-info-label"> Date</span>
                 <span className="mobile-info-value">
                   {format(new Date(booking.booking_date), "MMM d, yyyy")}
                 </span>
@@ -3219,8 +3241,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                       booking.time_slots?.end_time
                       ? formatTime12Hour(booking.time_slots.start_time)
                       : bookingType === "offline"
-                        ? "Offline"
-                        : "N/A";
+                      ? "Offline"
+                      : "N/A";
                   })()}
                 </span>
               </div>
@@ -3243,13 +3265,14 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                 <span className="mobile-info-label">Contact</span>
                 <span className="mobile-info-value">
                   {booking.contact_person_number ||
-                    profile?.phone_number ||
-                    booking?.booking_participants?.[0]?.phone_number ? (
+                  profile?.phone_number ||
+                  booking?.booking_participants?.[0]?.phone_number ? (
                     <a
-                      href={`tel:${booking.contact_person_number ||
+                      href={`tel:${
+                        booking.contact_person_number ||
                         profile?.phone_number ||
                         booking?.booking_participants?.[0]?.phone_number
-                        }`}
+                      }`}
                       className="mobile-contact-link"
                     >
                       {booking.contact_person_number ||
@@ -3406,7 +3429,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                           currency,
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -3418,7 +3441,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           booking.time_slots?.activities?.price *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -3430,7 +3453,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                           (booking.time_slots?.activities?.price -
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice)) *
-                          booking.total_participants
+                            booking.total_participants
                         )}
                       </span>
                     </div>
@@ -3455,7 +3478,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (Number(bookingAmount) - dueAmount)
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -3467,10 +3490,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                          (booking.b2bPrice ||
-                            booking.time_slots?.activities?.b2bPrice) *
-                          booking.total_participants -
-                          (Number(bookingAmount) - dueAmount)
+                            (booking.b2bPrice ||
+                              booking.time_slots?.activities?.b2bPrice) *
+                              booking.total_participants -
+                            (Number(bookingAmount) - dueAmount)
                         )}
                       </span>
                     </div>
@@ -3558,10 +3581,11 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         return (
                           <label
                             key={index}
-                            className={`flex items-center gap-2 p-2 rounded ${isHiddenForAgent
-                              ? "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer hover:bg-muted/30"
-                              }`}
+                            className={`flex items-center gap-2 p-2 rounded ${
+                              isHiddenForAgent
+                                ? "opacity-50 cursor-not-allowed"
+                                : "cursor-pointer hover:bg-muted/30"
+                            }`}
                           >
                             <input
                               type="checkbox"
@@ -3654,7 +3678,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   >
                     {selectedTimeslotId
                       ? uniqueTimeslots.find((t) => t.id === selectedTimeslotId)
-                        ?.displayName || "Timeslot"
+                          ?.displayName || "Timeslot"
                       : "Timeslot"}
                   </Button>
                 </PopoverTrigger>
@@ -3716,8 +3740,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   >
                     {selectedActivityId
                       ? uniqueActivities.find(
-                        (a) => a.id === selectedActivityId
-                      )?.name || "Activity"
+                          (a) => a.id === selectedActivityId
+                        )?.name || "Activity"
                       : "Activity"}
                   </Button>
                 </PopoverTrigger>
@@ -3941,11 +3965,11 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                     value={
                       selectedDate
                         ? [
-                          dayjs(selectedDate),
-                          selectedEndDate
-                            ? dayjs(selectedEndDate)
-                            : dayjs(selectedDate),
-                        ]
+                            dayjs(selectedDate),
+                            selectedEndDate
+                              ? dayjs(selectedEndDate)
+                              : dayjs(selectedDate),
+                          ]
                         : null
                     }
                     onChange={(dates, dateStrings) => {
@@ -4177,17 +4201,19 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                               headerRefs.current[originalIndex] = el;
                             }}
                             data-column-index={originalIndex}
-                            className={`px-[10px] py-0.5 text-left font-medium text-xs whitespace-normal relative cursor-pointer hover:bg-gray-100 select-none bg-white ${draggedColumnIndex === originalIndex
-                              ? "opacity-50"
-                              : ""
-                              } ${dragOverColumnIndex === originalIndex
+                            className={`px-[10px] py-0.5 text-left font-medium text-xs whitespace-normal relative cursor-pointer hover:bg-gray-100 select-none bg-white ${
+                              draggedColumnIndex === originalIndex
+                                ? "opacity-50"
+                                : ""
+                            } ${
+                              dragOverColumnIndex === originalIndex
                                 ? "border-2 border-blue-500"
                                 : ""
-                              } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
+                            } ${sortBy === originalIndex ? "bg-blue-50" : ""}`}
                             style={{
                               width: columnWidths[originalIndex],
                               paddingLeft: "10px",
-                              paddingRight: "10px"
+                              paddingRight: "10px",
                             }}
                             draggable={true}
                             onDragStart={() =>
@@ -4221,7 +4247,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                 <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                               </svg>
                               <span className="flex-1 whitespace-normal">
-                                {columnHeaders[originalIndex]} {getSortIndicator(originalIndex)}
+                                {columnHeaders[originalIndex]}{" "}
+                                {getSortIndicator(originalIndex)}
                               </span>
                               <div className="flex items-center gap-1 flex-shrink-0">
                                 {originalIndex !== 24 && (
@@ -4258,11 +4285,12 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                     title="Filter"
                                   >
                                     <Filter
-                                      className={`w-3 h-3 ${columnFilters[originalIndex] &&
+                                      className={`w-3 h-3 ${
+                                        columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length > 0
-                                        ? "text-blue-600"
-                                        : "text-gray-400"
-                                        }`}
+                                          ? "text-blue-600"
+                                          : "text-gray-400"
+                                      }`}
                                     />
                                   </span>
                                 )}
@@ -4295,7 +4323,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                       </span>
                                       {columnFilters[originalIndex] &&
                                         columnFilters[originalIndex].length >
-                                        0 && (
+                                          0 && (
                                           <Button
                                             variant="ghost"
                                             size="sm"
@@ -4317,11 +4345,12 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
                                           sortOrder === "asc"
-                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                          : "hover:bg-gray-200"
-                                          }`}
+                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                            : "hover:bg-gray-200"
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -4343,11 +4372,12 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-6 px-2 text-xs flex-1 ${sortBy === originalIndex &&
+                                        className={`h-6 px-2 text-xs flex-1 ${
+                                          sortBy === originalIndex &&
                                           sortOrder === "desc"
-                                          ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                          : "hover:bg-gray-200"
-                                          }`}
+                                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                            : "hover:bg-gray-200"
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (
@@ -4423,8 +4453,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                   {/* Filter Options List */}
                                   <div className="p-2 max-h-[200px] overflow-y-auto bg-white">
                                     {getUniqueColumnValues[originalIndex] &&
-                                      getUniqueColumnValues[originalIndex]
-                                        .length > 0 ? (
+                                    getUniqueColumnValues[originalIndex]
+                                      .length > 0 ? (
                                       (() => {
                                         const searchQuery =
                                           filterSearchQueries[
@@ -4576,8 +4606,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                        ? booking.note_for_guide || ""
-                                        : ""
+                                      ? booking.note_for_guide || ""
+                                      : ""
                                   }
                                 >
                                   {renderCellContent(
@@ -4667,12 +4697,6 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                     if (!editingAdminNote) return;
 
                     try {
-                      console.log("Updating admin note:", {
-                        bookingId: editingAdminNote.bookingId,
-                        note: editingAdminNote.note,
-                        isAdmin: isAdmin,
-                      });
-
                       const { data: updateData, error } = await supabase
                         .from("bookings")
                         .update({
@@ -4691,11 +4715,6 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         });
                         throw error;
                       }
-
-                      console.log(
-                        "Admin note updated successfully:",
-                        updateData
-                      );
 
                       toast({
                         title: "Admin note updated",
@@ -4739,10 +4758,11 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
             setCancelBookingDialogOpen(open);
             if (!open) {
               setBookingToCancel(null);
+              setCancellationNote("");
             }
           }}
         >
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-red-600">
                 <XCircle className="h-5 w-5" />
@@ -4759,6 +4779,24 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   </div>
                 )}
               </div>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="cancellationNote"
+                  className="text-sm font-medium"
+                >
+                  Cancellation Note (Optional)
+                </Label>
+                <Textarea
+                  id="cancellationNote"
+                  placeholder="Enter reason for cancellation..."
+                  value={cancellationNote}
+                  onChange={(e) => setCancellationNote(e.target.value)}
+                  className="min-h-[100px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This note will be saved in the booking timeline for reference.
+                </p>
+              </div>
               <div className="bg-red-50 border border-red-200 rounded-md p-3">
                 <p className="text-xs text-red-800">
                   <strong>Note:</strong> This action cannot be undone. The
@@ -4772,6 +4810,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                 onClick={() => {
                   setCancelBookingDialogOpen(false);
                   setBookingToCancel(null);
+                  setCancellationNote("");
                 }}
                 disabled={cancelingBookingId === bookingToCancel?.id}
               >
@@ -4813,6 +4852,26 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
           }}
         />
       )}
+
+      {/* Booking Timeline Dialog */}
+      <Dialog
+        open={timelineDialogOpen}
+        onOpenChange={(open) => {
+          setTimelineDialogOpen(open);
+          if (!open) {
+            setSelectedBookingForTimeline(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[90vw] max-w-[1200px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Booking Timeline</DialogTitle>
+          </DialogHeader>
+          {selectedBookingForTimeline && (
+            <BookingTimeline bookingId={selectedBookingForTimeline} />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Booking Dialog */}
       <Dialog
