@@ -94,44 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // For signin, check if user exists using the check-user-exists edge function
-      // This bypasses RLS and uses the same logic that works
-      if (isSignIn) {
-        try {
-          const { data: checkResult, error: checkError } =
-            await supabase.functions.invoke("check-user-exists", {
-              body: {
-                email: type === "email" ? identifier : undefined,
-                phoneNumber: type === "sms" ? formattedIdentifier : undefined,
-              },
-            });
-
-          if (checkError) {
-            return {
-              error: {
-                message: "Failed to validate identifier. Please try again.",
-              },
-            };
-          }
-
-          if (!checkResult?.userExists) {
-            return {
-              error: {
-                message:
-                  type === "email"
-                    ? "No account found with this email. Please sign up first."
-                    : "No account found with this phone number. Please sign up first.",
-              },
-            };
-          }
-        } catch (error: any) {
-          return {
-            error: {
-              message: "Failed to validate identifier. Please try again.",
-            },
-          };
-        }
-      }
+      // Note: For sign-in, we no longer check if user exists because signin-with-otp
+      // will automatically create the account if the user doesn't exist (auto sign-up)
 
       const { data, error } = await supabase.functions.invoke("send-otp", {
         body: {

@@ -16,6 +16,7 @@ interface SignInWithOTPRequest {
   identifier: string; // email or phone number
   otp: string;
   type: "email" | "sms";
+  role?: "customer" | "vendor" | "agent";
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -24,7 +25,12 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    let { identifier, otp, type }: SignInWithOTPRequest = await req.json();
+    let {
+      identifier,
+      otp,
+      type,
+      role = "customer",
+    }: SignInWithOTPRequest = await req.json();
 
     if (!identifier || !otp) {
       return new Response(
@@ -97,6 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Use the same logic as check-user-exists to ensure consistency
     let profile: any = null;
     let userEmail: string | null = null;
+    let createdAuthUser: any = null; // Store auth user if we auto-create account
 
     if (type === "email") {
       // Find user by email in profiles - try exact match
@@ -122,20 +129,111 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       if (!profileData || profileData.length === 0) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: "No account found with this email. Please sign up first.",
-          }),
-          {
-            status: 404,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          }
-        );
-      }
+        // User doesn't exist - create new account (auto sign-up)
+        const email = identifier.trim();
 
-      profile = profileData[0];
-      userEmail = profile.email;
+        // Check if auth user already exists with this email
+        let authUser: any = null;
+        try {
+          const { data: userList, error: listError } =
+            await supabase.auth.admin.listUsers();
+
+          if (!listError && userList) {
+            authUser = userList.users.find((u: any) => u.email === email);
+          }
+        } catch (error) {
+          console.error("Error checking existing auth user:", error);
+        }
+
+        // If auth user already exists, return error
+        if (authUser) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "User already registered",
+              code: "user_already_exists",
+            }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            }
+          );
+        }
+
+        // Create new auth user
+        const randomPassword =
+          Math.random().toString(36).slice(-12) +
+          Math.random().toString(36).slice(-12) +
+          "A1!@#";
+
+        const { data: newAuthData, error: signUpError } =
+          await supabase.auth.admin.createUser({
+            email,
+            password: randomPassword,
+            email_confirm: true,
+            user_metadata: {
+              email: identifier.trim(),
+              role: role,
+              terms_accepted: true,
+            },
+          });
+
+        if (signUpError || !newAuthData.user) {
+          if (signUpError?.message?.includes("already been registered")) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: "User already registered",
+                code: "user_already_exists",
+              }),
+              {
+                status: 400,
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              }
+            );
+          }
+
+          console.error("Error creating user:", signUpError);
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: signUpError?.message || "Failed to create user account",
+            }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            }
+          );
+        }
+
+        // Profile is automatically created by database trigger
+        // Get the newly created profile
+        const { data: newProfile, error: profileFetchError } = await supabase
+          .from("profiles")
+          .select("id, email, phone_number")
+          .eq("id", newAuthData.user.id)
+          .single();
+
+        if (profileFetchError || !newProfile) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Failed to create user profile",
+            }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            }
+          );
+        }
+
+        profile = newProfile;
+        userEmail = newProfile.email;
+        createdAuthUser = newAuthData.user; // Store the created auth user
+      } else {
+        profile = profileData[0];
+        userEmail = profile.email;
+      }
     } else {
       // Find user by phone number in profiles
       // Use the same logic as check-user-exists
@@ -147,20 +245,12 @@ const handler = async (req: Request): Promise<Response> => {
         ? formattedPhone
         : "91" + formattedPhone;
 
-      console.log("Looking for phone:", {
-        formattedPhone,
-        withoutCountryCode,
-        withCountryCode,
-      });
-
       // Try exact match first with formatted phone
       let { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("id, email, phone_number")
         .eq("phone_number", formattedPhone)
         .limit(1);
-
-      console.log("First query result:", { profileData, profileError });
 
       // If not found, try without country code
       if (
@@ -175,10 +265,6 @@ const handler = async (req: Request): Promise<Response> => {
           .limit(1);
         profileData = result.data;
         profileError = result.error;
-        console.log("Second query result (without country code):", {
-          profileData,
-          profileError,
-        });
       }
 
       // If still not found, try with country code
@@ -194,10 +280,6 @@ const handler = async (req: Request): Promise<Response> => {
           .limit(1);
         profileData = result.data;
         profileError = result.error;
-        console.log("Third query result (with country code):", {
-          profileData,
-          profileError,
-        });
       }
 
       if (profileError) {
@@ -216,26 +298,117 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       if (!profileData || profileData.length === 0) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error:
-              "No account found with this phone number. Please sign up first.",
-            debug: {
-              searchedFor: formattedPhone,
-              alsoTried: [withoutCountryCode, withCountryCode],
-            },
-          }),
-          {
-            status: 404,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          }
-        );
-      }
+        // User doesn't exist - create new account (auto sign-up)
+        const email = `${formattedPhone}@bucketlistt.temp`;
 
-      profile = profileData[0];
-      userEmail = profile.email;
-      console.log("Found profile:", { id: profile.id, email: userEmail });
+        // Check if auth user already exists with this email
+        let authUser: any = null;
+        try {
+          const { data: userList, error: listError } =
+            await supabase.auth.admin.listUsers();
+
+          if (!listError && userList) {
+            authUser = userList.users.find((u: any) => u.email === email);
+          }
+        } catch (error) {
+          console.error("Error checking existing auth user:", error);
+        }
+
+        // If auth user already exists, return error
+        if (authUser) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "User already registered",
+              code: "user_already_exists",
+            }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            }
+          );
+        }
+
+        // Create new auth user
+        const randomPassword =
+          Math.random().toString(36).slice(-12) +
+          Math.random().toString(36).slice(-12) +
+          "A1!@#";
+
+        const { data: newAuthData, error: signUpError } =
+          await supabase.auth.admin.createUser({
+            email,
+            password: randomPassword,
+            email_confirm: true,
+            user_metadata: {
+              phone_number: formattedPhone,
+              role: role,
+              terms_accepted: true,
+            },
+          });
+
+        if (signUpError || !newAuthData.user) {
+          if (signUpError?.message?.includes("already been registered")) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: "User already registered",
+                code: "user_already_exists",
+              }),
+              {
+                status: 400,
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              }
+            );
+          }
+
+          console.error("Error creating user:", signUpError);
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: signUpError?.message || "Failed to create user account",
+            }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            }
+          );
+        }
+
+        // Profile is automatically created by database trigger
+        // Update it with the correct phone number
+        await supabase
+          .from("profiles")
+          .update({ phone_number: formattedPhone })
+          .eq("id", newAuthData.user.id);
+
+        // Get the newly created profile
+        const { data: newProfile, error: profileFetchError } = await supabase
+          .from("profiles")
+          .select("id, email, phone_number")
+          .eq("id", newAuthData.user.id)
+          .single();
+
+        if (profileFetchError || !newProfile) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Failed to create user profile",
+            }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            }
+          );
+        }
+
+        profile = newProfile;
+        userEmail = newProfile.email;
+        createdAuthUser = newAuthData.user; // Store the created auth user
+      } else {
+        profile = profileData[0];
+        userEmail = profile.email;
+      }
     }
 
     if (!userEmail || !profile) {
@@ -252,10 +425,20 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Find user in auth.users by profile ID (not email)
-    const { data: authUser, error: authError } =
-      await supabase.auth.admin.getUserById(profile.id);
+    // If we just created the auth user, use it directly
+    let authUser: any = null;
+    if (createdAuthUser) {
+      authUser = { user: createdAuthUser };
+    } else {
+      const { data: fetchedAuthUser, error: authError } =
+        await supabase.auth.admin.getUserById(profile.id);
 
-    if (authError || !authUser.user) {
+      if (!authError && fetchedAuthUser) {
+        authUser = fetchedAuthUser;
+      }
+    }
+
+    if (!authUser || !authUser.user) {
       // If auth user doesn't exist, create one
       // Generate a random secure password
       const randomPassword =

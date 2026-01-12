@@ -402,7 +402,7 @@ export function SignInFormOTP({
                 <Input
                   id="otp-identifier"
                   type="text"
-                  placeholder="email@example.com or +91 9876543210"
+                  placeholder=""
                   value={otpIdentifier || formattedPhoneRef.current || ""}
                   onChange={(e) => {
                     setOtpIdentifier(e.target.value);
