@@ -42,11 +42,6 @@ const handler = async (req: Request): Promise<Response> => {
     const phoneNumber =
       body.phoneNumber || body.phone_number || body.PhoneNumber;
 
-    // Debug logging
-    console.log("Received request body:", JSON.stringify(body));
-    console.log("Email:", email);
-    console.log("PhoneNumber:", phoneNumber);
-
     if (!email && !phoneNumber) {
       return new Response(
         JSON.stringify({ error: "Email or phone number is required" }),

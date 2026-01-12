@@ -279,7 +279,7 @@ export function SignUpFormOTP({
             <Input
               id="identifier"
               type="text"
-              placeholder="email@example.com or +91 9876543210"
+              placeholder=""
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               onKeyDown={(e) => {
