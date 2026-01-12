@@ -3009,3 +3009,19 @@ video::-webkit-media-controls {
   color: #111827 !important;
   opacity: 1 !important;
 }
+
+.BlogMainContainer p {
+  text-align: start;
+  line-height: 1.40 !important;
+  margin-bottom: 20px !important;
+}
+
+.BlogMainContainer li {
+  text-align: start;
+  list-style: disc;
+  margin: 0px !important;
+}
+
+.BlogPageContainer {
+  padding-top: 5rem !important;
+}

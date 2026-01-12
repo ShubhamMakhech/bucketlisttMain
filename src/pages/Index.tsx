@@ -1,5 +1,5 @@
 import { Header } from "@/components/Header";
-import { Hero } from "@/components/Hero";
+import Hero from "@/components/Hero";
 import { DestinationCard } from "@/components/DestinationCard";
 import { ExperienceCard } from "@/components/ExperienceCard";
 import { TestimonialCarousel } from "@/components/TestimonialCarousel";

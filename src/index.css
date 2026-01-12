@@ -296,7 +296,7 @@
   h5,
   h6 {
     font-family: "Be Vietnam Pro", sans-serif !important;
-    font-weight: 600;
+    /* font-weight: 600; */
   }
 
   /* All text elements use Montserrat */
