@@ -177,6 +177,7 @@ export const BookingDialog = ({
     undefined
   );
   const prefilledPhoneRef = useRef<string | undefined>(undefined);
+  const [isCouponValidating, setIsCouponValidating] = useState(false);
   // State for Bike on Rent in Rishikesh - separate counters for vehicles and days
   const [numberOfVehicles, setNumberOfVehicles] = useState(1);
   const [numberOfDays, setNumberOfDays] = useState(1);
@@ -289,9 +290,8 @@ export const BookingDialog = ({
       form.setValue("participant_count", calculatedCount);
 
       // Update note_for_guide with vehicle and days info
-      const bikeRentNote = `${numberOfVehicles} ${
-        numberOfVehicles === 1 ? "vehicle" : "vehicles"
-      } for ${numberOfDays} ${numberOfDays === 1 ? "day" : "days"}`;
+      const bikeRentNote = `${numberOfVehicles} ${numberOfVehicles === 1 ? "vehicle" : "vehicles"
+        } for ${numberOfDays} ${numberOfDays === 1 ? "day" : "days"}`;
       const currentNote = form.getValues("note_for_guide") || "";
 
       // Remove any existing vehicle/days info lines and add updated one
@@ -432,11 +432,13 @@ export const BookingDialog = ({
   };
 
   const handleCouponValidation = async () => {
+    setIsCouponValidating(true);
     if (!couponCode.trim()) {
       setCouponValidation({
         isValid: false,
         message: "Please enter a coupon code",
       });
+      setIsCouponValidating(false);
       return;
     }
 
@@ -453,9 +455,8 @@ export const BookingDialog = ({
         const discountText =
           result.coupon?.type === "percentage"
             ? `${result.discount_calculation.savings_percentage.toFixed(1)}%`
-            : `${selectedActivity?.currency || experience.currency} ${
-                result.discount_calculation.discount_amount
-              }`;
+            : `${selectedActivity?.currency || experience.currency} ${result.discount_calculation.discount_amount
+            }`;
 
         setCouponValidation({
           isValid: true,
@@ -480,6 +481,8 @@ export const BookingDialog = ({
         isValid: false,
         message: "Error validating coupon. Please try again.",
       });
+    } finally {
+      setIsCouponValidating(false);
     }
   };
 
@@ -583,12 +586,12 @@ export const BookingDialog = ({
                   components: {
                     ...(pdfUrl
                       ? {
-                          header_1: {
-                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                            type: "document",
-                            value: pdfUrl,
-                          },
-                        }
+                        header_1: {
+                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                          type: "document",
+                          value: pdfUrl,
+                        },
+                      }
                       : {}),
                     body_1: {
                       type: "text",
@@ -655,12 +658,12 @@ export const BookingDialog = ({
                   components: {
                     ...(pdfUrl
                       ? {
-                          header_1: {
-                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                            type: "document",
-                            value: pdfUrl,
-                          },
-                        }
+                        header_1: {
+                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                          type: "document",
+                          value: pdfUrl,
+                        },
+                      }
                       : {}),
                     body_1: {
                       type: "text",
@@ -960,8 +963,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? parseFloat((calculatedBookingAmount - advancePayment).toFixed(2))
           : partialPayment
-          ? dueAmount
-          : 0;
+            ? dueAmount
+            : 0;
 
       // console.log("Direct booking amount calculation:", {
       // selectedActivity,
@@ -1078,8 +1081,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? (calculatedBookingAmount - advancePayment).toFixed(2)
           : partialPayment
-          ? dueAmount.toString()
-          : "0";
+            ? dueAmount.toString()
+            : "0";
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
@@ -1125,8 +1128,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? parseFloat((calculatedBookingAmount - advancePayment).toFixed(2))
           : partialPayment
-          ? dueAmount
-          : 0;
+            ? dueAmount
+            : 0;
 
       // console.log("Payment booking amount calculation:", {
       // selectedActivity,
@@ -1227,8 +1230,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? (calculatedBookingAmount - advancePayment).toFixed(2)
           : partialPayment
-          ? finalDueAmount.toString()
-          : "0";
+            ? finalDueAmount.toString()
+            : "0";
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
@@ -1303,9 +1306,8 @@ export const BookingDialog = ({
     ) {
       toast({
         title: "Not enough spots available",
-        description: `Only ${availableSpots} spot${
-          availableSpots !== 1 ? "s" : ""
-        } available for this time slot. Please select fewer participants.`,
+        description: `Only ${availableSpots} spot${availableSpots !== 1 ? "s" : ""
+          } available for this time slot. Please select fewer participants.`,
         variant: "destructive",
       });
       return;
@@ -1494,16 +1496,16 @@ export const BookingDialog = ({
   const upfrontAmount = isAgent
     ? 0 // Agents don't pay upfront
     : partialPayment
-    ? parseFloat((finalPrice * 0.1).toFixed(2))
-    : finalPrice;
+      ? parseFloat((finalPrice * 0.1).toFixed(2))
+      : finalPrice;
   const dueAmount =
     isAgent && advancePayment > 0
       ? parseFloat((finalPrice - advancePayment).toFixed(2)) // Due = booking amount - advance payment
       : isAgent
-      ? 0 // No due amount if no advance payment
-      : partialPayment
-      ? parseFloat((finalPrice - upfrontAmount).toFixed(2))
-      : 0;
+        ? 0 // No due amount if no advance payment
+        : partialPayment
+          ? parseFloat((finalPrice - upfrontAmount).toFixed(2))
+          : 0;
 
   // Get time slots for summary display with availability
   const { data: timeSlots } = useQuery({
@@ -1586,8 +1588,8 @@ export const BookingDialog = ({
 
   const totalActivityPrice = selectedActivity
     ? parseFloat(
-        (getActivityPrice(selectedActivity) * participantCount).toFixed(2)
-      )
+      (getActivityPrice(selectedActivity) * participantCount).toFixed(2)
+    )
     : 0;
 
   return (
@@ -1730,7 +1732,7 @@ export const BookingDialog = ({
                   </div> */}
                     <div className="booking-summary-wrapper">
                       <span className="summary-title-label">
-                        Booking Summary
+                        Booking Summaryfas
                       </span>
 
                       <div className="summary-main-layout">
@@ -1774,10 +1776,10 @@ export const BookingDialog = ({
                                   (slot) => slot.id === selectedSlotId
                                 )
                                   ? `${formatTime(
-                                      timeSlots.find(
-                                        (slot) => slot.id === selectedSlotId
-                                      )!.start_time
-                                    )}`
+                                    timeSlots.find(
+                                      (slot) => slot.id === selectedSlotId
+                                    )!.start_time
+                                  )}`
                                   : "Select Time Slot"}
                               </span>
                             </div>
@@ -1815,35 +1817,49 @@ export const BookingDialog = ({
                           )}
                         </span>
                         <div className="summary-price-container">
-                          {(selectedActivity as any)?.discounted_price &&
-                          (selectedActivity as any).discounted_price !==
-                            (selectedActivity as any).price ? (
-                            <>
-                              <div className="summary-price-original">
-                                {selectedActivity.currency === "INR"
-                                  ? "₹"
-                                  : selectedActivity?.currency}{" "}
-                                {selectedActivity.price * participantCount}
-                              </div>
+                          {/* Price Display Logic */}
+                          {(() => {
+                            // Determine the base price to compare against (either the activity's regular price or its discounted price)
+                            const basePriceForComparison = totalActivityPrice;
+                            
+                            // If final price (after coupon) is less than the activity price (after activity discount)
+                            const isCouponDiscounted = finalPrice < basePriceForComparison;
+                            
+                            // If activity has its own discount (discounted_price < price)
+                            const isActivityDiscounted = (selectedActivity as any)?.discounted_price && 
+                              (selectedActivity as any).discounted_price !== (selectedActivity as any).price;
+
+                            // Determine what to show as "Original Price"
+                            // If coupon is applied, show the price BEFORE coupon (which is totalActivityPrice)
+                            // Else if activity is discounted, show the raw activity price (price * count)
+                            const showOriginalPrice = isCouponDiscounted || isActivityDiscounted;
+                            
+                            const originalPriceValue = isCouponDiscounted 
+                              ? totalActivityPrice 
+                              : (selectedActivity?.price || 0) * participantCount;
+
+                            return showOriginalPrice ? (
+                              <>
+                                <div className="summary-price-original">
+                                  {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{" "}
+                                  {originalPriceValue.toFixed(2)}
+                                </div>
+                                <div className="summary-price-final">
+                                  <span className="summary-price-currency">
+                                    {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
+                                  </span>
+                                  {finalPrice.toFixed(2)}
+                                </div>
+                              </>
+                            ) : (
                               <div className="summary-price-final">
                                 <span className="summary-price-currency">
-                                  {selectedActivity.currency === "INR"
-                                    ? "₹"
-                                    : selectedActivity?.currency}
+                                  {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
                                 </span>
-                                {totalActivityPrice}
+                                {totalActivityPrice.toFixed(2)}
                               </div>
-                            </>
-                          ) : (
-                            <div className="summary-price-final">
-                              <span className="summary-price-currency">
-                                {selectedActivity?.currency === "INR"
-                                  ? "₹"
-                                  : selectedActivity?.currency}
-                              </span>
-                              {totalActivityPrice}
-                            </div>
-                          )}
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -2459,10 +2475,14 @@ export const BookingDialog = ({
                                             type="button"
                                             variant="outline"
                                             onClick={handleCouponValidation}
-                                            disabled={!couponCode.trim()}
+                                            disabled={!couponCode.trim() || isCouponValidating}
                                             className="flex items-center gap-2"
                                           >
-                                            <Tag className="h-4 w-4" />
+                                            {isCouponValidating ? (
+                                              <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                              <Tag className="h-4 w-4" />
+                                            )}
                                             Apply
                                           </Button>
                                         </div>
@@ -2487,40 +2507,40 @@ export const BookingDialog = ({
                               {((couponValidation?.isValid &&
                                 couponValidation.coupon) ||
                                 appliedCoupon) && (
-                                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <Tag className="h-4 w-4 text-green-600" />
-                                      <span className="font-medium text-green-800">
-                                        Coupon Applied:{" "}
-                                        {couponValidation?.isValid &&
-                                        couponValidation.coupon
-                                          ? couponValidation.coupon.coupon
+                                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <Tag className="h-4 w-4 text-green-600" />
+                                        <span className="font-medium text-green-800">
+                                          Coupon Applied:{" "}
+                                          {couponValidation?.isValid &&
+                                            couponValidation.coupon
+                                            ? couponValidation.coupon.coupon
                                               .coupon_code
-                                          : appliedCoupon.coupon.coupon_code}
-                                      </span>
-                                    </div>
-                                    <Badge
-                                      variant="secondary"
-                                      className="bg-green-100 text-green-800"
-                                    >
-                                      {(() => {
-                                        const activeCoupon =
-                                          couponValidation?.isValid &&
-                                          couponValidation.coupon
-                                            ? couponValidation.coupon
-                                            : appliedCoupon;
-                                        return activeCoupon.coupon.type ===
-                                          "percentage"
-                                          ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
+                                            : appliedCoupon.coupon.coupon_code}
+                                        </span>
+                                      </div>
+                                      <Badge
+                                        variant="secondary"
+                                        className="bg-green-100 text-green-800"
+                                      >
+                                        {(() => {
+                                          const activeCoupon =
+                                            couponValidation?.isValid &&
+                                              couponValidation.coupon
+                                              ? couponValidation.coupon
+                                              : appliedCoupon;
+                                          return activeCoupon.coupon.type ===
+                                            "percentage"
+                                            ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
                                               1
                                             )}%`
-                                          : `Save ${experience.currency} ${activeCoupon.discount_calculation.discount_amount}`;
-                                      })()}
-                                    </Badge>
-                                  </div>
-                                  {/* <div className="mt-2 text-sm text-green-700"> */}
-                                  {/* {(() => {
+                                            : `Save ${experience.currency} ${activeCoupon.discount_calculation.discount_amount}`;
+                                        })()}
+                                      </Badge>
+                                    </div>
+                                    {/* <div className="mt-2 text-sm text-green-700"> */}
+                                    {/* {(() => {
                           const activeCoupon =
                             couponValidation?.isValid && couponValidation.coupon
                               ? couponValidation.coupon
@@ -2559,9 +2579,9 @@ export const BookingDialog = ({
                             </>
                           );
                         })()} */}
-                                  {/* </div> */}
-                                </div>
-                              )}
+                                    {/* </div> */}
+                                  </div>
+                                )}
                             </div>
                           )}
                         </div>
@@ -2669,31 +2689,25 @@ export const BookingDialog = ({
                         {isSubmitting
                           ? "Processing..."
                           : isAgent
-                          ? advancePayment > 0
-                            ? `Confirm Booking (Due: ${
-                                selectedActivity?.currency ||
-                                experience.currency
-                              } ${
-                                dueAmount % 1 === 0
-                                  ? dueAmount
-                                  : dueAmount.toFixed(2)
+                            ? advancePayment > 0
+                              ? `Confirm Booking (Due: ${selectedActivity?.currency ||
+                              experience.currency
+                              } ${dueAmount % 1 === 0
+                                ? dueAmount
+                                : dueAmount.toFixed(2)
                               })`
-                            : "Confirm Booking"
-                          : partialPayment
-                          ? `Pay ${
-                              selectedActivity?.currency || experience.currency
-                            } ${
-                              upfrontAmount % 1 === 0
+                              : "Confirm Booking"
+                            : partialPayment
+                              ? `Pay ${selectedActivity?.currency || experience.currency
+                              } ${upfrontAmount % 1 === 0
                                 ? upfrontAmount
                                 : upfrontAmount.toFixed(2)
-                            } & Confirm Booking`
-                          : `Pay ${
-                              selectedActivity?.currency || experience.currency
-                            } ${
-                              finalPrice % 1 === 0
+                              } & Confirm Booking`
+                              : `Pay ${selectedActivity?.currency || experience.currency
+                              } ${finalPrice % 1 === 0
                                 ? finalPrice
                                 : finalPrice.toFixed(2)
-                            } & Confirm Booking`}
+                              } & Confirm Booking`}
                       </Button>
                     </div>
                     {/* <div className="mt-2">
