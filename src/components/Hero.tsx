@@ -224,7 +224,7 @@ const Hero = () => {
                                 />
                             </div>
                         </div>
-                        <div className="VideoContainer">
+                        {/* <div className="VideoContainer">
                             <div>
                                 <video
                                     autoPlay
@@ -233,7 +233,7 @@ const Hero = () => {
                                     src="https://prepseed.s3.ap-south-1.amazonaws.com/Hero+page+video+-+draft.mp4"
                                 ></video>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </div>
