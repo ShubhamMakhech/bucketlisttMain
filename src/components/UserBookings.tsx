@@ -57,6 +57,7 @@ import { DatePicker, ConfigProvider } from "antd";
 import dayjs from "dayjs";
 import "./UserBookingsMobileCard.css";
 import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
+import { generateTaxInvoicePdf } from "@/utils/generateTaxInvoicePdf";
 import { Label } from "@/components/ui/label";
 import { BookingTimeline } from "@/components/BookingTimeline";
 import { FileText as FileTextIcon } from "lucide-react";
@@ -132,6 +133,8 @@ export const UserBookings = forwardRef((props, ref) => {
   const [bookingToEdit, setBookingToEdit] = React.useState<any>(null);
   const [isUpdatingBooking, setIsUpdatingBooking] = React.useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
+  const [isGeneratingTaxInvoice, setIsGeneratingTaxInvoice] =
+    React.useState(false);
   const [timelineDialogOpen, setTimelineDialogOpen] = React.useState(false);
   const [selectedBookingForTimeline, setSelectedBookingForTimeline] =
     React.useState<string | null>(null);
@@ -738,6 +741,192 @@ export const UserBookings = forwardRef((props, ref) => {
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem
+                onSelect={async (e) => {
+                  e.preventDefault();
+                  setIsGeneratingTaxInvoice(true);
+                  try {
+                    const experience = booking.experiences;
+                    const activity =
+                      booking.time_slots?.activities || booking.activities;
+
+                    // Fetch vendor profile for tax invoice details
+                    let logoUrl = "";
+                    let vendorName = "";
+                    let vendorAddress = "";
+                    let vendorGST = "";
+                    let placeOfSupply = "";
+
+                    if (experience?.vendor_id) {
+                      try {
+                        const { data: vendorProfile } = await supabase
+                          .from("profiles")
+                          .select("*")
+                          .eq("id", experience.vendor_id)
+                          .single();
+
+                        if (vendorProfile) {
+                          logoUrl = (vendorProfile as any)?.logo_url || "";
+                          vendorName =
+                            `${(vendorProfile as any)?.first_name || ""} ${
+                              (vendorProfile as any)?.last_name || ""
+                            }`.trim() ||
+                            (vendorProfile as any)?.company_name ||
+                            "";
+                          vendorAddress = (vendorProfile as any)?.address || "";
+                          vendorGST = (vendorProfile as any)?.gst_number || "";
+                          placeOfSupply =
+                            (vendorProfile as any)?.state || "Gujarat";
+                        }
+                      } catch (error) {
+                        console.error("Error fetching vendor profile:", error);
+                      }
+                    }
+
+                    // Fallback: Extract logoUrl from booking data
+                    if (!logoUrl) {
+                      logoUrl =
+                        (booking as any)?.logoUrl ||
+                        experience?.logoUrl ||
+                        (experience as any)?.logo_url ||
+                        ((booking as any)?.experiences as any)?.logoUrl ||
+                        ((booking as any)?.experiences as any)?.logo_url ||
+                        "";
+                    }
+
+                    // Tax calculation
+                    const bookingAmountVal = parseFloat(
+                      String(booking.booking_amount || 0)
+                    );
+                    const totalParticipants = booking.total_participants || 1;
+                    const originalPricePerPerson =
+                      activity?.price || experience?.price || 0;
+
+                    // Ticket price per person (actual amount paid per person)
+                    const ticketPricePerPerson =
+                      bookingAmountVal / totalParticipants;
+
+                    // Net amount per person (base price after discount) = ticket price / 1.18
+                    const netPricePerPerson = ticketPricePerPerson / 1.18;
+                    // Base price per person (same as net price after discount for invoice display)
+                    const basePricePerPerson = netPricePerPerson;
+                    // Tax amount per person (18% of net/base price)
+                    const taxAmountPerPerson = netPricePerPerson * 0.18;
+                    // Verify: net + tax should equal ticket price
+                    const totalPricePerPerson =
+                      netPricePerPerson + taxAmountPerPerson;
+
+                    // Original base price per person (before discount)
+                    const originalBasePricePerPerson =
+                      originalPricePerPerson / 1.18;
+                    // Original tax per person
+                    const originalTaxPerPerson =
+                      originalBasePricePerPerson * 0.18;
+                    // Discount per person = original price - ticket price
+                    const discountPerPerson =
+                      originalPricePerPerson - ticketPricePerPerson;
+                    // Discount on base price = discount / 1.18
+                    const discountOnBasePerPerson = discountPerPerson / 1.18;
+
+                    // Calculate totals
+                    const totalNetPrice = netPricePerPerson * totalParticipants;
+                    const totalTaxAmount =
+                      taxAmountPerPerson * totalParticipants;
+                    const totalAmount = totalPricePerPerson * totalParticipants;
+                    const totalDiscount = discountPerPerson * totalParticipants;
+                    const totalBasePrice =
+                      netPricePerPerson * totalParticipants; // Net amount shown in invoice
+
+                    // Generate invoice number (using booking ID and date)
+                    const invoiceDate = format(
+                      new Date(booking.booking_date || new Date()),
+                      "dd MMM yyyy"
+                    );
+                    const invoiceNumber = `INV-${booking.id
+                      .substring(0, 8)
+                      .toUpperCase()}-${format(new Date(), "yyyyMMdd")}`;
+
+                    // Customer address (from booking or participant)
+                    const customerAddress =
+                      booking.pickup_location ||
+                      experience?.location ||
+                      booking.contact_person_name
+                        ? `${booking.contact_person_name || ""}`
+                        : "";
+
+                    const taxInvoiceData = {
+                      customerName: booking.contact_person_name || "Customer",
+                      customerAddress: customerAddress,
+                      invoiceNumber: invoiceNumber,
+                      invoiceDate: invoiceDate,
+                      experienceTitle: experience?.title || "Experience",
+                      activityName: activity?.name || "",
+                      dateTime: booking.time_slots
+                        ? `${format(
+                            new Date(booking.booking_date),
+                            "dd/MM/yyyy"
+                          )} - ${booking.time_slots.start_time} - ${
+                            booking.time_slots.end_time
+                          }`
+                        : format(new Date(booking.booking_date), "dd/MM/yyyy"),
+                      totalParticipants: totalParticipants,
+                      originalPricePerPerson: originalPricePerPerson,
+                      basePricePerPerson: basePricePerPerson,
+                      taxAmountPerPerson: taxAmountPerPerson,
+                      totalPricePerPerson: totalPricePerPerson,
+                      discountPerPerson: discountPerPerson,
+                      netPricePerPerson: netPricePerPerson,
+                      totalBasePrice: totalBasePrice,
+                      totalTaxAmount: totalTaxAmount,
+                      totalAmount: totalAmount,
+                      totalDiscount: totalDiscount,
+                      totalNetPrice: totalNetPrice,
+                      currency: experience?.currency || "INR",
+                      logoUrl: logoUrl || undefined,
+                      vendorName: vendorName || undefined,
+                      vendorAddress: vendorAddress || undefined,
+                      vendorGST: vendorGST || undefined,
+                      placeOfSupply: placeOfSupply || "Gujarat",
+                      hsnCode: "999799",
+                    };
+
+                    const pdfUrl = await generateTaxInvoicePdf(
+                      taxInvoiceData,
+                      booking.id
+                    );
+                    window.open(pdfUrl, "_blank");
+
+                    toast({
+                      title: "Success",
+                      description: "Tax invoice PDF generated successfully",
+                    });
+                  } catch (error) {
+                    console.error("Error generating tax invoice PDF:", error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to generate tax invoice PDF",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setIsGeneratingTaxInvoice(false);
+                  }
+                }}
+                disabled={isGeneratingTaxInvoice}
+                className="justify-start h-auto py-1 px-3 font-normal hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingTaxInvoice ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <span className="font-semibold FontSetPerfect">
+                      Download Tax Invoice
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-semibold FontSetPerfect">
+                    Download Tax Invoice
+                  </span>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onSelect={(e) => {
                   e.preventDefault();
                   setBookingToEdit(booking);
@@ -962,7 +1151,6 @@ export const UserBookings = forwardRef((props, ref) => {
 
         // Debug: Log first booking to check if admin_note is present
         if (data && data.length > 0 && isAdmin) {
-         
         }
 
         return data || [];
