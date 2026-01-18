@@ -43,36 +43,49 @@ import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
 import "../Styles/OfflineBookingDialog.css";
 import moment from "moment";
 
-const offlineBookingSchema = z.object({
-  experience_id: z.string().min(1, "Please select an experience"),
-  activity_id: z.string().min(1, "Please select an activity"),
-  time_slot_id: z.string().optional(),
-  contact_person_name: z.string().min(1, "Name is required"),
-  contact_person_number: z
-    .string()
-    .min(1, "Phone number is required")
-    .regex(/^[0-9]+$/, "Phone number must contain only numbers")
-    .length(10, "Phone number must be exactly 10 digits"),
-  contact_person_email: z
-    .string()
-    .email("Please enter a valid email address")
-    .optional()
-    .or(z.literal("")),
-  total_participants: z
-    .number()
-    .min(1, "At least one participant is required")
-    .max(50, "Maximum 50 participants allowed"),
-  booking_amount_per_person: z
-    .number()
-    .min(0, "Amount per person must be positive")
-    .optional(),
-  advance_amount: z
-    .number()
-    .min(0, "Advance amount must be positive")
-    .optional(),
-  booking_date: z.date({ required_error: "Please select a date" }),
-  note_for_guide: z.string().optional(),
-});
+const offlineBookingSchema = z
+  .object({
+    experience_id: z.string().min(1, "Please select an experience"),
+    activity_id: z.string().min(1, "Please select an activity"),
+    time_slot_id: z.string().optional(),
+    contact_person_name: z.string().min(1, "Name is required"),
+    contact_person_number: z
+      .string()
+      .min(1, "Phone number is required")
+      .regex(/^[0-9]+$/, "Phone number must contain only numbers")
+      .length(10, "Phone number must be exactly 10 digits"),
+    contact_person_email: z
+      .string()
+      .email("Please enter a valid email address")
+      .optional()
+      .or(z.literal("")),
+    total_participants: z
+      .number()
+      .min(1, "At least one participant is required")
+      .max(50, "Maximum 50 participants allowed"),
+    booking_amount_per_person: z
+      .number()
+      .min(0, "Amount per person must be positive")
+      .optional(),
+    advance_amount: z
+      .number()
+      .min(0, "Advance amount must be positive")
+      .optional(),
+    booking_date: z.date({ required_error: "Please select a date" }),
+    note_for_guide: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      const totalAmount =
+        (data.booking_amount_per_person || 0) * data.total_participants;
+      const advanceAmount = data.advance_amount || 0;
+      return advanceAmount <= totalAmount;
+    },
+    {
+      message: "Advance amount cannot be greater than the total payable amount",
+      path: ["advance_amount"],
+    }
+  );
 
 type OfflineBookingFormData = z.infer<typeof offlineBookingSchema>;
 
@@ -1042,6 +1055,24 @@ export const OfflineBookingDialog = ({
       return;
     }
 
+    // Validate advance amount before proceeding
+    const totalAmount =
+      (data.booking_amount_per_person || 0) * data.total_participants ||
+      (selectedActivity?.price
+        ? selectedActivity.price * data.total_participants
+        : 0);
+    const advanceAmount = data.advance_amount || 0;
+
+    if (advanceAmount > totalAmount) {
+      toast({
+        title: "Validation Error",
+        description:
+          "Advance amount cannot be greater than the total payable amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Verify the experience exists (for vendors, it should belong to them; for agents, any active experience)
     const experience = experiences.find((e) => e.id === data.experience_id);
     if (!experience) {
@@ -1514,32 +1545,56 @@ export const OfflineBookingDialog = ({
                     <FormField
                       control={form.control}
                       name="advance_amount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <label className="field-label-compact">
-                            Advance Amount
-                          </label>
-                          <FormControl>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
-                                {selectedActivity?.currency || "INR"}
-                              </span>
-                              <Input
-                                type="number"
-                                className="pl-12 h-11"
-                                placeholder="0.00"
-                                {...field}
-                                value={field.value || ""}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
-                              />
-                            </div>
-                          </FormControl>
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const totalAmount =
+                          (form.watch("booking_amount_per_person") || 0) *
+                            form.watch("total_participants") || 0;
+                        const advanceAmount = field.value || 0;
+                        const isInvalid = advanceAmount > totalAmount;
+
+                        return (
+                          <FormItem>
+                            <label className="field-label-compact">
+                              Advance Amount
+                            </label>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                                  {selectedActivity?.currency || "INR"}
+                                </span>
+                                <Input
+                                  type="number"
+                                  className={`pl-12 h-11 ${
+                                    isInvalid ? "border-red-500" : ""
+                                  }`}
+                                  placeholder="0.00"
+                                  {...field}
+                                  value={field.value || ""}
+                                  onChange={(e) => {
+                                    const value =
+                                      parseFloat(e.target.value) || 0;
+                                    field.onChange(value);
+                                    // Show toast immediately when validation fails
+                                    if (
+                                      value > totalAmount &&
+                                      totalAmount > 0
+                                    ) {
+                                      toast({
+                                        title: "Validation Error",
+                                        description:
+                                          "Advance amount cannot be greater than the total payable amount.",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }}
+                                  onBlur={field.onBlur}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                     <FormField
                       control={form.control}

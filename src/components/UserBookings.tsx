@@ -962,7 +962,6 @@ export const UserBookings = forwardRef((props, ref) => {
 
         // Debug: Log first booking to check if admin_note is present
         if (data && data.length > 0 && isAdmin) {
-         
         }
 
         return data || [];
@@ -1316,19 +1315,13 @@ export const UserBookings = forwardRef((props, ref) => {
                 if ((booking as any)?.type === "offline" && !isAdmin)
                   return "-";
                 const originalPrice = activity?.price || experience?.price || 0;
-                return formatCurrency(
-                  currency,
-                  originalPrice * booking.total_participants
-                );
+                return formatCurrency(currency, originalPrice);
               case 12: // B2B Price
                 if ((booking as any)?.type === "offline" && !isAdmin)
                   return "-";
                 const b2bPrice =
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
-                return formatCurrency(
-                  currency,
-                  b2bPrice * booking.total_participants
-                );
+                return formatCurrency(currency, b2bPrice);
               case 13: // Commission as per vendor
                 if ((booking as any)?.type === "offline" && !isAdmin)
                   return "-";
@@ -1604,11 +1597,11 @@ export const UserBookings = forwardRef((props, ref) => {
             case 11: // Official Price/ Original Price
               if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const originalPriceA = activity?.price || experience?.price || 0;
-              return originalPriceA * booking.total_participants;
+              return originalPriceA;
             case 12: // B2B Price
               if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const b2bPriceA = booking.b2bPrice || activity?.b2bPrice || 0;
-              return b2bPriceA * booking.total_participants;
+              return b2bPriceA;
             case 13: // Commission as per vendor
               if ((booking as any)?.type === "offline" && !isAdmin) return "";
               const originalPriceA2 = activity?.price || experience?.price || 0;
@@ -2411,19 +2404,13 @@ export const UserBookings = forwardRef((props, ref) => {
             case 11: {
               if (isOffline && !isAdmin) return "-";
               const originalPrice = activity?.price || experience?.price || 0;
-              return formatCurrency(
-                currency,
-                originalPrice * booking.total_participants
-              );
+              return formatCurrency(currency, originalPrice);
             }
             case 12: {
               if (isOffline && !isAdmin) return "-";
               const b2bPrice =
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
-              return formatCurrency(
-                currency,
-                b2bPrice * booking.total_participants
-              );
+              return formatCurrency(currency, b2bPrice);
             }
             case 13: {
               if (isOffline && !isAdmin) return "-";
@@ -2860,19 +2847,13 @@ export const UserBookings = forwardRef((props, ref) => {
                 if ((booking as any)?.type === "offline" && !isAdmin)
                   return "-";
                 const originalPrice = activity?.price || experience?.price || 0;
-                return formatCurrency(
-                  currency,
-                  originalPrice * booking.total_participants
-                );
+                return formatCurrency(currency, originalPrice);
               case 12: // B2B Price
                 if ((booking as any)?.type === "offline" && !isAdmin)
                   return "-";
                 const b2bPrice =
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
-                return formatCurrency(
-                  currency,
-                  b2bPrice * booking.total_participants
-                );
+                return formatCurrency(currency, b2bPrice);
               case 13: // Commission as per vendor
                 if ((booking as any)?.type === "offline" && !isAdmin)
                   return "-";
@@ -4554,12 +4535,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                       const activityData = activity;
                       const originalPrice =
                         activityData?.price || experience?.price || 0;
-                      const officialPrice =
-                        originalPrice * booking.total_participants;
+                      const officialPrice = originalPrice; // Per person price (no multiplication)
                       const b2bPrice =
                         booking.b2bPrice || activityData?.b2bPrice || 0;
-                      const b2bPriceTotal =
-                        b2bPrice * booking.total_participants;
+                      const b2bPriceTotal = b2bPrice; // Per person price (no multiplication)
                       const commissionPerVendor = originalPrice - b2bPrice;
                       const commissionTotal =
                         commissionPerVendor * booking.total_participants;
