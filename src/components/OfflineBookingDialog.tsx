@@ -39,6 +39,10 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { format } from "date-fns";
 import { SendWhatsappMessage } from "@/utils/whatsappUtil";
 import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
+import {
+  generateBookingNumber,
+  createInvoiceRecord,
+} from "@/utils/invoiceUtils";
 
 import "../Styles/OfflineBookingDialog.css";
 import moment from "moment";
@@ -371,40 +375,9 @@ export const OfflineBookingDialog = ({
 
       const generatePdfWithRetry = async (retryCount = 0): Promise<string> => {
         try {
-          const locationUrl = experienceDetails?.location;
-          const location2Url = experienceDetails?.location2;
-          const generatedUrl = await generateInvoicePdf(
-            {
-              participantName: data.contact_person_name,
-              experienceTitle:
-                experienceDetails?.title || experience?.title || "Activity",
-              activityName: activity?.name || "",
-              dateTime: formattedDateTime,
-              pickUpLocation: experienceDetails?.location || "-",
-              spotLocation: experienceDetails?.location2 || "-",
-              spotLocationUrl: experienceDetails?.location2?.startsWith("http")
-                ? experienceDetails.location2
-                : "",
-              totalParticipants: data.total_participants,
-              amountPaid: (bookingAmount - dueAmount).toFixed(2),
-              amountToBePaid: dueAmount.toFixed(2),
-              currency:
-                activity?.currency || experienceDetails?.currency || "INR",
-            },
-            bookingId
-          );
-
-          // Validate PDF URL was generated
-          if (!generatedUrl || generatedUrl.trim() === "") {
-            throw new Error("PDF generation returned empty URL");
-          }
-
-          // Validate URL format
-          if (!generatedUrl.startsWith("http")) {
-            throw new Error(`PDF URL is not a valid HTTP URL: ${generatedUrl}`);
-          }
-
-          return generatedUrl;
+          // PDF is now downloaded directly, not stored as link
+          // Skip PDF attachment in WhatsApp messages
+          return "";
         } catch (error: any) {
           if (retryCount < maxRetries) {
             console.warn(
@@ -1072,6 +1045,9 @@ export const OfflineBookingDialog = ({
       const advanceAmount = data.advance_amount || 0;
       const dueAmount = Math.max(0, totalBookingAmount - advanceAmount);
 
+      // Generate booking number
+      const bookingNumber = await generateBookingNumber();
+
       const bookingData = {
         user_id: user.id, // Vendor's/Agent's/Admin's user_id (customer didn't book online)
         experience_id: data.experience_id,
@@ -1092,6 +1068,7 @@ export const OfflineBookingDialog = ({
         type: "offline" as const,
         time_slot_id: selectedSlotId || null, // Optional time slot for offline bookings
         admin_note: isAdmin ? "admin booking" : null, // Set default admin note for admin bookings
+        booking_number: bookingNumber,
       };
 
       const { data: booking, error: bookingError } = await supabase
@@ -1123,6 +1100,33 @@ export const OfflineBookingDialog = ({
       if (participantsError) {
         console.error("Participants creation error:", participantsError);
         throw participantsError;
+      }
+
+      // Create invoice record
+      try {
+        // Fetch vendor profile for invoice
+        let vendorProfile = null;
+        if (experience?.vendor_id) {
+          const { data: vendor } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", experience.vendor_id)
+            .single();
+          vendorProfile = vendor;
+        }
+
+        // Create invoice record
+        await createInvoiceRecord(
+          booking.id,
+          bookingNumber,
+          booking,
+          experience,
+          selectedActivity,
+          vendorProfile
+        );
+      } catch (invoiceError) {
+        console.error("Error creating invoice record:", invoiceError);
+        // Don't throw - invoice creation failure shouldn't fail the booking
       }
 
       // Send all confirmations synchronously before closing

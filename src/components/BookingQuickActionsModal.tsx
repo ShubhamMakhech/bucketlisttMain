@@ -183,14 +183,15 @@ export const BookingQuickActionsModal = ({
                 logoUrl: logoUrl || undefined,
             };
 
-            const pdfUrl = await generateInvoicePdf(bookingData, booking.id);
-
-            // Open PDF in new tab
-            window.open(pdfUrl, "_blank");
+            await generateInvoicePdf(
+                bookingData,
+                booking.id,
+                `Booking_Invoice_${booking.booking_number || booking.id}.pdf`
+            );
 
             toast({
                 title: "Success",
-                description: "PDF generated successfully",
+                description: "PDF downloaded successfully",
             });
         } catch (error) {
             console.error("Error generating PDF:", error);

@@ -54,6 +54,10 @@ import { useNavigate } from "react-router-dom";
 import { useRazorpay } from "@/hooks/useRazorpay";
 import { SendWhatsappMessage } from "@/utils/whatsappUtil";
 import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
+import {
+  generateBookingNumber,
+  createInvoiceRecord,
+} from "@/utils/invoiceUtils";
 import moment from "moment";
 import { useQuery } from "@tanstack/react-query";
 import { Modal, Select as AntSelect } from "antd";
@@ -290,8 +294,9 @@ export const BookingDialog = ({
       form.setValue("participant_count", calculatedCount);
 
       // Update note_for_guide with vehicle and days info
-      const bikeRentNote = `${numberOfVehicles} ${numberOfVehicles === 1 ? "vehicle" : "vehicles"
-        } for ${numberOfDays} ${numberOfDays === 1 ? "day" : "days"}`;
+      const bikeRentNote = `${numberOfVehicles} ${
+        numberOfVehicles === 1 ? "vehicle" : "vehicles"
+      } for ${numberOfDays} ${numberOfDays === 1 ? "day" : "days"}`;
       const currentNote = form.getValues("note_for_guide") || "";
 
       // Remove any existing vehicle/days info lines and add updated one
@@ -455,8 +460,9 @@ export const BookingDialog = ({
         const discountText =
           result.coupon?.type === "percentage"
             ? `${result.discount_calculation.savings_percentage.toFixed(1)}%`
-            : `${selectedActivity?.currency || experience.currency} ${result.discount_calculation.discount_amount
-            }`;
+            : `${selectedActivity?.currency || experience.currency} ${
+                result.discount_calculation.discount_amount
+              }`;
 
         setCouponValidation({
           isValid: true,
@@ -528,26 +534,9 @@ export const BookingDialog = ({
         // Get location URL if available (you may need to construct this from location data)
         const locationUrl = timeSlot?.experiences?.location;
 
-        pdfUrl = await generateInvoicePdf(
-          {
-            participantName: data.participant.name,
-            experienceTitle: timeSlot?.experiences?.title || "Activity",
-            activityName: timeSlot?.activities.name || "",
-            dateTime: formattedDateTime,
-            pickUpLocation: timeSlot?.experiences?.location || "-",
-            spotLocation: timeSlot?.experiences?.location2 || "-",
-            spotLocationUrl: timeSlot?.experiences?.location2?.startsWith(
-              "http"
-            )
-              ? timeSlot.experiences.location2
-              : "",
-            totalParticipants: data.participant_count,
-            amountPaid: upfrontAmount.toFixed(2),
-            amountToBePaid: dueAmount || "0",
-            currency: selectedActivity?.currency || experience.currency,
-          },
-          bookingId
-        );
+        // PDF is now downloaded directly, not stored as link
+        // Skip PDF attachment in WhatsApp messages
+        pdfUrl = null;
       } catch (pdfError) {
         console.error("PDF generation failed:", pdfError);
         // Continue without PDF - WhatsApp will be sent without attachment
@@ -586,12 +575,12 @@ export const BookingDialog = ({
                   components: {
                     ...(pdfUrl
                       ? {
-                        header_1: {
-                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                          type: "document",
-                          value: pdfUrl,
-                        },
-                      }
+                          header_1: {
+                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
                       : {}),
                     body_1: {
                       type: "text",
@@ -658,12 +647,12 @@ export const BookingDialog = ({
                   components: {
                     ...(pdfUrl
                       ? {
-                        header_1: {
-                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
-                          type: "document",
-                          value: pdfUrl,
-                        },
-                      }
+                          header_1: {
+                            filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                            type: "document",
+                            value: pdfUrl,
+                          },
+                        }
                       : {}),
                     body_1: {
                       type: "text",
@@ -963,8 +952,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? parseFloat((calculatedBookingAmount - advancePayment).toFixed(2))
           : partialPayment
-            ? dueAmount
-            : 0;
+          ? dueAmount
+          : 0;
 
       // console.log("Direct booking amount calculation:", {
       // selectedActivity,
@@ -1081,8 +1070,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? (calculatedBookingAmount - advancePayment).toFixed(2)
           : partialPayment
-            ? dueAmount.toString()
-            : "0";
+          ? dueAmount.toString()
+          : "0";
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
@@ -1128,8 +1117,8 @@ export const BookingDialog = ({
         isAgent && advancePayment > 0
           ? parseFloat((calculatedBookingAmount - advancePayment).toFixed(2))
           : partialPayment
-            ? dueAmount
-            : 0;
+          ? dueAmount
+          : 0;
 
       // console.log("Payment booking amount calculation:", {
       // selectedActivity,
@@ -1141,6 +1130,9 @@ export const BookingDialog = ({
       // calculatedBookingAmount,
       // finalPrice,
       // });
+
+      // Generate booking number
+      const bookingNumber = await generateBookingNumber();
 
       // Create the booking
       const { data: booking, error: bookingError } = await supabase
@@ -1161,6 +1153,7 @@ export const BookingDialog = ({
           contact_person_number: data.participant.phone_number,
           isAgentBooking: isAgent ? true : false,
           contact_person_email: data.participant.email,
+          booking_number: bookingNumber,
         })
         .select()
         .single();
@@ -1225,13 +1218,43 @@ export const BookingDialog = ({
 
       // console.log("Participants created successfully");
 
+      // Create invoice record
+      try {
+        // Fetch vendor profile for invoice
+        let vendorProfile = null;
+        if (experience?.vendor_id) {
+          const { data: vendor } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", experience.vendor_id)
+            .single();
+          vendorProfile = vendor;
+        }
+
+        // Get activity data
+        const activity = selectedActivity || null;
+
+        // Create invoice record
+        await createInvoiceRecord(
+          booking.id,
+          bookingNumber,
+          booking,
+          experience,
+          activity,
+          vendorProfile
+        );
+      } catch (invoiceError) {
+        console.error("Error creating invoice record:", invoiceError);
+        // Don't throw - invoice creation failure shouldn't fail the booking
+      }
+
       // Send confirmation email
       const emailDueAmount =
         isAgent && advancePayment > 0
           ? (calculatedBookingAmount - advancePayment).toFixed(2)
           : partialPayment
-            ? finalDueAmount.toString()
-            : "0";
+          ? finalDueAmount.toString()
+          : "0";
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
@@ -1306,8 +1329,9 @@ export const BookingDialog = ({
     ) {
       toast({
         title: "Not enough spots available",
-        description: `Only ${availableSpots} spot${availableSpots !== 1 ? "s" : ""
-          } available for this time slot. Please select fewer participants.`,
+        description: `Only ${availableSpots} spot${
+          availableSpots !== 1 ? "s" : ""
+        } available for this time slot. Please select fewer participants.`,
         variant: "destructive",
       });
       return;
@@ -1496,16 +1520,16 @@ export const BookingDialog = ({
   const upfrontAmount = isAgent
     ? 0 // Agents don't pay upfront
     : partialPayment
-      ? parseFloat((finalPrice * 0.1).toFixed(2))
-      : finalPrice;
+    ? parseFloat((finalPrice * 0.1).toFixed(2))
+    : finalPrice;
   const dueAmount =
     isAgent && advancePayment > 0
       ? parseFloat((finalPrice - advancePayment).toFixed(2)) // Due = booking amount - advance payment
       : isAgent
-        ? 0 // No due amount if no advance payment
-        : partialPayment
-          ? parseFloat((finalPrice - upfrontAmount).toFixed(2))
-          : 0;
+      ? 0 // No due amount if no advance payment
+      : partialPayment
+      ? parseFloat((finalPrice - upfrontAmount).toFixed(2))
+      : 0;
 
   // Get time slots for summary display with availability
   const { data: timeSlots } = useQuery({
@@ -1588,8 +1612,8 @@ export const BookingDialog = ({
 
   const totalActivityPrice = selectedActivity
     ? parseFloat(
-      (getActivityPrice(selectedActivity) * participantCount).toFixed(2)
-    )
+        (getActivityPrice(selectedActivity) * participantCount).toFixed(2)
+      )
     : 0;
 
   return (
@@ -1776,10 +1800,10 @@ export const BookingDialog = ({
                                   (slot) => slot.id === selectedSlotId
                                 )
                                   ? `${formatTime(
-                                    timeSlots.find(
-                                      (slot) => slot.id === selectedSlotId
-                                    )!.start_time
-                                  )}`
+                                      timeSlots.find(
+                                        (slot) => slot.id === selectedSlotId
+                                      )!.start_time
+                                    )}`
                                   : "Select Time Slot"}
                               </span>
                             </div>
@@ -1821,32 +1845,41 @@ export const BookingDialog = ({
                           {(() => {
                             // Determine the base price to compare against (either the activity's regular price or its discounted price)
                             const basePriceForComparison = totalActivityPrice;
-                            
+
                             // If final price (after coupon) is less than the activity price (after activity discount)
-                            const isCouponDiscounted = finalPrice < basePriceForComparison;
-                            
+                            const isCouponDiscounted =
+                              finalPrice < basePriceForComparison;
+
                             // If activity has its own discount (discounted_price < price)
-                            const isActivityDiscounted = (selectedActivity as any)?.discounted_price && 
-                              (selectedActivity as any).discounted_price !== (selectedActivity as any).price;
+                            const isActivityDiscounted =
+                              (selectedActivity as any)?.discounted_price &&
+                              (selectedActivity as any).discounted_price !==
+                                (selectedActivity as any).price;
 
                             // Determine what to show as "Original Price"
                             // If coupon is applied, show the price BEFORE coupon (which is totalActivityPrice)
                             // Else if activity is discounted, show the raw activity price (price * count)
-                            const showOriginalPrice = isCouponDiscounted || isActivityDiscounted;
-                            
-                            const originalPriceValue = isCouponDiscounted 
-                              ? totalActivityPrice 
-                              : (selectedActivity?.price || 0) * participantCount;
+                            const showOriginalPrice =
+                              isCouponDiscounted || isActivityDiscounted;
+
+                            const originalPriceValue = isCouponDiscounted
+                              ? totalActivityPrice
+                              : (selectedActivity?.price || 0) *
+                                participantCount;
 
                             return showOriginalPrice ? (
                               <>
                                 <div className="summary-price-original">
-                                  {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{" "}
+                                  {selectedActivity?.currency === "INR"
+                                    ? "₹"
+                                    : selectedActivity?.currency}{" "}
                                   {originalPriceValue.toFixed(2)}
                                 </div>
                                 <div className="summary-price-final">
                                   <span className="summary-price-currency">
-                                    {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
+                                    {selectedActivity?.currency === "INR"
+                                      ? "₹"
+                                      : selectedActivity?.currency}
                                   </span>
                                   {finalPrice.toFixed(2)}
                                 </div>
@@ -1854,7 +1887,9 @@ export const BookingDialog = ({
                             ) : (
                               <div className="summary-price-final">
                                 <span className="summary-price-currency">
-                                  {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
+                                  {selectedActivity?.currency === "INR"
+                                    ? "₹"
+                                    : selectedActivity?.currency}
                                 </span>
                                 {totalActivityPrice.toFixed(2)}
                               </div>
@@ -2475,7 +2510,10 @@ export const BookingDialog = ({
                                             type="button"
                                             variant="outline"
                                             onClick={handleCouponValidation}
-                                            disabled={!couponCode.trim() || isCouponValidating}
+                                            disabled={
+                                              !couponCode.trim() ||
+                                              isCouponValidating
+                                            }
                                             className="flex items-center gap-2"
                                           >
                                             {isCouponValidating ? (
@@ -2507,40 +2545,40 @@ export const BookingDialog = ({
                               {((couponValidation?.isValid &&
                                 couponValidation.coupon) ||
                                 appliedCoupon) && (
-                                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <Tag className="h-4 w-4 text-green-600" />
-                                        <span className="font-medium text-green-800">
-                                          Coupon Applied:{" "}
-                                          {couponValidation?.isValid &&
-                                            couponValidation.coupon
-                                            ? couponValidation.coupon.coupon
+                                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Tag className="h-4 w-4 text-green-600" />
+                                      <span className="font-medium text-green-800">
+                                        Coupon Applied:{" "}
+                                        {couponValidation?.isValid &&
+                                        couponValidation.coupon
+                                          ? couponValidation.coupon.coupon
                                               .coupon_code
-                                            : appliedCoupon.coupon.coupon_code}
-                                        </span>
-                                      </div>
-                                      <Badge
-                                        variant="secondary"
-                                        className="bg-green-100 text-green-800"
-                                      >
-                                        {(() => {
-                                          const activeCoupon =
-                                            couponValidation?.isValid &&
-                                              couponValidation.coupon
-                                              ? couponValidation.coupon
-                                              : appliedCoupon;
-                                          return activeCoupon.coupon.type ===
-                                            "percentage"
-                                            ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
+                                          : appliedCoupon.coupon.coupon_code}
+                                      </span>
+                                    </div>
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-green-100 text-green-800"
+                                    >
+                                      {(() => {
+                                        const activeCoupon =
+                                          couponValidation?.isValid &&
+                                          couponValidation.coupon
+                                            ? couponValidation.coupon
+                                            : appliedCoupon;
+                                        return activeCoupon.coupon.type ===
+                                          "percentage"
+                                          ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
                                               1
                                             )}%`
-                                            : `Save ${experience.currency} ${activeCoupon.discount_calculation.discount_amount}`;
-                                        })()}
-                                      </Badge>
-                                    </div>
-                                    {/* <div className="mt-2 text-sm text-green-700"> */}
-                                    {/* {(() => {
+                                          : `Save ${experience.currency} ${activeCoupon.discount_calculation.discount_amount}`;
+                                      })()}
+                                    </Badge>
+                                  </div>
+                                  {/* <div className="mt-2 text-sm text-green-700"> */}
+                                  {/* {(() => {
                           const activeCoupon =
                             couponValidation?.isValid && couponValidation.coupon
                               ? couponValidation.coupon
@@ -2579,9 +2617,9 @@ export const BookingDialog = ({
                             </>
                           );
                         })()} */}
-                                    {/* </div> */}
-                                  </div>
-                                )}
+                                  {/* </div> */}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -2689,25 +2727,31 @@ export const BookingDialog = ({
                         {isSubmitting
                           ? "Processing..."
                           : isAgent
-                            ? advancePayment > 0
-                              ? `Confirm Booking (Due: ${selectedActivity?.currency ||
-                              experience.currency
-                              } ${dueAmount % 1 === 0
-                                ? dueAmount
-                                : dueAmount.toFixed(2)
+                          ? advancePayment > 0
+                            ? `Confirm Booking (Due: ${
+                                selectedActivity?.currency ||
+                                experience.currency
+                              } ${
+                                dueAmount % 1 === 0
+                                  ? dueAmount
+                                  : dueAmount.toFixed(2)
                               })`
-                              : "Confirm Booking"
-                            : partialPayment
-                              ? `Pay ${selectedActivity?.currency || experience.currency
-                              } ${upfrontAmount % 1 === 0
+                            : "Confirm Booking"
+                          : partialPayment
+                          ? `Pay ${
+                              selectedActivity?.currency || experience.currency
+                            } ${
+                              upfrontAmount % 1 === 0
                                 ? upfrontAmount
                                 : upfrontAmount.toFixed(2)
-                              } & Confirm Booking`
-                              : `Pay ${selectedActivity?.currency || experience.currency
-                              } ${finalPrice % 1 === 0
+                            } & Confirm Booking`
+                          : `Pay ${
+                              selectedActivity?.currency || experience.currency
+                            } ${
+                              finalPrice % 1 === 0
                                 ? finalPrice
                                 : finalPrice.toFixed(2)
-                              } & Confirm Booking`}
+                            } & Confirm Booking`}
                       </Button>
                     </div>
                     {/* <div className="mt-2">

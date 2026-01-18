@@ -147,15 +147,16 @@ async function importWithRetry<T>(
 }
 
 /**
- * Generates a PDF tax invoice from booking data and uploads it to Supabase storage
+ * Generates a PDF tax invoice from booking data and downloads it directly
  * @param invoiceData - The tax invoice data to populate the invoice
  * @param bookingId - The booking ID to use in the filename
- * @returns The public URL of the uploaded PDF
+ * @param fileName - Optional custom filename (defaults to invoice number)
  */
 export async function generateTaxInvoicePdf(
   invoiceData: TaxInvoiceData,
-  bookingId: string
-): Promise<string> {
+  bookingId: string,
+  fileName?: string
+): Promise<void> {
   const startTime = Date.now();
 
   try {
@@ -324,34 +325,16 @@ export async function generateTaxInvoicePdf(
     root.unmount();
     document.body.removeChild(container);
 
-    // Upload to Supabase storage
-    const fileName = `${bookingId}/tax-invoice-${Date.now()}.pdf`;
-
-    const { data, error } = await supabase.storage
-      .from("booking-invoices")
-      .upload(fileName, pdfBlob);
-
-    if (error) {
-      await logDebug(
-        "tax_invoice_pdf_upload_failed",
-        bookingId,
-        "Tax invoice PDF upload to storage failed",
-        {
-          error: error.message,
-          error_details: error,
-          file_name: fileName,
-          blob_size: pdfBlob.size,
-          total_time_ms: Date.now() - startTime,
-        }
-      );
-      throw error;
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("booking-invoices").getPublicUrl(fileName);
-
-    return publicUrl;
+    // Download PDF directly
+    const downloadFileName = fileName || `Tax_Invoice_${invoiceData.invoiceNumber || bookingId}.pdf`;
+    const url = URL.createObjectURL(pdfBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = downloadFileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   } catch (error) {
     const errorTime = Date.now();
     const errorMessage = error instanceof Error ? error.message : String(error);

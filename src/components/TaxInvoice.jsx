@@ -314,22 +314,12 @@ const TaxInvoice = ({
                 <th
                   style={{
                     padding: "12px 8px",
-                    textAlign: "center",
-                    fontWeight: 600,
-                    color: "#111827",
-                  }}
-                >
-                  Tax
-                </th>
-                <th
-                  style={{
-                    padding: "12px 8px",
                     textAlign: "right",
                     fontWeight: 600,
                     color: "#111827",
                   }}
                 >
-                  Tax Amount
+                  Price per person
                 </th>
                 <th
                   style={{
@@ -350,7 +340,6 @@ const TaxInvoice = ({
                 </td>
                 <td style={{ padding: "12px 8px", color: "#374151" }}>
                   {activityName || experienceTitle}
-                  {totalParticipants > 1 && ` (${totalParticipants} pax)`}
                 </td>
                 <td
                   style={{
@@ -364,20 +353,11 @@ const TaxInvoice = ({
                 <td
                   style={{
                     padding: "12px 8px",
-                    textAlign: "center",
-                    color: "#374151",
-                  }}
-                >
-                  IGST 18%
-                </td>
-                <td
-                  style={{
-                    padding: "12px 8px",
                     textAlign: "right",
                     color: "#374151",
                   }}
                 >
-                  {formatCurrency(totalTaxAmount)}
+                  {formatCurrency(netPricePerPerson)}
                 </td>
                 <td
                   style={{
@@ -389,52 +369,6 @@ const TaxInvoice = ({
                   {formatCurrency(totalNetPrice)}
                 </td>
               </tr>
-              {totalDiscount > 0 && (
-                <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-                  <td style={{ padding: "12px 8px", color: "#374151" }}>
-                    {invoiceDate}
-                  </td>
-                  <td style={{ padding: "12px 8px", color: "#374151" }}>
-                    Discount
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 8px",
-                      textAlign: "center",
-                      color: "#374151",
-                    }}
-                  >
-                    1
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 8px",
-                      textAlign: "center",
-                      color: "#374151",
-                    }}
-                  >
-                    -
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 8px",
-                      textAlign: "right",
-                      color: "#dc2626",
-                    }}
-                  >
-                    {formatCurrency(0)}
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 8px",
-                      textAlign: "right",
-                      color: "#dc2626",
-                    }}
-                  >
-                    -{formatCurrency(totalDiscount / 1.18)}
-                  </td>
-                </tr>
-              )}
             </tbody>
             <tfoot>
               <tr
@@ -444,7 +378,7 @@ const TaxInvoice = ({
                 }}
               >
                 <td
-                  colSpan={4}
+                  colSpan={3}
                   style={{
                     padding: "12px 8px",
                     textAlign: "right",
@@ -477,7 +411,7 @@ const TaxInvoice = ({
               </tr>
               <tr style={{ background: "#f9fafb" }}>
                 <td
-                  colSpan={4}
+                  colSpan={3}
                   style={{
                     padding: "12px 8px",
                     textAlign: "right",
@@ -486,16 +420,19 @@ const TaxInvoice = ({
                   }}
                 >
                   Total IGST 18%
-                </td>
-                <td
-                  style={{
-                    padding: "12px 8px",
-                    textAlign: "right",
-                    fontWeight: 600,
-                    color: "#111827",
-                  }}
-                >
-                  {formatCurrency(totalTaxAmount)}
+                  {totalDiscount > 0 && (
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: 400,
+                        color: "#dc2626",
+                        marginTop: "4px",
+                      }}
+                    >
+                      Less: Discount
+                    </span>
+                  )}
                 </td>
                 <td
                   style={{
@@ -506,6 +443,42 @@ const TaxInvoice = ({
                   }}
                 >
                   {formatCurrency(0)}
+                  {totalDiscount > 0 && (
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: 400,
+                        color: "#dc2626",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {formatCurrency(0)}
+                    </span>
+                  )}
+                </td>
+                <td
+                  style={{
+                    padding: "12px 8px",
+                    textAlign: "right",
+                    fontWeight: 600,
+                    color: "#111827",
+                  }}
+                >
+                  {formatCurrency(totalTaxAmount)}
+                  {totalDiscount > 0 && (
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: 400,
+                        color: "#dc2626",
+                        marginTop: "4px",
+                      }}
+                    >
+                      -{formatCurrency(totalDiscount)}
+                    </span>
+                  )}
                 </td>
               </tr>
               <tr
@@ -515,7 +488,7 @@ const TaxInvoice = ({
                 }}
               >
                 <td
-                  colSpan={4}
+                  colSpan={3}
                   style={{
                     padding: "12px 8px",
                     textAlign: "right",
@@ -546,7 +519,11 @@ const TaxInvoice = ({
                     fontSize: "16px",
                   }}
                 >
-                  {formatCurrency(totalNetPrice + totalTaxAmount)}
+                  {formatCurrency(
+                    totalNetPrice +
+                      totalTaxAmount -
+                      (totalDiscount > 0 ? totalDiscount : 0)
+                  )}
                 </td>
               </tr>
             </tfoot>
@@ -564,7 +541,9 @@ const TaxInvoice = ({
               color: "#6b7280",
             }}
           >
-            {vendorName && <div style={{ marginBottom: "4px" }}>{vendorName}</div>}
+            {vendorName && (
+              <div style={{ marginBottom: "4px" }}>{vendorName}</div>
+            )}
             {vendorAddress && (
               <div style={{ marginBottom: "4px" }}>{vendorAddress}</div>
             )}
