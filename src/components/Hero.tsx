@@ -24,12 +24,35 @@ const Hero = () => {
     const searchContainerRef = useRef(null);
 
     // Background images for slider
-    const backgroundImages = [
+    const desktopBackgroundImages = [
         "/Images/Slider1.jpeg",
-       "/Images/Slider2.jpeg",
-       "/Images/Slider3.jpeg",
-       "/Images/Slider4.jpeg",
+        "/Images/Slider2.jpeg",
+        "/Images/Slider3.jpeg",
+        "/Images/Slider4.jpeg",
     ];
+
+    const mobileBackgroundImages = [
+        "/Images/CompressHomeImages/1.jpg",
+        "/Images/CompressHomeImages/2.jpg",
+        "/Images/CompressHomeImages/3.jpg",
+        "/Images/CompressHomeImages/4.jpg",
+    ];
+
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        // Initial check
+        handleResize();
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    const backgroundImages = isMobile ? mobileBackgroundImages : desktopBackgroundImages;
 
     const { data: suggestions, isLoading } = useQuery({
         queryKey: ["search-suggestions", searchQuery],
@@ -194,7 +217,7 @@ const Hero = () => {
                                 India's trusted platform for curated experiences
                             </h1>
                             <p className="textAlignStart ColorWhite MarginTopSmall SecondaryColorText">
-                            Curated with intention. Delivered with trust. Designed for meaningful moments.
+                                Curated with intention. Delivered with trust. Designed for meaningful moments.
                             </p>
 
                             {/* Search bar */}
