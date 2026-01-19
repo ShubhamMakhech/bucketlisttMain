@@ -33,9 +33,9 @@ const Hero = () => {
 
     const mobileBackgroundImages = [
         "/Images/CompressHomeImages/1.jpg",
-        "/Images/CompressHomeImages/2.jpg",
-        "/Images/CompressHomeImages/3.jpg",
-        "/Images/CompressHomeImages/4.jpg",
+        // "/Images/CompressHomeImages/2.jpg",
+        // "/Images/CompressHomeImages/3.jpg",
+        // "/Images/CompressHomeImages/4.jpg",
     ];
 
     const [isMobile, setIsMobile] = useState(false);
