@@ -367,7 +367,7 @@ const Index = () => {
             </BidirectionalAnimatedSection>
 
             {destinationsLoading ? (
-              <div className="flex gap-4 overflow-hidden">
+              <div className="flex gap-4 overflow-hidden MobileHide">
                 {Array.from({ length: 6 }).map((_, index) => (
                   <div
                     key={index}

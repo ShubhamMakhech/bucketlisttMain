@@ -17,26 +17,13 @@ const Hero = () => {
         left: 0,
         width: 0,
     });
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const [previousSlide, setPreviousSlide] = useState(null);
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
     const searchContainerRef = useRef(null);
 
-    // Background images for slider
-    const desktopBackgroundImages = [
-        "/Images/Slider1.jpeg",
-        "/Images/Slider2.jpeg",
-        "/Images/Slider3.jpeg",
-        "/Images/Slider4.jpeg",
-    ];
-
-    const mobileBackgroundImages = [
-        "/Images/CompressHomeImages/1.jpg",
-        // "/Images/CompressHomeImages/2.jpg",
-        // "/Images/CompressHomeImages/3.jpg",
-        // "/Images/CompressHomeImages/4.jpg",
-    ];
+    // Static background images
+    const desktopBackgroundImage = "/Images/CompressHomeImages/5.png";
+    const mobileBackgroundImage = "/Images/CompressHomeImages/1.jpg";
 
     const [isMobile, setIsMobile] = useState(false);
 
@@ -52,7 +39,7 @@ const Hero = () => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    const backgroundImages = isMobile ? mobileBackgroundImages : desktopBackgroundImages;
+    const backgroundImage = isMobile ? mobileBackgroundImage : desktopBackgroundImage;
 
     const { data: suggestions, isLoading } = useQuery({
         queryKey: ["search-suggestions", searchQuery],
@@ -83,21 +70,6 @@ const Hero = () => {
         },
         enabled: searchQuery.length >= 2,
     });
-
-    // Auto-slide background images every 3 seconds
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setPreviousSlide(currentSlide);
-            setCurrentSlide((prev) => (prev + 1) % backgroundImages.length);
-
-            // Clear previous slide after animation completes
-            setTimeout(() => {
-                setPreviousSlide(null);
-            }, 1500);
-        }, 3000);
-
-        return () => clearInterval(interval);
-    }, [currentSlide, backgroundImages.length]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -187,38 +159,25 @@ const Hero = () => {
     return (
         <div id="HeroHomeContainer">
             <div className="HeroHomeContentContainer">
-                {/* Background Image Slider */}
-                {backgroundImages.map((image, index) => {
-                    const isActive = index === currentSlide;
-                    const isExiting = index === previousSlide;
-
-                    // Only render active and exiting slides
-                    if (!isActive && !isExiting) return null;
-
-                    return (
-                        <div
-                            key={index}
-                            className={`HeroBackgroundSliderItem ${isActive ? "active" : ""} ${isExiting ? "exiting" : ""}`}
-                        >
-                            <div className="HeroBackgroundImageWrapper">
-                                <img
-                                    src={image}
-                                    alt={`Hero background ${index + 1}`}
-                                    className="HeroBackgroundImage"
-                                />
-                            </div>
-                        </div>
-                    );
-                })}
+                {/* Static Background Image */}
+                <div className="HeroBackgroundSliderItem active">
+                    <div className="HeroBackgroundImageWrapper">
+                        <img
+                            src={backgroundImage}
+                            alt="Hero background"
+                            className="HeroBackgroundImage"
+                        />
+                    </div>
+                </div>
                 <div className="HeroHomeContentGridContainer MaxWidthContainer">
                     <div>
                         <div>
                             <h1 className="HeroHomeContentGridContainerTitle RairBigHeading textAlignStart ColorWhite">
-                                India's trusted platform for curated experiences
+                             Best experiences in India
                             </h1>
-                            <p className="textAlignStart ColorWhite MarginTopSmall SecondaryColorText">
+                            {/* <p className="textAlignStart ColorWhite MarginTopSmall SecondaryColorText">
                                 Curated with intention. Delivered with trust. Designed for meaningful moments.
-                            </p>
+                            </p> */}
 
                             {/* Search bar */}
                             <div className="HeroSearchBarWrapper" ref={searchContainerRef}>

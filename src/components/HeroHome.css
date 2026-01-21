@@ -403,6 +403,9 @@
     .HeroHomeContentGridContainer>div {
         grid-template-columns: 1fr;
     }
+    .HeroHomeContentGridContainer{
+        padding-bottom: 30px !important;
+    }
 }
 
 .RairBigHeading {
@@ -438,9 +441,9 @@
         padding-right: 10px !important;
     }
     .HeroHomeContentContainer {
-    min-height: 600px;
+    min-height: 450px;
     position: relative;
-    height: 600px;
+    height: 450px;
     overflow: hidden;
 }
 
