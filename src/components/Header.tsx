@@ -701,6 +701,46 @@ export function Header() {
                         </div>
                       </DropdownMenuItem>
                     )}
+
+                    {isAdmin && (
+                      <>
+                      <DropdownMenuItem
+                        className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                        onClick={() => navigate("/users")}
+                      >
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div
+                            className="flex items-center justify-center w-7 h-7 rounded-md"
+                            style={{ background: "#940fdb15" }}
+                          >
+                            <Shield
+                              className="h-3.5 w-3.5"
+                              style={{ color: "#940fdb" }}
+                            />
+                          </div>
+                          <span className="text-sm">Users</span>
+                        </div>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        className="cursor-pointer rounded-md px-2.5 py-2 hover:bg-accent transition-colors group"
+                        onClick={() => navigate("/profile")}
+                      >
+                        <div className="flex items-center gap-2.5 w-full">
+                          <div
+                            className="flex items-center justify-center w-7 h-7 rounded-md"
+                            style={{ background: "#940fdb15" }}
+                          >
+                            <User
+                              className="h-3.5 w-3.5"
+                              style={{ color: "#940fdb" }}
+                            />
+                          </div>
+                          <span className="text-sm">Go to profile</span>
+                        </div>
+                      </DropdownMenuItem>
+                      </>
+                    )}
                   </div>
 
                   <DropdownMenuSeparator className="my-1" />

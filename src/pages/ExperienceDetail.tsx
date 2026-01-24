@@ -739,7 +739,7 @@ const ExperienceDetail = () => {
                 </div>
               )} */}
 
-                      {!isAgent && (
+                      {/* {!isAgent && (
                         <div className="flex items-center gap-3 mb-6">
                           <span style={{ color: "grey" }}>From</span>
                           {appliedCoupon &&
@@ -796,7 +796,7 @@ const ExperienceDetail = () => {
                             </span>
                           )}
                         </div>
-                      )}
+                      )} */}
 
                       {/* Coupon Section */}
                       {!isVendor && (
@@ -823,7 +823,7 @@ const ExperienceDetail = () => {
                             />
                           )} */}
 
-                          {appliedCoupon && (
+                          {/* {appliedCoupon && (
                             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -843,7 +843,7 @@ const ExperienceDetail = () => {
                                 </Button>
                               </div>
                             </div>
-                          )}
+                          )} */}
                         </div>
                       )}
 
@@ -852,8 +852,9 @@ const ExperienceDetail = () => {
                         className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                         onClick={() => setIsBookingDialogOpen(true)}
                       >
-                        {bookingButtonText} {!isAgent && " - "}{" "}
-                        {!isAgent &&
+                        {bookingButtonText}
+                         {/* {!isAgent && " - "}{" "} */}
+                        {/* {!isAgent &&
                           appliedCoupon?.discount_calculation?.final_amount
                           ? formatCurrency(
                             appliedCoupon.discount_calculation.final_amount
@@ -867,7 +868,7 @@ const ExperienceDetail = () => {
                               ? formatCurrency(experience.price)
                               : formatCurrency(
                                 firstActivity?.price || experience.price
-                              )}
+                              )} */}
                       </Button>
 
                       {/* Bulk Booking Buttons for Vendor */}
