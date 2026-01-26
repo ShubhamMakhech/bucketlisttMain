@@ -182,6 +182,9 @@ export const BookingDialog = ({
   const [numberOfVehicles, setNumberOfVehicles] = useState(1);
   const [numberOfDays, setNumberOfDays] = useState(1);
   const isBikeRent = experience.title === "Bike on Rent in Rishikesh";
+  // Check if experience is River rafting - 9 Km, 16 Km and 25 Km
+  const isRiverRafting = 
+    experience.title === "River rafting - 9 Km, 16 Km and 25 Km";
   const form = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
     mode: "onBlur",
@@ -1501,11 +1504,11 @@ export const BookingDialog = ({
 
   // Calculate payment amounts for partial payment
   // For agents: due amount = booking amount - advance payment
-  // For regular users: upfront = 10%, due = 90%
+  // For regular users: upfront = 10% (or 20% for River rafting), due = 90% (or 80% for River rafting)
   const upfrontAmount = isAgent
     ? 0 // Agents don't pay upfront
     : partialPayment
-      ? parseFloat((finalPrice * 0.1).toFixed(2))
+      ? parseFloat((finalPrice * (isRiverRafting ? 0.2 : 0.1)).toFixed(2))
       : finalPrice;
   const dueAmount =
     isAgent && advancePayment > 0
@@ -1847,6 +1850,9 @@ export const BookingDialog = ({
                               ? totalActivityPrice 
                               : (selectedActivity?.price || 0) * participantCount;
 
+                            // Show upfront amount when partial payment is enabled (for non-agents)
+                            const displayPrice = !isAgent && partialPayment ? upfrontAmount : (showOriginalPrice ? finalPrice : totalActivityPrice);
+                            
                             return showOriginalPrice ? (
                               <>
                                 <div className="summary-price-original">
@@ -1857,16 +1863,28 @@ export const BookingDialog = ({
                                   <span className="summary-price-currency">
                                     {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
                                   </span>
-                                  {finalPrice.toFixed(2)}
+                                  {displayPrice.toFixed(2)}
                                 </div>
+                                {!isAgent && partialPayment && (
+                                  <div className="summary-price-due text-sm text-muted-foreground mt-1">
+                                    Due on-site: {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{dueAmount.toFixed(2)}
+                                  </div>
+                                )}
                               </>
                             ) : (
-                              <div className="summary-price-final">
-                                <span className="summary-price-currency">
-                                  {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
-                                </span>
-                                {totalActivityPrice.toFixed(2)}
-                              </div>
+                              <>
+                                <div className="summary-price-final">
+                                  <span className="summary-price-currency">
+                                    {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
+                                  </span>
+                                  {displayPrice.toFixed(2)}
+                                </div>
+                                {!isAgent && partialPayment && (
+                                  <div className="summary-price-due text-sm text-muted-foreground mt-1">
+                                    Due on-site: {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{dueAmount.toFixed(2)}
+                                  </div>
+                                )}
+                              </>
                             );
                           })()}
                         </div>
@@ -2605,10 +2623,10 @@ export const BookingDialog = ({
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="font-medium text-blue-800 dark:text-blue-200">
-                                Pay 10% Now, Rest On-Site
+                                Pay {isRiverRafting ? "20%" : "10%"} Now, Rest On-Site
                               </h4>
                               <p className="text-sm text-blue-600 dark:text-blue-300">
-                                Book your adventure with 10% — pay the rest when
+                                Book your adventure with {isRiverRafting ? "20%" : "10%"} — pay the rest when
                                 you arrive at spot!
                               </p>
                             </div>
