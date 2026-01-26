@@ -422,7 +422,7 @@ const Index = () => {
                               id={destination.id}
                               image={destination.image_url || ""}
                               title={destination.title}
-                              subtitle={destination.subtitle || ""}
+                              subtitle=""
                             />
                           </div>
                         </SwiperSlide>
