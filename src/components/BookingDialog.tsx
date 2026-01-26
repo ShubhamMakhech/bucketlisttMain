@@ -544,6 +544,15 @@ export const BookingDialog = ({
             totalParticipants: data.participant_count,
             amountPaid: upfrontAmount.toFixed(2),
             amountToBePaid: dueAmount || "0",
+            advancePlusDiscount: (() => {
+              const originalPrice =
+                selectedActivity?.price || experience.price || 0;
+              const officialPrice = originalPrice * data.participant_count;
+              const discountCoupon =
+                officialPrice - finalPrice > 0 ? officialPrice - finalPrice : 0;
+              const advancePaid = upfrontAmount;
+              return (advancePaid + discountCoupon).toFixed(2);
+            })(),
             currency: selectedActivity?.currency || experience.currency,
           },
           bookingId
