@@ -25,7 +25,7 @@ export function MobileFloatingButton({
     return (
         <div className="MobileOnlyButtonContainer">
             <div>
-                <div>
+                {/* <div>
                     {isDiscounted ? (
                         <div className="flex flex-col gap-0" style={{textAlign: "start"}}>
                             <div className="FlexAdjustContainer">
@@ -71,7 +71,7 @@ export function MobileFloatingButton({
                             )}
                         </div>
                     )}
-                </div>
+                </div> */}
                 
             </div>
             <div>
