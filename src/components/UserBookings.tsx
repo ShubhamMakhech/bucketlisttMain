@@ -60,6 +60,13 @@ import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
 import { Label } from "@/components/ui/label";
 import { BookingTimeline } from "@/components/BookingTimeline";
 import { FileText as FileTextIcon } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface BookingWithDueAmount {
   due_amount?: number;
@@ -142,6 +149,7 @@ export const UserBookings = forwardRef((props, ref) => {
   const [bookingAmount, setBookingAmount] = React.useState("");
   const [advance, setAdvance] = React.useState("");
   const [totalParticipants, setTotalParticipants] = React.useState("");
+  const [selectedActivityIdForEdit, setSelectedActivityIdForEdit] = React.useState<string>("");
 
   // Dropdown open state for backdrop
   const [isActionsDropdownOpen, setIsActionsDropdownOpen] = React.useState<
@@ -754,6 +762,12 @@ export const UserBookings = forwardRef((props, ref) => {
                     booking.due_amount?.toString() || "0"
                   );
                   setAdvance((bookingAmt - dueAmt).toString());
+                  // Set the current activity_id from booking
+                  const currentActivityId = booking.activity_id || 
+                    booking.activities?.id || 
+                    booking.time_slots?.activities?.id || 
+                    "";
+                  setSelectedActivityIdForEdit(currentActivityId);
                   setEditBookingDialogOpen(true);
                 }}
                 className="justify-start h-auto py-1 px-3 font-normal hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer rounded-md border border-transparent hover:border-purple-200"
@@ -996,6 +1010,28 @@ export const UserBookings = forwardRef((props, ref) => {
 
     return uniqueIds;
   }, [bookings, user]);
+
+  // Get experience_id from booking to edit
+  const experienceIdForEdit = bookingToEdit?.experiences?.id || bookingToEdit?.experience_id;
+
+  // Fetch activities for the experience being edited
+  const { data: activitiesForEdit = [] } = useQuery({
+    queryKey: ["edit-booking-activities", experienceIdForEdit],
+    queryFn: async () => {
+      if (!experienceIdForEdit) return [];
+
+      const { data, error } = await supabase
+        .from("activities")
+        .select("id, name, price, currency")
+        .eq("experience_id", experienceIdForEdit)
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!experienceIdForEdit && editBookingDialogOpen,
+  });
 
   const { data: profiles = [] } = useQuery({
     queryKey: ["user-profiles", uniqueUserIds],
@@ -4859,6 +4895,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
           setEditBookingDialogOpen(open);
           if (!open) {
             setBookingToEdit(null);
+            setSelectedActivityIdForEdit("");
           }
         }}
       >
@@ -4887,6 +4924,27 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                 maxLength={10}
               />
             </div>
+
+            {experienceIdForEdit && activitiesForEdit.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="editActivity">Activity *</Label>
+                <Select
+                  value={selectedActivityIdForEdit}
+                  onValueChange={setSelectedActivityIdForEdit}
+                >
+                  <SelectTrigger id="editActivity">
+                    <SelectValue placeholder="Select activity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activitiesForEdit.map((activity) => (
+                      <SelectItem key={activity.id} value={activity.id}>
+                        {activity.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="editTotalParticipants">Participants *</Label>
@@ -5022,24 +5080,71 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   return;
                 }
 
+                // Validate activity selection if activities are available
+                if (activitiesForEdit.length > 0 && !selectedActivityIdForEdit) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Please select an activity",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
                 setIsUpdatingBooking(true);
                 try {
                   // Calculate due_amount: booking_amount - advance
                   const dueAmountNum = bookingAmountNum - advanceNum;
 
                   // Update booking
+                  const updateData: any = {
+                    contact_person_name: contactPersonName.trim(),
+                    contact_person_number: contactPersonNumber.trim(),
+                    booking_amount: bookingAmountNum,
+                    due_amount: dueAmountNum,
+                    total_participants: totalParticipantsNum,
+                  };
+
+                  // Update activity_id if an activity is selected (always update if activities are available)
+                  if (selectedActivityIdForEdit) {
+                    updateData.activity_id = selectedActivityIdForEdit;
+                  }
+
                   const { error: bookingError } = await supabase
                     .from("bookings")
-                    .update({
-                      contact_person_name: contactPersonName.trim(),
-                      contact_person_number: contactPersonNumber.trim(),
-                      booking_amount: bookingAmountNum,
-                      due_amount: dueAmountNum,
-                      total_participants: totalParticipantsNum,
-                    } as any)
+                    .update(updateData)
                     .eq("id", bookingToEdit.id);
 
                   if (bookingError) throw bookingError;
+
+                  // Manually log activity_id change if it was updated (not tracked by trigger)
+                  if (selectedActivityIdForEdit && selectedActivityIdForEdit !== bookingToEdit.activity_id) {
+                    try {
+                      // Get old and new activity names for better display
+                      const oldActivity = bookingToEdit.activities || bookingToEdit.time_slots?.activities;
+                      const oldActivityName = oldActivity?.name || bookingToEdit.activity_id || "N/A";
+                      const newActivity = activitiesForEdit.find(a => a.id === selectedActivityIdForEdit);
+                      const newActivityName = newActivity?.name || selectedActivityIdForEdit;
+
+                      const { error: logError } = await supabase
+                        .from("booking_logs")
+                        .insert({
+                          booking_id: bookingToEdit.id,
+                          action: "updated",
+                          field_name: "activity_id",
+                          old_value: oldActivityName,
+                          new_value: newActivityName,
+                          changed_by: user?.id || null,
+                        });
+
+                      if (logError) {
+                        console.error("Error logging activity_id change:", logError);
+                        // Don't throw - booking update succeeded, logging is secondary
+                      }
+                    } catch (logErr) {
+                      console.error("Exception logging activity_id change:", logErr);
+                      // Don't throw - booking update succeeded, logging is secondary
+                    }
+                  }
 
                   // Update booking_participants if they exist
                   const { data: participants } = await supabase
@@ -5072,6 +5177,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   });
                   queryClient.invalidateQueries({
                     queryKey: ["user-bookings"],
+                  });
+                  // Invalidate booking logs to refresh timeline
+                  queryClient.invalidateQueries({
+                    queryKey: ["booking-logs", bookingToEdit.id],
                   });
                   setEditBookingDialogOpen(false);
                   setBookingToEdit(null);
