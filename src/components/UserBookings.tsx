@@ -116,11 +116,11 @@ export const UserBookings = forwardRef((props, ref) => {
   >(null);
   const [showExperienceFilter, setShowExperienceFilter] = React.useState(false);
   const [selectedAgentId, setSelectedAgentId] = React.useState<string | null>(
-    null
+    null,
   );
   const [showAgentFilter, setShowAgentFilter] = React.useState(false);
   const [selectedVendorId, setSelectedVendorId] = React.useState<string | null>(
-    null
+    null,
   );
   const [showVendorFilter, setShowVendorFilter] = React.useState(false);
   const [selectedBookingType, setSelectedBookingType] = React.useState<
@@ -149,7 +149,8 @@ export const UserBookings = forwardRef((props, ref) => {
   const [bookingAmount, setBookingAmount] = React.useState("");
   const [advance, setAdvance] = React.useState("");
   const [totalParticipants, setTotalParticipants] = React.useState("");
-  const [selectedActivityIdForEdit, setSelectedActivityIdForEdit] = React.useState<string>("");
+  const [selectedActivityIdForEdit, setSelectedActivityIdForEdit] =
+    React.useState<string>("");
 
   // Dropdown open state for backdrop
   const [isActionsDropdownOpen, setIsActionsDropdownOpen] = React.useState<
@@ -174,13 +175,13 @@ export const UserBookings = forwardRef((props, ref) => {
     Record<number, HTMLDivElement | null>
   >({});
   const headerRefs = React.useRef<Record<number, HTMLTableCellElement | null>>(
-    {}
+    {},
   );
 
   // Column width state for resizable columns
   const columnCount = 25; // Total number of columns (added Admin Note + Quick Actions)
   const [columnWidths, setColumnWidths] = React.useState<number[]>(
-    Array(columnCount).fill(150) // Default width 150px for each column
+    Array(columnCount).fill(150), // Default width 150px for each column
   );
 
   // Column visibility state - default visible columns only
@@ -258,7 +259,7 @@ export const UserBookings = forwardRef((props, ref) => {
 
   // Column order state for drag and drop
   const [columnOrder, setColumnOrder] = React.useState<number[]>(
-    Array.from({ length: columnCount }, (_, i) => i)
+    Array.from({ length: columnCount }, (_, i) => i),
   );
 
   // Expose methods to parent component
@@ -398,7 +399,7 @@ export const UserBookings = forwardRef((props, ref) => {
     paymentToCollectByVendor: number,
     actualCommissionNet: number,
     amountToCollectFromVendor: number,
-    advancePlusDiscount: number
+    advancePlusDiscount: number,
   ) => {
     // Check if this is an offline booking
     const isOfflineBooking = (booking as any)?.type === "offline";
@@ -462,11 +463,11 @@ export const UserBookings = forwardRef((props, ref) => {
         if (bookingTypeRender === "canceled") return "Canceled";
         return timeslot?.start_time && timeslot?.end_time
           ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-              timeslot.end_time
+              timeslot.end_time,
             )}`
           : isOfflineBooking
-          ? "Offline"
-          : "N/A";
+            ? "Offline"
+            : "N/A";
       },
       () => format(new Date(booking.booking_date), "MMM d, yyyy"),
       () => booking?.total_participants || "N/A",
@@ -518,10 +519,10 @@ export const UserBookings = forwardRef((props, ref) => {
               isCanceled
                 ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
                 : isOffline
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                : isAgentBooking
-                ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                  : isAgentBooking
+                    ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                    : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
             }`}
           >
             {bookingTypeDisplay}
@@ -659,10 +660,10 @@ export const UserBookings = forwardRef((props, ref) => {
 
                     // Calculate Advance + Discount
                     const bookingAmountVal = parseFloat(
-                      String(booking.booking_amount || 0)
+                      String(booking.booking_amount || 0),
                     );
                     const dueAmountVal = parseFloat(
-                      String(booking.due_amount || 0)
+                      String(booking.due_amount || 0),
                     );
                     const originalPriceVal =
                       activity?.price || experience?.price || 0;
@@ -687,7 +688,7 @@ export const UserBookings = forwardRef((props, ref) => {
                       dateTime: booking.time_slots
                         ? `${format(
                             new Date(booking.booking_date),
-                            "dd/MM/yyyy"
+                            "dd/MM/yyyy",
                           )} - ${booking.time_slots.start_time} - ${
                             booking.time_slots.end_time
                           }`
@@ -710,7 +711,7 @@ export const UserBookings = forwardRef((props, ref) => {
 
                     const pdfUrl = await generateInvoicePdf(
                       bookingData,
-                      booking.id
+                      booking.id,
                     );
                     window.open(pdfUrl, "_blank");
 
@@ -753,19 +754,20 @@ export const UserBookings = forwardRef((props, ref) => {
                   setContactPersonNumber(booking.contact_person_number || "");
                   setBookingAmount(booking.booking_amount?.toString() || "0");
                   setTotalParticipants(
-                    booking.total_participants?.toString() || "1"
+                    booking.total_participants?.toString() || "1",
                   );
                   const bookingAmt = parseFloat(
-                    booking.booking_amount?.toString() || "0"
+                    booking.booking_amount?.toString() || "0",
                   );
                   const dueAmt = parseFloat(
-                    booking.due_amount?.toString() || "0"
+                    booking.due_amount?.toString() || "0",
                   );
                   setAdvance((bookingAmt - dueAmt).toString());
                   // Set the current activity_id from booking
-                  const currentActivityId = booking.activity_id || 
-                    booking.activities?.id || 
-                    booking.time_slots?.activities?.id || 
+                  const currentActivityId =
+                    booking.activity_id ||
+                    booking.activities?.id ||
+                    booking.time_slots?.activities?.id ||
                     "";
                   setSelectedActivityIdForEdit(currentActivityId);
                   setEditBookingDialogOpen(true);
@@ -826,7 +828,7 @@ export const UserBookings = forwardRef((props, ref) => {
 
   // Resize handler for table columns
   const [resizingColumn, setResizingColumn] = React.useState<number | null>(
-    null
+    null,
   );
   const [startX, setStartX] = React.useState(0);
   const [startWidth, setStartWidth] = React.useState(0);
@@ -941,7 +943,7 @@ export const UserBookings = forwardRef((props, ref) => {
               email,
               phone_number
             )
-          `
+          `,
           )
           .order("created_at", { ascending: false });
 
@@ -1012,7 +1014,8 @@ export const UserBookings = forwardRef((props, ref) => {
   }, [bookings, user]);
 
   // Get experience_id from booking to edit
-  const experienceIdForEdit = bookingToEdit?.experiences?.id || bookingToEdit?.experience_id;
+  const experienceIdForEdit =
+    bookingToEdit?.experiences?.id || bookingToEdit?.experience_id;
 
   // Fetch activities for the experience being edited
   const { data: activitiesForEdit = [] } = useQuery({
@@ -1077,10 +1080,13 @@ export const UserBookings = forwardRef((props, ref) => {
 
   // Create a map of user_id to profile for easy lookup
   const profileMap = React.useMemo(() => {
-    return profiles.reduce((acc, profile) => {
-      acc[profile.id] = profile;
-      return acc;
-    }, {} as Record<string, any>);
+    return profiles.reduce(
+      (acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
   }, [profiles]);
 
   // Fetch profiles for booked_by users (to get agent/admin names) - MOVED BEFORE filteredAndSortedBookings
@@ -1134,18 +1140,24 @@ export const UserBookings = forwardRef((props, ref) => {
 
   // Create a map of booked_by user_id to profile
   const bookedByProfileMap = React.useMemo(() => {
-    return bookedByProfiles.reduce((acc, profile) => {
-      acc[profile.id] = profile;
-      return acc;
-    }, {} as Record<string, any>);
+    return bookedByProfiles.reduce(
+      (acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
   }, [bookedByProfiles]);
 
   // Create a map of booked_by user_id to role
   const bookedByRoleMap = React.useMemo(() => {
-    return bookedByRoles.reduce((acc, role) => {
-      acc[role.user_id] = role.role;
-      return acc;
-    }, {} as Record<string, string>);
+    return bookedByRoles.reduce(
+      (acc, role) => {
+        acc[role.user_id] = role.role;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
   }, [bookedByRoles]);
 
   // Filter and sort bookings
@@ -1155,7 +1167,7 @@ export const UserBookings = forwardRef((props, ref) => {
     // Apply today filter
     if (showTodayOnly) {
       filtered = filtered.filter((booking) =>
-        isSameDay(new Date(booking.booking_date), new Date())
+        isSameDay(new Date(booking.booking_date), new Date()),
       );
     }
 
@@ -1164,7 +1176,7 @@ export const UserBookings = forwardRef((props, ref) => {
       filtered = filtered.filter((booking) => {
         const bookingDate = format(
           new Date(booking.booking_date),
-          "yyyy-MM-dd"
+          "yyyy-MM-dd",
         );
 
         if (selectedEndDate) {
@@ -1309,11 +1321,11 @@ export const UserBookings = forwardRef((props, ref) => {
                 const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                      timeslot.start_time
+                      timeslot.start_time,
                     )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                  ? "Offline"
-                  : "";
+                    ? "Offline"
+                    : "";
               }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
@@ -1367,7 +1379,7 @@ export const UserBookings = forwardRef((props, ref) => {
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
                 return formatCurrency(
                   currency,
-                  (originalPrice2 - b2bPrice2) * booking.total_participants
+                  (originalPrice2 - b2bPrice2) * booking.total_participants,
                 );
               case 14: // Website Price
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -1375,7 +1387,7 @@ export const UserBookings = forwardRef((props, ref) => {
                 const discountedPrice = activity?.discounted_price || 0;
                 return formatCurrency(
                   currency,
-                  discountedPrice * booking.total_participants
+                  discountedPrice * booking.total_participants,
                 );
               case 15: // Discount Coupon
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -1393,7 +1405,7 @@ export const UserBookings = forwardRef((props, ref) => {
               case 16: // Ticket Price (customer cost)
                 return formatCurrency(
                   currency,
-                  (booking as any)?.booking_amount || 0
+                  (booking as any)?.booking_amount || 0,
                 );
               case 17: // Advance paid to bucketlistt (10%)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -1408,7 +1420,7 @@ export const UserBookings = forwardRef((props, ref) => {
                 const dueAmount2 = (booking as any)?.due_amount || 0;
                 return formatCurrency(
                   currency,
-                  bookingAmount3 - (bookingAmount3 - dueAmount2)
+                  bookingAmount3 - (bookingAmount3 - dueAmount2),
                 );
               case 19: // Actual Commission to bucketlistt (Net profit)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -1418,7 +1430,7 @@ export const UserBookings = forwardRef((props, ref) => {
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
                 return formatCurrency(
                   currency,
-                  bookingAmount4 - b2bPrice3 * booking.total_participants
+                  bookingAmount4 - b2bPrice3 * booking.total_participants,
                 );
               case 20: // Amount to be collected from vendor/ '- to be paid'
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -1431,7 +1443,7 @@ export const UserBookings = forwardRef((props, ref) => {
                   currency,
                   bookingAmount5 -
                     b2bPrice4 * booking.total_participants -
-                    (bookingAmount5 - dueAmount3)
+                    (bookingAmount5 - dueAmount3),
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -1448,7 +1460,7 @@ export const UserBookings = forwardRef((props, ref) => {
                     : 0;
                 return formatCurrency(
                   currency,
-                  bookingAmount6 - dueAmount4 + discountCoupon2
+                  bookingAmount6 - dueAmount4 + discountCoupon2,
                 );
               case 22: // Booking Created At
                 if (booking?.created_at) {
@@ -1804,14 +1816,14 @@ export const UserBookings = forwardRef((props, ref) => {
         | "experience"
         | "agent"
         | "vendor"
-        | "bookingType"
+        | "bookingType",
     ) => {
       let filtered = bookings;
 
       // Apply today filter
       if (showTodayOnly) {
         filtered = filtered.filter((booking) =>
-          isSameDay(new Date(booking.booking_date), new Date())
+          isSameDay(new Date(booking.booking_date), new Date()),
         );
       }
 
@@ -1820,7 +1832,7 @@ export const UserBookings = forwardRef((props, ref) => {
         filtered = filtered.filter((booking) => {
           const bookingDate = format(
             new Date(booking.booking_date),
-            "yyyy-MM-dd"
+            "yyyy-MM-dd",
           );
 
           if (selectedEndDate) {
@@ -1945,11 +1957,11 @@ export const UserBookings = forwardRef((props, ref) => {
                   const isOfflineFilter = bookingTypeFilter === "offline";
                   return timeslot?.start_time && timeslot?.end_time
                     ? `${formatTime12Hour(
-                        timeslot.start_time
+                        timeslot.start_time,
                       )} - ${formatTime12Hour(timeslot.end_time)}`
                     : isOfflineFilter
-                    ? "Offline"
-                    : "";
+                      ? "Offline"
+                      : "";
                 }
                 case 10: {
                   const bookingType = (booking as any)?.type || "online";
@@ -2032,7 +2044,7 @@ export const UserBookings = forwardRef((props, ref) => {
       bookedByRoleMap,
       bookedByProfileMap,
       formatTime12Hour,
-    ]
+    ],
   );
 
   // Get unique activities from bookings - only from active experiences, filtered by other filters
@@ -2221,7 +2233,7 @@ export const UserBookings = forwardRef((props, ref) => {
       // Default for offline bookings
       return "offline";
     },
-    [bookedByRoleMap, bookedByProfileMap]
+    [bookedByRoleMap, bookedByProfileMap],
   );
 
   // Filter and sort bookings
@@ -2329,7 +2341,7 @@ export const UserBookings = forwardRef((props, ref) => {
       if (selectedDate) {
         const bookingDate = format(
           new Date(booking.booking_date),
-          "yyyy-MM-dd"
+          "yyyy-MM-dd",
         );
 
         if (selectedEndDate) {
@@ -2400,11 +2412,11 @@ export const UserBookings = forwardRef((props, ref) => {
               if (bookingTypeUnique === "canceled") return "Canceled";
               return timeslot?.start_time && timeslot?.end_time
                 ? `${formatTime12Hour(
-                    timeslot.start_time
+                    timeslot.start_time,
                   )} - ${formatTime12Hour(timeslot.end_time)}`
                 : isOffline
-                ? "Offline"
-                : "";
+                  ? "Offline"
+                  : "";
             case 7:
               return format(new Date(booking.booking_date), "MMM d, yyyy");
             case 8:
@@ -2455,7 +2467,7 @@ export const UserBookings = forwardRef((props, ref) => {
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
               return formatCurrency(
                 currency,
-                (originalPrice - b2bPrice) * booking.total_participants
+                (originalPrice - b2bPrice) * booking.total_participants,
               );
             }
             case 14: {
@@ -2463,7 +2475,7 @@ export const UserBookings = forwardRef((props, ref) => {
               const discountedPrice = activity?.discounted_price || 0;
               return formatCurrency(
                 currency,
-                discountedPrice * booking.total_participants
+                discountedPrice * booking.total_participants,
               );
             }
             case 15: {
@@ -2480,7 +2492,7 @@ export const UserBookings = forwardRef((props, ref) => {
             case 16:
               return formatCurrency(
                 currency,
-                (booking as any)?.booking_amount || 0
+                (booking as any)?.booking_amount || 0,
               );
             case 17: {
               if (isOffline && !isAdmin) return "-";
@@ -2494,7 +2506,7 @@ export const UserBookings = forwardRef((props, ref) => {
               const dueAmount = (booking as any)?.due_amount || 0;
               return formatCurrency(
                 currency,
-                bookingAmount - (bookingAmount - dueAmount)
+                bookingAmount - (bookingAmount - dueAmount),
               );
             }
             case 19: {
@@ -2504,7 +2516,7 @@ export const UserBookings = forwardRef((props, ref) => {
                 (booking as any).b2bPrice || activity?.b2bPrice || 0;
               return formatCurrency(
                 currency,
-                bookingAmount - b2bPrice * booking.total_participants
+                bookingAmount - b2bPrice * booking.total_participants,
               );
             }
             case 20: {
@@ -2517,7 +2529,7 @@ export const UserBookings = forwardRef((props, ref) => {
                 currency,
                 bookingAmount -
                   b2bPrice * booking.total_participants -
-                  (bookingAmount - dueAmount)
+                  (bookingAmount - dueAmount),
               );
             }
             case 21: {
@@ -2532,7 +2544,7 @@ export const UserBookings = forwardRef((props, ref) => {
                   : 0;
               return formatCurrency(
                 currency,
-                bookingAmount - dueAmount + discountCoupon
+                bookingAmount - dueAmount + discountCoupon,
               );
             }
             case 22: {
@@ -2599,7 +2611,7 @@ export const UserBookings = forwardRef((props, ref) => {
     const allValues = getUniqueColumnValues[columnIndex] || [];
     const searchQuery = filterSearchQueries[columnIndex]?.toLowerCase() || "";
     const filteredValues = allValues.filter((value) =>
-      value.toLowerCase().includes(searchQuery)
+      value.toLowerCase().includes(searchQuery),
     );
     setColumnFilters((prev) => ({
       ...prev,
@@ -2621,7 +2633,7 @@ export const UserBookings = forwardRef((props, ref) => {
     const allValues = getUniqueColumnValues[columnIndex] || [];
     const searchQuery = filterSearchQueries[columnIndex]?.toLowerCase() || "";
     const filteredValues = allValues.filter((value) =>
-      value.toLowerCase().includes(searchQuery)
+      value.toLowerCase().includes(searchQuery),
     );
     if (filteredValues.length === 0) return false;
     const selectedValues = columnFilters[columnIndex] || [];
@@ -2634,7 +2646,7 @@ export const UserBookings = forwardRef((props, ref) => {
       if (openFilterDropdown !== null) {
         const ref = filterDropdownRefs.current[openFilterDropdown];
         const filterIcon = (event.target as HTMLElement).closest(
-          ".filter-icon"
+          ".filter-icon",
         );
         if (ref && !ref.contains(event.target as Node) && !filterIcon) {
           setOpenFilterDropdown(null);
@@ -2696,7 +2708,7 @@ export const UserBookings = forwardRef((props, ref) => {
       filtered = filtered.filter((booking) => {
         const bookingDate = format(
           new Date(booking.booking_date),
-          "yyyy-MM-dd"
+          "yyyy-MM-dd",
         );
 
         if (selectedEndDate) {
@@ -2841,11 +2853,11 @@ export const UserBookings = forwardRef((props, ref) => {
                 const isOfflineFilter = bookingTypeFilter === "offline";
                 return timeslot?.start_time && timeslot?.end_time
                   ? `${formatTime12Hour(
-                      timeslot.start_time
+                      timeslot.start_time,
                     )} - ${formatTime12Hour(timeslot.end_time)}`
                   : isOfflineFilter
-                  ? "Offline"
-                  : "";
+                    ? "Offline"
+                    : "";
               }
               case 7: // Date
                 return format(new Date(booking.booking_date), "MMM d, yyyy");
@@ -2899,7 +2911,7 @@ export const UserBookings = forwardRef((props, ref) => {
                   (booking as any).b2bPrice || activity?.b2bPrice || 0;
                 return formatCurrency(
                   currency,
-                  (originalPrice2 - b2bPrice2) * booking.total_participants
+                  (originalPrice2 - b2bPrice2) * booking.total_participants,
                 );
               case 14: // Website Price
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -2907,7 +2919,7 @@ export const UserBookings = forwardRef((props, ref) => {
                 const discountedPrice = activity?.discounted_price || 0;
                 return formatCurrency(
                   currency,
-                  discountedPrice * booking.total_participants
+                  discountedPrice * booking.total_participants,
                 );
               case 15: // Discount Coupon
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -2925,7 +2937,7 @@ export const UserBookings = forwardRef((props, ref) => {
               case 16: // Ticket Price (customer cost)
                 return formatCurrency(
                   currency,
-                  (booking as any)?.booking_amount || 0
+                  (booking as any)?.booking_amount || 0,
                 );
               case 17: // Advance paid to bucketlistt (10%)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -2940,7 +2952,7 @@ export const UserBookings = forwardRef((props, ref) => {
                 const dueAmount2 = (booking as any)?.due_amount || 0;
                 return formatCurrency(
                   currency,
-                  bookingAmount3 - (bookingAmount3 - dueAmount2)
+                  bookingAmount3 - (bookingAmount3 - dueAmount2),
                 );
               case 19: // Actual Commission to bucketlistt (Net profit)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -2949,7 +2961,7 @@ export const UserBookings = forwardRef((props, ref) => {
                 const b2bPrice3 = booking.b2bPrice || activity?.b2bPrice || 0;
                 return formatCurrency(
                   currency,
-                  bookingAmount4 - b2bPrice3 * booking.total_participants
+                  bookingAmount4 - b2bPrice3 * booking.total_participants,
                 );
               case 20: // Amount to be collected from vendor/ '- to be paid'
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -2961,7 +2973,7 @@ export const UserBookings = forwardRef((props, ref) => {
                   currency,
                   bookingAmount5 -
                     b2bPrice4 * booking.total_participants -
-                    (bookingAmount5 - dueAmount3)
+                    (bookingAmount5 - dueAmount3),
                 );
               case 21: // Advance + discount (vendor needs this)
                 if ((booking as any)?.type === "offline" && !isAdmin)
@@ -2978,7 +2990,7 @@ export const UserBookings = forwardRef((props, ref) => {
                     : 0;
                 return formatCurrency(
                   currency,
-                  bookingAmount6 - dueAmount4 + discountCoupon2
+                  bookingAmount6 - dueAmount4 + discountCoupon2,
                 );
               case 22: // Booking Created At
                 if (booking?.created_at) {
@@ -3027,7 +3039,7 @@ export const UserBookings = forwardRef((props, ref) => {
 
     // Filter for today's bookings only
     return filtered.filter((booking) =>
-      isSameDay(new Date(booking.booking_date), new Date())
+      isSameDay(new Date(booking.booking_date), new Date()),
     ).length;
   }, [
     bookings,
@@ -3165,7 +3177,7 @@ export const UserBookings = forwardRef((props, ref) => {
                   // Get date & time
                   const bookingDate = format(
                     new Date(booking.booking_date),
-                    "MMM d, yyyy"
+                    "MMM d, yyyy",
                   );
                   let dateTime = bookingDate;
                   if (timeslot?.start_time && timeslot?.end_time) {
@@ -3181,10 +3193,10 @@ export const UserBookings = forwardRef((props, ref) => {
 
                   // Get discount and advance amount
                   const bookingAmount = parseFloat(
-                    (booking as any)?.booking_amount?.toString() || "0"
+                    (booking as any)?.booking_amount?.toString() || "0",
                   );
                   const dueAmount = parseFloat(
-                    booking?.due_amount?.toString() || "0"
+                    booking?.due_amount?.toString() || "0",
                   );
                   const advanceAmount = bookingAmount - dueAmount;
 
@@ -3258,8 +3270,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                       booking.time_slots?.end_time
                       ? formatTime12Hour(booking.time_slots.start_time)
                       : bookingType === "offline"
-                      ? "Offline"
-                      : "N/A";
+                        ? "Offline"
+                        : "N/A";
                   })()}
                 </span>
               </div>
@@ -3446,7 +3458,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                           currency,
                           (booking.b2bPrice ||
                             booking.time_slots?.activities?.b2bPrice) *
-                            booking.total_participants
+                            booking.total_participants,
                         )}
                       </span>
                     </div>
@@ -3458,7 +3470,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           booking.time_slots?.activities?.price *
-                            booking.total_participants
+                            booking.total_participants,
                         )}
                       </span>
                     </div>
@@ -3470,7 +3482,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                           (booking.time_slots?.activities?.price -
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice)) *
-                            booking.total_participants
+                            booking.total_participants,
                         )}
                       </span>
                     </div>
@@ -3485,7 +3497,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                       <span className="mobile-vendor-value">
                         {formatCurrency(
                           currency,
-                          Number(bookingAmount) - dueAmount
+                          Number(bookingAmount) - dueAmount,
                         )}
                       </span>
                     </div>
@@ -3495,7 +3507,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         {formatCurrency(
                           currency,
                           Number(bookingAmount) -
-                            (Number(bookingAmount) - dueAmount)
+                            (Number(bookingAmount) - dueAmount),
                         )}
                       </span>
                     </div>
@@ -3510,7 +3522,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                             (booking.b2bPrice ||
                               booking.time_slots?.activities?.b2bPrice) *
                               booking.total_participants -
-                            (Number(bookingAmount) - dueAmount)
+                            (Number(bookingAmount) - dueAmount),
                         )}
                       </span>
                     </div>
@@ -3757,7 +3769,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   >
                     {selectedActivityId
                       ? uniqueActivities.find(
-                          (a) => a.id === selectedActivityId
+                          (a) => a.id === selectedActivityId,
                         )?.name || "Activity"
                       : "Activity"}
                   </Button>
@@ -4246,7 +4258,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                               if (
                                 draggedColumnIndex === null &&
                                 !(e.target as HTMLElement).closest(
-                                  ".filter-icon"
+                                  ".filter-icon",
                                 )
                               ) {
                                 e.stopPropagation();
@@ -4348,7 +4360,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               handleClearColumnFilter(
-                                                originalIndex
+                                                originalIndex,
                                               );
                                             }}
                                           >
@@ -4483,7 +4495,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                           ].filter((value) =>
                                             value
                                               .toLowerCase()
-                                              .includes(searchQuery)
+                                              .includes(searchQuery),
                                           );
 
                                         if (filteredValues.length === 0) {
@@ -4518,7 +4530,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                                   onCheckedChange={() =>
                                                     handleFilterToggle(
                                                       originalIndex,
-                                                      value
+                                                      value,
                                                     )
                                                   }
                                                 />
@@ -4527,7 +4539,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                                 </span>
                                               </label>
                                             );
-                                          }
+                                          },
                                         );
                                       })()
                                     ) : (
@@ -4546,7 +4558,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                               }}
                             />
                           </th>
-                        )
+                        ),
                     )}
                   </tr>
                 </thead>
@@ -4592,7 +4604,9 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                       const advancePaid10 = bookingAmount - dueAmount;
                       const paymentToCollectByVendor =
                         ticketPrice - advancePaid10; // Payment to be collected by vendor = ticketPrice - Advance paid (10%)
-                      const actualCommissionNet = ticketPrice - b2bPriceTotal; // Actual Commission (Net profit) = Ticket Price - B2B Price
+                      const actualCommissionNet =
+                        ticketPrice -
+                        b2bPriceTotal * booking.total_participants; // Actual Commission (Net profit) = Ticket Price - B2B Price
                       const amountToCollectFromVendor =
                         bookingAmount -
                         b2bPriceTotal -
@@ -4621,8 +4635,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                     originalIndex === 0
                                       ? experience?.title || ""
                                       : originalIndex === 9
-                                      ? booking.note_for_guide || ""
-                                      : ""
+                                        ? booking.note_for_guide || ""
+                                        : ""
                                   }
                                 >
                                   {renderCellContent(
@@ -4643,14 +4657,14 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                                     paymentToCollectByVendor,
                                     actualCommissionNet,
                                     amountToCollectFromVendor,
-                                    advancePlusDiscount
+                                    advancePlusDiscount,
                                   )}
                                 </td>
-                              )
+                              ),
                           )}
                         </tr>
                       );
-                    }
+                    },
                   )}
                 </tbody>
               </table>
@@ -5081,7 +5095,10 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                 }
 
                 // Validate activity selection if activities are available
-                if (activitiesForEdit.length > 0 && !selectedActivityIdForEdit) {
+                if (
+                  activitiesForEdit.length > 0 &&
+                  !selectedActivityIdForEdit
+                ) {
                   toast({
                     title: "Validation Error",
                     description: "Please select an activity",
@@ -5117,13 +5134,22 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                   if (bookingError) throw bookingError;
 
                   // Manually log activity_id change if it was updated (not tracked by trigger)
-                  if (selectedActivityIdForEdit && selectedActivityIdForEdit !== bookingToEdit.activity_id) {
+                  if (
+                    selectedActivityIdForEdit &&
+                    selectedActivityIdForEdit !== bookingToEdit.activity_id
+                  ) {
                     try {
                       // Get old and new activity names for better display
-                      const oldActivity = bookingToEdit.activities || bookingToEdit.time_slots?.activities;
-                      const oldActivityName = oldActivity?.name || bookingToEdit.activity_id || "N/A";
-                      const newActivity = activitiesForEdit.find(a => a.id === selectedActivityIdForEdit);
-                      const newActivityName = newActivity?.name || selectedActivityIdForEdit;
+                      const oldActivity =
+                        bookingToEdit.activities ||
+                        bookingToEdit.time_slots?.activities;
+                      const oldActivityName =
+                        oldActivity?.name || bookingToEdit.activity_id || "N/A";
+                      const newActivity = activitiesForEdit.find(
+                        (a) => a.id === selectedActivityIdForEdit,
+                      );
+                      const newActivityName =
+                        newActivity?.name || selectedActivityIdForEdit;
 
                       const { error: logError } = await supabase
                         .from("booking_logs")
@@ -5137,11 +5163,17 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                         });
 
                       if (logError) {
-                        console.error("Error logging activity_id change:", logError);
+                        console.error(
+                          "Error logging activity_id change:",
+                          logError,
+                        );
                         // Don't throw - booking update succeeded, logging is secondary
                       }
                     } catch (logErr) {
-                      console.error("Exception logging activity_id change:", logErr);
+                      console.error(
+                        "Exception logging activity_id change:",
+                        logErr,
+                      );
                       // Don't throw - booking update succeeded, logging is secondary
                     }
                   }
@@ -5165,7 +5197,7 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
                     if (participantsError) {
                       console.error(
                         "Error updating participants:",
-                        participantsError
+                        participantsError,
                       );
                       // Don't throw - booking update succeeded
                     }
