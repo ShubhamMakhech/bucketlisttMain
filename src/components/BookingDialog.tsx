@@ -183,7 +183,7 @@ export const BookingDialog = ({
   const [numberOfDays, setNumberOfDays] = useState(1);
   const isBikeRent = experience.title === "Bike on Rent in Rishikesh";
   // Check if experience is River rafting - 9 Km, 16 Km and 25 Km
-  const isRiverRafting = 
+  const isRiverRafting =
     experience.title === "River rafting - 9 Km, 16 Km and 25 Km";
   const form = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
@@ -1505,10 +1505,11 @@ export const BookingDialog = ({
   // Calculate payment amounts for partial payment
   // For agents: due amount = booking amount - advance payment
   // For regular users: upfront = 10% (or 20% for River rafting), due = 90% (or 80% for River rafting)
+  const paymentPercentage = isRiverRafting ? 0.2 : 0.1;
   const upfrontAmount = isAgent
     ? 0 // Agents don't pay upfront
     : partialPayment
-      ? parseFloat((finalPrice * (isRiverRafting ? 0.2 : 0.1)).toFixed(2))
+      ? parseFloat((finalPrice * paymentPercentage).toFixed(2))
       : finalPrice;
   const dueAmount =
     isAgent && advancePayment > 0
@@ -1833,58 +1834,57 @@ export const BookingDialog = ({
                           {(() => {
                             // Determine the base price to compare against (either the activity's regular price or its discounted price)
                             const basePriceForComparison = totalActivityPrice;
-                            
+
                             // If final price (after coupon) is less than the activity price (after activity discount)
                             const isCouponDiscounted = finalPrice < basePriceForComparison;
-                            
+
                             // If activity has its own discount (discounted_price < price)
-                            const isActivityDiscounted = (selectedActivity as any)?.discounted_price && 
+                            const isActivityDiscounted = (selectedActivity as any)?.discounted_price &&
                               (selectedActivity as any).discounted_price !== (selectedActivity as any).price;
 
                             // Determine what to show as "Original Price"
                             // If coupon is applied, show the price BEFORE coupon (which is totalActivityPrice)
                             // Else if activity is discounted, show the raw activity price (price * count)
                             const showOriginalPrice = isCouponDiscounted || isActivityDiscounted;
-                            
-                            const originalPriceValue = isCouponDiscounted 
-                              ? totalActivityPrice 
+
+                            const originalPriceValue = isCouponDiscounted
+                              ? totalActivityPrice
                               : (selectedActivity?.price || 0) * participantCount;
 
                             // Show upfront amount when partial payment is enabled (for non-agents)
                             const displayPrice = !isAgent && partialPayment ? upfrontAmount : (showOriginalPrice ? finalPrice : totalActivityPrice);
-                            
-                            return showOriginalPrice ? (
-                              <>
-                                <div className="summary-price-original">
-                                  {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{" "}
-                                  {originalPriceValue.toFixed(2)}
-                                </div>
-                                <div className="summary-price-final">
-                                  <span className="summary-price-currency">
-                                    {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
-                                  </span>
-                                  {displayPrice.toFixed(2)}
-                                </div>
-                                {!isAgent && partialPayment && (
-                                  <div className="summary-price-due text-sm text-muted-foreground mt-1">
-                                    Due on-site: {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{dueAmount.toFixed(2)}
+
+                            return (
+                              <div className="summary-price-details">
+                                {showOriginalPrice && (
+                                  <div className="summary-price-original">
+                                    {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{" "}
+                                    {originalPriceValue.toFixed(2)}
                                   </div>
                                 )}
-                              </>
-                            ) : (
-                              <>
-                                <div className="summary-price-final">
-                                  <span className="summary-price-currency">
-                                    {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
-                                  </span>
-                                  {displayPrice.toFixed(2)}
-                                </div>
                                 {!isAgent && partialPayment && (
-                                  <div className="summary-price-due text-sm text-muted-foreground mt-1">
-                                    Due on-site: {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{dueAmount.toFixed(2)}
+                                  <div className="summary-payment-calculation">
+                                    {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{finalPrice.toFixed(0)} × {(paymentPercentage * 100).toFixed(0)}% 
                                   </div>
                                 )}
-                              </>
+                                <div className="summary-price-final-row">
+                                  <div className="summary-price-final">
+                                    <span className="summary-price-currency">
+                                      {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
+                                    </span>
+                                    {displayPrice.toFixed(2)}
+                                  </div>
+                                  {!isAgent && partialPayment && (
+                                    <div className="summary-price-due">
+                                      <span className="due-label">Due on-site:</span>
+                                      <span className="due-value">
+                                        {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
+                                        {dueAmount.toFixed(2)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             );
                           })()}
                         </div>

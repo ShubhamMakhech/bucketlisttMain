@@ -50,7 +50,7 @@
 
 .summary-main-layout {
     display: flex;
-    gap: 16px;
+    gap: 10px;
     align-items: flex-start;
 }
 
@@ -145,14 +145,14 @@
     gap: 6px;
 }
 
-.summary-activity-name::before {
+/* .summary-activity-name::before {
     content: "";
     display: inline-block;
     width: 6px;
     height: 6px;
     background: #fb923c;
     border-radius: 50%;
-}
+} */
 
 .summary-time-slot {
     display: flex;
@@ -213,22 +213,38 @@
     font-weight: 700;
 }
 
-.MobileSmmaryDate{
+.summary-payment-calculation {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    margin-bottom: 2px;
+    letter-spacing: -0.01em;
+}
+
+.MobileSmmaryDate {
     display: none;
 }
+
 @media (max-width: 768px) {
-    .summary-date-card{
-        min-width: 70px;
+    .summary-date-card {
+        min-width: 60px;
     }
-    .summary-footer-row{
+
+    .summary-footer-row {
+        display: flex;
         align-items: center;
+        gap: 12px;
+        justify-content: space-between;
     }
-    .MobileSmmaryDate{
+
+    .MobileSmmaryDate {
         display: block;
     }
-    .PcummaryDate{
+
+    .PcummaryDate {
         display: none;
     }
+
     .summary-visual-column {
         width: 80px;
     }
@@ -236,20 +252,70 @@
     .summary-day {
         font-size: 20px;
     }
-.booking-summary-wrapper{
-    margin-bottom: 0px;
-    padding: 10px 16px;
-}
+
+    .summary-people-count {
+        flex: 1;
+        font-size: 13px;
+        color: #475569;
+        line-height: 1.2;
+        padding: 0 4px;
+        text-align: left;
+    }
+
+    .booking-summary-wrapper {
+        margin-bottom: 0px;
+        padding: 12px 11px;
+    }
+
     .summary-exp-title {
         font-size: 15px;
     }
 
     .summary-price-final {
         font-size: 18px;
+        margin-bottom: 0px;
     }
-    .summary-price-container{
+
+    .summary-price-container {
         display: flex;
-        align-items: center;
-        gap: 10px;
+        flex-direction: column;
+        align-items: flex-end;
+        text-align: right;
+        min-width: fit-content;
+    }
+
+    .summary-price-details {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .summary-price-final-row {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+    }
+
+    .summary-price-due {
+        font-size: 11px;
+        color: #64748b;
+        display: flex;
+        gap: 4px;
+        white-space: nowrap;
+        background: #f8fafc;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #f1f5f9;
+        margin-top: 2px;
+    }
+
+    .due-label {
+        font-weight: 500;
+    }
+
+    .due-value {
+        font-weight: 700;
+        color: #334155;
     }
 }
