@@ -1744,7 +1744,7 @@ export const BookingDialog = ({
                   </div> */}
                     <div className="booking-summary-wrapper">
                       <span className="summary-title-label">
-                        Booking Summaryfas
+                        Booking Summary
                       </span>
 
                       <div className="summary-main-layout">
