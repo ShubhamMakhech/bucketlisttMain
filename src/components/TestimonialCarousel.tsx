@@ -1,8 +1,13 @@
-// @ts-nocheck
-import { useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Star, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Color } from "antd/es/color-picker";
+
+interface VideoReel {
+  id: string;
+  src: string;
+  poster?: string;
+  instagramUrl?: string;
+}
 
 interface Testimonial {
   id: string;
@@ -189,6 +194,154 @@ const testimonials: Testimonial[] = [
   },
 ];
 
+// Video Reel component with mute/unmute + sequential play (only plays when isActive)
+function VideoReelCard({
+  reel,
+  index,
+  isActive,
+  onEnded,
+  onRequestPlay,
+}: {
+  reel: VideoReel;
+  index: number;
+  isActive: boolean;
+  onEnded: () => void;
+  onRequestPlay: (index: number) => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isMuted, setIsMuted] = useState(true);
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Clicking the audio button makes this reel the active one so it starts playing
+    onRequestPlay(index);
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  // Sequential: play when this reel is active, pause and reset when not
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isActive) {
+      video.currentTime = 0;
+      setIsMuted(video.muted); // keep icon in sync with actual audio state
+      video.play().catch(() => { });
+    } else {
+      video.pause();
+      video.currentTime = 0;
+      setIsMuted(true);
+    }
+  }, [isActive]);
+
+  const handleEnded = () => {
+    onEnded();
+  };
+
+  // Open the Instagram link in a new tab
+  const openInstagram = () => {
+    if (reel.instagramUrl) {
+      window.open(reel.instagramUrl, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  return (
+    <div className={`testimonial-reel-card ${isActive ? "testimonial-reel-active" : ""}`} onClick={openInstagram}>
+      <video
+        ref={videoRef}
+        src={reel.src}
+        poster={reel.poster}
+        muted
+        playsInline
+        className="testimonial-reel-video"
+        onEnded={handleEnded}
+      />
+
+      {/* Gradient overlay */}
+      <div className="testimonial-reel-overlay" />
+
+      {/* Mute/Unmute Button */}
+      <button
+        onClick={toggleMute}
+        className="testimonial-reel-mute-btn"
+        aria-label={isMuted ? "Unmute" : "Mute"}
+      >
+        {isMuted ? (
+          <VolumeX className="h-4 w-4" />
+        ) : (
+          <Volume2 className="h-4 w-4" />
+        )}
+      </button>
+
+      {/* Instagram attribution */}
+      <div className="testimonial-reel-badge">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="white">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+        </svg>
+        <span>Reel</span>
+      </div>
+    </div>
+  );
+}
+
+// Video reels data - from public/Images/InstaReelsReview/
+const videoReels: VideoReel[] = [
+
+  {
+    id: "reel-3",
+    src: "/Images/InstaReelsReview/3.mp4",
+    instagramUrl: "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDgxODc3OTYxMTU1OTYy?story_media_id=3794722450379551696&igsh=MXVyc3I1cGswNG10bw==",
+  },
+  {
+    id: "reel-2",
+    src: "/Images/InstaReelsReview/2.mp4",
+    instagramUrl: "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDgxODc3OTYxMTU1OTYy?story_media_id=3796190244044414878&igsh=MXVyc3I1cGswNG10bw==",
+  },
+  {
+    id: "reel-1",
+    src: "/Images/InstaReelsReview/1.mp4",
+    instagramUrl: "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDgxODc3OTYxMTU1OTYy?story_media_id=3793801262773963986&igsh=MXVyc3I1cGswNG10bw==",
+  },
+
+  {
+    id: "reel-3",
+    src: "/Images/InstaReelsReview/4.mp4",
+    instagramUrl: "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDgxODc3OTYxMTU1OTYy?story_media_id=3794722450379551696&igsh=MXVyc3I1cGswNG10bw==",
+  },
+];
+
+// Grid that runs reels in sequence: 1 → 2 → 3 → 4 → 1 → ...
+function SequentialReelsGrid() {
+  const [currentPlayingIndex, setCurrentPlayingIndex] = useState(0);
+
+  const handleReelEnded = () => {
+    setCurrentPlayingIndex((prev) => (prev + 1) % videoReels.length);
+  };
+
+  // When user clicks the audio button on any reel, that reel becomes active and starts
+  const handleRequestPlay = (index: number) => {
+    setCurrentPlayingIndex(index);
+  };
+
+  return (
+    <div className="testimonial-reels-grid PaddingTopSet">
+      {videoReels.map((reel, index) => (
+        <VideoReelCard
+          key={`reel-${index}`}
+          reel={reel}
+          index={index}
+          isActive={currentPlayingIndex === index}
+          onEnded={handleReelEnded}
+          onRequestPlay={handleRequestPlay}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function TestimonialCarousel() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -223,40 +376,22 @@ export function TestimonialCarousel() {
   return (
     <section
       className="SectionPaddingBottom SectionPaddingTop"
-      id="TestimonialCarouselBackgroundStyles"
+      id="testimonials-section"
     >
-      <div className="max-w-7xl mx-auto MaxWidthContainer">
+      <div className="MaxWidthContainer">
         <div>
-          {/* Left Side - Title and Navigation */}
+          {/* Title */}
           <div>
-            <div className="ColorWhite SectionHeading" >
-              {/* <br /> */}
-              People's experience with us &nbsp;💜
-            </div>
-            {/* <br /> */}
-            {/* Navigation Buttons */}
-            {/* <div className="flex gap-3 justify-center lg:justify-start">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={scrollLeft}
-                className="border-white/20 rounded-full w-12 h-12 bg-white/10 text-white hover:bg-white/20"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={scrollRight}
-                className="border-white/20 rounded-full w-12 h-12 bg-white/10 text-white hover:bg-white/20"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div> */}
+            <h2 className="text-white CommonH2 leading-tight">
+              Hear what our customers are saying&nbsp;💜
+            </h2>
           </div>
 
-          {/* Right Side - Horizontal Scrollable Testimonials */}
-          <div className="flex-1 relative w-full overflow-x-auto mt-2 PaddingTopSet">
+          {/* Video Reels Grid - sequential play: 1st → 2nd → 3rd → 1st... */}
+          <SequentialReelsGrid />
+
+          {/* Review Cards - Hidden for now */}
+          {/* <div className="flex-1 relative w-full overflow-x-auto mt-4 PaddingTopSet">
             <div
               ref={scrollContainerRef}
               className="flex gap-4  scrollbar-hide pb-4"
@@ -268,39 +403,14 @@ export function TestimonialCarousel() {
               {testimonials.map((testimonial) => (
                 <div
                   key={testimonial.id}
-                  className="TestimonialCardContainer"
+                  className="bg-gray-800 rounded-2xl  flex flex-col flex-shrink-0 w-80 "
 
                 >
-                  {/* Image */}
-                  {/* <div
-                    className="h-40 w-full bg-gradient-to-br from-blue-500 to-purple-600 relative "
-                    id="TestimonialImage"
-                  >
-                    <img
-                      src={testimonial.image}
-                      alt={`${testimonial.experience} - ${testimonial.name}`}
-                      className="w-full h-full object-cover object-center"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
-                    <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-white text-xs font-medium">
-                        {testimonial.rating}
-                      </span>
-                    </div>
-                  </div> */}
-
-                  {/* Content */}
                   <div
                     className="p-6 flex-1 flex flex-col"
-                    style={{ background: "rgb(28 21 37)", borderRadius: "20px",heigh:"100%" }}
+                    style={{ background: "rgb(28 21 37)", borderRadius: "20px" }}
 
                   >
-                    {/* Header with Avatar and Info */}
                     <div className="flex items-center gap-3 mb-4">
                       <TestimonialAvatar
                         image={testimonial.image}
@@ -322,7 +432,6 @@ export function TestimonialCarousel() {
                       </div>
                     </div>
 
-                    {/* Review Text */}
                     <div className="flex-1 mb-4">
                       <p
                         className="text-gray-300 text-sm leading-relaxed"
@@ -332,7 +441,6 @@ export function TestimonialCarousel() {
                       </p>
                     </div>
 
-                    {/* Experience Link */}
                     <div className="text-xs text-white font-medium border-t border-gray-700 pt-3">
                       {testimonial.experience}
                     </div>
@@ -340,7 +448,7 @@ export function TestimonialCarousel() {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </section>

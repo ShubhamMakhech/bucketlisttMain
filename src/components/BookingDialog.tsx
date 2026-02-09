@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -32,6 +33,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import DownloadPdfButton from "./DownloadPdfButton";
+import BookingInvoice from "./BookingInvoice";
 import {
   Plus,
   X,
@@ -41,11 +44,7 @@ import {
   Minus,
   ChevronDown,
   ChevronUp,
-  Calendar as CalendarIcon,
-  Clock,
-  MapPin,
-  Lock,
-  Info,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,15 +53,18 @@ import { SlotSelector } from "@/components/SlotSelector";
 import { useNavigate } from "react-router-dom";
 import { useRazorpay } from "@/hooks/useRazorpay";
 import { SendWhatsappMessage } from "@/utils/whatsappUtil";
+import { generateInvoicePdf } from "@/utils/generateInvoicePdf";
 import moment from "moment";
 import { useQuery } from "@tanstack/react-query";
 import { Modal, Select as AntSelect } from "antd";
 import { format } from "date-fns";
+import { createPortal } from "react-dom";
 import { useDiscountCoupon } from "@/hooks/useDiscountCoupon";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AuthModal } from "@/components/AuthModal";
 import { useUserRole } from "@/hooks/useUserRole";
-import "@/components/GlobalCss/ExperienceDetailGallery.css";
+import "@/Styles/BookingSummary.css";
+import { Clock } from "lucide-react";
 const participantSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z
@@ -118,6 +120,8 @@ interface BookingDialogProps {
     image_url?: string;
   };
   onBookingSuccess: () => void;
+  /** When set, activity is chosen on the page; modal shows only date & slot selection in step 1 */
+  externalSelectedActivityId?: string;
   appliedCoupon?: {
     coupon: {
       coupon_code: string;
@@ -140,23 +144,26 @@ export const BookingDialog = ({
   experience,
   onBookingSuccess,
   appliedCoupon,
+  externalSelectedActivityId,
   setIsBookingDialogOpen,
 }: BookingDialogProps) => {
+  const dummyInvoiceRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedDate, setSelectedDate] = useState < Date | undefined > (undefined);
-  const [selectedSlotId, setSelectedSlotId] = useState < string | undefined > (
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | undefined>(
     undefined
   );
   const [bypassPayment, setBypassPayment] = useState(false);
   const [partialPayment, setPartialPayment] = useState(false);
-  const [selectedActivityId, setSelectedActivityId] = useState < string > ();
+  const [selectedActivityId, setSelectedActivityId] = useState<string>();
+  const effectiveSelectedActivityId = externalSelectedActivityId ?? selectedActivityId;
   const [currentStep, setCurrentStep] = useState(1); // 1: Activity Selection, 2: Date/Time Selection, 3: Participants (mobile only)
   const [couponCode, setCouponCode] = useState("");
-  const [couponValidation, setCouponValidation] = useState < {
+  const [couponValidation, setCouponValidation] = useState<{
     isValid: boolean;
     message: string;
     coupon?: any;
-  } | null > (null);
+  } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -165,12 +172,24 @@ export const BookingDialog = ({
   const isMobile = useIsMobile();
   const { isAgent } = useUserRole();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [b2bPrice, setB2bPrice] = useState < number > (0);
-  const [sellingPrice, setSellingPrice] = useState < number > (0);
-  const [advancePayment, setAdvancePayment] = useState < number > (0);
+  const [b2bPrice, setB2bPrice] = useState<number>(0);
+  const [sellingPrice, setSellingPrice] = useState<number>(0);
+  const [advancePayment, setAdvancePayment] = useState<number>(0);
   const [isReferralCodeExpanded, setIsReferralCodeExpanded] = useState(false);
   const [isCouponCodeExpanded, setIsCouponCodeExpanded] = useState(false);
-  const form = useForm < BookingFormData > ({
+  const [prefilledPhone, setPrefilledPhone] = useState<string | undefined>(
+    undefined
+  );
+  const prefilledPhoneRef = useRef<string | undefined>(undefined);
+  const [isCouponValidating, setIsCouponValidating] = useState(false);
+  // State for Bike on Rent in Rishikesh - separate counters for vehicles and days
+  const [numberOfVehicles, setNumberOfVehicles] = useState(1);
+  const [numberOfDays, setNumberOfDays] = useState(1);
+  const isBikeRent = experience.title === "Bike on Rent in Rishikesh";
+  // Check if experience is River rafting - 9 Km, 16 Km and 25 Km
+  const isRiverRafting =
+    experience.title === "River rafting - 9 Km, 16 Km and 25 Km";
+  const form = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
     mode: "onBlur",
     reValidateMode: "onBlur",
@@ -183,6 +202,7 @@ export const BookingDialog = ({
       coupon_code: "",
     },
   });
+
   useEffect(() => {
     const bookingModalData = localStorage.getItem("bookingModalData");
     if (bookingModalData) {
@@ -215,6 +235,42 @@ export const BookingDialog = ({
     }
   }, [form]);
 
+  // Restore booking data when user becomes authenticated (after OTP sign-up/sign-in)
+  useEffect(() => {
+    if (user) {
+      const bookingModalData = localStorage.getItem("bookingModalData");
+      if (bookingModalData) {
+        const data = JSON.parse(bookingModalData);
+
+        // Set form values individually
+        form.setValue("participant.name", data.data.participant.name);
+        form.setValue("participant.email", data.data.participant.email);
+        form.setValue(
+          "participant.phone_number",
+          data.data.participant.phone_number
+        );
+        form.setValue("participant_count", data.data.participant_count);
+        form.setValue("note_for_guide", data.data.note_for_guide || "");
+        form.setValue("terms_accepted", data.data.terms_accepted);
+        form.setValue("referral_code", data.data.referral_code || "");
+        form.setValue("coupon_code", data.data.coupon_code || "");
+        form.setValue("booking_date", new Date(data.selectedDate));
+        form.setValue("time_slot_id", data.selectedSlotId);
+
+        // Set other state values
+        setSelectedDate(new Date(data.selectedDate));
+        setSelectedSlotId(data.selectedSlotId);
+        setSelectedActivityId(data.selectedActivityId);
+        setCurrentStep(3);
+
+        // Clear localStorage
+        localStorage.removeItem("bookingModalData");
+        setIsBookingDialogOpen(true);
+        setIsAuthModalOpen(false); // Close auth modal if it's still open
+      }
+    }
+  }, [user, form]);
+
   // useEffect(() => {
   //   const bookingModalData = localStorage.getItem('bookingModalData');
   //   if (bookingModalData) {
@@ -234,6 +290,38 @@ export const BookingDialog = ({
   // }, []);
 
   const participantCount = form.watch("participant_count");
+
+  // For Bike on Rent, update participant_count and note_for_guide when vehicles or days change
+  useEffect(() => {
+    if (isBikeRent) {
+      const calculatedCount = numberOfDays * numberOfVehicles;
+      form.setValue("participant_count", calculatedCount);
+
+      // Update note_for_guide with vehicle and days info
+      const bikeRentNote = `${numberOfVehicles} ${numberOfVehicles === 1 ? "vehicle" : "vehicles"
+        } for ${numberOfDays} ${numberOfDays === 1 ? "day" : "days"}`;
+      const currentNote = form.getValues("note_for_guide") || "";
+
+      // Remove any existing vehicle/days info lines and add updated one
+      const lines = currentNote.split("\n");
+      const userNotes = lines.filter(
+        (line) =>
+          !line.trim().includes("vehicle") &&
+          !line.trim().includes("vehicles") &&
+          !line
+            .trim()
+            .match(/^\d+\s+(vehicle|vehicles)\s+for\s+\d+\s+(day|days)$/)
+      );
+
+      // Combine user notes with vehicle/days info
+      const userNoteText = userNotes.join("\n").trim();
+      const finalNote = userNoteText
+        ? `${userNoteText}\n${bikeRentNote}`
+        : bikeRentNote;
+
+      form.setValue("note_for_guide", finalNote);
+    }
+  }, [numberOfDays, numberOfVehicles, isBikeRent, form]);
 
   // Helper function to get activity price (discounted if available)
   const getActivityPrice = (activity: any) => {
@@ -283,41 +371,39 @@ export const BookingDialog = ({
     form.setValue("time_slot_id", slotId || "");
   };
 
-  // Step navigation functions
+  // Step navigation functions (use effectiveSelectedActivityId when activity is chosen on page)
   const handleNextStep = () => {
     if (isMobile) {
-      // Mobile: 3-step process
-      if (currentStep === 1) {
-        // Step 1 -> Step 2: Check if activity is selected
-        if (selectedActivityId) {
-          setCurrentStep(2);
-        } else {
-          toast({
-            title: "Missing information",
-            description: "Please select an activity",
-            variant: "destructive",
-          });
+      if (externalSelectedActivityId) {
+        // Mobile with activity from page: step 1 = date+time only, step 2 = participants
+        if (currentStep === 1) {
+          if (selectedDate && selectedSlotId) setCurrentStep(2);
+          else {
+            toast({ title: "Missing information", description: "Please select date and time slot", variant: "destructive" });
+          }
         }
-      } else if (currentStep === 2) {
-        // Step 2 -> Step 3: Check if date and time slot are selected
-        if (selectedDate && selectedSlotId) {
-          setCurrentStep(3);
-        } else {
-          toast({
-            title: "Missing information",
-            description: "Please select date and time slot",
-            variant: "destructive",
-          });
+      } else {
+        // Mobile without external activity: 3-step (activity -> date/time -> participants)
+        if (currentStep === 1) {
+          if (effectiveSelectedActivityId) setCurrentStep(2);
+          else {
+            toast({ title: "Missing information", description: "Please select an activity", variant: "destructive" });
+          }
+        } else if (currentStep === 2) {
+          if (selectedDate && selectedSlotId) setCurrentStep(3);
+          else {
+            toast({ title: "Missing information", description: "Please select date and time slot", variant: "destructive" });
+          }
         }
       }
     } else {
-      // Desktop: 2-step process (original logic)
-      if (selectedActivityId && selectedDate && selectedSlotId) {
+      // Desktop: step 1 = activity (or date+time if external) + date + time, then step 2 = participants
+      if (effectiveSelectedActivityId && selectedDate && selectedSlotId) {
         setCurrentStep(2);
       } else {
         toast({
           title: "Missing information",
-          description: "Please select activity, date, and time slot",
+          description: externalSelectedActivityId ? "Please select date and time slot" : "Please select activity, date, and time slot",
           variant: "destructive",
         });
       }
@@ -352,11 +438,13 @@ export const BookingDialog = ({
   };
 
   const handleCouponValidation = async () => {
+    setIsCouponValidating(true);
     if (!couponCode.trim()) {
       setCouponValidation({
         isValid: false,
         message: "Please enter a coupon code",
       });
+      setIsCouponValidating(false);
       return;
     }
 
@@ -399,6 +487,8 @@ export const BookingDialog = ({
         isValid: false,
         message: "Error validating coupon. Please try again.",
       });
+    } finally {
+      setIsCouponValidating(false);
     }
   };
 
@@ -422,81 +512,216 @@ export const BookingDialog = ({
       const { data: timeSlot } = await supabase
         .from("time_slots")
         .select(
-          "start_time, end_time,experiences(title,vendor_id,location),activities(name)"
+          "start_time, end_time,experiences(title,vendor_id,location,location2),activities(name)"
         )
         .eq("id", selectedSlotId)
         .single();
       const { data: vendor, error: vendorError } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", timeSlot?.experiences.vendor_id)
+        .eq("id", timeSlot?.experiences?.vendor_id)
         .single();
+
+      // Generate PDF invoice
+      let pdfUrl = "";
+      try {
+        const formattedDateTime = `${moment(selectedDate).format(
+          "DD/MM/YYYY"
+        )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+          "hh:mm A"
+        )} - ${moment(timeSlot?.end_time, "HH:mm").format("hh:mm A")}`;
+
+        // Get location URL if available (you may need to construct this from location data)
+        const locationUrl = timeSlot?.experiences?.location;
+
+        pdfUrl = await generateInvoicePdf(
+          {
+            participantName: data.participant.name,
+            experienceTitle: timeSlot?.experiences?.title || "Activity",
+            activityName: timeSlot?.activities.name || "",
+            dateTime: formattedDateTime,
+            pickUpLocation: timeSlot?.experiences?.location || "-",
+            spotLocation: timeSlot?.experiences?.location2 || "-",
+            spotLocationUrl: timeSlot?.experiences?.location2?.startsWith(
+              "http"
+            )
+              ? timeSlot.experiences.location2
+              : "",
+            totalParticipants: data.participant_count,
+            amountPaid: upfrontAmount.toFixed(2),
+            amountToBePaid: dueAmount || "0",
+            advancePlusDiscount: (() => {
+              const originalPrice =
+                selectedActivity?.price || experience.price || 0;
+              const officialPrice = originalPrice * data.participant_count;
+              const discountCoupon =
+                officialPrice - finalPrice > 0 ? officialPrice - finalPrice : 0;
+              const advancePaid = upfrontAmount;
+              return (advancePaid + discountCoupon).toFixed(2);
+            })(),
+            currency: selectedActivity?.currency || experience.currency,
+          },
+          bookingId
+        );
+      } catch (pdfError) {
+        console.error("PDF generation failed:", pdfError);
+        // Continue without PDF - WhatsApp will be sent without attachment
+      }
 
       // console.log(vendor
       // console.log(data);
       // console.log(vendor);
+      let whatsappBody = {};
+      const phoneNumber =
+        data.participant.phone_number.toString().length !== 10
+          ? data.participant.phone_number
+          : "+91" + data.participant.phone_number.toString();
 
-      const whatsappBody = {
-        integrated_number: "919274046332",
-        content_type: "template",
-        payload: {
-          messaging_product: "whatsapp",
-          type: "template",
-          template: {
-            name: "booking_confirmation_user_v2",
-            language: {
-              code: "en",
-              policy: "deterministic",
-            },
-            namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
-            to_and_components: [
-              {
-                to: [
-                  data.participant.phone_number.toString().length !== 10
-                    ? data.participant.phone_number
-                    : "+91" + data.participant.phone_number.toString(),
-                ],
-                components: {
-                  body_1: {
-                    type: "text",
-                    value: data.participant.name,
-                  },
-                  body_2: {
-                    type: "text",
-                    value: timeSlot?.activities.name || "",
-                  },
-                  body_3: {
-                    type: "text",
-                    value: `${moment(selectedDate).format(
-                      "DD/MM/YYYY"
-                    )} - ${moment(timeSlot?.start_time, "HH:mm").format(
-                      "hh:mm A"
-                    )} - ${moment(timeSlot?.end_time, "HH:mm").format(
-                      "hh:mm A"
-                    )}`,
-                  },
-                  body_4: {
-                    type: "text",
-                    value: timeSlot?.experiences?.location || "",
-                  },
-                  body_5: {
-                    type: "text",
-                    value: data?.participant_count?.toString() || "0",
-                  },
-                  body_6: {
-                    type: "text",
-                    value: upfrontAmount.toFixed(2).toString(),
-                  },
-                  body_7: {
-                    type: "text",
-                    value: dueAmount || "0",
+      if (
+        timeSlot?.experiences?.location !== null &&
+        timeSlot?.experiences?.location2 !== null
+      ) {
+        // Two location template with PDF
+        whatsappBody = {
+          integrated_number: "919274046332",
+          content_type: "template",
+          payload: {
+            messaging_product: "whatsapp",
+            type: "template",
+            template: {
+              name: "user_ticket_confirmation_two_location_v2",
+              language: {
+                code: "en",
+                policy: "deterministic",
+              },
+              namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+              to_and_components: [
+                {
+                  to: [phoneNumber],
+                  components: {
+                    ...(pdfUrl
+                      ? {
+                        header_1: {
+                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                          type: "document",
+                          value: pdfUrl,
+                        },
+                      }
+                      : {}),
+                    body_1: {
+                      type: "text",
+                      value: data.participant.name,
+                    },
+                    body_2: {
+                      type: "text",
+                      value: timeSlot?.activities.name || "",
+                    },
+                    body_3: {
+                      type: "text",
+                      value: `${moment(selectedDate).format(
+                        "DD/MM/YYYY"
+                      )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+                        "hh:mm A"
+                      )} - ${moment(timeSlot?.end_time, "HH:mm").format(
+                        "hh:mm A"
+                      )}`,
+                    },
+                    body_4: {
+                      type: "text",
+                      value: timeSlot?.experiences?.location || "",
+                    },
+                    body_5: {
+                      type: "text",
+                      value: timeSlot?.experiences?.location2 || "",
+                    },
+                    body_6: {
+                      type: "text",
+                      value: data?.participant_count?.toString() || "0",
+                    },
+                    body_7: {
+                      type: "text",
+                      value: upfrontAmount.toFixed(2).toString(),
+                    },
+                    body_8: {
+                      type: "text",
+                      value: dueAmount || "0",
+                    },
                   },
                 },
-              },
-            ],
+              ],
+            },
           },
-        },
-      };
+        };
+      } else {
+        // Single location template with PDF
+        whatsappBody = {
+          integrated_number: "919274046332",
+          content_type: "template",
+          payload: {
+            messaging_product: "whatsapp",
+            type: "template",
+            template: {
+              name: "confirmation_user_with_ticket",
+              language: {
+                code: "en",
+                policy: "deterministic",
+              },
+              namespace: "ca756b77_f751_41b3_adb9_96ed99519854",
+              to_and_components: [
+                {
+                  to: [phoneNumber],
+                  components: {
+                    ...(pdfUrl
+                      ? {
+                        header_1: {
+                          filename: `bucketlistt.com_ticket_${bookingId}.pdf`,
+                          type: "document",
+                          value: pdfUrl,
+                        },
+                      }
+                      : {}),
+                    body_1: {
+                      type: "text",
+                      value: data.participant.name,
+                    },
+                    body_2: {
+                      type: "text",
+                      value: timeSlot?.activities.name || "",
+                    },
+                    body_3: {
+                      type: "text",
+                      value: `${moment(selectedDate).format(
+                        "DD/MM/YYYY"
+                      )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+                        "hh:mm A"
+                      )} - ${moment(timeSlot?.end_time, "HH:mm").format(
+                        "hh:mm A"
+                      )}`,
+                    },
+                    body_4: {
+                      type: "text",
+                      value: timeSlot?.experiences?.location || "",
+                    },
+                    body_5: {
+                      type: "text",
+                      value: data?.participant_count?.toString() || "0",
+                    },
+                    body_6: {
+                      type: "text",
+                      value: upfrontAmount.toFixed(2).toString(),
+                    },
+                    body_7: {
+                      type: "text",
+                      value: dueAmount || "0",
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        };
+      }
+
       // const whatsappBody = {
       //   version: "2.0",
       //   country_code: "91",
@@ -689,10 +914,18 @@ export const BookingDialog = ({
             customerEmail: data.participant.email,
             customerName: data.participant.name,
             experienceTitle: experience.title,
+            activityName: timeSlot?.activities.name || "",
             bookingDate: selectedDate?.toISOString(),
+            formattedDateTime: `${moment(selectedDate).format(
+              "DD/MM/YYYY"
+            )} - ${moment(timeSlot?.start_time, "HH:mm").format(
+              "hh:mm A"
+            )} - ${moment(timeSlot?.end_time, "HH:mm").format("hh:mm A")}`,
             timeSlot: timeSlot
               ? `${timeSlot.start_time} - ${timeSlot.end_time}`
               : "Time slot details unavailable",
+            location: timeSlot?.experiences?.location || "",
+            location2: timeSlot?.experiences?.location2 || null,
             totalParticipants: data.participant_count,
             totalAmount: finalPrice,
             upfrontAmount: upfrontAmount,
@@ -868,6 +1101,9 @@ export const BookingDialog = ({
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
+      // Store booking ID for PDF download on confirmation page
+      localStorage.setItem("lastBookingId", booking.id);
+
       toast({
         title: "Booking confirmed!",
         description: "Your booking has been confirmed.",
@@ -1014,10 +1250,13 @@ export const BookingDialog = ({
 
       await sendBookingConfirmationEmail(data, booking.id, emailDueAmount);
 
+      // Store booking ID for PDF download on confirmation page
+      localStorage.setItem("lastBookingId", booking.id);
+
       toast({
         title: "Booking confirmed!",
         description:
-          "Your payment was successful and booking has been confirmed.",
+          "Your payment was successful and booking has been confirmed successfully.",
       });
 
       onBookingSuccess();
@@ -1037,6 +1276,10 @@ export const BookingDialog = ({
   const onSubmit = async (data: BookingFormData) => {
     // console.log("Upfront amount (what user pays now):", upfrontAmount);
     // console.log("Due amount https://www.bucketlistt.com/destination/rishikesh(what user pays on-site):", dueAmount);
+
+    // Note: For Bike on Rent, note_for_guide is already updated in useEffect
+    // when vehicles or days change, so no need to update it here again
+
     if (!user) {
       // saving data in local storage
 
@@ -1044,13 +1287,19 @@ export const BookingDialog = ({
         data: data,
         selectedDate: selectedDate,
         selectedSlotId: selectedSlotId,
-        selectedActivityId: selectedActivityId,
+        selectedActivityId: effectiveSelectedActivityId,
       };
 
       localStorage.setItem(
         "bookingModalData",
         JSON.stringify(bookingModalData)
       );
+
+      // Store phone number for pre-filling in auth modal
+      const phoneNumber = data.participant.phone_number;
+      // Use both state and ref to ensure it's available immediately
+      setPrefilledPhone(phoneNumber);
+      prefilledPhoneRef.current = phoneNumber;
       setIsAuthModalOpen(true);
       return;
     }
@@ -1183,6 +1432,9 @@ export const BookingDialog = ({
       const { order } = orderData;
       // console.log("Razorpay order created successfully:", order);
 
+      // Hide loader so user can interact with Razorpay modal
+      setIsSubmitting(false);
+
       // Open Razorpay payment with the live key
       await openRazorpay({
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_live_AyU0PWr4XJPUZ8",
@@ -1192,6 +1444,8 @@ export const BookingDialog = ({
         description: `Book ${experience.title}`,
         order_id: order.id,
         handler: async (response: any) => {
+          // Show loader again for final booking creation
+          setIsSubmitting(true);
           // console.log("Payment successful:", response);
           await createBookingAfterPayment(data, response.razorpay_payment_id);
         },
@@ -1228,23 +1482,23 @@ export const BookingDialog = ({
     }
   };
 
-  // Add query for selected activity details
+  // Add query for selected activity details (uses page selection when externalSelectedActivityId is set)
   const { data: selectedActivity } = useQuery({
-    queryKey: ["activity", selectedActivityId],
+    queryKey: ["activity", effectiveSelectedActivityId],
     queryFn: async () => {
-      if (!selectedActivityId) return null;
+      if (!effectiveSelectedActivityId) return null;
 
       const { data, error } = await supabase
         .from("activities")
         .select("*")
-        .eq("id", selectedActivityId)
+        .eq("id", effectiveSelectedActivityId)
         .eq("is_active", true)
         .single();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedActivityId,
+    enabled: !!effectiveSelectedActivityId,
   });
 
   // Calculate final price and payment amounts after selectedActivity is available
@@ -1253,11 +1507,12 @@ export const BookingDialog = ({
 
   // Calculate payment amounts for partial payment
   // For agents: due amount = booking amount - advance payment
-  // For regular users: upfront = 10%, due = 90%
+  // For regular users: upfront = 10% (or 20% for River rafting), due = 90% (or 80% for River rafting)
+  const paymentPercentage = isRiverRafting ? 0.2 : 0.1;
   const upfrontAmount = isAgent
     ? 0 // Agents don't pay upfront
     : partialPayment
-      ? parseFloat((finalPrice * 0.1).toFixed(2))
+      ? parseFloat((finalPrice * paymentPercentage).toFixed(2))
       : finalPrice;
   const dueAmount =
     isAgent && advancePayment > 0
@@ -1274,10 +1529,10 @@ export const BookingDialog = ({
       "time-slots-summary",
       experience.id,
       selectedDate,
-      selectedActivityId,
+      effectiveSelectedActivityId,
     ],
     queryFn: async () => {
-      if (!selectedDate || !selectedActivityId) return [];
+      if (!selectedDate || !effectiveSelectedActivityId) return [];
 
       const dateStr = selectedDate.toISOString().split("T")[0];
 
@@ -1286,7 +1541,7 @@ export const BookingDialog = ({
         .from("time_slots")
         .select("*")
         .eq("experience_id", experience.id)
-        .eq("activity_id", selectedActivityId);
+        .eq("activity_id", effectiveSelectedActivityId);
 
       if (slotsError) throw slotsError;
 
@@ -1319,9 +1574,16 @@ export const BookingDialog = ({
         };
       });
 
+      // Sort by start_time in ascending order
+      slotsWithAvailability.sort((a: any, b: any) => {
+        const timeA = a.start_time || "";
+        const timeB = b.start_time || "";
+        return timeA.localeCompare(timeB);
+      });
+
       return slotsWithAvailability;
     },
-    enabled: !!selectedDate && !!selectedActivityId,
+    enabled: !!selectedDate && !!effectiveSelectedActivityId,
   });
 
   // Get available spots for the selected slot
@@ -1347,28 +1609,56 @@ export const BookingDialog = ({
     : 0;
 
   return (
-    <Modal
-      open={isOpen}
-      onCancel={handleClose}
-      // title={`Book Experience: ${experience.title}`}
-      width={1200}
-      footer={null}
-      destroyOnClose={true}
-      maskClosable={false}
-      className="BookingDialogModal"
-      bodyStyle={{ padding: "0px" }}
-    >
-      <div id="BookingDialog">
-        {currentStep === 1 ? (
-          // Step 1: Activity Selection (Mobile) or Activity + Date + Time Selection (Desktop)
-          <div className="space-y-2">
-            {isMobile ? (
-              // Mobile: Only Activity Selection
+    <>
+      {isSubmitting &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] bg-black/50 backdrop-blur-sm flex flex-col items-center justify-center">
+            <div className="bg-white dark:bg-slate-950 p-6 rounded-lg shadow-xl flex flex-col items-center gap-4 max-w-[300px] text-center animate-in fade-in zoom-in duration-300">
+              <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
               <div>
-                {/* <h3 className="text-lg font-semibold mb-4">Select Activity</h3> */}
+                <h3 className="font-semibold text-lg mb-1">Processing...</h3>
+                <p className="text-sm text-muted-foreground">
+                  Please do not close or refresh this window.
+                </p>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+      <Modal
+        open={isOpen}
+        onCancel={handleClose}
+        width={800}
+        footer={null}
+        destroyOnClose={true}
+        maskClosable={false}
+        centered={true}
+        className="BookingDialogModal"
+      >
+        {currentStep === 1 ? (
+          // Step 1: When activity chosen on page → only Date & Time. Otherwise → Activity (mobile) or Activity + Date + Time (desktop)
+          <div className="space-y-6">
+            {externalSelectedActivityId ? (
+              <div>
+                <SlotSelector
+                  experienceId={experience.id}
+                  experienceTitle={experience.title}
+                  selectedDate={selectedDate}
+                  selectedSlotId={selectedSlotId}
+                  selectedActivityId={effectiveSelectedActivityId}
+                  participantCount={participantCount}
+                  onDateChange={handleDateChange}
+                  onSlotChange={handleSlotChange}
+                  onActivityChange={() => { }}
+                  showOnlyDateAndTime={true}
+                />
+              </div>
+            ) : isMobile ? (
+              <div>
                 <SlotSelector
                   experienceId={experience.id}
                   selectedDate={selectedDate}
+                  experienceTitle={experience.title}
                   selectedSlotId={selectedSlotId}
                   selectedActivityId={selectedActivityId}
                   participantCount={participantCount}
@@ -1376,14 +1666,12 @@ export const BookingDialog = ({
                   onSlotChange={handleSlotChange}
                   onActivityChange={setSelectedActivityId}
                   showOnlyActivitySelection={true}
-                  experienceTitle={experience.title}
-                  onClose={handleClose}
                 />
               </div>
             ) : (
-              // Desktop: Activity + Date + Time Selection (original behavior)
               <SlotSelector
                 experienceId={experience.id}
+                experienceTitle={experience.title}
                 selectedDate={selectedDate}
                 selectedSlotId={selectedSlotId}
                 selectedActivityId={selectedActivityId}
@@ -1391,28 +1679,22 @@ export const BookingDialog = ({
                 onDateChange={handleDateChange}
                 onSlotChange={handleSlotChange}
                 onActivityChange={setSelectedActivityId}
-                experienceTitle={experience.title}
-                onClose={handleClose}
               />
             )}
 
-            {/* Step 1 Footer */}
             <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="flex-1"
-              >
+              <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
                 Cancel
               </Button>
               <Button
                 type="button"
                 onClick={handleNextStep}
                 disabled={
-                  isMobile
-                    ? !selectedActivityId
-                    : !selectedActivityId || !selectedDate || !selectedSlotId
+                  externalSelectedActivityId
+                    ? !selectedDate || !selectedSlotId
+                    : isMobile
+                      ? !effectiveSelectedActivityId
+                      : !effectiveSelectedActivityId || !selectedDate || !selectedSlotId
                 }
                 className="flex-1 bg-orange-500 hover:bg-orange-600"
               >
@@ -1420,23 +1702,21 @@ export const BookingDialog = ({
               </Button>
             </div>
           </div>
-        ) : currentStep === 2 && isMobile ? (
+        ) : currentStep === 2 && isMobile && !externalSelectedActivityId ? (
           // Step 2: Date and Time Selection (Mobile only)
-          <div className="space-y-2">
+          <div className="space-y-6">
             <div>
-              {/* <h3 className="text-lg font-semibold mb-4">Select Date & Time</h3> */}
               <SlotSelector
                 experienceId={experience.id}
+                experienceTitle={experience.title}
                 selectedDate={selectedDate}
                 selectedSlotId={selectedSlotId}
-                selectedActivityId={selectedActivityId}
+                selectedActivityId={effectiveSelectedActivityId}
                 participantCount={participantCount}
                 onDateChange={handleDateChange}
                 onSlotChange={handleSlotChange}
                 onActivityChange={setSelectedActivityId}
                 showOnlyDateAndTime={true}
-                experienceTitle={experience.title}
-                onClose={handleClose}
               />
             </div>
 
@@ -1463,450 +1743,167 @@ export const BookingDialog = ({
         ) : (
           // Step 2: Participants and Payment Details
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="booking-dialog-grid">
-                {/* Left Column: Form Fields */}
-                <div className="booking-dialog-form">
-                  {/* Guests Section */}
-                  <div className="form-section">
-                    {/* <div className="guests-header">
-                    <h2 className="form-section-title">Guests</h2>
-                    {selectedActivity?.available_slots && selectedActivity.available_slots < 20 && (
-                      <div className="tickets-warning">
-                        <AlertCircle size={16} />
-                        <span>Only {selectedActivity.available_slots} tickets left</span>
-                        </div>
-                    )}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="GridSetNow">
+                {/* Left Column: Activity Summary */}
+
+                <div>
+                  <div className="BackgroundImageSet">
+                    {/* <div className="ActivityImageShow">
+                    <img src={experience.image_url} alt={experience.title} className="w-full h-full object-cover rounded-lg" />
                   </div> */}
+                    <div className="booking-summary-wrapper">
+                      <span className="summary-title-label">
+                        Booking Summary
+                      </span>
 
-                    <div className="guest-type-item">
-                      <div className="guest-type-info">
-                        <h4>Adult</h4>
-                        <p>18 yrs and above</p>
-                      </div>
-                      <div className="guest-type-controls">
-                        <FormField
-                          control={form.control}
-                          name="participant_count"
-                          render={({ field }) => (
-                            <div className="guest-counter">
-                              <button
-                                type="button"
-                                className="guest-counter-btn"
-                                onClick={() => {
-                                  if (field.value > 1) {
-                                    field.onChange(field.value - 1);
-                                  }
-                                }}
-                                disabled={field.value <= 1 || availableSpots === 0}
-                              >
-                                <Minus size={16} />
-                              </button>
-                              <span className="guest-counter-value">{field.value}</span>
-                              <button
-                                type="button"
-                                className="guest-counter-btn"
-                                onClick={() => {
-                                  if (field.value < maxParticipants) {
-                                    field.onChange(field.value + 1);
-                                  }
-                                }}
-                                disabled={field.value >= maxParticipants || availableSpots === 0}
-                              >
-                                <Plus size={16} />
-                              </button>
-                            </div>
-                          )}
-                        />
-                        <div className="guest-type-price">
-                          {selectedActivity?.currency || experience.currency}{" "}
-                          {selectedActivity ? getActivityPrice(selectedActivity) : experience.price}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Lead Guest Details */}
-                  <div className="form-section">
-                    <h2 className="form-section-title">Lead guest details</h2>
-                    <p className="form-section-subtitle">
-                      Booking on behalf of a friend? Enter their details.
-                    </p>
-
-                    <div className="form-fields-grid">
-                      <FormField
-                        control={form.control}
-                        name="participant.name"
-                        render={({ field }) => (
-                          <div className="form-field">
-                            <label className="form-label">
-                              Full Name{" "}
-                              <span className="form-label-note">Must match ID</span>
-                            </label>
-                            <input
-                              type="text"
-                              className="form-input"
-                              placeholder="Enter full name"
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e.target.value);
-                                if (!e.target.value.trim()) {
-                                  form.trigger("participant.name");
-                                }
-                              }}
-                              onBlur={(e) => {
-                                field.onBlur();
-                                form.trigger("participant.name");
-                              }}
+                      <div className="summary-main-layout">
+                        <div className="summary-visual-column">
+                          <div className="summary-image-container">
+                            <img
+                              src={experience.image_url}
+                              alt={experience.title}
+                              className="summary-activity-img"
                             />
-                            {form.formState.errors.participant?.name && (
-                              <p className="text-red-500 text-sm mt-1">
-                                {form.formState.errors.participant.name.message}
-                              </p>
-                            )}
                           </div>
-                        )}
-                      />
+                          <div className="summary-date-card PcummaryDate">
+                            <div className="summary-month">
+                              {selectedDate
+                                ? format(selectedDate, "MMM")
+                                : "---"}
+                            </div>
+                            <div className="summary-day">
+                              {selectedDate ? format(selectedDate, "d") : "--"}
+                            </div>
+                            <div className="summary-weekday">
+                              {selectedDate
+                                ? format(selectedDate, "EEE")
+                                : "---"}
+                            </div>
+                          </div>
+                        </div>
 
-                      <FormField
-                        control={form.control}
-                        name="participant.phone_number"
-                        render={({ field }) => (
-                          <div className="form-field">
-                            <label className="form-label">
-                              Phone number{" "}
-                              <span className="form-label-note">
-                                We may reach out for booking updates here over SMS/WhatsApp
+                        <div className="summary-info-column">
+                          <div className="summary-info-block">
+                            <div className="summary-exp-title">
+                              {experience.title}
+                            </div>
+                            <div className="summary-activity-name">
+                              {selectedActivity?.name || "Select Activity"}
+                            </div>
+                            <div className="summary-time-slot">
+                              <Clock className="summary-time-icon" />
+                              <span>
+                                {timeSlots?.find(
+                                  (slot) => slot.id === selectedSlotId
+                                )
+                                  ? `${formatTime(
+                                    timeSlots.find(
+                                      (slot) => slot.id === selectedSlotId
+                                    )!.start_time
+                                  )}`
+                                  : "Select Time Slot"}
                               </span>
-                            </label>
-                            <div className="form-input-with-icon">
-                              <div className="phone-country-select">
-                                <img src="https://flagcdn.com/w40/in.png" alt="IN" />
-                                <span>+91</span>
-                              </div>
-                              <input
-                                type="tel"
-                                placeholder="Enter phone number"
-                                maxLength={10}
-                                {...field}
-                                onChange={(e) => {
-                                  const value = e.target.value.replace(/[^0-9]/g, "");
-                                  field.onChange(value);
-                                }}
-                                onBlur={(e) => {
-                                  field.onBlur();
-                                  form.trigger("participant.phone_number");
-                                }}
-                              />
                             </div>
-                            {form.formState.errors.participant?.phone_number && (
-                              <p className="text-red-500 text-sm mt-1">
-                                {form.formState.errors.participant.phone_number.message}
-                              </p>
-                            )}
                           </div>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="participant.email"
-                        render={({ field }) => (
-                          <div className="form-field">
-                            <label className="form-label">
-                              Email address{" "}
-                              <span className="form-label-note">We'll send your tickets here</span>
-                            </label>
-                            <input
-                              type="email"
-                              className="form-input"
-                              placeholder="Enter email address"
-                              {...field}
-                              onChange={(e) => {
-                                const value = e.target.value.trim();
-                                field.onChange(value);
-                              }}
-                              onBlur={(e) => {
-                                field.onBlur();
-                                form.trigger("participant.email");
-                              }}
-                            />
-                            {form.formState.errors.participant?.email && (
-                              <p className="text-red-500 text-sm mt-1">
-                                {form.formState.errors.participant.email.message}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="note_for_guide"
-                        render={({ field }) => (
-                          <div className="form-field form-field-full">
-                            <label className="form-label">Note for guide (Optional)</label>
-                            <textarea
-                              className="form-input"
-                              placeholder="Any special requests/information for your guide"
-                              rows={3}
-                              {...field}
-                            />
-                          </div>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Agent Pricing Section */}
-                  {isAgent && (
-                    <div className="form-section">
-                      <h2 className="form-section-title">Agent Pricing</h2>
-                      <div className="form-fields-grid">
-                        <div className="form-field">
-                          <label className="form-label">B2B Price</label>
-                          <input
-                            type="number"
-                            className="form-input"
-                            min="0"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={b2bPrice || ""}
-                            onChange={(e) => setB2bPrice(parseFloat(e.target.value) || 0)}
-                          />
-                        </div>
-                        <div className="form-field">
-                          <label className="form-label">Selling Price</label>
-                          <input
-                            type="number"
-                            className="form-input"
-                            min="0"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={sellingPrice || ""}
-                            onChange={(e) => setSellingPrice(parseFloat(e.target.value) || 0)}
-                          />
-                        </div>
-                        <div className="form-field form-field-full">
-                          <label className="form-label">Advance Payment (Optional)</label>
-                          <input
-                            type="number"
-                            className="form-input"
-                            min="0"
-                            step="0.01"
-                            placeholder="0.00"
-                            value={advancePayment || ""}
-                            onChange={(e) => {
-                              const value = parseFloat(e.target.value) || 0;
-                              setAdvancePayment(value);
-                            }}
-                          />
-                          {advancePayment > 0 && advancePayment > finalPrice && (
-                            <p className="text-red-500 text-sm mt-1">
-                              Advance payment cannot be greater than booking amount
-                            </p>
-                          )}
                         </div>
                       </div>
-                    </div>
-                  )}
 
-                  {/* Referral Code */}
-                  <div className="form-section">
-                    <div className="form-field-full">
-                      {!isReferralCodeExpanded ? (
-                        <div
-                          onClick={() => setIsReferralCodeExpanded(true)}
-                          className="expandable-field-trigger"
-                        >
-                          <span className="expandable-field-label">
-                            Referral Code (Optional)
-                          </span>
-                          <ChevronDown size={16} />
+                      <div className="summary-divider-line" />
+
+                      <div className="summary-footer-row">
+                        <div className="summary-date-card MobileSmmaryDate">
+                          <div className="summary-month">
+                            {selectedDate ? format(selectedDate, "MMM") : "---"}
+                          </div>
+                          <div className="summary-day">
+                            {selectedDate ? format(selectedDate, "d") : "--"}
+                          </div>
+                          <div className="summary-weekday">
+                            {selectedDate ? format(selectedDate, "EEE") : "---"}
+                          </div>
                         </div>
-                      ) : (
-                        <>
-                          <div
-                            onClick={() => {
-                              setIsReferralCodeExpanded(false);
-                              form.setValue("referral_code", "");
-                            }}
-                            className="expandable-field-trigger"
-                          >
-                            <span className="expandable-field-label">
-                              Referral Code (Optional)
-                            </span>
-                            <ChevronUp size={16} />
-                          </div>
-                          <FormField
-                            control={form.control}
-                            name="referral_code"
-                            render={({ field }) => (
-                              <input
-                                type="text"
-                                className="form-input"
-                                placeholder="Enter referral code"
-                                {...field}
-                                onChange={(e) => {
-                                  field.onChange(e.target.value.toUpperCase());
-                                }}
-                                autoFocus
-                                style={{ marginTop: "12px" }}
-                              />
-                            )}
-                          />
-                        </>
-                      )}
-                    </div>
-                  </div>
+                        <span className="summary-people-count">
+                          {isBikeRent ? (
+                            <>
+                              {numberOfVehicles}{" "}
+                              {numberOfVehicles === 1 ? "vehicle" : "vehicles"}{" "}
+                              for {numberOfDays}{" "}
+                              {numberOfDays === 1 ? "day" : "days"}
+                            </>
+                          ) : (
+                            <>
+                              {participantCount}{" "}
+                              {participantCount === 1 ? "Person" : "People"}
+                            </>
+                          )}
+                        </span>
+                        <div className="summary-price-container">
+                          {/* Price Display Logic */}
+                          {(() => {
+                            // Determine the base price to compare against (either the activity's regular price or its discounted price)
+                            const basePriceForComparison = totalActivityPrice;
 
-                  {/* Coupon Code */}
-                  {!isAgent && (
-                    <div className="form-section">
-                      <div className="form-field-full">
-                        {!isCouponCodeExpanded ? (
-                          <div
-                            onClick={() => setIsCouponCodeExpanded(true)}
-                            className="expandable-field-trigger"
-                          >
-                            <span className="expandable-field-label">
-                              Coupon Code (Optional)
-                            </span>
-                            <ChevronDown size={16} />
-                          </div>
-                        ) : (
-                          <>
-                            <div
-                              onClick={() => {
-                                setIsCouponCodeExpanded(false);
-                                if (!couponCode) {
-                                  handleCouponCodeChange("");
-                                }
-                              }}
-                              className="expandable-field-trigger"
-                            >
-                              <span className="expandable-field-label">
-                                Coupon Code (Optional)
-                              </span>
-                              <ChevronUp size={16} />
-                            </div>
-                            <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
-                              <input
-                                type="text"
-                                className="form-input"
-                                placeholder="Enter coupon code"
-                                value={couponCode}
-                                onChange={(e) => handleCouponCodeChange(e.target.value)}
-                                style={{ flex: 1 }}
-                                autoFocus
-                              />
-                              <button
-                                type="button"
-                                onClick={handleCouponValidation}
-                                disabled={!couponCode.trim()}
-                                style={{
-                                  padding: "12px 24px",
-                                  background: "var(--brand-color-new)",
-                                  color: "#fff",
-                                  border: "none",
-                                  borderRadius: "8px",
-                                  fontWeight: "500",
-                                  cursor: couponCode.trim() ? "pointer" : "not-allowed",
-                                  opacity: couponCode.trim() ? 1 : 0.5,
-                                }}
-                              >
-                                <Tag size={16} style={{ marginRight: "6px", display: "inline" }} />
-                                Apply
-                              </button>
-                            </div>
+                            // If final price (after coupon) is less than the activity price (after activity discount)
+                            const isCouponDiscounted = finalPrice < basePriceForComparison;
 
-                            {/* Coupon Validation Status */}
-                            {couponValidation && !couponValidation.isValid && (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "8px",
-                                  padding: "12px",
-                                  background: "#fee2e2",
-                                  border: "1px solid #fca5a5",
-                                  borderRadius: "8px",
-                                  marginTop: "12px",
-                                }}
-                              >
-                                <AlertCircle size={16} style={{ color: "#dc2626" }} />
-                                <span style={{ fontSize: "13px", color: "#dc2626" }}>
-                                  {couponValidation.message}
-                                </span>
-                              </div>
-                            )}
+                            // If activity has its own discount (discounted_price < price)
+                            const isActivityDiscounted = (selectedActivity as any)?.discounted_price &&
+                              (selectedActivity as any).discounted_price !== (selectedActivity as any).price;
 
-                            {/* Applied Coupon Display */}
-                            {((couponValidation?.isValid && couponValidation.coupon) || appliedCoupon) && (
-                              <div className="discount-applied">
-                                <div className="discount-applied-info">
-                                  <Tag size={16} />
-                                  <span className="discount-applied-text">
-                                    Coupon Applied:{" "}
-                                    {couponValidation?.isValid && couponValidation.coupon
-                                      ? couponValidation.coupon.coupon.coupon_code
-                                      : appliedCoupon.coupon.coupon_code}
-                                  </span>
+                            // Determine what to show as "Original Price"
+                            // If coupon is applied, show the price BEFORE coupon (which is totalActivityPrice)
+                            // Else if activity is discounted, show the raw activity price (price * count)
+                            const showOriginalPrice = isCouponDiscounted || isActivityDiscounted;
+
+                            const originalPriceValue = isCouponDiscounted
+                              ? totalActivityPrice
+                              : (selectedActivity?.price || 0) * participantCount;
+
+                            // Show upfront amount when partial payment is enabled (for non-agents)
+                            const displayPrice = !isAgent && partialPayment ? upfrontAmount : (showOriginalPrice ? finalPrice : totalActivityPrice);
+
+                            return (
+                              <div className="summary-price-details">
+                                {showOriginalPrice && (
+                                  <div className="summary-price-original">
+                                    {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{" "}
+                                    {originalPriceValue.toFixed(2)}
+                                  </div>
+                                )}
+                                {!isAgent && partialPayment && (
+                                  <div className="summary-payment-calculation">
+                                    {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}{finalPrice.toFixed(0)} × {(paymentPercentage * 100).toFixed(0)}%
+                                  </div>
+                                )}
+                                <div className="summary-price-final-row">
+                                  <div className="summary-price-final">
+                                    <span className="summary-price-currency">
+                                      {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
+                                    </span>
+                                    {displayPrice.toFixed(2)}
+                                  </div>
+                                  {!isAgent && partialPayment && (
+                                    <div className="summary-price-due">
+                                      <span className="due-label">Due on-site:</span>
+                                      <span className="due-value">
+                                        {selectedActivity?.currency === "INR" ? "₹" : selectedActivity?.currency}
+                                        {dueAmount.toFixed(2)}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                                <span className="discount-applied-badge">
-                                  {(() => {
-                                    const activeCoupon =
-                                      couponValidation?.isValid && couponValidation.coupon
-                                        ? couponValidation.coupon
-                                        : appliedCoupon;
-                                    return activeCoupon.coupon.type === "percentage"
-                                      ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(1)}%`
-                                      : `Save ${experience.currency} ${activeCoupon.discount_calculation.discount_amount}`;
-                                  })()}
-                                </span>
                               </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Partial Payment Toggle */}
-                  {!isAgent && (
-                    <div className="form-section">
-                      <div className="form-field-full">
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "16px",
-                            background: "#dbeafe",
-                            border: "1px solid #93c5fd",
-                            borderRadius: "8px",
-                          }}
-                        >
-                          <div>
-                            <h4 style={{ fontSize: "14px", fontWeight: "500", color: "#1e40af", marginBottom: "4px" }}>
-                              Pay 10% Now, Rest On-Site
-                            </h4>
-                            <p style={{ fontSize: "13px", color: "#3b82f6" }}>
-                              Book your adventure with 10% — pay the rest when you arrive at spot!
-                            </p>
-                          </div>
-                          <Switch
-                            checked={partialPayment}
-                            onCheckedChange={setPartialPayment}
-                          />
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
 
-                {/* Right Column: Overview Card */}
-                <div className="booking-overview-card">
+                {/* Right Column: Participants and Details */}
+                <div className="space-y-6">
                   {/* Bypass Payment Toggle */}
                   {/* <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
                   <CardContent className="p-4">
@@ -1922,204 +1919,904 @@ export const BookingDialog = ({
                       <Switch
                         checked={bypassPayment}
                         onCheckedChange={setBypassPayment}
-                          />
-                        </div>
-                      </CardContent>
+                      />
+                    </div>
+                  </CardContent>
                 </Card> */}
 
-                  <img
-                    src={experience.image_url || ""}
-                    alt={experience.title}
-                    className="overview-image"
-                  />
-                  <div className="overview-content">
-                    <h3 className="overview-title">{experience.title}</h3>
-
-                    {/* Date */}
-                    <div className="overview-detail-row">
-                      <CalendarIcon className="overview-detail-icon" />
-                      <div className="overview-detail-content">
-                        {selectedDate ? (
-                          <div className="overview-date-badge">
-                            <span className="overview-date-badge-month">
-                              {format(selectedDate, "MMM").toUpperCase()}
-                            </span>
-                            <span className="overview-date-badge-day">
-                              {format(selectedDate, "d")}
-                            </span>
-                            <span className="overview-date-badge-dow">
-                              {format(selectedDate, "EEE")}
-                            </span>
+                  {/* Agent Pricing Section */}
+                  {isAgent && (
+                    <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+                      <CardContent className="p-4 space-y-4">
+                        <h4 className="font-medium text-blue-800 dark:text-blue-200">
+                          Agent Pricing
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="b2bPrice">B2B Price</Label>
+                            <Input
+                              id="b2bPrice"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={b2bPrice || ""}
+                              onChange={(e) =>
+                                setB2bPrice(parseFloat(e.target.value) || 0)
+                              }
+                              className="w-full"
+                            />
                           </div>
-                        ) : (
-                          <div className="overview-detail-content-value">Select Date</div>
+                          <div className="space-y-2">
+                            <Label htmlFor="sellingPrice">Selling Price</Label>
+                            <Input
+                              id="sellingPrice"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={sellingPrice || ""}
+                              onChange={(e) =>
+                                setSellingPrice(parseFloat(e.target.value) || 0)
+                              }
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="advancePayment">
+                            Advance Payment (Optional)
+                          </Label>
+                          <Input
+                            id="advancePayment"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={advancePayment || ""}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 0;
+                              setAdvancePayment(value);
+                            }}
+                            className="w-full"
+                          />
+                          {advancePayment > 0 &&
+                            advancePayment > finalPrice && (
+                              <p className="text-sm text-red-600">
+                                Advance payment cannot be greater than booking
+                                amount
+                              </p>
+                            )}
+                        </div>
+                        {sellingPrice > 0 && participantCount > 0 && (
+                          <div className="pt-2 border-t">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">
+                                Booking Amount ({participantCount}{" "}
+                                {participantCount === 1 ? "person" : "people"})
+                              </span>
+                              <span className="font-semibold text-lg">
+                                {selectedActivity?.currency ||
+                                  experience.currency}{" "}
+                                {finalPrice.toFixed(2)}
+                              </span>
+                            </div>
+                            {advancePayment > 0 && (
+                              <div className="flex justify-between items-center mt-2">
+                                <span className="text-sm text-muted-foreground">
+                                  Advance Payment
+                                </span>
+                                <span className="font-semibold text-blue-600">
+                                  {selectedActivity?.currency ||
+                                    experience.currency}{" "}
+                                  {advancePayment.toFixed(2)}
+                                </span>
+                              </div>
+                            )}
+                            {advancePayment > 0 && (
+                              <div className="flex justify-between items-center mt-2">
+                                <span className="text-sm text-muted-foreground">
+                                  Due Amount
+                                </span>
+                                <span className="font-semibold text-orange-600">
+                                  {selectedActivity?.currency ||
+                                    experience.currency}{" "}
+                                  {dueAmount.toFixed(2)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         )}
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                    {/* Time */}
-                    <div className="overview-detail-row">
-                      <Clock className="overview-detail-icon" />
-                      <div className="overview-detail-content">
-                        <div className="overview-detail-content-value">
-                          {timeSlots?.find((slot) => slot.id === selectedSlotId)
-                            ? formatTime(
-                              timeSlots.find((slot) => slot.id === selectedSlotId)!.start_time
-                            )
-                            : "Select Time Slot"}
-                        </div>
-                      </div>
-                    </div>
+                  {/* Participants Section */}
+                  <div className="space-y-4">
+                    {/* <h3 className="text-lg font-semibold">Participants</h3> */}
 
-                    {/* Activity */}
-                    <div className="overview-detail-row">
-                      <MapPin className="overview-detail-icon" />
-                      <div className="overview-detail-content">
-                        <div className="overview-detail-content-value">
-                          {selectedActivity?.name || "Select Activity"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Price Summary */}
-                    <div className="price-summary">
-                      <div className="price-row">
-                        <span className="price-row-label">
-                          {participantCount} Adult{participantCount > 1 ? "s" : ""}
-                        </span>
-                        <span className="price-row-value">
-                          {selectedActivity?.currency || experience.currency}{" "}
-                          {(() => {
-                            const basePrice = selectedActivity
-                              ? getActivityPrice(selectedActivity) * participantCount
-                              : experience.price * participantCount;
-                            return basePrice.toLocaleString();
-                          })()}
-                        </span>
-                      </div>
-
-                      {(() => {
-                        const activeCoupon =
-                          couponValidation?.isValid && couponValidation.coupon
-                            ? couponValidation.coupon
-                            : appliedCoupon;
-                        const couponDiscount = activeCoupon
-                          ? activeCoupon.discount_calculation?.discount_amount * participantCount || 0
-                          : 0;
-                        return couponDiscount > 0 ? (
-                          <div className="price-row" style={{ color: "#059669" }}>
-                            <span className="price-row-label">Coupon Discount</span>
-                            <span className="price-row-value">
-                              - {selectedActivity?.currency || experience.currency}{" "}
-                              {couponDiscount.toLocaleString()}
-                            </span>
-                          </div>
-                        ) : null;
-                      })()}
-
-                      <div className="price-row price-row-total">
-                        <span className="price-row-label">Total payable</span>
-                        <span className="price-row-value">
-                          {selectedActivity?.currency || experience.currency}{" "}
-                          {finalPrice.toLocaleString()}
-                        </span>
-                      </div>
-
-                      <div className="price-conversion">
-                        <span>You'll pay AED {(finalPrice * 0.04).toFixed(0)}</span>
-                        <Info size={14} />
-                      </div>
-                    </div>
-
-                    {/* Supplier Info */}
-                    <div className="supplier-info">
-                      Supplied by <strong>RAYNA TOURISM L.L.C.</strong>
-                      <br />
-                      By continuing, you agree to the General Terms, Privacy Policy, and the
-                      Cancellation Policy.
-                    </div>
-
-                    {/* Terms Checkbox */}
-                    <div className="terms-checkbox">
+                    {/* Participant Count Selector */}
+                    {isBikeRent ? (
+                      // Two counters for Bike on Rent: Vehicles and Days
                       <FormField
                         control={form.control}
-                        name="terms_accepted"
-                        render={({ field }) => (
-                          <>
-                            <input
-                              type="checkbox"
-                              id="terms"
-                              checked={field.value}
-                              onChange={field.onChange}
+                        name="participant_count"
+                        render={({ field }) => {
+                          return (
+                            <FormItem id="participant-count-form-item">
+                              <div className="space-y-4">
+                                {/* Number of Vehicles */}
+                                <div className="flex items-center gap-2 justify-between">
+                                  <Card
+                                    style={{
+                                      width: "100%",
+                                      padding: "3px 10px",
+                                    }}
+                                    id="ParticipantCountCard"
+                                  >
+                                    <div>
+                                      <FormLabel>Number of Vehicles</FormLabel>
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (numberOfVehicles > 1) {
+                                              setNumberOfVehicles(
+                                                numberOfVehicles - 1
+                                              );
+                                            }
+                                          }}
+                                          disabled={numberOfVehicles <= 1}
+                                        >
+                                          <Minus className="h-4 w-4" />
+                                        </Button>
+                                        <FormControl>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            max={50}
+                                            value={numberOfVehicles}
+                                            disabled={true}
+                                            className="text-center font-medium"
+                                            readOnly
+                                          />
+                                        </FormControl>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (numberOfVehicles < 50) {
+                                              setNumberOfVehicles(
+                                                numberOfVehicles + 1
+                                              );
+                                            }
+                                          }}
+                                          disabled={numberOfVehicles >= 50}
+                                        >
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                </div>
+
+                                {/* Number of Days */}
+                                <div className="flex items-center gap-2 justify-between">
+                                  <Card
+                                    style={{
+                                      width: "100%",
+                                      padding: "3px 10px",
+                                    }}
+                                    id="ParticipantCountCard"
+                                  >
+                                    <div>
+                                      <FormLabel>Number of Days</FormLabel>
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (numberOfDays > 1) {
+                                              setNumberOfDays(numberOfDays - 1);
+                                            }
+                                          }}
+                                          disabled={numberOfDays <= 1}
+                                        >
+                                          <Minus className="h-4 w-4" />
+                                        </Button>
+                                        <FormControl>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            max={50}
+                                            value={numberOfDays}
+                                            disabled={true}
+                                            className="text-center font-medium"
+                                            readOnly
+                                          />
+                                        </FormControl>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (numberOfDays < 50) {
+                                              setNumberOfDays(numberOfDays + 1);
+                                            }
+                                          }}
+                                          disabled={numberOfDays >= 50}
+                                        >
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                </div>
+
+                                {/* Display calculated total */}
+                                <div className="text-sm text-muted-foreground text-center">
+                                  Total: {numberOfDays * numberOfVehicles}{" "}
+                                  {numberOfDays * numberOfVehicles === 1
+                                    ? "day"
+                                    : "days"}{" "}
+                                  ({numberOfVehicles}{" "}
+                                  {numberOfVehicles === 1
+                                    ? "vehicle"
+                                    : "vehicles"}{" "}
+                                  × {numberOfDays}{" "}
+                                  {numberOfDays === 1 ? "day" : "days"})
+                                </div>
+                              </div>
+                            </FormItem>
+                          );
+                        }}
+                      />
+                    ) : (
+                      // Regular participant count for other experiences
+                      <FormField
+                        control={form.control}
+                        name="participant_count"
+                        render={({ field }) => {
+                          const [inputValue, setInputValue] = useState(
+                            field.value.toString()
+                          );
+
+                          return (
+                            <>
+                              <FormItem id="participant-count-form-item">
+                                <div className="flex items-center gap-2 justify-between">
+                                  <Card
+                                    style={{
+                                      width: "100%",
+                                      padding: "3px 10px",
+                                    }}
+                                    id="ParticipantCountCard"
+                                  >
+                                    <div>
+                                      <FormLabel>
+                                        Number of Participants
+                                      </FormLabel>
+                                      {selectedSlotId &&
+                                        availableSpots !== undefined && <></>}
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        {/* Minus Button */}
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (field.value > 1) {
+                                              const newValue = field.value - 1;
+                                              field.onChange(newValue);
+                                              setInputValue(
+                                                newValue.toString()
+                                              );
+                                            }
+                                          }}
+                                          disabled={field.value <= 1}
+                                        >
+                                          <Minus className="h-4 w-4" />
+                                        </Button>
+
+                                        {/* Input Field */}
+                                        <FormControl>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            max={maxParticipants}
+                                            value={inputValue}
+                                            disabled={true}
+                                            onChange={(e) => {
+                                              setInputValue(e.target.value);
+                                            }}
+                                            onBlur={(e) => {
+                                              const value = parseInt(
+                                                e.target.value
+                                              );
+                                              if (isNaN(value) || value < 1) {
+                                                field.onChange(1);
+                                                setInputValue("1");
+                                              } else if (
+                                                value > maxParticipants
+                                              ) {
+                                                field.onChange(maxParticipants);
+                                                setInputValue(
+                                                  maxParticipants.toString()
+                                                );
+                                              } else {
+                                                field.onChange(value);
+                                                setInputValue(value.toString());
+                                              }
+                                            }}
+                                            className="text-center font-medium"
+                                            placeholder="1"
+                                          />
+                                        </FormControl>
+
+                                        {/* Plus Button */}
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-10 w-10 shrink-0"
+                                          onClick={() => {
+                                            if (field.value < maxParticipants) {
+                                              const newValue = field.value + 1;
+                                              field.onChange(newValue);
+                                              setInputValue(
+                                                newValue.toString()
+                                              );
+                                            }
+                                          }}
+                                          disabled={
+                                            field.value >= maxParticipants ||
+                                            availableSpots === 0
+                                          }
+                                        >
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </Card>
+                                </div>
+                              </FormItem>
+                            </>
+                          );
+                        }}
+                      />
+                    )}
+
+                    {/* Single Participant Form */}
+                    <Card id="primary-contact-details-card">
+                      <CardContent className="px-3 py-3">
+                        <h4 className="font-medium mb-1">
+                          Primary Contact Details
+                        </h4>
+                        <div className="grid grid-cols-1 gap-2">
+                          <FormField
+                            control={form.control}
+                            name="participant.name"
+                            render={({ field }) => (
+                              <FormItem>
+                                {/* <FormLabel>Name</FormLabel> */}
+                                <FormControl>
+                                  <Input
+                                    placeholder="Full name *"
+                                    {...field}
+                                    onChange={(e) => {
+                                      field.onChange(e.target.value);
+                                      // Trigger validation if field becomes empty
+                                      if (!e.target.value.trim()) {
+                                        form.trigger("participant.name");
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      field.onBlur();
+                                      // Trigger validation on blur
+                                      form.trigger("participant.name");
+                                    }}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="participant.email"
+                            render={({ field }) => (
+                              <FormItem>
+                                {/* <FormLabel>Email</FormLabel> */}
+                                <FormControl>
+                                  <Input
+                                    type="email"
+                                    placeholder="Email *"
+                                    {...field}
+                                    onChange={(e) => {
+                                      const value = e.target.value.trim();
+                                      field.onChange(value);
+                                    }}
+                                    onBlur={(e) => {
+                                      // Trigger validation on blur
+                                      field.onBlur();
+                                      form.trigger("participant.email");
+                                    }}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="participant.phone_number"
+                            render={({ field }) => (
+                              <FormItem>
+                                {/* <FormLabel>Phone</FormLabel> */}
+                                <FormControl>
+                                  <Input
+                                    placeholder="Phone number *"
+                                    {...field}
+                                    onChange={(e) => {
+                                      // Remove all non-numeric characters and spaces
+                                      const value = e.target.value.replace(
+                                        /[^0-9]/g,
+                                        ""
+                                      );
+                                      field.onChange(value);
+                                    }}
+                                    onBlur={(e) => {
+                                      // Trigger validation on blur
+                                      field.onBlur();
+                                      form.trigger("participant.phone_number");
+                                    }}
+                                    maxLength={10}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="note_for_guide"
+                            render={({ field }) => (
+                              <FormItem id="note-for-guide-textarea">
+                                {/* <FormLabel>Note for Tour Guide (Optional)</FormLabel> */}
+                                <FormControl>
+                                  <Textarea
+                                    style={{ minHeight: "20px" }}
+                                    placeholder="Any special requests/information for your guide"
+                                    {...field}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          {/* <FormField
+                          control={form.control}
+                          name="referral_code"
+                          render={({ field }) => (
+                            <FormItem>
+                              {!isReferralCodeExpanded ? (
+                                <div
+                                  onClick={() =>
+                                    setIsReferralCodeExpanded(true)
+                                  }
+                                  className="cursor-pointer"
+                                >
+                                  <span className="text-sm GrayColor">
+                                    Referral Code (Optional)
+                                  </span>
+                                  <ChevronDown className="h-4 w-4 inline-block ml-2" />
+                                </div>
+                              ) : (
+                                <>
+                                  <div
+                                    onClick={() => {
+                                      setIsReferralCodeExpanded(false);
+                                      if (!field.value) {
+                                        field.onChange("");
+                                      }
+                                    }}
+                                    className="cursor-pointer mb-2"
+                                  >
+                                    <span className="text-sm GrayColor">
+                                      Referral Code (Optional)
+                                    </span>
+                                    <ChevronUp className="h-4 w-4 inline-block ml-2" />
+                                  </div>
+                                  <FormControl>
+                                    <Input
+                                      id="referral-code-input"
+                                      placeholder="Referral Code"
+                                      {...field}
+                                      onChange={(e) =>
+                                        field.onChange(
+                                          e.target.value.toUpperCase()
+                                        )
+                                      }
+                                      value={field.value?.toUpperCase() || ""}
+                                      autoFocus
+                                    />
+                                  </FormControl>
+                                </>
+                              )}
+                            </FormItem>
+                          )}
+                        /> */}
+                          {!isAgent && (
+                            <div className="space-y-3">
+                              <FormField
+                                control={form.control}
+                                name="coupon_code"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    {!isCouponCodeExpanded ? (
+                                      <div
+                                        onClick={() =>
+                                          setIsCouponCodeExpanded(true)
+                                        }
+                                        className="cursor-pointer"
+                                      >
+                                        <span className="text-sm GrayColor">
+                                          Coupon Code (Optional)
+                                        </span>
+                                        <ChevronDown className="h-4 w-4 inline-block ml-2" />
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div
+                                          onClick={() => {
+                                            setIsCouponCodeExpanded(false);
+                                            if (!couponCode) {
+                                              handleCouponCodeChange("");
+                                            }
+                                          }}
+                                          className="cursor-pointer mb-2"
+                                        >
+                                          <span className="text-sm GrayColor">
+                                            Coupon Code (Optional)
+                                          </span>
+                                          <ChevronUp className="h-4 w-4 inline-block ml-2" />
+                                        </div>
+                                        <div className="flex gap-2">
+                                          <FormControl>
+                                            <Input
+                                              placeholder="Enter coupon code"
+                                              value={couponCode}
+                                              onChange={(e) =>
+                                                handleCouponCodeChange(
+                                                  e.target.value
+                                                )
+                                              }
+                                              autoFocus
+                                            />
+                                          </FormControl>
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={handleCouponValidation}
+                                            disabled={!couponCode.trim() || isCouponValidating}
+                                            className="flex items-center gap-2"
+                                          >
+                                            {isCouponValidating ? (
+                                              <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                              <Tag className="h-4 w-4" />
+                                            )}
+                                            Apply
+                                          </Button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </FormItem>
+                                )}
+                              />
+
+                              {/* Coupon Validation Status - Only show error messages */}
+                              {couponValidation &&
+                                !couponValidation.isValid && (
+                                  <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+                                    <AlertCircle className="h-4 w-4 text-red-600" />
+                                    <span className="text-sm text-red-800">
+                                      {couponValidation.message}
+                                    </span>
+                                  </div>
+                                )}
+
+                              {/* Applied Coupon Display */}
+                              {((couponValidation?.isValid &&
+                                couponValidation.coupon) ||
+                                appliedCoupon) && (
+                                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <Tag className="h-4 w-4 text-green-600" />
+                                        <span className="font-medium text-green-800">
+                                          Coupon Applied:{" "}
+                                          {couponValidation?.isValid &&
+                                            couponValidation.coupon
+                                            ? couponValidation.coupon.coupon
+                                              .coupon_code
+                                            : appliedCoupon.coupon.coupon_code}
+                                        </span>
+                                      </div>
+                                      <Badge
+                                        variant="secondary"
+                                        className="bg-green-100 text-green-800"
+                                      >
+                                        {(() => {
+                                          const activeCoupon =
+                                            couponValidation?.isValid &&
+                                              couponValidation.coupon
+                                              ? couponValidation.coupon
+                                              : appliedCoupon;
+                                          return activeCoupon.coupon.type ===
+                                            "percentage"
+                                            ? `Save ${activeCoupon.discount_calculation.savings_percentage.toFixed(
+                                              1
+                                            )}%`
+                                            : `Save ${experience.currency} ${activeCoupon.discount_calculation.discount_amount}`;
+                                        })()}
+                                      </Badge>
+                                    </div>
+                                    {/* <div className="mt-2 text-sm text-green-700"> */}
+                                    {/* {(() => {
+                          const activeCoupon =
+                            couponValidation?.isValid && couponValidation.coupon
+                              ? couponValidation.coupon
+                              : appliedCoupon;
+                          return (
+                            <>
+                              <div>
+                                Original Price: {experience.currency}{" "}
+                                {
+                                  activeCoupon.discount_calculation
+                                    .original_amount
+                                }
+                              </div>
+                              <div>
+                                Discount: -{experience.currency}{" "}
+                                {
+                                  activeCoupon.discount_calculation
+                                    .discount_amount
+                                }
+                              </div>
+                              <div className="font-semibold">
+                                Final Price: {experience.currency}{" "}
+                                {activeCoupon.discount_calculation.final_amount}
+                              </div>
+                              {activeCoupon.coupon.type === "flat" && (
+                                <div className="text-xs text-green-600 mt-1">
+                                  Flat discount of {experience.currency}{" "}
+                                  {activeCoupon.coupon.discount_value}
+                                </div>
+                              )}
+                              {activeCoupon.coupon.type === "percentage" && (
+                                <div className="text-xs text-green-600 mt-1">
+                                  {activeCoupon.coupon.discount_value}% discount
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()} */}
+                                    {/* </div> */}
+                                  </div>
+                                )}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {!isAgent && (
+                      <Card
+                        className="border-blue-200 bg-blue-50 dark:bg-blue-950/20"
+                        id="pay-10-now-card"
+                      >
+                        <CardContent className="p-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-blue-800 dark:text-blue-200">
+                                Pay {isRiverRafting ? "20%" : "10%"} Now, Rest On-Site
+                              </h4>
+                              <p className="text-sm text-blue-600 dark:text-blue-300">
+                                Book your adventure with {isRiverRafting ? "20%" : "10%"} — pay the rest when
+                                you arrive at spot!
+                              </p>
+                            </div>
+                            <Switch
+                              checked={partialPayment}
+                              onCheckedChange={setPartialPayment}
                             />
-                            <label htmlFor="terms">
-                              I agree to the{" "}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                    <FormField
+                      control={form.control}
+                      name="terms_accepted"
+                      render={({ field }) => (
+                        <FormItem
+                          className="flex flex-row items-start space-x-3 space-y-0"
+                          id="terms-and-conditions-label"
+                        >
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="cursor-pointer">
+                              I accept the{" "}
                               <a
                                 href="/terms"
-                                target="_blank"
+                                // target="_blank"
                                 rel="noopener noreferrer"
+                                className="p-0 h-auto text-orange-500 hover:text-orange-600"
                                 onClick={(e) => {
                                   e.preventDefault();
+                                  // Get current form data
                                   const formData = form.getValues();
+
+                                  // Create bookingModalData with the same structure as onSubmit
                                   const bookingModalData = {
                                     data: formData,
                                     selectedDate: selectedDate,
                                     selectedSlotId: selectedSlotId,
-                                    selectedActivityId: selectedActivityId,
+                                    selectedActivityId: effectiveSelectedActivityId,
                                   };
+
+                                  // Save to localStorage
                                   localStorage.setItem(
                                     "bookingModalData",
                                     JSON.stringify(bookingModalData)
                                   );
+
                                   navigate("/terms");
                                 }}
                               >
                                 Terms & Conditions
                               </a>
-                            </label>
-                          </>
-                        )}
-                      />
-                    </div>
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
 
-                    {/* Confirm Button */}
-                    <button
-                      type="submit"
-                      onClick={form.handleSubmit(onSubmit)}
-                      disabled={
-                        isSubmitting ||
-                        !form.watch("terms_accepted") ||
-                        !selectedDate ||
-                        !selectedSlotId ||
-                        (isAgent && (!b2bPrice || !sellingPrice)) ||
-                        (isAgent && advancePayment > 0 && advancePayment > finalPrice)
-                      }
-                      className="confirm-pay-button"
-                    >
-                      <Lock size={18} />
-                      <span>
+                    {/* Step 2 Footer */}
+                    <div className="flex gap-3 pt-0 mt-0 flex-wrap">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handlePrevStep}
+                        className="flex-1"
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={
+                          isSubmitting ||
+                          !selectedDate ||
+                          !selectedSlotId ||
+                          (isAgent && (!b2bPrice || !sellingPrice)) ||
+                          (isAgent &&
+                            advancePayment > 0 &&
+                            advancePayment > finalPrice)
+                        }
+                        className="flex-1 bg-orange-500 hover:bg-orange-600"
+                      >
                         {isSubmitting
                           ? "Processing..."
                           : isAgent
                             ? advancePayment > 0
-                              ? `Confirm Booking (Due: ${selectedActivity?.currency || experience.currency} ${dueAmount.toFixed(2)})`
+                              ? `Confirm Booking (Due: ${selectedActivity?.currency ||
+                              experience.currency
+                              } ${dueAmount % 1 === 0
+                                ? dueAmount
+                                : dueAmount.toFixed(2)
+                              })`
                               : "Confirm Booking"
                             : partialPayment
-                              ? `Pay ${selectedActivity?.currency || experience.currency} ${upfrontAmount.toFixed(2)} Now`
-                              : "Confirm & pay"}
-                      </span>
-                    </button>
+                              ? `Pay ${selectedActivity?.currency || experience.currency
+                              } ${upfrontAmount % 1 === 0
+                                ? upfrontAmount
+                                : upfrontAmount.toFixed(2)
+                              } & Confirm Booking`
+                              : `Pay ${selectedActivity?.currency || experience.currency
+                              } ${finalPrice % 1 === 0
+                                ? finalPrice
+                                : finalPrice.toFixed(2)
+                              } & Confirm Booking`}
+                      </Button>
+                    </div>
+                    {/* <div className="mt-2">
+                    <DownloadPdfButton
+                      invoiceRef={dummyInvoiceRef}
+                      fileName={`Dummy_Invoice_${experience.title.replace(/\s+/g, '_')}`}
+                    />
+                    <BookingInvoice
+                      participantName="Dummy User"
+                      activityName={experience.title}
+                      dateTime={moment().format("DD/MM/YYYY - hh:mm A")}
+                      totalParticipants={1}
+                      amountPaid="0"
+                      amountToBePaid={experience.price.toString()}
+                      currency={experience.currency}
+                      showDownloadButton={false}
+                      isForPdf={true}
+                    />
+                  </div> */}
                   </div>
+
+                  {/* Note for Guide */}
+
+                  {/* Coupon Code Section - Hidden for agents */}
+
+                  {/* Terms and Conditions */}
                 </div>
               </div>
+
+              {/* Partial Payment Toggle - Hidden for agents */}
             </form>
           </Form>
         )}
         <AuthModal
           open={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
+          onClose={() => {
+            console.log(
+              "[BookingDialog] Closing auth modal, clearing prefilledPhone"
+            );
+            setIsAuthModalOpen(false);
+            setPrefilledPhone(undefined); // Clear prefilled phone when modal closes
+            prefilledPhoneRef.current = undefined;
+          }}
+          prefilledPhoneNumber={(() => {
+            const phone = prefilledPhone || prefilledPhoneRef.current;
+            console.log(
+              "[BookingDialog] Passing to AuthModal - prefilledPhone state:",
+              prefilledPhone,
+              "ref:",
+              prefilledPhoneRef.current,
+              "final:",
+              phone
+            );
+            return phone;
+          })()}
         />
-      </div>
-    </Modal>
+
+        {/* Hidden Dummy Invoice for PDF Generation */}
+        <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
+          <div ref={dummyInvoiceRef}>
+            <BookingInvoice
+              participantName="Dummy User"
+              activityName={experience.title}
+              dateTime={moment().format("DD/MM/YYYY - hh:mm A")}
+              totalParticipants={1}
+              amountPaid="0"
+              amountToBePaid={experience.price.toString()}
+              currency={experience.currency}
+              showDownloadButton={false}
+            />
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 };

@@ -6,7 +6,6 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Navigation, Pagination } from 'swiper/modules'
-import { Image } from 'antd'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
@@ -69,12 +68,6 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
     )
   }
 
-  // Prepare images for Ant Design Image.PreviewGroup
-  const imageList = sortedImages.map((image) => ({
-    src: image.image_url,
-    alt: image.alt_text || experienceTitle,
-  }))
-
   const handlePlayButtonClick = () => {
     // Handle play button click - could open video modal or navigate to video
     console.log('Play button clicked')
@@ -117,8 +110,15 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
     <>
       {/* Desktop Layout */}
       <div className="image-gallery-grid hidden md:grid" >
-        {/* Main Image/Video */}
-        <div className="image-gallery-main">
+        {/* Main Image/Video - click opens gallery popup */}
+        <div
+          className="image-gallery-main"
+          onClick={() => openModal(0)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && openModal(0)}
+          aria-label="Open gallery"
+        >
           {isVideo(mainImage) ? (
             <video
               src={mainImage.video_url || mainImage.image_url}
@@ -126,14 +126,12 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
               className="w-full object-cover h-100"
             />
           ) : (
-            <Image.PreviewGroup items={imageList}>
-              <Image
-                src={mainImage.image_url}
-                alt={mainImage.alt_text || `${experienceTitle} main image`}
-                className="w-full object-cover h-100"
-                style={{ display: 'block' }}
-              />
-            </Image.PreviewGroup>
+            <img
+              src={mainImage.image_url}
+              alt={mainImage.alt_text || `${experienceTitle} main image`}
+              className="w-full object-cover h-100"
+              style={{ display: 'block' }}
+            />
           )}
           <div className="image-gallery-main-overlay"></div>
           {/* Show play button only for videos */}
@@ -184,17 +182,16 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
                         <div className="image-gallery-play-icon"></div>
                       </div>
                     )}
-                    {/* Show "View all images" button on the 4th image if there are more than 5 total images */}
-                    {index === 3 && sortedImages.length > 5 && (
+                    {/* "Gallery" overlay on last grid cell - click opens popup */}
+                    {index === 3 && (
                       <div
-                        className="image-gallery-view-all"
+                        className="image-gallery-gallery-btn"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleViewAllClick()
                         }}
                       >
-                        <div className="image-gallery-view-icon"></div>
-                        <span>View all images</span>
+                        <span>Gallery</span>
                       </div>
                     )}
                   </>

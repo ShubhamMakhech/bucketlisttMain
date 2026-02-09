@@ -14,7 +14,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { PageTransition } from "@/components/PageTransition";
 import { AIChatbot } from "@/components/AIChatbot";
 import { Layout } from "@/components/Layout";
-import { NavigationBar } from "@/components/NavigationBar";
+import { Header } from "@/components/Header";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import EmailConfirmation from "./pages/EmailConfirmation";
@@ -172,7 +172,7 @@ const App: React.FC = () => {
           <Sonner />
           <BrowserRouter>
             <Layout>
-              <NavigationBar />
+              <Header />
               <PageTransition>
                 <Routes>
                   <Route path="/" element={<Index />} />

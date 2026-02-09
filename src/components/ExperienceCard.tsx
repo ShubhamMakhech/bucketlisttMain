@@ -1,13 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Star, Clock, Users, MapPin, Route } from "lucide-react";
+import { Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LazyImage } from "./LazyImage";
 import { FavoriteButton } from "./FavoriteButton";
 import { useState } from "react";
-import { IoIosArrowRoundForward } from "react-icons/io";
 
 interface Category {
   id: string;
@@ -139,6 +137,16 @@ export function ExperienceCard({
     isDiscounted,
   } = getDisplayPrice();
 
+  // Discount % for badge (e.g. "6% off") when we have original and discounted price
+  const discountPercent = (() => {
+    if (!isDiscounted || !displayOriginalPrice) return null;
+    const strip = (s: string) => parseFloat(String(s).replace(/[^0-9.]/g, "")) || 0;
+    const original = strip(displayOriginalPrice);
+    const discounted = strip(displayPrice);
+    if (original <= 0 || discounted >= original) return null;
+    return Math.round((1 - discounted / original) * 100);
+  })();
+
   const handleClick = () => {
     setIsClicked(true);
 
@@ -235,295 +243,59 @@ export function ExperienceCard({
   };
 
   const truncatedTitle = truncateTitle(title);
-  const truncatedDescription = truncateHTMLDescription(description || "", 100);
+  const categoryLabel = displayCategories.length > 0 ? displayCategories[0].name : category || "";
 
   return (
     <Card
       id="ExperienceCardStylesCard"
-      className={`group cursor-pointer overflow-hidden border-0 transition-all duration-300 
-      } ExperienceCardMobileLayout`}
+      className="experience-card-minimal group cursor-pointer overflow-hidden border-0 transition-all duration-300 ExperienceCardMobileLayout"
       onClick={handleClick}
-      style={{ boxShadow: "none", borderRadius: "5px" }}
+      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.08)", borderRadius: "12px" }}
     >
       <CardContent className="p-0">
-        {/* Desktop Layout */}
-        <div className="OnlyPc">
-          <div className="relative" id="ExperiencePcCardImageStyles">
-            {isSpecialOffer && (
-              <Badge className="absolute top-3 left-3 z-10" id="BadgeEditStyle">
-                Special offer
-              </Badge>
-            )}
-            <div
-              className={`absolute z-10 ${index !== undefined ? "top-0 right-0" : "top-0 right-2"
-                }`}
-              style={{ marginTop: "-2px" }}
-            >
-              <FavoriteButton
-                experienceId={id}
-                className="HeaderFavoriteButton"
-              />
-            </div>
-            <LazyImage
-              src={displayImage}
-              alt={title}
-              className="group-hover:scale-105 transition-transform duration-200"
-              aspectRatio="aspect-[4/3]"
+        {/* Image */}
+        <div className="experience-card-minimal-image">
+          {isSpecialOffer && (
+            <span className="experience-card-minimal-badge">Free cancellation</span>
+          )}
+          <div className="experience-card-minimal-favorite">
+            <FavoriteButton
+              experienceId={id}
+              className="HeaderFavoriteButton"
             />
           </div>
-
-          <div id="ExperiencePCCardContentStyles">
-            <div>
-              <h3 className="CommonH3 text-start FontAdjustForMobile">{truncatedTitle}</h3>
-              {/* <br /> */}
-              {truncatedDescription && (
-                <p
-                  className="text-muted-foreground fontSizeSm text-start"
-                  dangerouslySetInnerHTML={{ __html: truncatedDescription }}
-                />
-              )}
-              <div id="ExperiencePcCardBackgroundStyles">
-                <div className="ExperiencePCCardContent">
-                  <div>
-                    <div>
-                      <div>
-                        {displayCategories.length > 0 && (
-                          <div>
-                            {displayCategories.slice(0, 2).map((cat, index) => (
-                              <span
-                                key={cat.id || index}
-                                className="flex items-center gap-1"
-                              >
-                                {/* {cat.icon && <span>{cat.icon}</span>} */}
-                                <div id="FlexContainerRowBetween">
-                                  {/* <span className="fontSizeSm">{cat.name}</span> */}
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex items-center gap-1">
-                                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 fontSizeSm" />
-                                      <span className="font-medium fontSizeSm">
-                                        {rating}
-                                      </span>
-                                    </div>
-                                    <span className="text-sm text-muted-foreground fontSizeSm">
-                                      ({reviews})
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {index < Math.min(displayCategories.length, 2) - 1 && (
-                                  <span>•</span>
-                                )}
-                              </span>
-                            ))}
-                            {displayCategories.length > 2 && (
-                              <span className="text-xs">
-                                +{displayCategories.length - 2} more
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground marginUnset">
-                      {duration && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 fontSizeSm" />
-                          <span className="fontSizeSm">{duration}</span>
-                        </div>
-                      )}
-                      {groupSize && (
-                        <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          <span className="fontSizeSm">{groupSize}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {getDistanceDisplay() && (
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground ">
-                        {distanceKm === 0 ? (
-                          <MapPin className="h-4 w-4" />
-                        ) : (
-                          <Route className="h-4 w-4" />
-                        )}
-                        <span>{getDistanceDisplay()}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="HeadingHeaderCommonUsed">
-                      <div id="PriceContainerOfferHomePageCards">
-                        {isDiscounted ? (
-                          <div
-                            className="flex flex-col gap-0"
-                            style={{ textAlign: "start" }}
-                          >
-                            <div className="FlexAdjustContainer font-bold fontSizeMd">
-                              <span className="SpanTextSmooth">From <span className="line-through">{displayOriginalPrice}</span></span>&nbsp;
-                            </div>
-                            {displayPrice}
-                          </div>
-                        ) : (
-                          <div className="FlexAdjustContainer">
-                            <span
-                              className="text-lg font-bold fontSizeMd"
-                              style={{ color: "var(--brand-color)" }}
-                            >
-                              <span>From</span> {displayPrice}
-                            </span>
-                            {displayOriginalPrice && (
-                              <span className="text-sm text-muted-foreground line-through fontSizeSm">
-                                {displayOriginalPrice}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      <div className="BookingButtonContainer">
-                        <button> <IoIosArrowRoundForward /></button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <LazyImage
+            src={displayImage}
+            alt={title}
+            className="group-hover:scale-[1.02] transition-transform duration-300"
+            aspectRatio="aspect-[4/3]"
+          />
         </div>
 
-        {/* Mobile Layout */}
-        <div className="OnlyMobile ExperienceCardMobileGrid">
-          <div className="relative ExperienceCardMobileImage">
-            {isSpecialOffer && (
-              <Badge className="absolute top-2 left-2 z-10" id="BadgeEditStyle">
-                Special offer
-              </Badge>
-            )}
-
-            {/* Index Number - Only on Mobile */}
-            {index !== undefined && (
-              <div className="absolute top-2 right-2 z-20 ExperienceCardIndexNumber">
-                {index + 1}
-              </div>
-            )}
-            <LazyImage
-              src={displayImage}
-              alt={title}
-              className="group-hover:scale-105 transition-transform duration-200"
-              aspectRatio="aspect-[1/1]"
-            />
+        {/* Content: category + rating | title | price */}
+        <div className="experience-card-minimal-content">
+          <div className="experience-card-minimal-meta">
+            {categoryLabel ? (
+              <span className="experience-card-minimal-category">{categoryLabel}</span>
+            ) : null}
+            <span className="experience-card-minimal-rating">
+              <Star className="experience-card-minimal-star" />
+              {rating}
+              <span className="experience-card-minimal-reviews">({reviews})</span>
+            </span>
           </div>
-
-          <div className="ExperienceCardMobileContent p-3 space-y-1">
-            <div className="RelativeContainer">
-              <div>
-                {displayCategories.length > 0 && (
-                  <div>
-                    {displayCategories.slice(0, 1).map((cat, index) => (
-                      <span
-                        key={cat.id || index}
-                        className="flex items-center gap-1"
-                      >
-                        {/* {cat.icon && <span>{cat.icon}</span>} */}
-                        <div id="FlexContainerRowBetween">
-                          {/* <span className="fontSizeSm">{cat.name}</span> */}
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 fontSizeSm" />
-                              <span className="font-medium fontSizeSm">
-                                {rating}
-                              </span>
-                            </div>
-                            <span className="text-xs text-muted-foreground fontSizeSm">
-                              ({reviews})
-                            </span>
-                          </div>
-                        </div>
-                      </span>
-                    ))}
-                  </div>
-                )}
+          <h3 className="experience-card-minimal-title">{truncatedTitle}</h3>
+          <div className="experience-card-minimal-price">
+            <div className="experience-card-minimal-from-line">from</div>
+            {isDiscounted && displayOriginalPrice && (
+              <div className="experience-card-minimal-original-line">
+                <span className="experience-card-minimal-original">{displayOriginalPrice}</span>
               </div>
-              <div
-                className={`absolute z-10 ${index !== undefined ? "top-0 right-0" : "top-0 right-2"
-                  }`}
-                style={{ marginTop: "-2px" }}
-              >
-                <FavoriteButton
-                  experienceId={id}
-                  className="HeaderFavoriteButton"
-                />
-              </div>
-            </div>
-
-            <h3 className="CommonH3 text-start FontAdjustForMobile">{truncatedTitle}</h3>
-
-            <div
-              className="DescriptionContainer"
-              dangerouslySetInnerHTML={{
-                __html: description
-                  ? description
-                    .replace(/<[^>]*>/g, "")
-                    .split(" ")
-                    .slice(0, 8)
-                    .join(" ") +
-                  (description.replace(/<[^>]*>/g, "").split(" ").length > 20
-                    ? "..."
-                    : "")
-                  : "",
-              }}
-            />
-            <div id="PriceContainerOfferHomePageCards">
-              {isDiscounted ? (
-                <div
-                  className="flex justify-between "
-                  style={{ textAlign: "start", width: "100%" }}
-                >
-                  <div>
-                    <div className="FlexAdjustContainer">
-                      <span className="FromText textSmall">from</span>
-                      <span className="text-muted-foreground line-through textSmall">
-                        {displayOriginalPrice}
-                      </span>
-                    </div>
-                    <div style={{ marginTop: "-5px" }}>
-                      <span className="text-lg font-bold fontSizeMd text-green-600">
-                        {displayPrice}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="BookingButtonContainer">
-                    <button> <IoIosArrowRoundForward /></button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between "
-                    style={{ width: "100%" }}>
-                    <div>
-                      <div>
-                        <span className="FromText">from</span>{" "}
-                        {displayOriginalPrice && (
-                          <span className="text-sm text-muted-foreground line-through fontSizeSm">
-                            {displayOriginalPrice}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ marginTop: "-5px" }}>
-                        <span
-                          className="text-lg font-bold fontSizeMd"
-                          style={{ color: "var(--brand-color)" }}
-                        >
-                          {displayPrice}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="BookingButtonContainer" style={{
-
-                    }}>
-                      <button> <IoIosArrowRoundForward /></button>
-                    </div>
-                  </div>
-                </>
+            )}
+            <div className="experience-card-minimal-value-line">
+              <span className="experience-card-minimal-value">{displayPrice}</span>
+              {discountPercent != null && discountPercent > 0 && (
+                <span className="experience-card-minimal-discount-badge">{discountPercent}% off</span>
               )}
             </div>
           </div>

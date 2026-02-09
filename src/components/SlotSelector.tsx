@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, Badge, Button, Popover, Tooltip } from "antd";
@@ -10,21 +10,13 @@ import {
   Calendar as CalendarIcon,
   ChevronDown,
   ChevronUp,
-  ArrowLeft,
-  Home,
-  ChevronRight,
-  ChevronLeft,
-  Bookmark,
-  Star,
 } from "lucide-react";
 import { format, addDays, isSameDay } from "date-fns";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
-import { useNavigate } from "react-router-dom";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import "@/components/GlobalCss/ExperienceDetailGallery.css";
 
 interface SlotSelectorProps {
   experienceId: string;
@@ -37,8 +29,6 @@ interface SlotSelectorProps {
   onActivityChange: (activityId: string | undefined) => void; // Add this
   showOnlyActivitySelection?: boolean; // New prop for mobile step 1
   showOnlyDateAndTime?: boolean; // New prop for mobile step 2
-  experienceTitle?: string; // Add experience title for breadcrumb
-  onClose?: () => void; // Add onClose handler for breadcrumb
 }
 
 interface TimeSlot {
@@ -63,6 +53,7 @@ interface Activity {
 export const SlotSelector = ({
   experienceId,
   selectedDate,
+  experienceTitle,
   selectedSlotId,
   selectedActivityId, // Add this
   participantCount,
@@ -71,35 +62,13 @@ export const SlotSelector = ({
   onActivityChange, // Add this
   showOnlyActivitySelection = false,
   showOnlyDateAndTime = false,
-  experienceTitle,
-  onClose,
 }: SlotSelectorProps) => {
-  const navigate = useNavigate();
-  const swiperRef = useRef<any>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [isDistanceExpanded, setIsDistanceExpanded] = useState(false);
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(
     new Set()
   );
   const [showAllActivities, setShowAllActivities] = useState(false);
-
-  // Fetch experience data if not provided
-  const { data: experience } = useQuery({
-    queryKey: ["experience-data", experienceId],
-    queryFn: async () => {
-      if (!experienceId) return null;
-      const { data, error } = await supabase
-        .from("experiences")
-        .select("title, image_url")
-        .eq("id", experienceId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!experienceId && !experienceTitle,
-  });
-
-  const displayTitle = experienceTitle || experience?.title || "Booking Details";
 
   // Toggle expanded state for activity descriptions
   const toggleExpanded = (activityId: string) => {
@@ -112,27 +81,33 @@ export const SlotSelector = ({
     setExpandedActivities(newExpanded);
   };
 
-  // Generate next 9 days for date picker
-  const getNext9Days = () => {
+  // Generate next 4 days for horizontal date picker
+  const getNext4Days = () => {
     const days = [];
     const today = new Date();
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 4; i++) {
       days.push(addDays(today, i));
     }
     return days;
   };
 
-  const next9Days = getNext9Days();
+  const next4Days = getNext4Days();
 
   // Query to get available dates (dates with available slots)
   const { data: availableDates } = useQuery({
-    queryKey: ["available-dates", experienceId, participantCount],
+    queryKey: ["available-dates", experienceId, participantCount, selectedActivityId],
     queryFn: async () => {
-      // Get all time slots for the experience
-      const { data: slots, error: slotsError } = await supabase
+      // Get time slots for the experience (and activity if selected)
+      let query = supabase
         .from("time_slots")
         .select("*")
         .eq("experience_id", experienceId);
+
+      if (selectedActivityId) {
+        query = query.eq("activity_id", selectedActivityId);
+      }
+
+      const { data: slots, error: slotsError } = await query;
 
       if (slotsError) throw slotsError;
 
@@ -173,6 +148,15 @@ export const SlotSelector = ({
             0
           );
           const availableSpots = slot.capacity - bookedCount;
+
+          // For today, we also need to check if the slot hasn't already started
+          if (i === 0) {
+            const currentTimeIST = getCurrentTimeIST();
+            const currentTimeMinutes = currentTimeIST.getHours() * 60 + currentTimeIST.getMinutes();
+            const slotStartMinutes = timeToMinutes(slot.start_time);
+            if (slotStartMinutes < currentTimeMinutes) return false;
+          }
+
           return availableSpots >= participantCount;
         });
 
@@ -185,6 +169,32 @@ export const SlotSelector = ({
     },
     enabled: !!experienceId,
   });
+
+  // Reset/Auto-select date if current one is unavailable for the selected activity
+  React.useEffect(() => {
+    if (availableDates && availableDates.size > 0 && selectedActivityId) {
+      const dateStr = selectedDate ? selectedDate.toISOString().split("T")[0] : null;
+
+      // If no date is selected OR the current selected date is no longer available
+      if (!selectedDate || (dateStr && !availableDates.has(dateStr))) {
+        // Find the first available date from today onwards (up to 365 days)
+        const todayAtMidnight = new Date();
+        todayAtMidnight.setHours(0, 0, 0, 0);
+
+        for (let i = 0; i < 365; i++) {
+          const checkDate = addDays(todayAtMidnight, i);
+          const checkDateStr = checkDate.toISOString().split("T")[0];
+          if (availableDates.has(checkDateStr)) {
+            onDateChange(checkDate);
+            break;
+          }
+        }
+      }
+    } else if (availableDates && availableDates.size === 0 && selectedDate) {
+      // If no dates are available at all for this activity, clear the selection
+      onDateChange(undefined);
+    }
+  }, [selectedActivityId, availableDates, selectedDate, onDateChange]);
 
   // Add query for activities
   const { data: activities } = useQuery({
@@ -286,6 +296,10 @@ export const SlotSelector = ({
           }
           // For future dates, include all slots
           return true;
+        })
+        .sort((a, b) => {
+          // Sort by start_time in ascending order
+          return timeToMinutes(a.start_time) - timeToMinutes(b.start_time);
         });
 
       return slotsWithAvailability as TimeSlot[];
@@ -299,17 +313,6 @@ export const SlotSelector = ({
     const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
     const ampm = hour24 >= 12 ? "PM" : "AM";
     return `${hour12}:${minutes} ${ampm}`;
-  };
-
-  // Format currency
-  const formatCurrency = (amount: number, currency: string) => {
-    if (!amount) return "₹0";
-    return currency === "INR" || currency === "USD" ? `₹${amount}` : `${currency} ${amount}`;
-  };
-
-  // Get activity image or fallback
-  const getActivityImage = (activity: Activity) => {
-    return activity?.image_url || experience?.image_url || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop";
   };
 
   const isSlotAvailable = (slot: TimeSlot) => {
@@ -326,8 +329,8 @@ export const SlotSelector = ({
     if (slot.available_spots <= 3) {
       return <Badge color="orange">Few Spots Left</Badge>;
     }
-    return ("")
-  }
+    return "";
+  };
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -346,381 +349,378 @@ export const SlotSelector = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="booking-breadcrumb">
-        <button
-          className="breadcrumb-back-button"
-          onClick={() => {
-            if (onClose) {
-              onClose();
-            } else {
-              navigate(-1);
-            }
-          }}
-        >
-          <ArrowLeft size={16} />
-          <span>Back to Activity</span>
-        </button>
-        <div className="breadcrumb-divider"></div>
-        <button className="breadcrumb-item" onClick={() => navigate('/')}>
-          <Home size={14} />
-          <span>Home</span>
-        </button>
-        <ChevronRight size={12} className="breadcrumb-separator" />
-        <button
-          className="breadcrumb-item"
-          onClick={() => {
-            if (onClose) {
-              onClose();
-            } else {
-              navigate(-1);
-            }
-          }}
-        >
-          <span>Activities</span>
-        </button>
-        <ChevronRight size={12} className="breadcrumb-separator" />
-        <span className="breadcrumb-item active">
-          {displayTitle}
-        </span>
-      </div>
+    <div className="slot-selector-main-container space-y-6">
+      {/* Selected Activity Summary (Compact) */}
+      {selectedActivityId && (
+        <div className="selected-activity-summary-banner">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Activity Selection</span>
+              <h4 className="text-sm font-bold text-gray-800 m-0">
+                {activities?.find(a => a.id === selectedActivityId)?.name || "Selected Activity"}
+              </h4>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Price</span>
+              <div className="text-sm font-bold text-[var(--brand-color)]">
+                {(() => {
+                  const activity = activities?.find(a => a.id === selectedActivityId);
+                  if (!activity) return "";
+                  const sym = activity.currency === "INR" || activity.currency === "USD" ? "₹" : activity.currency;
+                  return `${sym} ${activity.discounted_price || activity.price}`;
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Activity Selection - Show only if not in date/time only mode */}
       {!showOnlyDateAndTime && (
         <>
           {/* Add Activity Selector */}
-          <div style={{ marginTop: "5px" }}>
-            {/* <label className="text-base font-semibold mb-3 block textSmall">Select Activity</label> */}
+          <Card className="ContainerBorderSet" bodyStyle={{ padding: "10px" }}>
+            <label className="text-base font-semibold mb-3 block textSmall">
+              Select Activity
+            </label>
 
             {/* Desktop Activity Swiper Slider */}
-            <div className="activity-selection-container hidden md:block">
-              <h3 className="activity-selection-title">Select Activity</h3>
-              <div className="activity-swiper-wrapper">
-                <div className="activity-swiper-controls">
-                  <button
-                    className="swiper-nav-btn prev"
-                    onClick={() => swiperRef.current?.slidePrev()}
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <button
-                    className="swiper-nav-btn next"
-                    onClick={() => swiperRef.current?.slideNext()}
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                </div>
-                <Swiper
-                  modules={[Navigation, Pagination]}
-                  spaceBetween={13}
-                  slidesPerView="auto"
-                  onSwiper={(swiper) => (swiperRef.current = swiper)}
-                  className="activity-swiper-new"
-                >
-                  {activities?.map((activity) => {
-                    const isSelected = selectedActivityId === activity.id;
-                    const hasDiscount = activity.discounted_price && activity.discounted_price !== activity.price;
-                    const displayPrice = hasDiscount ? activity.discounted_price : activity.price;
-                    const rating = activity.rating || 4.71;
-
-                    return (
-                      <SwiperSlide key={activity.id} className="activity-slide-new">
-                        <div
-                          className={`activity-card-new ${isSelected ? "selected" : ""}`}
-                          onClick={() => {
-                            onActivityChange(activity.id);
-                            onSlotChange(undefined);
-                          }}
-                        >
-                          {/* Image Section */}
-                          <div className="activity-card-new__image">
-                            <img
-                              src={getActivityImage(activity)}
-                              alt={activity.name}
-                              loading="lazy"
-                            />
-                            {/* Date Badge */}
-                            {selectedDate && (
-                              <div className="activity-card-new__date-badge">
-                                <span className="month">{format(selectedDate, "MMM").toUpperCase()}</span>
-                                <span className="day">{format(selectedDate, "d")}</span>
-                                <span className="dow">{format(selectedDate, "EEE").toUpperCase()}</span>
-                              </div>
-                            )}
-                            {/* Bookmark */}
-                            <button className="activity-card-new__bookmark">
-                              <Bookmark size={18} />
-                            </button>
-                          </div>
-
-                          {/* Content Section */}
-                          <div className="activity-card-new__content">
-                            {/* Rating & Avatars */}
-                            <div className="activity-card-new__meta">
-                              <div className="rating">
-                                <Star size={13} fill="#000" />
-                                <span>{rating.toFixed(2)}</span>
-                              </div>
-                              <div className="avatars">
-                                <div className="avatar">A</div>
-                                <div className="avatar">B</div>
-                                <div className="avatar pill">+5</div>
-                              </div>
-                              <span className="joined">joined</span>
-                            </div>
-
-                            {/* Title */}
-                            <h4 className="activity-card-new__title">{activity.name}</h4>
-
-                            {/* Description */}
-                            <p className="activity-card-new__desc">
-                              {activity.distance
-                                ? activity.distance.length > 80
-                                  ? `${activity.distance.substring(0, 80)}...`
-                                  : activity.distance
-                                : "Experience the thrill with trusted guides."}
-                            </p>
-
-                            {/* Price & CTA Row */}
-                            <div className="activity-card-new__footer">
-                              <div className="price-section">
-                                {hasDiscount ? (
-                                  <>
-                                    <div className="price-original">
-                                      {formatCurrency(activity.price, activity.currency)}
-                                    </div>
-                                    <div className="price-discounted">
-                                      {formatCurrency(displayPrice, activity.currency)}
-                                    </div>
-                                  </>
-                                ) : (
-                                  <div className="price">
-                                    {formatCurrency(displayPrice, activity.currency)}
-                                  </div>
-                                )}
-                              </div>
-                              <button
-                                className={`activity-card-new__cta ${isSelected ? "selected" : ""}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onActivityChange(activity.id);
-                                  onSlotChange(undefined);
-                                }}
-                              >
-                                {isSelected ? "✓ Selected" : "Reserve your booking"}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </SwiperSlide>
-                    );
-                  })}
-                </Swiper>
-              </div>
-            </div>
-
-            <div id="MobileActivityCardsContainer">
-              {/* Mobile Activity Cards */}
-              <div className="md:hidden activity-selection-container">
-                <h3 className="activity-selection-title">Select Activity</h3>
-
-                <div className="mobile-activity-list-new">
-                  {(showAllActivities ? activities : activities?.slice(0, 3))?.map((activity) => {
-                    const isExpanded = expandedActivities.has(activity.id);
-                    const isSelected = selectedActivityId === activity.id;
-                    const hasDiscount =
-                      activity.discounted_price && activity.discounted_price !== activity.price;
-
-                    const displayPrice = hasDiscount ? activity.discounted_price : activity.price;
-                    const rating = activity.rating || 4.71;
-
-                    const descriptionWords = activity.distance ? activity.distance.split(" ") : [];
-                    const shouldShowReadMore = descriptionWords.length > 12;
-
-                    return (
-                      <div
-                        key={activity.id}
-                        className={`activity-card-mobile-new ${isSelected ? "selected" : ""}`}
+            <div className="activity-swiper-container hidden md:block">
+              <Swiper
+                modules={[Navigation, Pagination]}
+                spaceBetween={16}
+                slidesPerView="auto"
+                navigation={true}
+                pagination={{
+                  clickable: true,
+                  dynamicBullets: true,
+                }}
+                className="activity-swiper"
+              >
+                {activities?.map((activity) => (
+                  <SwiperSlide key={activity.id} className="activity-slide">
+                    <Tooltip
+                      title={activity.distance || "Description not available"}
+                      placement="top"
+                      overlayStyle={{ maxWidth: "300px" }}
+                    >
+                      <Card
+                        className={`activity-card cursor-pointer transition-all duration-200 ${selectedActivityId === activity.id
+                          ? "border-[var(--brand-color)] bg-orange-50 shadow-md"
+                          : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                          }`}
                         onClick={() => {
                           onActivityChange(activity.id);
-                          onSlotChange(undefined);
+                          onSlotChange(undefined); // Reset slot when activity changes
+                        }}
+                        style={{
+                          width: "280px",
+                          minHeight: "200px",
+                          height: "100%",
                         }}
                       >
-                        {/* ===== TOP ROW (Title left | Price + Arrow button right) ===== */}
-                        <div className="activity-card-mobile-new__top">
-                          <h4 className="activity-card-mobile-new__title">{activity.name}</h4>
+                        <div className="flex flex-col h-full p-3">
+                          {/* Title */}
+                          <div className="mb-3">
+                            <h3
+                              className={`text-lg font-bold ${selectedActivityId === activity.id
+                                ? "text-gray-800"
+                                : "text-gray-800"
+                                }`}
+                            >
+                              {activity.name}
+                            </h3>
+                          </div>
 
-                          <div className="activity-card-mobile-new__right">
-                            <div className="price-section">
-                              {hasDiscount ? (
-                                <>
-                                  <div className="price-original">
-                                    {formatCurrency(activity.price, activity.currency)}
-                                  </div>
-                                  <div className="price-discounted">
-                                    {formatCurrency(displayPrice, activity.currency)}
-                                  </div>
-                                </>
-                              ) : (
-                                <div className="price">
-                                  {formatCurrency(displayPrice, activity.currency)}
+                          {/* Price */}
+                          <div className="mb-4">
+                            {activity.discounted_price &&
+                              activity.discounted_price !== activity.price ? (
+                              <div className="flex gap-2">
+                                <div className="text-lg text-muted-foreground line-through opacity-50">
+                                  {activity.currency === "USD"
+                                    ? "₹"
+                                    : activity.currency === "INR"
+                                      ? "₹"
+                                      : activity.currency}{" "}
+                                  {activity.price}
                                 </div>
-                              )}
-                            </div>
+                                <div
+                                  className={`text-2xl font-bold ${selectedActivityId === activity.id
+                                    ? "text-green-600"
+                                    : "text-green-600"
+                                    }`}
+                                >
+                                  {activity.currency === "USD"
+                                    ? "₹"
+                                    : activity.currency === "INR"
+                                      ? "₹"
+                                      : activity.currency}{" "}
+                                  {activity.discounted_price}
+                                </div>
+                              </div>
+                            ) : (
+                              <div
+                                className={`text-2xl font-bold ${selectedActivityId === activity.id
+                                  ? "text-[var(--brand-color)]"
+                                  : "text-gray-800"
+                                  }`}
+                              >
+                                {activity.currency === "USD"
+                                  ? "₹"
+                                  : activity.currency === "INR"
+                                    ? "₹"
+                                    : activity.currency}{" "}
+                                {activity.price}
+                              </div>
+                            )}
+                          </div>
 
-                            {/* Arrow / Selected button (no text) */}
-                            <button
-                              className={`activity-card-mobile-new__arrow ${isSelected ? "selected" : ""}`}
+                          {/* Select Button */}
+                          <div className="mb-4">
+                            <Button
+                              className={`w-full rounded-lg border-1 font-semibold ${selectedActivityId === activity.id
+                                ? "border-[var(--brand-color)] bg-[var(--brand-color)] text-white hover:opacity-90"
+                                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                }`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onActivityChange(activity.id);
                                 onSlotChange(undefined);
                               }}
-                              aria-label={isSelected ? "Selected" : "Select"}
-                              type="button"
                             >
-                              {isSelected ? "✓" : "›"}
-                            </button>
+                              {selectedActivityId === activity.id
+                                ? "Selected"
+                                : "Select"}
+                            </Button>
+                          </div>
+
+                          {/* Distance Content */}
+                          <div className="mt-auto">
+                            <div className="border-t border-dashed border-gray-300 pt-3">
+                              <div className="text-xs text-gray-600">
+                                <div className="font-medium mb-1">
+                                  Description:
+                                </div>
+                                <div className="text-gray-500">
+                                  {activity.distance
+                                    ? activity.distance.length > 80
+                                      ? `${activity.distance.substring(
+                                        0,
+                                        80
+                                      )}...`
+                                      : activity.distance
+                                    : "Distance information not available"}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    </Tooltip>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
+
+            {/* Mobile Activity Cards */}
+            <div className="md:hidden space-y-3 MobileActivityCardsContainer">
+              {(showAllActivities ? activities : activities?.slice(0, 3))?.map(
+                (activity) => {
+                  const isExpanded = expandedActivities.has(activity.id);
+                  const isSelected = selectedActivityId === activity.id;
+                  const descriptionWords = activity.distance
+                    ? activity.distance.split(" ")
+                    : [];
+                  const shouldShowReadMore = descriptionWords.length > 20;
+
+                  return (
+                    <Card
+                      key={activity.id}
+                      className={`cursor-pointer transition-all duration-200 ${isSelected
+                        ? "border-[var(--brand-color)] bg-orange-50 shadow-md"
+                        : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                        }`}
+                      onClick={() => {
+                        onActivityChange(activity.id);
+                        onSlotChange(undefined);
+                      }}
+                    >
+                      <div className="p-0">
+                        {/* Header Row */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex-1">
+                            <h3
+                              className={`text-sm font-semibold ${isSelected ? "text-gray-800" : "text-gray-800"
+                                }`}
+                            >
+                              {activity.name}
+                            </h3>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-right">
+                              {activity.discounted_price &&
+                                activity.discounted_price !== activity.price ? (
+                                <div className="flex flex-col items-end">
+                                  <div className="text-xs text-muted-foreground line-through">
+                                    {activity.currency === "USD"
+                                      ? "₹"
+                                      : activity.currency === "INR"
+                                        ? "₹"
+                                        : activity.currency}{" "}
+                                    {activity.price}
+                                  </div>
+                                  <div
+                                    className={`text-base font-bold ${isSelected
+                                      ? "text-green-600"
+                                      : "text-green-600"
+                                      }`}
+                                  >
+                                    {activity.currency === "USD"
+                                      ? "₹"
+                                      : activity.currency === "INR"
+                                        ? "₹"
+                                        : activity.currency}{" "}
+                                    {activity.discounted_price}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div
+                                  className={`text-base font-bold ${isSelected
+                                    ? "text-[var(--brand-color)]"
+                                    : "text-gray-800"
+                                    }`}
+                                >
+                                  {activity.currency === "USD"
+                                    ? "₹"
+                                    : activity.currency === "INR"
+                                      ? "₹"
+                                      : activity.currency}{" "}
+                                  {activity.price}
+                                </div>
+                              )}
+                            </div>
+                            <Button
+                              size="small"
+                              className={`px-3 py-1 text-xs font-medium rounded ${isSelected
+                                ? "bg-[var(--brand-color)] text-white"
+                                : "bg-gray-100 text-gray-700"
+                                }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onActivityChange(activity.id);
+                                onSlotChange(undefined);
+                              }}
+                            >
+                              {isSelected ? "Selected" : "Select"}
+                            </Button>
                           </div>
                         </div>
 
-                        {/* ===== DESCRIPTION ROW (1 line + ... + Read more) ===== */}
-                        <div>
-                          <p className="activity-card-mobile-new__desc">
-                            {isExpanded
-                              ? activity.distance || "Experience the thrill with trusted guides."
-                              : activity.distance
-                                ? `${descriptionWords.slice(0, 12).join(" ")}${shouldShowReadMore ? "..." : ""}`
-                                : "Experience the thrill with trusted guides."}
-                          </p>
+                        {/* Description Section */}
+                        {activity.distance && (
+                          <div className="border-t border-gray-200 pt-2">
+                            {/* Show first 2 lines */}
+                            <div className="text-xs text-gray-600 leading-relaxed mb-2">
+                              {isExpanded ? (
+                                activity.distance
+                              ) : (
+                                <>
+                                  {descriptionWords.slice(0, 20).join(" ")}
+                                  {shouldShowReadMore && "..."}
+                                </>
+                              )}
+                            </div>
 
-                          {shouldShowReadMore && (
-                            <button
-                              className="read-more-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExpanded(activity.id);
-                              }}
-                              type="button"
-                            >
-                              {isExpanded ? "Read less" : "Read more"}
-                              {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                            </button>
-                          )}
-                        </div>
-
-                        {/* ===== ACCORDION (put image + other details inside) ===== */}
-                        <div className="activity-card-mobile-new__accordion">
-                          {isExpanded && (
-                            <div className="activity-card-mobile-new__accordionBody">
-                              {/* Image */}
-                              <div className="activity-card-mobile-new__image">
-                                <img
-                                  src={getActivityImage(activity)}
-                                  alt={activity.name}
-                                  loading="lazy"
-                                />
-
-                                {/* Date Badge */}
-                                {selectedDate && (
-                                  <div className="activity-card-mobile-new__date-badge">
-                                    <span className="month">
-                                      {format(selectedDate, "MMM").toUpperCase()}
-                                    </span>
-                                    <span className="day">{format(selectedDate, "d")}</span>
-                                    <span className="dow">
-                                      {format(selectedDate, "EEE").toUpperCase()}
-                                    </span>
-                                  </div>
-                                )}
-
-                                {/* Bookmark */}
-                                <button
-                                  className="activity-card-mobile-new__bookmark"
-                                  onClick={(e) => e.stopPropagation()}
-                                  type="button"
-                                >
-                                  <Bookmark size={16} />
-                                </button>
-                              </div>
-
-                              {/* Rating & Avatars (same as your code) */}
-                              <div className="activity-card-mobile-new__meta">
-                                <div className="rating">
-                                  <Star size={11} fill="#000" />
-                                  <span>{rating.toFixed(2)}</span>
-                                </div>
-                                <div className="avatars">
-                                  <div className="avatar">A</div>
-                                  <div className="avatar">B</div>
-                                  <div className="avatar pill">+5</div>
-                                </div>
-                                <span className="joined">joined</span>
-                              </div>
-
-                              {/* (Optional) keep your old CTA button here if you still want it,
-                    but not removing it—just moving it inside accordion */}
-                              <button
-                                className={`activity-card-mobile-new__cta ${isSelected ? "selected" : ""}`}
+                            {/* Read more button */}
+                            {shouldShowReadMore && (
+                              <div
+                                className="flex items-center justify-between cursor-pointer"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onActivityChange(activity.id);
-                                  onSlotChange(undefined);
+                                  toggleExpanded(activity.id);
                                 }}
-                                type="button"
                               >
-                                {isSelected ? "✓ Selected" : "Reserve your booking"}
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                                <span className="text-xs text-gray-600">
+                                  {isExpanded ? "Read less" : "Read more"}
+                                </span>
+                                <div className="text-gray-400">
+                                  {isExpanded ? (
+                                    <ChevronUp className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronDown className="h-3 w-3" />
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
+                    </Card>
+                  );
+                }
+              )}
 
-                  {/* Show More Activities Button */}
-                  {activities && activities.length > 3 && !showAllActivities && (
-                    <button className="show-more-btn" onClick={() => setShowAllActivities(true)} type="button">
-                      Show more activities ({activities.length - 3} more)
-                    </button>
-                  )}
-
-                  {/* Show Less Button */}
-                  {showAllActivities && activities && activities.length > 3 && (
-                    <button className="show-more-btn" onClick={() => setShowAllActivities(false)} type="button">
-                      Show less
-                    </button>
-                  )}
+              {/* Show More Activities Button */}
+              {activities && activities.length > 3 && !showAllActivities && (
+                <div className="pt-2">
+                  <Button
+                    type="default"
+                    className="w-full text-sm font-medium border-gray-300 text-gray-700 hover:bg-gray-50"
+                    onClick={() => setShowAllActivities(true)}
+                  >
+                    Show more activities ({activities.length - 3} more)
+                  </Button>
                 </div>
-              </div>
+              )}
 
+              {/* Show Less Button */}
+              {showAllActivities && activities && activities.length > 3 && (
+                <div className="pt-2">
+                  <Button
+                    type="default"
+                    className="w-full text-sm font-medium border-gray-300 text-gray-700 hover:bg-gray-50"
+                    onClick={() => setShowAllActivities(false)}
+                  >
+                    Show less
+                  </Button>
+                </div>
+              )}
             </div>
-          </div>
+          </Card>
         </>
       )}
 
       {/* Date and Time Selection - Show only if not in activity only mode */}
       {!showOnlyActivitySelection && (
         <>
-          {/* Date & Time Selection Container */}
+          {/* Existing Calendar and Time Slots components */}
           {selectedActivityId && (
-            <div className="date-time-selection-container" style={{ marginTop: "5px" }}>
-              {/* Left Column - Date Selection */}
-              <div className="date-selection-column">
-                <h3 className="selection-title">Select a date</h3>
-                <div className="date-grid">
-                  {next9Days.slice(0, 9).map((date) => {
-                    const isSelected = selectedDate && isSameDay(date, selectedDate);
+            <>
+              <div className="date-selection-container">
+                <div className="section-header-compact">
+                  <label className="section-label-minimal">
+                    {experienceTitle === "Bike on Rent in Rishikesh"
+                      ? "Select Pickup Date"
+                      : "Select Date"}
+                  </label>
+                </div>
+
+                {/* Horizontal Date Picker */}
+                <div className="minimal-date-grid">
+                  {next4Days.map((date) => {
+                    const isSelected =
+                      selectedDate && isSameDay(date, selectedDate);
                     const isDisabled = isDateDisabled(date);
+
                     return (
                       <div
                         key={date.toISOString()}
-                        className={`date-cube ${isDisabled ? "disabled" : ""} ${isSelected ? "selected" : ""}`}
+                        className={`minimal-date-card ${isSelected ? "selected" : ""} ${isDisabled ? "disabled" : ""}`}
                         onClick={() => !isDisabled && onDateChange(date)}
                       >
-                        <div className="date-cube__day">{format(date, "EEE")}</div>
-                        <div className="date-cube__date">{format(date, "MMM d")}</div>
+                        <span className="minimal-date-day">{format(date, "EEE")}</span>
+                        <span className="minimal-date-number">{format(date, "MMM d")}</span>
                       </div>
                     );
                   })}
@@ -743,51 +743,55 @@ export const SlotSelector = ({
                     trigger="click"
                     open={showCalendar}
                     onOpenChange={setShowCalendar}
-                    placement="bottomLeft"
+                    placement="bottomRight"
                   >
-                    <div className="date-cube more-dates">
-                      <CalendarIcon size={20} />
-                      <div className="more-dates__text">More<br />dates</div>
+                    <div className="minimal-date-card more-dates-card">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span className="minimal-date-day">More</span>
                     </div>
                   </Popover>
                 </div>
               </div>
-
-              {/* Right Column - Time Slots */}
               {selectedDate && (
-                <div className="timeslot-selection-column">
-                  <h3 className="selection-title">Select Timeslots</h3>
+                <div className="time-selection-container mt-6">
+                  <div className="section-header-compact">
+                    <label className="section-label-minimal">
+                      Available Time Slots
+                    </label>
+                  </div>
+
                   {isLoading ? (
-                    <div className="time-slots-skeleton">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                       {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="skeleton-item" />
+                        <div key={i} className="h-12 bg-gray-50 animate-pulse rounded-xl"></div>
                       ))}
                     </div>
                   ) : timeSlots && timeSlots.length > 0 ? (
-                    <div className="time-slot-grid-new">
+                    <div className="minimal-slot-grid">
                       {timeSlots.map((slot) => {
                         const available = isSlotAvailable(slot);
                         const isSelected = selectedSlotId === slot.id;
+
                         return (
                           <div
                             key={slot.id}
-                            className={`time-slot-cube ${isSelected ? "selected" : ""} ${!available ? "disabled" : ""}`}
+                            className={`minimal-slot-pill ${isSelected ? "selected" : ""} ${!available ? "disabled" : ""}`}
                             onClick={() => available && onSlotChange(isSelected ? undefined : slot.id)}
                           >
-                            <Clock size={16} />
-                            <span>{formatTime(slot.start_time)}</span>
+                            <span className="minimal-slot-time">{formatTime(slot.start_time)}</span>
+                            {!available && <span className="minimal-slot-status">Full</span>}
                           </div>
                         );
                       })}
                     </div>
                   ) : (
-                    <div className="time-slot-empty">
+                    <div className="empty-state-minimal">
                       No time slots available for this date
                     </div>
                   )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </>
       )}

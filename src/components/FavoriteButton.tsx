@@ -39,19 +39,18 @@ export function FavoriteButton({ experienceId, className, size = "sm" }: Favorit
       variant="ghost"
       size={size === "sm" ? "icon" : size}
       className={cn(
-        "hover:bg-red-50 hover:text-red-500 transition-colors",
+        "text-gray-600 hover:bg-red-50 hover:text-red-500 transition-colors",
         isInFavorites && "text-red-500",
         className
       )}
       onClick={handleClick}
     >
-      <Heart 
-      style={{color: "white"}}
+      <Heart
         className={cn(
-          "h-4 w-4",
+          "h-4 w-4 shrink-0",
           size === "lg" && "h-5 w-5",
-          isInFavorites && "fill-red-500"
-        )} 
+          isInFavorites ? "fill-red-500 text-red-500" : "text-current"
+        )}
       />
     </Button>
   )

@@ -10,9 +10,7 @@
 @tailwind utilities;
 
 /* Swiper Styles */
-.mySwiper {
-  padding: 10px 0;
-}
+
 
 .mySwiper .swiper-slide {
   height: auto;

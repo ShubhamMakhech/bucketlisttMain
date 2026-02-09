@@ -23,8 +23,8 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className }) => {
   ];
 
   return (
-    <nav 
-      aria-label="Breadcrumb" 
+    <nav
+      aria-label="Breadcrumb"
       className={cn("flex items-center space-x-1 text-sm text-muted-foreground", className)}
     >
       <ol className="flex items-center space-x-1">
@@ -37,15 +37,15 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className }) => {
               {index > 0 && (
                 <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground/60" />
               )}
-              
+
               {index === 0 && (
                 <Home className="h-4 w-4 mr-1" />
               )}
 
               {isCurrent || !item.href ? (
-                <span 
+                <span
                   className={cn(
-                    "font-medium",
+                    "font-normal",
                     isCurrent ? "text-foreground" : "text-muted-foreground"
                   )}
                   aria-current={isCurrent ? "page" : undefined}

@@ -207,6 +207,15 @@ export function Footer() {
             <div className="FooterLinksColumn">
               <h3 className="FooterColumnHeader">Contact</h3>
               <ul className="FooterLinksList">
+              <li>
+                  <Button
+                    variant="link"
+                    className="FooterLink"
+                    onClick={() => window.open("https://wa.me/918511838237", "_blank")}
+                  >
+                  Live Support
+                  </Button>
+                </li>
                 <li>
                   <Button
                     variant="link"
@@ -225,6 +234,8 @@ export function Footer() {
                     +91 820 036 2890
                   </Button>
                 </li>
+                
+                
               </ul>
             </div>
           </div>
@@ -244,7 +255,7 @@ export function Footer() {
         {/* Bottom Section: Copyright and Payment Methods */}
         <div className="FooterBottomSection">
           <div className="FooterBottomLeft">
-            <span className="FooterCopyright">© 2025 bucketlistt. All rights reserved.</span>
+            <span className="FooterCopyright">© {new Date().getFullYear()} bucketlistt. All rights reserved.</span>
             <Button
               variant="link"
               className="FooterBottomLink"
@@ -258,12 +269,12 @@ export function Footer() {
             >
               Privacy policy
             </Button>
-            <Button
+            {/* <Button
               variant="link"
               className="FooterBottomLink"
             >
               Company details
-            </Button>
+            </Button> */}
           </div>
           <div className="FooterBottomRight">
             {/* <h4 className="FooterPaymentHeader">WE ACCEPT</h4> */}
