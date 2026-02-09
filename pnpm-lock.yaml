@@ -152,6 +152,9 @@ importers:
       next-themes:
         specifier: ^0.3.0
         version: 0.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -748,6 +751,12 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@pdf-lib/standard-fonts@1.0.0':
+    resolution: {integrity: sha512-hU30BK9IUN/su0Mn9VdlVKsWBS6GyhVfqjwl1FjZN4TxP6cCw0jP2w7V3Hf5uX7M0AZJ16vey9yE0ny7Sa59ZA==}
+
+  '@pdf-lib/upng@1.0.1':
+    resolution: {integrity: sha512-dQK2FUMQtowVP00mtIksrlZhdFXQZPC+taih1q4CvPZ5vqdxR/LKBaFg0oAfzd1GlHZXXSPdQfzQnt+ViGvEIQ==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -1480,56 +1489,67 @@ packages:
     resolution: {integrity: sha512-aL6hRwu0k7MTUESgkg7QHY6CoqPgr6gdQXRJI1/VbFlUMwsSzPGSR7sG5d+MCbYnJmJwThc2ol3nixj1fvI/zQ==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.52.0':
     resolution: {integrity: sha512-BTs0M5s1EJejgIBJhCeiFo7GZZ2IXWkFGcyZhxX4+8usnIo5Mti57108vjXFIQmmJaRyDwmV59Tw64Ap1dkwMw==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.52.0':
     resolution: {integrity: sha512-uj672IVOU9m08DBGvoPKPi/J8jlVgjh12C9GmjjBxCTQc3XtVmRkRKyeHSmIKQpvJ7fIm1EJieBUcnGSzDVFyw==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.52.0':
     resolution: {integrity: sha512-/+IVbeDMDCtB/HP/wiWsSzduD10SEGzIZX2945KSgZRNi4TSkjHqRJtNTVtVb8IRwhJ65ssI56krlLik+zFWkw==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-loong64-gnu@4.52.0':
     resolution: {integrity: sha512-U1vVzvSWtSMWKKrGoROPBXMh3Vwn93TA9V35PldokHGqiUbF6erSzox/5qrSMKp6SzakvyjcPiVF8yB1xKr9Pg==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-ppc64-gnu@4.52.0':
     resolution: {integrity: sha512-X/4WfuBAdQRH8cK3DYl8zC00XEE6aM472W+QCycpQJeLWVnHfkv7RyBFVaTqNUMsTgIX8ihMjCvFF9OUgeABzw==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-gnu@4.52.0':
     resolution: {integrity: sha512-xIRYc58HfWDBZoLmWfWXg2Sq8VCa2iJ32B7mqfWnkx5mekekl0tMe7FHpY8I72RXEcUkaWawRvl3qA55og+cwQ==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-musl@4.52.0':
     resolution: {integrity: sha512-mbsoUey05WJIOz8U1WzNdf+6UMYGwE3fZZnQqsM22FZ3wh1N887HT6jAOjXs6CNEK3Ntu2OBsyQDXfIjouI4dw==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-s390x-gnu@4.52.0':
     resolution: {integrity: sha512-qP6aP970bucEi5KKKR4AuPFd8aTx9EF6BvutvYxmZuWLJHmnq4LvBfp0U+yFDMGwJ+AIJEH5sIP+SNypauMWzg==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.52.0':
     resolution: {integrity: sha512-nmSVN+F2i1yKZ7rJNKO3G7ZzmxJgoQBQZ/6c4MuS553Grmr7WqR7LLDcYG53Z2m9409z3JLt4sCOhLdbKQ3HmA==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.52.0':
     resolution: {integrity: sha512-2d0qRo33G6TfQVjaMR71P+yJVGODrt5V6+T0BDYH4EMfGgdC/2HWDVjSSFw888GSzAZUwuska3+zxNUCDco6rQ==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-openharmony-arm64@4.52.0':
     resolution: {integrity: sha512-A1JalX4MOaFAAyGgpO7XP5khquv/7xKzLIyLmhNrbiCxWpMlnsTYr8dnsWM7sEeotNmxvSOEL7F65j0HXFcFsw==}
@@ -1601,24 +1621,28 @@ packages:
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@swc/core-linux-arm64-musl@1.13.5':
     resolution: {integrity: sha512-9+ZxFN5GJag4CnYnq6apKTnnezpfJhCumyz0504/JbHLo+Ue+ZtJnf3RhyA9W9TINtLE0bC4hKpWi8ZKoETyOQ==}
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@swc/core-linux-x64-gnu@1.13.5':
     resolution: {integrity: sha512-WD530qvHrki8Ywt/PloKUjaRKgstQqNGvmZl54g06kA+hqtSE2FTG9gngXr3UJxYu/cNAjJYiBifm7+w4nbHbA==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@swc/core-linux-x64-musl@1.13.5':
     resolution: {integrity: sha512-Luj8y4OFYx4DHNQTWjdIuKTq2f5k6uSXICqx+FSabnXptaOBAbJHNbHT/06JZh6NRUouaf0mYXN0mcsqvkhd7Q==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@swc/core-win32-arm64-msvc@1.13.5':
     resolution: {integrity: sha512-cZ6UpumhF9SDJvv4DA2fo9WIzlNFuKSkZpZmPG1c+4PFSEMy5DFOjBSllCvnqihCabzXzpn6ykCwBmHpy31vQw==}
@@ -2646,6 +2670,9 @@ packages:
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
 
+  pako@1.0.11:
+    resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
+
   pako@2.1.0:
     resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
 
@@ -2670,6 +2697,9 @@ packages:
   path-scurry@1.11.1:
     resolution: {integrity: sha512-Xa4Nw17FS9ApQFJ9umLiJS4orGjm7ZzwUrwamcGQuHSzDyth9boKDaycYdDcZDuqYATXw4HFXgaqWTctW/v1HA==}
     engines: {node: '>=16 || 14 >=14.18'}
+
+  pdf-lib@1.17.1:
+    resolution: {integrity: sha512-V/mpyJAoTsN4cnP31vc0wfNA1+p20evqqnap0KLoRUN0Yk/p3wN52DOEsL4oBFcLdb76hlpKPtzJIgo67j/XLw==}
 
   performance-now@2.1.0:
     resolution: {integrity: sha512-7EAHlyLHI56VEIdK57uwHdHKIaAGbnXPiw0yWbarQZOKaKpvUIgW0jWRVLiatnM+XXlSwsanIBH/hzGMJulMow==}
@@ -3306,6 +3336,9 @@ packages:
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
 
+  tslib@1.14.1:
+    resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
+
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
@@ -3839,6 +3872,14 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
+
+  '@pdf-lib/standard-fonts@1.0.0':
+    dependencies:
+      pako: 1.0.11
+
+  '@pdf-lib/upng@1.0.1':
+    dependencies:
+      pako: 1.0.11
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -5854,6 +5895,8 @@ snapshots:
 
   package-json-from-dist@1.0.1: {}
 
+  pako@1.0.11: {}
+
   pako@2.1.0: {}
 
   parchment@1.1.4: {}
@@ -5872,6 +5915,13 @@ snapshots:
     dependencies:
       lru-cache: 10.4.3
       minipass: 7.1.2
+
+  pdf-lib@1.17.1:
+    dependencies:
+      '@pdf-lib/standard-fonts': 1.0.0
+      '@pdf-lib/upng': 1.0.1
+      pako: 1.0.11
+      tslib: 1.14.1
 
   performance-now@2.1.0:
     optional: true
@@ -6634,6 +6684,8 @@ snapshots:
       typescript: 5.9.2
 
   ts-interface-checker@0.1.13: {}
+
+  tslib@1.14.1: {}
 
   tslib@2.8.1: {}
 
