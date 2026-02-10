@@ -67,9 +67,13 @@ const ExperienceDetail = () => {
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [isBulkPaymentDialogOpen, setIsBulkPaymentDialogOpen] = useState(false);
   const [bulkBookingsData, setBulkBookingsData] = useState([]);
-  const [selectedActivityId, setSelectedActivityId] = useState<string | undefined>(undefined);
+  const [selectedActivityId, setSelectedActivityId] = useState<
+    string | undefined
+  >(undefined);
   /** When set, modal opens with this activity and shows date selection directly (no activity step) */
-  const [openBookingWithActivityId, setOpenBookingWithActivityId] = useState<string | null>(null);
+  const [openBookingWithActivityId, setOpenBookingWithActivityId] = useState<
+    string | null
+  >(null);
   const [showAllActivities, setShowAllActivities] = useState(false);
   const [bulkParticipantsData, setBulkParticipantsData] = useState([]);
   const [appliedCoupon, setAppliedCoupon] =
@@ -86,7 +90,6 @@ const ExperienceDetail = () => {
     { id: "exclusion", label: "Exclusion" },
     { id: "eligibility", label: "Eligibility" },
     { id: "location", label: "Location" },
-    { id: "reviews", label: "Reviews" },
     { id: "cancellation", label: "Cancellation Policy" },
     { id: "operating-hours", label: "Operating Hours" },
     { id: "faqs", label: "FAQs" },
@@ -159,8 +162,11 @@ const ExperienceDetail = () => {
     typeof rawCount === "number" && !Number.isNaN(rawCount)
       ? Math.max(0, Math.floor(rawCount))
       : typeof rawCount === "string"
-        ? Math.max(0, Math.floor(parseInt(String(rawCount).replace(/,/g, ""), 10) || 0))
-        : 0;
+      ? Math.max(
+          0,
+          Math.floor(parseInt(String(rawCount).replace(/,/g, ""), 10) || 0)
+        )
+      : 0;
 
   const { data: bookingsCount = 0 } = useQuery({
     queryKey: ["experience-bookings-count", id],
@@ -178,7 +184,7 @@ const ExperienceDetail = () => {
   });
 
   // Show review count when we have it; otherwise show bookings count so "others" don't all show 0
-  const reviewCount = reviewsFromDb > 0 ? reviewsFromDb : (bookingsCount ?? 0);
+  const reviewCount = reviewsFromDb > 0 ? reviewsFromDb : bookingsCount ?? 0;
   const reviewLabel = reviewsFromDb > 0 ? "reviews" : "people booked";
 
   // If vendor_id is still missing, try to fetch it by ID
@@ -206,8 +212,8 @@ const ExperienceDetail = () => {
   // Merge vendor_id if we fetched it separately
   const experienceWithVendorId =
     experience &&
-      (experience.vendor_id === undefined || experience.vendor_id === null) &&
-      vendorIdData
+    (experience.vendor_id === undefined || experience.vendor_id === null) &&
+    vendorIdData
       ? { ...experience, vendor_id: vendorIdData }
       : experience;
 
@@ -353,7 +359,11 @@ const ExperienceDetail = () => {
     window.addEventListener("openBookingDialog", handleOpenBookingDialog);
 
     const handleScroll = () => {
-      const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+      const scrollPosition =
+        window.pageYOffset ||
+        document.documentElement.scrollTop ||
+        window.scrollY ||
+        0;
       setShowStickyNav(scrollPosition > 500);
 
       const threshold = 180; // Offset for header + sticky nav + buffer
@@ -398,7 +408,7 @@ const ExperienceDetail = () => {
     images && images.length > 0
       ? images
       : experience?.image_url
-        ? [
+      ? [
           {
             id: "main",
             image_url: experience.image_url,
@@ -407,7 +417,7 @@ const ExperienceDetail = () => {
             is_primary: true,
           },
         ]
-        : [];
+      : [];
 
   // Bulk Booking CSV Download
   const handleDownloadBulkBookingCSV = () => {
@@ -476,7 +486,8 @@ const ExperienceDetail = () => {
 
         if (!bookingDate || !participantName || !participantEmail) {
           errors.push(
-            `Row ${i + 2
+            `Row ${
+              i + 2
             }: Missing required fields (booking_date, participant_name, participant_email)`
           );
           continue;
@@ -512,7 +523,8 @@ const ExperienceDetail = () => {
 
         if (bookingsError) {
           errors.push(
-            `Row ${i + 2}: Error checking existing bookings - ${bookingsError.message
+            `Row ${i + 2}: Error checking existing bookings - ${
+              bookingsError.message
             }`
           );
           continue;
@@ -539,7 +551,8 @@ const ExperienceDetail = () => {
 
         if (!availableSlot) {
           errors.push(
-            `Row ${i + 2
+            `Row ${
+              i + 2
             }: No available time slots for ${participantName} on ${bookingDate}`
           );
           continue;
@@ -604,7 +617,6 @@ const ExperienceDetail = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-
         <div className="container py-16 px-4">
           <div className="text-center">Loading...</div>
         </div>
@@ -616,7 +628,6 @@ const ExperienceDetail = () => {
     // console.log("experience not found", experience, id);
     return (
       <div className="min-h-screen bg-background">
-
         <div className="container py-16 px-4">
           <div className="text-center">Experience not found</div>
         </div>
@@ -627,7 +638,6 @@ const ExperienceDetail = () => {
   if (experience.is_active === false) {
     return (
       <div className="min-h-screen bg-background">
-
         <div className="container py-16 px-4">
           <div className="text-center">This experience is not active.</div>
         </div>
@@ -637,15 +647,19 @@ const ExperienceDetail = () => {
 
   return (
     <div className="min-h-screen bg-background MaxWidthContainer">
-
-
       {/* Sticky Sub-navigation */}
-      <div className={`experience-detail-sticky-nav ${showStickyNav ? 'visible' : ''}`}>
+      <div
+        className={`experience-detail-sticky-nav ${
+          showStickyNav ? "visible" : ""
+        }`}
+      >
         <div className="sticky-nav-content">
           {navItems.map((item) => (
             <button
               key={item.id}
-              className={`sticky-nav-item ${activeSection === item.id ? 'active' : ''}`}
+              className={`sticky-nav-item ${
+                activeSection === item.id ? "active" : ""
+              }`}
               onClick={() => scrollToSection(item.id)}
             >
               {item.label}
@@ -675,10 +689,12 @@ const ExperienceDetail = () => {
                 <span className="experience-detail-breadcrumb-sep">&#8250;</span>
               </>
             )} */}
-            <Link >Rishikesh</Link>
+            <Link>Rishikesh</Link>
             <span className="experience-detail-breadcrumb-sep">&#8250;</span>
             <span className="experience-detail-breadcrumb-current">
-              {experience.title.length > 50 ? experience.title.slice(0, 50) + "..." : experience.title}
+              {experience.title.length > 50
+                ? experience.title.slice(0, 50) + "..."
+                : experience.title}
             </span>
           </nav>
 
@@ -714,7 +730,9 @@ const ExperienceDetail = () => {
                 experienceId={experience.id}
                 className="experience-detail-wishlist-btn"
               />
-              <span className="experience-detail-wishlist-label">Save to wishlist</span>
+              <span className="experience-detail-wishlist-label">
+                Save to wishlist
+              </span>
             </div>
           </div>
 
@@ -741,7 +759,6 @@ const ExperienceDetail = () => {
               {/* <br /> */}
               <div className="features-badges-container">
                 <div className="features-badges-grid">
-
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
                       {/* <img
@@ -767,10 +784,16 @@ const ExperienceDetail = () => {
                       <p>Pay Just 10% the book</p>
                     </div>
                     <div className="feature-badge-info-wrap">
-                      <span className="feature-badge-info-icon" aria-label="More info">
+                      <span
+                        className="feature-badge-info-icon"
+                        aria-label="More info"
+                      >
                         <Info className="feature-badge-info-i" />
                       </span>
-                      <span className="feature-badge-info-tooltip">Pay just 10% upfront to confirm your booking. Rest is to be paid on spot.</span>
+                      <span className="feature-badge-info-tooltip">
+                        Pay just 10% upfront to confirm your booking. Rest is to
+                        be paid on spot.
+                      </span>
                     </div>
                   </div>
 
@@ -795,10 +818,15 @@ const ExperienceDetail = () => {
                       <p>Tickets to your mobile</p>
                     </div>
                     <div className="feature-badge-info-wrap">
-                      <span className="feature-badge-info-icon" aria-label="More info">
+                      <span
+                        className="feature-badge-info-icon"
+                        aria-label="More info"
+                      >
                         <Info className="feature-badge-info-i" />
                       </span>
-                      <span className="feature-badge-info-tooltip">Get tickets directly on your Whatsapp & Email.</span>
+                      <span className="feature-badge-info-tooltip">
+                        Get tickets directly on your Whatsapp & Email.
+                      </span>
                     </div>
                   </div>
                   <div className="feature-badge">
@@ -822,10 +850,16 @@ const ExperienceDetail = () => {
                       <p>Free Cancellation </p>
                     </div>
                     <div className="feature-badge-info-wrap">
-                      <span className="feature-badge-info-icon" aria-label="More info">
+                      <span
+                        className="feature-badge-info-icon"
+                        aria-label="More info"
+                      >
                         <Info className="feature-badge-info-i" />
                       </span>
-                      <span className="feature-badge-info-tooltip">Get 100% refund If you cancel 24 hours before the activity start time.</span>
+                      <span className="feature-badge-info-tooltip">
+                        Get 100% refund If you cancel 24 hours before the
+                        activity start time.
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -854,18 +888,40 @@ const ExperienceDetail = () => {
               <Col lg={16}>
                 {/* Select Activity - grid of minimal cards above description */}
                 {activities && activities.length > 0 && (
-                  <Card className={`experience-detail-activity-select-card ${isHighlighted ? "highlight-booking-section" : ""}`} size="small">
+                  <Card
+                    className={`experience-detail-activity-select-card ${
+                      isHighlighted ? "highlight-booking-section" : ""
+                    }`}
+                    size="small"
+                  >
                     <div className="experience-detail-activity-select-header">
-                      <span className="experience-detail-activity-select-label">Select Activity</span>
+                      <span className="experience-detail-activity-select-label">
+                        Select Activity
+                      </span>
                     </div>
                     <div className="experience-detail-activity-grid">
-                      {(showAllActivities ? activities : activities.slice(0, 3)).map((activity: any) => {
+                      {(showAllActivities
+                        ? activities
+                        : activities.slice(0, 3)
+                      ).map((activity: any) => {
                         const isSelected = selectedActivityId === activity.id;
-                        const hasDiscount = activity.discounted_price && activity.discounted_price !== activity.price;
-                        const displayPrice = hasDiscount ? activity.discounted_price : activity.price;
-                        const currencySym = activity.currency === "INR" || activity.currency === "USD" ? "₹" : activity.currency;
-                        const description = activity.distance?.trim() || activity.duration || "";
-                        const shortDesc = description.length > 100 ? description.slice(0, 100).trim() + "…" : description;
+                        const hasDiscount =
+                          activity.discounted_price &&
+                          activity.discounted_price !== activity.price;
+                        const displayPrice = hasDiscount
+                          ? activity.discounted_price
+                          : activity.price;
+                        const currencySym =
+                          activity.currency === "INR" ||
+                          activity.currency === "USD"
+                            ? "₹"
+                            : activity.currency;
+                        const description =
+                          activity.distance?.trim() || activity.duration || "";
+                        const shortDesc =
+                          description.length > 100
+                            ? description.slice(0, 100).trim() + "…"
+                            : description;
                         const openBookingForThis = () => {
                           setSelectedActivityId(activity.id);
                           setOpenBookingWithActivityId(activity.id);
@@ -874,15 +930,24 @@ const ExperienceDetail = () => {
                         return (
                           <div
                             key={activity.id}
-                            className={`experience-detail-activity-card ${isSelected ? "selected" : ""}`}
+                            className={`experience-detail-activity-card ${
+                              isSelected ? "selected" : ""
+                            }`}
                             onClick={() => setSelectedActivityId(activity.id)}
                             role="button"
                             tabIndex={0}
-                            onKeyDown={(e) => e.key === "Enter" && setSelectedActivityId(activity.id)}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" &&
+                              setSelectedActivityId(activity.id)
+                            }
                           >
-                            <h3 className="experience-detail-activity-card-title">{activity.name}</h3>
+                            <h3 className="experience-detail-activity-card-title">
+                              {activity.name}
+                            </h3>
                             {shortDesc ? (
-                              <p className="experience-detail-activity-card-desc">{shortDesc}</p>
+                              <p className="experience-detail-activity-card-desc">
+                                {shortDesc}
+                              </p>
                             ) : null}
                             <div className="experience-detail-activity-card-footer">
                               <div className="experience-detail-activity-card-price-wrap">
@@ -948,50 +1013,140 @@ const ExperienceDetail = () => {
                 )}
                 <br />
                 <div className="ExperienceDetailContainersCards">
-                  <Card id="highlights" title="Highlights">
-
+                  <Card
+                    id="highlights"
+                    title="Highlights"
+                    className="experience-detail-description-card"
+                  >
+                    {experience.highlights ? (
+                      <div className="DescriptionEditContainer">
+                        <div
+                          className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: String(experience.highlights),
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </Card>
                   <br />
-                  <Card id="inclusion" title="Inclusion">
-
+                  <Card
+                    id="inclusion"
+                    title="Inclusion"
+                    className="experience-detail-description-card"
+                  >
+                    {experience.inclusion ? (
+                      <div className="DescriptionEditContainer">
+                        <div
+                          className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: String(experience.inclusion),
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </Card>
                   <br />
-                  <Card id="exclusion" title="Exclusion">
-
+                  <Card
+                    id="exclusion"
+                    title="Exclusion"
+                    className="experience-detail-description-card"
+                  >
+                    {experience.exclusion ? (
+                      <div className="DescriptionEditContainer">
+                        <div
+                          className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: String(experience.exclusion),
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </Card>
                   <br />
-                  <Card id="eligibility" title="Eligibility">
-
+                  <Card
+                    id="eligibility"
+                    title="Eligibility"
+                    className="experience-detail-description-card"
+                  >
+                    {experience.eligibility ? (
+                      <div className="DescriptionEditContainer">
+                        <div
+                          className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: String(experience.eligibility),
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </Card>
                   <br />
-                  <Card id="location" title="Location">
-
+                  <Card
+                    id="location"
+                    title="Location"
+                    className="experience-detail-description-card"
+                  >
+                    {experience.location_info ? (
+                      <div className="DescriptionEditContainer">
+                        <div
+                          className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: String(experience.location_info),
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </Card>
                   <br />
-                  <Card id="reviews" title="Reviews">
-                    <div className="flex flex-col gap-2">
-                      {/* <p className="text-sm text-gray-600">
-                          Hear from our customers who have experienced this adventure.
-                        </p> */}
-                      <button
-                        onClick={() => navigate("/?scrollTo=testimonials")}
-                        className="text-start text-sm font-medium text-[#940fdb] hover:underline w-fit underline"
-                      >
-                        Click here to see reviews
-                      </button>
-                    </div>
+                  <Card
+                    id="cancellation"
+                    title="Cancellation Policy"
+                    className="experience-detail-description-card"
+                  >
+                    {experience.cancellation_policy ? (
+                      <div className="DescriptionEditContainer">
+                        <div
+                          className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: String(experience.cancellation_policy),
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </Card>
                   <br />
-                  <Card id="cancellation" title="Cancellation Policy">
-
+                  <Card
+                    id="operating-hours"
+                    title="Operating Hours"
+                    className="experience-detail-description-card"
+                  >
+                    {experience.operating_hours ? (
+                      <div className="DescriptionEditContainer">
+                        <div
+                          className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: String(experience.operating_hours),
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </Card>
                   <br />
-                  <Card id="operating-hours" title="Operating Hours">
-
-                  </Card>
-                  <br />
-                  <Card id="faqs" title="FAQs">
-
+                  <Card
+                    id="faqs"
+                    title="FAQs"
+                    className="experience-detail-description-card"
+                  >
+                    {experience.faqs ? (
+                      <div className="DescriptionEditContainer">
+                        <div
+                          className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: String(experience.faqs),
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </Card>
                 </div>
               </Col>
@@ -1005,8 +1160,6 @@ const ExperienceDetail = () => {
                       onBookingClick={() => setIsBookingDialogOpen(true)}
                     /> */}
                   <Card className="PcOnlyButtonContainer">
-
-
                     {/* {getDistanceDisplay() && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 p-3 bg-muted rounded-lg">
                   {experience.distance_km === 0 ? (
@@ -1131,7 +1284,8 @@ const ExperienceDetail = () => {
                       className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                       // onClick={() => setIsBookingDialogOpen(true)}
                       onClick={() => {
-                        const section = document.getElementById("booking-section");
+                        const section =
+                          document.getElementById("booking-section");
 
                         if (section) {
                           const yOffset = -200; // offset
@@ -1150,7 +1304,6 @@ const ExperienceDetail = () => {
                     >
                       {/* {bookingButtonText} */}
                       Select Activity to Book
-
                       {/* {!isAgent && " - "}{" "} */}
                       {/* {!isAgent &&
                           appliedCoupon?.discount_calculation?.final_amount
@@ -1204,7 +1357,21 @@ const ExperienceDetail = () => {
                           <Users className="h-4 w-4" />
                         </div>
                         <div className="why-text">
-                          <h4>2000+ happy adventurers <span onClick={() => navigate("/?scrollTo=testimonials")} style={{ color: "var(--brand-color)", cursor: "pointer", textDecorationLine: "underline" }}>(reviews)</span></h4>
+                          <h4>
+                            2000+ happy adventurers{" "}
+                            <span
+                              onClick={() =>
+                                navigate("/?scrollTo=testimonials")
+                              }
+                              style={{
+                                color: "var(--brand-color)",
+                                cursor: "pointer",
+                                textDecorationLine: "underline",
+                              }}
+                            >
+                              (reviews)
+                            </span>
+                          </h4>
                         </div>
                       </div>
                       <div className="why-item">
@@ -1236,7 +1403,21 @@ const ExperienceDetail = () => {
                           <Headset className="h-4 w-4" />
                         </div>
                         <div className="why-text">
-                          <h4>24/7 expert  <a href="https://wa.me/918511838237" target="_blank" rel="noopener noreferrer" style={{ color: "var(--brand-color)", cursor: "pointer", textDecorationLine: "underline" }}>support</a></h4>
+                          <h4>
+                            24/7 expert{" "}
+                            <a
+                              href="https://wa.me/918511838237"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: "var(--brand-color)",
+                                cursor: "pointer",
+                                textDecorationLine: "underline",
+                              }}
+                            >
+                              support
+                            </a>
+                          </h4>
                         </div>
                       </div>
                       <div className="why-item">
@@ -1326,7 +1507,9 @@ const ExperienceDetail = () => {
           currency: experience.currency || "INR",
           image_url: galleryImages?.[0]?.image_url || experience.image_url,
         }}
-        externalSelectedActivityId={openBookingWithActivityId ?? selectedActivityId ?? undefined}
+        externalSelectedActivityId={
+          openBookingWithActivityId ?? selectedActivityId ?? undefined
+        }
         appliedCoupon={appliedCoupon}
         onBookingSuccess={handleBookingSuccess}
         setIsBookingDialogOpen={setIsBookingDialogOpen}

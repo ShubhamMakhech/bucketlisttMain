@@ -424,6 +424,7 @@ export type Database = {
       };
       experiences: {
         Row: {
+          cancellation_policy: string | null;
           category: string;
           category_id: string | null;
           created_at: string;
@@ -433,16 +434,23 @@ export type Database = {
           destination_id: string | null;
           distance_km: number | null;
           duration: string | null;
+          eligibility: string | null;
           end_point: string | null;
+          exclusion: string | null;
+          faqs: string | null;
           google_maps_url: string | null;
           group_size: string | null;
+          highlights: string | null;
           id: string;
           image_url: string | null;
+          inclusion: string | null;
           is_active: boolean | null;
           is_special_offer: boolean | null;
           latitude: number | null;
           location: string | null;
+          location_info: string | null;
           longitude: number | null;
+          operating_hours: string | null;
           original_price: number | null;
           place_id: string | null;
           price: number | null;
@@ -454,6 +462,7 @@ export type Database = {
           vendor_id: string | null;
         };
         Insert: {
+          cancellation_policy?: string | null;
           category: string;
           category_id?: string | null;
           created_at?: string;
@@ -463,16 +472,23 @@ export type Database = {
           destination_id?: string | null;
           distance_km?: number | null;
           duration?: string | null;
+          eligibility?: string | null;
           end_point?: string | null;
+          exclusion?: string | null;
+          faqs?: string | null;
           google_maps_url?: string | null;
           group_size?: string | null;
+          highlights?: string | null;
           id?: string;
           image_url?: string | null;
+          inclusion?: string | null;
           is_active?: boolean | null;
           is_special_offer?: boolean | null;
           latitude?: number | null;
           location?: string | null;
+          location_info?: string | null;
           longitude?: number | null;
+          operating_hours?: string | null;
           original_price?: number | null;
           place_id?: string | null;
           price?: number | null;
@@ -484,6 +500,7 @@ export type Database = {
           vendor_id?: string | null;
         };
         Update: {
+          cancellation_policy?: string | null;
           category?: string;
           category_id?: string | null;
           created_at?: string;
@@ -493,16 +510,23 @@ export type Database = {
           destination_id?: string | null;
           distance_km?: number | null;
           duration?: string | null;
+          eligibility?: string | null;
           end_point?: string | null;
+          exclusion?: string | null;
+          faqs?: string | null;
           google_maps_url?: string | null;
           group_size?: string | null;
+          highlights?: string | null;
           id?: string;
           image_url?: string | null;
+          inclusion?: string | null;
           is_active?: boolean | null;
           is_special_offer?: boolean | null;
           latitude?: number | null;
           location?: string | null;
+          location_info?: string | null;
           longitude?: number | null;
+          operating_hours?: string | null;
           original_price?: number | null;
           place_id?: string | null;
           price?: number | null;

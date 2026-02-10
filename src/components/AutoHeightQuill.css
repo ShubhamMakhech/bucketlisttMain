@@ -1,0 +1,23 @@
+/* Compact scrollable Quill: small fixed height + vertical scroll inside each box */
+.auto-height-quill-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.auto-height-quill-wrapper > div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.auto-height-quill-wrapper .ql-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Override global .ql-editor min-height so these boxes stay small */
+.auto-height-quill-wrapper .ql-editor {
+  min-height: 80px !important;
+}

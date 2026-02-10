@@ -19,8 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import { AutoHeightQuill } from "@/components/AutoHeightQuill";
 
 interface Category {
   id: string;
@@ -55,6 +55,14 @@ interface ExperienceData {
   id?: string;
   title: string;
   description: string;
+  highlights?: string;
+  inclusion?: string;
+  exclusion?: string;
+  eligibility?: string;
+  location_info?: string;
+  cancellation_policy?: string;
+  operating_hours?: string;
+  faqs?: string;
   category_ids: string[];
   original_price: number;
   discount_percentage: number | null;
@@ -110,6 +118,14 @@ export function CreateExperienceForm({
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
     description: initialData?.description || "",
+    highlights: initialData?.highlights || "",
+    inclusion: initialData?.inclusion || "",
+    exclusion: initialData?.exclusion || "",
+    eligibility: initialData?.eligibility || "",
+    location_info: initialData?.location_info || "",
+    cancellation_policy: initialData?.cancellation_policy || "",
+    operating_hours: initialData?.operating_hours || "",
+    faqs: initialData?.faqs || "",
     category_ids: initialData?.category_ids || [],
     location: initialData?.location || "",
     location2: initialData?.location2 || "",
@@ -921,6 +937,14 @@ export function CreateExperienceForm({
       const experienceData = {
         title: formData.title,
         description: formData.description,
+        highlights: formData.highlights || null,
+        inclusion: formData.inclusion || null,
+        exclusion: formData.exclusion || null,
+        eligibility: formData.eligibility || null,
+        location_info: formData.location_info || null,
+        cancellation_policy: formData.cancellation_policy || null,
+        operating_hours: formData.operating_hours || null,
+        faqs: formData.faqs || null,
         category: primaryCategory?.name || "General", // Legacy field - use first selected category
         price: minPrice,
         discount_percentage: minDiscountPercentage,
@@ -1142,20 +1166,114 @@ export function CreateExperienceForm({
 
           <div className="space-y-2 text-start">
             <Label htmlFor="description">Description *</Label>
-            <div className="border rounded-md overflow-hidden">
-              <ReactQuill
-                theme="snow"
-                value={formData.description}
-                onChange={(value) => handleInputChange("description", value)}
-                modules={quillModules}
-                formats={quillFormats}
-                placeholder="Describe the experience.."
-                style={{
-                  minHeight: "400px",
-                  backgroundColor: "transparent",
-                }}
-              />
-            </div>
+            <AutoHeightQuill
+              theme="snow"
+              value={formData.description}
+              onChange={(value) => handleInputChange("description", value)}
+              modules={quillModules}
+              formats={quillFormats}
+              placeholder="Describe the experience.."
+              minHeight={160}
+            />
+          </div>
+
+          <div className="space-y-2 text-start">
+            <Label htmlFor="highlights">Highlights</Label>
+            <AutoHeightQuill
+              theme="snow"
+              value={formData.highlights}
+              onChange={(value) => handleInputChange("highlights", value)}
+              modules={quillModules}
+              formats={quillFormats}
+              placeholder="Key highlights of the experience.."
+              minHeight={72}
+            />
+          </div>
+          <div className="space-y-2 text-start">
+            <Label htmlFor="inclusion">Inclusion</Label>
+            <AutoHeightQuill
+              theme="snow"
+              value={formData.inclusion}
+              onChange={(value) => handleInputChange("inclusion", value)}
+              modules={quillModules}
+              formats={quillFormats}
+              placeholder="What's included.."
+              minHeight={72}
+            />
+          </div>
+          <div className="space-y-2 text-start">
+            <Label htmlFor="exclusion">Exclusion</Label>
+            <AutoHeightQuill
+              theme="snow"
+              value={formData.exclusion}
+              onChange={(value) => handleInputChange("exclusion", value)}
+              modules={quillModules}
+              formats={quillFormats}
+              placeholder="What's not included.."
+              minHeight={72}
+            />
+          </div>
+          <div className="space-y-2 text-start">
+            <Label htmlFor="eligibility">Eligibility</Label>
+            <AutoHeightQuill
+              theme="snow"
+              value={formData.eligibility}
+              onChange={(value) => handleInputChange("eligibility", value)}
+              modules={quillModules}
+              formats={quillFormats}
+              placeholder="Who can participate.."
+              minHeight={72}
+            />
+          </div>
+          <div className="space-y-2 text-start">
+            <Label htmlFor="location_info">Location (details)</Label>
+            <AutoHeightQuill
+              theme="snow"
+              value={formData.location_info}
+              onChange={(value) => handleInputChange("location_info", value)}
+              modules={quillModules}
+              formats={quillFormats}
+              placeholder="Location details and how to reach.."
+              minHeight={72}
+            />
+          </div>
+          <div className="space-y-2 text-start">
+            <Label htmlFor="cancellation_policy">Cancellation Policy</Label>
+            <AutoHeightQuill
+              theme="snow"
+              value={formData.cancellation_policy}
+              onChange={(value) =>
+                handleInputChange("cancellation_policy", value)
+              }
+              modules={quillModules}
+              formats={quillFormats}
+              placeholder="Cancellation and refund policy.."
+              minHeight={72}
+            />
+          </div>
+          <div className="space-y-2 text-start">
+            <Label htmlFor="operating_hours">Operating Hours</Label>
+            <AutoHeightQuill
+              theme="snow"
+              value={formData.operating_hours}
+              onChange={(value) => handleInputChange("operating_hours", value)}
+              modules={quillModules}
+              formats={quillFormats}
+              placeholder="When is this experience available.."
+              minHeight={72}
+            />
+          </div>
+          <div className="space-y-2 text-start">
+            <Label htmlFor="faqs">FAQs</Label>
+            <AutoHeightQuill
+              theme="snow"
+              value={formData.faqs}
+              onChange={(value) => handleInputChange("faqs", value)}
+              modules={quillModules}
+              formats={quillFormats}
+              placeholder="Frequently asked questions.."
+              minHeight={72}
+            />
           </div>
 
           <div className="space-y-2 text-start">
