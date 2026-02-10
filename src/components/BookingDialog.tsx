@@ -1808,12 +1808,6 @@ export const BookingDialog = ({
                           </div>
                         </div>
                       </div>
-                                  : "Select Time Slot"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
 
                       <div className="summary-divider-line" />
 

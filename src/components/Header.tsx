@@ -15,9 +15,9 @@ import {
   Bell,
   User,
   BookOpen,
-  Star,
-  Shield,
-  User,
+  // Star,
+  // Shield,
+  // User,
   BookOpen,
   Star,
   Shield,
@@ -109,7 +109,7 @@ export function Header() {
           experiences (
             title
           )
-        `
+        `,
         )
         .eq("user_id", user.id)
         .eq("status", "confirmed")
@@ -197,15 +197,10 @@ export function Header() {
 
   return (
     <>
-      {/* Backdrop Blur Overlay */}
-      {(isDesktopDropdownOpen || isMobileDropdownOpen) && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9997] animate-in fade-in duration-200" />
-      )}
-
       <header
         className={`sticky top-0 left-0 right-0 z-[9998] w-full transition-all duration-300 ${getHeaderStyles()}`}
       >
-        <div className="flex items-center justify-between  mx-auto relative navigationheight MaxWidthContainer" >
+        <div className="flex items-center justify-between  mx-auto relative navigationheight MaxWidthContainer">
           {/* Logo */}
           <Link
             to="/"
@@ -220,15 +215,17 @@ export function Header() {
             <img
               src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt+(1).png"
               alt="bucketlistt Logo"
-              className={`transition-opacity duration-300 ${isScrolled ? "opacity-0 absolute" : "opacity-100"
-                }`}
+              className={`transition-opacity duration-300 ${
+                isScrolled ? "opacity-0 absolute" : "opacity-100"
+              }`}
             />
             {/* Second logo - shown after scroll */}
             <img
               src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt.png"
               alt="bucketlistt Logo"
-              className={`transition-opacity duration-300 ${isScrolled ? "opacity-100" : "opacity-0 absolute"
-                }`}
+              className={`transition-opacity duration-300 ${
+                isScrolled ? "opacity-100" : "opacity-0 absolute"
+              }`}
             />
           </Link>
 
@@ -300,7 +297,7 @@ export function Header() {
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             {format(
                               new Date(nextBooking.booking_date),
-                              "MMM d, yyyy"
+                              "MMM d, yyyy",
                             )}{" "}
                             - Don't forget!
                           </p>

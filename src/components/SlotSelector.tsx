@@ -790,7 +790,7 @@ export const SlotSelector = ({
                       No time slots available for this date
                     </div>
                   )}
-                </Card>
+                </div>
               )}
             </>
           )}

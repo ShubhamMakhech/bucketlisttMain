@@ -45,7 +45,7 @@ import { CertificationBadges } from "@/components/CertificationBadges";
 import { CouponValidationResult } from "@/hooks/useDiscountCoupon";
 import "../Styles/ExperienceDetail.css";
 import { Row, Col, Card } from "antd";
-import { textDecorationLine } from "html2canvas/dist/types/css/property-descriptors/text-decoration-line";
+
 const ExperienceDetail = () => {
   const { name } = useParams(); // This is the url_name from the URL
   const navigate = useNavigate();
@@ -105,6 +105,7 @@ const ExperienceDetail = () => {
     queryFn: async () => {
       if (!name) throw new Error("URL name is required");
 
+      // @ts-expect-error - Supabase select().single() type inference can be excessively deep
       const result = await supabase
         .from("experiences")
         .select("*")
@@ -126,12 +127,12 @@ const ExperienceDetail = () => {
       // If vendor_id is missing or null, try to fetch it explicitly
       if (data && (data.vendor_id === undefined || data.vendor_id === null)) {
         console.log("vendor_id is missing/null, fetching separately...");
-        const vendorResult = await supabase
+        const vendorResult = (await supabase
           .from("experiences")
           .select("vendor_id")
           .eq("url_name", name)
-          .single();
-        const vendorData = (vendorResult as { data: any; error: any }).data;
+          .single()) as unknown as { data: { vendor_id?: string } | null };
+        const vendorData = vendorResult?.data;
         console.log("Separate vendor_id fetch result:", vendorData);
         if (vendorData?.vendor_id !== undefined) {
           return {
@@ -162,11 +163,11 @@ const ExperienceDetail = () => {
     typeof rawCount === "number" && !Number.isNaN(rawCount)
       ? Math.max(0, Math.floor(rawCount))
       : typeof rawCount === "string"
-      ? Math.max(
-          0,
-          Math.floor(parseInt(String(rawCount).replace(/,/g, ""), 10) || 0)
-        )
-      : 0;
+        ? Math.max(
+            0,
+            Math.floor(parseInt(String(rawCount).replace(/,/g, ""), 10) || 0),
+          )
+        : 0;
 
   const { data: bookingsCount = 0 } = useQuery({
     queryKey: ["experience-bookings-count", id],
@@ -184,7 +185,7 @@ const ExperienceDetail = () => {
   });
 
   // Show review count when we have it; otherwise show bookings count so "others" don't all show 0
-  const reviewCount = reviewsFromDb > 0 ? reviewsFromDb : bookingsCount ?? 0;
+  const reviewCount = reviewsFromDb > 0 ? reviewsFromDb : (bookingsCount ?? 0);
   const reviewLabel = reviewsFromDb > 0 ? "reviews" : "people booked";
 
   // If vendor_id is still missing, try to fetch it by ID
@@ -212,8 +213,8 @@ const ExperienceDetail = () => {
   // Merge vendor_id if we fetched it separately
   const experienceWithVendorId =
     experience &&
-      (experience.vendor_id === undefined || experience.vendor_id === null) &&
-      vendorIdData
+    (experience.vendor_id === undefined || experience.vendor_id === null) &&
+    vendorIdData
       ? { ...experience, vendor_id: vendorIdData }
       : experience;
 
@@ -288,7 +289,7 @@ const ExperienceDetail = () => {
               currency
             )
           )
-        `
+        `,
         )
         .eq("user_id", user.id)
         .eq("experience_id", id)
@@ -409,14 +410,14 @@ const ExperienceDetail = () => {
       ? images
       : experience?.image_url
         ? [
-          {
-            id: "main",
-            image_url: experience.image_url,
-            alt_text: experience.title,
-            display_order: 0,
-            is_primary: true,
-          },
-        ]
+            {
+              id: "main",
+              image_url: experience.image_url,
+              alt_text: experience.title,
+              display_order: 0,
+              is_primary: true,
+            },
+          ]
         : [];
 
   // Bulk Booking CSV Download
@@ -435,8 +436,11 @@ const ExperienceDetail = () => {
       "2024-01-15,Sample note,John Doe,john@example.com,+1234567890\n";
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     // Use file-saver if available, else fallback
-    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-      window.navigator.msSaveOrOpenBlob(blob, "bulk_booking_template.csv");
+    const nav = window.navigator as Navigator & {
+      msSaveOrOpenBlob?: (blob: Blob, filename: string) => void;
+    };
+    if (nav.msSaveOrOpenBlob) {
+      nav.msSaveOrOpenBlob(blob, "bulk_booking_template.csv");
     } else {
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -486,8 +490,9 @@ const ExperienceDetail = () => {
 
         if (!bookingDate || !participantName || !participantEmail) {
           errors.push(
-            `Row ${i + 2
-            }: Missing required fields (booking_date, participant_name, participant_email)`
+            `Row ${
+              i + 2
+            }: Missing required fields (booking_date, participant_name, participant_email)`,
           );
           continue;
         }
@@ -501,14 +506,14 @@ const ExperienceDetail = () => {
 
         if (slotsError) {
           errors.push(
-            `Row ${i + 2}: Error fetching time slots - ${slotsError.message}`
+            `Row ${i + 2}: Error fetching time slots - ${slotsError.message}`,
           );
           continue;
         }
 
         if (!timeSlots || timeSlots.length === 0) {
           errors.push(
-            `Row ${i + 2}: No time slots available for this experience`
+            `Row ${i + 2}: No time slots available for this experience`,
           );
           continue;
         }
@@ -522,8 +527,9 @@ const ExperienceDetail = () => {
 
         if (bookingsError) {
           errors.push(
-            `Row ${i + 2}: Error checking existing bookings - ${bookingsError.message
-            }`
+            `Row ${i + 2}: Error checking existing bookings - ${
+              bookingsError.message
+            }`,
           );
           continue;
         }
@@ -533,11 +539,11 @@ const ExperienceDetail = () => {
         for (const slot of timeSlots) {
           const slotBookings =
             existingBookings?.filter(
-              (booking) => booking.time_slot_id === slot.id
+              (booking) => booking.time_slot_id === slot.id,
             ) || [];
           const bookedCount = slotBookings.reduce(
             (sum, booking) => sum + booking.total_participants,
-            0
+            0,
           );
           const availableSpots = slot.capacity - bookedCount;
 
@@ -549,8 +555,9 @@ const ExperienceDetail = () => {
 
         if (!availableSlot) {
           errors.push(
-            `Row ${i + 2
-            }: No available time slots for ${participantName} on ${bookingDate}`
+            `Row ${
+              i + 2
+            }: No available time slots for ${participantName} on ${bookingDate}`,
           );
           continue;
         }
@@ -686,7 +693,7 @@ const ExperienceDetail = () => {
                 <span className="experience-detail-breadcrumb-sep">&#8250;</span>
               </>
             )} */}
-            <Link>Rishikesh</Link>
+            <Link to="/experiences">Rishikesh</Link>
             <span className="experience-detail-breadcrumb-sep">&#8250;</span>
             <span className="experience-detail-breadcrumb-current">
               {experience.title.length > 50
@@ -1275,37 +1282,35 @@ const ExperienceDetail = () => {
                           )} */}
                       </div>
                     )}
-                          )} */}
-                        </div>
-                      )}
+                  </Card>
 
-                    <Button
-                      size="lg"
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                      // onClick={() => setIsBookingDialogOpen(true)}
-                      onClick={() => {
-                        const section =
-                          document.getElementById("booking-section");
+                  <Button
+                    size="lg"
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    // onClick={() => setIsBookingDialogOpen(true)}
+                    onClick={() => {
+                      const section =
+                        document.getElementById("booking-section");
 
-                        if (section) {
-                          const yOffset = -200; // offset
-                          const y =
-                            section.getBoundingClientRect().top +
-                            window.pageYOffset +
-                            yOffset;
+                      if (section) {
+                        const yOffset = -200; // offset
+                        const y =
+                          section.getBoundingClientRect().top +
+                          window.pageYOffset +
+                          yOffset;
 
-                          window.scrollTo({ top: y, behavior: "smooth" });
+                        window.scrollTo({ top: y, behavior: "smooth" });
 
-                          // Trigger highlight
-                          setIsHighlighted(true);
-                          setTimeout(() => setIsHighlighted(false), 2000);
-                        }
-                      }}
-                    >
-                      {/* {bookingButtonText} */}
-                      Select Activity to Book
-                      {/* {!isAgent && " - "}{" "} */}
-                      {/* {!isAgent &&
+                        // Trigger highlight
+                        setIsHighlighted(true);
+                        setTimeout(() => setIsHighlighted(false), 2000);
+                      }
+                    }}
+                  >
+                    {/* {bookingButtonText} */}
+                    Select Activity to Book
+                    {/* {!isAgent && " - "}{" "} */}
+                    {/* {!isAgent &&
                           appliedCoupon?.discount_calculation?.final_amount
                           ? formatCurrency(
                             appliedCoupon.discount_calculation.final_amount
@@ -1320,12 +1325,12 @@ const ExperienceDetail = () => {
                               : formatCurrency(
                                 firstActivity?.price || experience.price
                               )} */}
-                    </Button>
+                  </Button>
 
-                    {/* Bulk Booking Buttons for Vendor */}
-                    {/* {isVendor && ( */}
-                    <div className="flex flex-col gap-2 mt-2">
-                      {/* <Button
+                  {/* Bulk Booking Buttons for Vendor */}
+                  {/* {isVendor && ( */}
+                  <div className="flex flex-col gap-2 mt-2">
+                    {/* <Button
                           variant="outline"
                           className="w-full"
                           onClick={handleDownloadBulkBookingCSV}
@@ -1339,16 +1344,16 @@ const ExperienceDetail = () => {
                         >
                           Bulk Upload (Upload CSV)
                         </Button> */}
-                      <input
-                        type="file"
-                        accept=".csv"
-                        style={{ display: "none" }}
-                        ref={fileInputRef}
-                        onChange={handleBulkUploadFile}
-                      />
-                    </div>
-                    {/* )} */}
-                  </Card>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      style={{ display: "none" }}
+                      ref={fileInputRef}
+                      onChange={handleBulkUploadFile}
+                    />
+                  </div>
+                  {/* )} */}
+                  {/* </Card> */}
                   <div className="WhyBucketlisttContainer">
                     {/* <h3></h3> */}
                     <Card title="Why bucketlistt?" className="why-items">
@@ -1510,7 +1515,18 @@ const ExperienceDetail = () => {
         externalSelectedActivityId={
           openBookingWithActivityId ?? selectedActivityId ?? undefined
         }
-        appliedCoupon={appliedCoupon}
+        appliedCoupon={
+          appliedCoupon?.coupon && appliedCoupon?.discount_calculation
+            ? {
+                coupon: {
+                  coupon_code: appliedCoupon.coupon.coupon_code,
+                  type: appliedCoupon.coupon.type,
+                  discount_value: appliedCoupon.coupon.discount_value,
+                },
+                discount_calculation: appliedCoupon.discount_calculation,
+              }
+            : undefined
+        }
         onBookingSuccess={handleBookingSuccess}
         setIsBookingDialogOpen={setIsBookingDialogOpen}
       />
