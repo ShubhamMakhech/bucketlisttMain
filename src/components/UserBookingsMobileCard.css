@@ -1,0 +1,300 @@
+/* Ultra Compact Mobile Booking Cards - Optimized for 2-Column Grid */
+
+.mobile-booking-card-content {
+    padding: 12px !important;
+    background: radial-gradient(circle at top left, rgba(148, 15, 219, 0.15), transparent 40%);
+    border: 0.3px solid rgba(0, 0, 0, 0.154);
+    /* border-radius: 20px !important; */
+}
+
+.mobile-card-section {
+    margin-bottom: 8px;
+}
+
+.mobile-card-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Compact Info Grid */
+.mobile-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 6px;
+    font-size: 12px;
+}
+
+.mobile-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow: hidden;
+    /* Prevent overflow */
+    /* border-bottom: 0.2px solid rgb(228, 228, 228); */
+    padding: 2px 0px;
+}
+
+.mobile-info-item:nth-child(odd) {
+    align-items: start;
+    text-align: left;
+}
+
+.mobile-info-item:nth-child(even) {
+    align-items: start;
+    text-align: right;
+}
+
+.mobile-info-label {
+    color: #6d6d6d;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    line-height: 1;
+    margin-bottom: 1px;
+    white-space: nowrap;
+}
+
+.mobile-info-value {
+    font-weight: 700;
+    color: #111827;
+    font-size: 12px;
+    line-height: 1.1;
+    word-break: break-word;
+    /* Ensure text wraps within narrow columns */
+    max-width: 100%;
+    text-align: start;
+}
+
+.mobile-contact-link {
+    color: #940fdb;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+/* Compact Payment Badge - Adjusted for narrow width */
+.mobile-pending-payment {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1px;
+    background: #940fdb;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-top: 3px;
+    box-shadow: 0 1px 2px rgba(148, 15, 219, 0.2);
+    min-height: auto;
+    width: 100%;
+    text-align: center;
+    margin-top: 0px;
+}
+
+.mobile-pending-label {
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 0.2px;
+    opacity: 0.9;
+    text-align: start;
+}
+
+.mobile-pending-amount {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+/* Compact Notes Section */
+.mobile-notes-section {
+    padding-top: 3px;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 3px;
+    text-align: left;
+}
+
+.mobile-notes-label {
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    margin-bottom: 1px;
+    display: block;
+}
+
+.mobile-notes-content {
+    font-weight: 500;
+    color: #4b5563;
+    font-size: 12px;
+    line-height: 1.2;
+    background: #f9fafb;
+    padding: 2px 4px;
+    border-radius: 3px;
+    border: 1px solid #f3f4f6;
+    word-break: break-word;
+}
+
+/* Admin Note Section - Purple theme to distinguish from guide notes */
+.mobile-admin-note-section {
+    border-top-color: #d8b4fe;
+    border-top-width: 1.5px;
+}
+
+.mobile-admin-note-label {
+    color: #86198f !important;
+}
+
+.mobile-admin-note-section .mobile-notes-content {
+    background: #fdf4ff;
+    border-color: #f0abfc;
+    color: #6b21a8;
+}
+
+/* Vendor Section - Kept compact */
+.mobile-vendor-section {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 3px;
+    margin-top: 3px;
+}
+
+.mobile-vendor-container {
+    background: #f3e8ff;
+    border-radius: 4px;
+    padding: 3px 5px;
+    border: 1px solid #e9d5ff;
+}
+
+.mobile-vendor-title {
+    font-size: 7px;
+    font-weight: 700;
+    color: #6b21a8;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    text-align: center;
+}
+
+.mobile-vendor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    font-size: 12px;
+}
+
+.mobile-vendor-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+}
+
+.mobile-vendor-item:nth-child(odd) {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.mobile-vendor-item:nth-child(even) {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.mobile-vendor-label {
+    color: #6b21a8;
+    font-size: 10;
+    font-weight: 600;
+}
+
+.mobile-vendor-value {
+    font-weight: 700;
+    color: #111827;
+    font-size: 12px;
+}
+
+.MybookingHeading {
+    font-size: 20px;
+    text-align: start;
+}
+
+.calenderIcon {
+    height: 25px;
+    width: 25px;
+}
+
+.FontSetPerfect{
+    font-size: 0.75rem !important;
+}
+
+.cursor-move{
+    display: none !important;
+}
+@media (max-width: 768px) {
+    .EditButtonStyle {
+        padding:5px 20px !important;
+        height: 100% !important;
+    }
+
+    .calenderIcon {
+        height: 15px;
+        width: 15px;
+    }
+
+    .MybookingHeading {
+        font-size: 15px;
+        text-align: start;
+    }
+
+    .OnlyMobileParaGraph {
+        display: none !important;
+    }
+
+    #UserBookingsMobileLayout {
+        display: grid !important;
+        grid-template-columns: 1fr;
+        gap: 10px !important;
+    }
+
+    #ExportToExcelButtonStyles {
+        display: none !important;
+    }
+    .mobile-card-section{
+        margin-top: 5px;
+    }
+
+}
+
+/* Mobile Vendor Collection Section */
+.mobile-vendor-collection {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fdf4ff;
+    /* Light purple/pink background */
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #f0abfc;
+    /* margin-bottom: 2px; */
+}
+
+.mobile-vendor-collection-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #86198f;
+    text-transform: uppercase;
+    text-align: start;
+}
+
+.mobile-vendor-collection-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: #86198f
+}
+
+.FlexMobileSection {
+    display: flex;
+    flex-direction: column;
+    /* align-items: center; */
+    gap: 4px;
+    /* justify-content: space-between; */
+}

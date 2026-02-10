@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -265,7 +266,7 @@ export const VendorAnalytics = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-<div className="relative overflow-hidden bg-gradient-to-br from-[#fe6bc7] to-[#e865b3] rounded-2xl p-4 md:p-6 text-white shadow-xl">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#fe6bc7] to-[#e865b3] rounded-2xl p-4 md:p-6 text-white shadow-xl">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 md:gap-3 mb-2">
@@ -455,11 +456,10 @@ export const VendorAnalytics = () => {
                       }}
                       tickFormatter={(value) =>
                         window.innerWidth < 768
-                          ? `₹${
-                              value > 1000
-                                ? (value / 1000).toFixed(0) + "k"
-                                : value
-                            }`
+                          ? `₹${value > 1000
+                            ? (value / 1000).toFixed(0) + "k"
+                            : value
+                          }`
                           : `₹${value}`
                       }
                       width={window.innerWidth < 768 ? 45 : 70}
@@ -517,7 +517,7 @@ export const VendorAnalytics = () => {
           </CardHeader>
           <CardContent className="p-3 md:p-6">
             {analytics?.experienceData &&
-            analytics.experienceData.length > 0 ? (
+              analytics.experienceData.length > 0 ? (
               <div className="w-full h-[300px] md:h-[400px] flex items-center justify-center">
                 <ChartContainer
                   config={chartConfig}
@@ -563,11 +563,10 @@ export const VendorAnalytics = () => {
                         label={({ name, value, percent }) =>
                           percent > (window.innerWidth < 768 ? 10 : 5)
                             ? window.innerWidth < 768
-                              ? `₹${
-                                  value > 1000
-                                    ? (value / 1000).toFixed(0) + "k"
-                                    : value.toFixed(0)
-                                }`
+                              ? `₹${value > 1000
+                                ? (value / 1000).toFixed(0) + "k"
+                                : value.toFixed(0)
+                              }`
                               : `${name}: ₹${value.toFixed(0)}`
                             : ""
                         }

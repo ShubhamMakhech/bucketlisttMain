@@ -4,28 +4,43 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { ExperienceCard } from "@/components/ExperienceCard"
-import { ExperienceFilters } from "@/components/ExperienceFilters"
 import { SEO } from "@/components/SEO"
 import { Breadcrumb } from "@/components/Breadcrumb"
-
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Slider } from "@/components/ui/slider"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Search, SlidersHorizontal } from "lucide-react"
+import "@/styles/Experiences.css"
 
 interface FilterState {
   priceRange: [number, number]
-  locations: string[]
-  categories: string[]
   sortBy: string
 }
 
 const Experiences = () => {
+  const [searchQuery, setSearchQuery] = useState("")
   const [filters, setFilters] = useState<FilterState>({
     priceRange: [0, 10000],
-    locations: [],
-    categories: [],
     sortBy: 'title'
   })
 
+  // Debounce search query for API calls could be better, but for now direct state is fine as it's a small app
+  // or I can rely on React Query's behavior if I pass searchQuery to queryKey.
+
   const { data: experiences, isLoading } = useQuery({
-    queryKey: ['all-experiences', filters],
+    queryKey: ['all-experiences', filters, searchQuery],
     queryFn: async () => {
       let query = supabase
         .from('experiences')
@@ -46,9 +61,9 @@ const Experiences = () => {
         .gte('price', filters.priceRange[0])
         .lte('price', filters.priceRange[1])
 
-      // Apply location filter
-      if (filters.locations.length > 0) {
-        query = query.in('location', filters.locations)
+      // Apply search filter
+      if (searchQuery) {
+        query = query.ilike('title', `%${searchQuery}%`)
       }
 
       let data

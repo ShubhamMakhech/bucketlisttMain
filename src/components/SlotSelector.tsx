@@ -1,4 +1,5 @@
 // @ts-nocheck
+// @ts-nocheck
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -789,7 +790,7 @@ export const SlotSelector = ({
                       No time slots available for this date
                     </div>
                   )}
-                </div>
+                </Card>
               )}
             </>
           )}

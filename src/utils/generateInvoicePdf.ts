@@ -134,16 +134,15 @@ async function importWithRetry<T>(
 }
 
 /**
- * Generates a PDF invoice from booking data and downloads it directly
+ * Generates a PDF invoice from booking data and uploads it to Supabase storage
  * @param bookingData - The booking data to populate the invoice
  * @param bookingId - The booking ID to use in the filename
- * @param fileName - Optional custom filename (defaults to booking invoice)
+ * @returns The public URL of the uploaded PDF
  */
 export async function generateInvoicePdf(
   bookingData: BookingInvoiceData,
-  bookingId: string,
-  fileName?: string
-): Promise<void> {
+  bookingId: string
+): Promise<string> {
   const startTime = Date.now();
 
   try {
@@ -391,15 +390,7 @@ export async function generateInvoicePdf(
           const annotationRef = pdfDoc.context.register(annotation);
           const annots = firstPage.node.lookup(PDFName.of("Annots"));
           if (annots) {
-            const annotsArray = annots as any;
-            if (Array.isArray(annotsArray)) {
-              annotsArray.push(annotationRef);
-            } else {
-              firstPage.node.set(
-                PDFName.of("Annots"),
-                pdfDoc.context.obj([annotsArray, annotationRef])
-              );
-            }
+            annots.push(annotationRef);
           } else {
             firstPage.node.set(
               PDFName.of("Annots"),
@@ -414,9 +405,7 @@ export async function generateInvoicePdf(
 
     // Save the modified PDF with clickable links
     const finalPdfBytes = await pdfDoc.save();
-    const pdfBlob = new Blob([new Uint8Array(finalPdfBytes)], {
-      type: "application/pdf",
-    });
+    const pdfBlob = new Blob([finalPdfBytes], { type: "application/pdf" });
 
     if (!pdfBlob) {
       root.unmount();
@@ -428,16 +417,34 @@ export async function generateInvoicePdf(
     root.unmount();
     document.body.removeChild(container);
 
-    // Download PDF directly
-    const downloadFileName = fileName || `Booking_Invoice_${bookingId}.pdf`;
-    const url = URL.createObjectURL(pdfBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = downloadFileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // Upload to Supabase storage
+    const fileName = `${bookingId}/${Date.now()}.pdf`;
+
+    const { data, error } = await supabase.storage
+      .from("booking-invoices")
+      .upload(fileName, pdfBlob);
+
+    if (error) {
+      await logDebug(
+        "pdf_upload_failed",
+        bookingId,
+        "PDF upload to storage failed",
+        {
+          error: error.message,
+          error_details: error,
+          file_name: fileName,
+          blob_size: pdfBlob.size,
+          total_time_ms: Date.now() - startTime,
+        }
+      );
+      throw error;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("booking-invoices").getPublicUrl(fileName);
+
+    return publicUrl;
   } catch (error) {
     const errorTime = Date.now();
     const errorMessage = error instanceof Error ? error.message : String(error);

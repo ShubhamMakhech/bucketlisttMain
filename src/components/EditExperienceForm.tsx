@@ -55,6 +55,7 @@ interface Activity {
   timeSlots: TimeSlot[];
   discount_type?: "flat" | "percentage";
   discount_amount?: number;
+  b2bPrice?: number;
 }
 
 interface AutoGenerateConfig {
@@ -78,12 +79,14 @@ interface ExperienceData {
   faqs?: string;
   category_ids: string[];
   location: string;
+  location2?: string;
   start_point: string;
   end_point: string;
   days_open: string[];
   destination_id: string;
   activities: Activity[];
   image_urls: string[];
+  logo_url?: string;
 }
 
 interface EditExperienceFormProps {
@@ -112,6 +115,8 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [removedImages, setRemovedImages] = useState<string[]>([]);
+  const [selectedLogo, setSelectedLogo] = useState<File | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
 
   // Auto-generate time slots configuration
   const [autoConfig, setAutoConfig] = useState<AutoGenerateConfig>({
@@ -136,6 +141,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     faqs: initialData.faqs || "",
     category_ids: initialData.category_ids,
     location: initialData.location,
+    location2: initialData.location2 || "",
     start_point: initialData.start_point,
     end_point: initialData.end_point,
     days_open: initialData.days_open,
@@ -173,6 +179,10 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     // Initialize preview URLs from existing images
     if (initialData.image_urls && initialData.image_urls.length > 0) {
       setPreviewUrls(initialData.image_urls);
+    }
+    // Initialize logo preview if exists
+    if (initialData.logo_url) {
+      setLogoPreviewUrl(initialData.logo_url);
     }
   }, [initialData]);
 
@@ -225,6 +235,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
       timeSlots: [],
       discount_type: "percentage", // Default to percentage
       discount_amount: 0,
+      b2bPrice: 0,
     };
     setActivities((prev) => [...prev, newActivity]);
   };
@@ -238,7 +249,14 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
   const updateActivity = (
     activityId: string,
     field: keyof Activity,
-    value: string | number | TimeSlot[] | "flat" | "percentage"
+    value:
+      | string
+      | number
+      | TimeSlot[]
+      | "flat"
+      | "percentage"
+      | null
+      | undefined
   ) => {
     setActivities((prev) =>
       prev.map((activity) => {
@@ -457,6 +475,56 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleLogoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file for the logo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Revoke old preview URL if it was a blob
+    if (logoPreviewUrl && logoPreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(logoPreviewUrl);
+    }
+
+    setSelectedLogo(file);
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreviewUrl(previewUrl);
+  };
+
+  const removeLogo = () => {
+    if (logoPreviewUrl && logoPreviewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(logoPreviewUrl);
+    }
+    setSelectedLogo(null);
+    setLogoPreviewUrl(null);
+  };
+
+  const uploadLogo = async (experienceId: string): Promise<string | null> => {
+    if (!selectedLogo) return null;
+
+    const fileExt = selectedLogo.name.split(".").pop();
+    const fileName = `${experienceId}/logo_${Date.now()}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from("experience-images")
+      .upload(fileName, selectedLogo);
+
+    if (error) throw error;
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("experience-images").getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
   const uploadNewImages = async (experienceId: string) => {
     console.log("uploadNewImages called with:", {
       experienceId,
@@ -583,6 +651,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
         currency: activity.currency,
         display_order: activities.indexOf(activity),
         is_active: true,
+        b2bPrice: activity.b2bPrice || null,
       };
 
       const { error: updateError } = await supabase
@@ -619,6 +688,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
           currency: activity.currency,
           display_order: existingActivitiesToUpdate.length + index,
           is_active: true,
+          b2bPrice: activity.b2bPrice || null,
         })
       );
 
@@ -883,18 +953,17 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     let counter = 1;
 
     while (true) {
-      let query = supabase
+      let queryBuilder = supabase
         .from("experiences")
         .select("id")
         .eq("url_name", urlName)
         .limit(1);
 
-      // If editing, exclude current experience from check
       if (excludeId) {
-        query = query.neq("id", excludeId);
+        queryBuilder = queryBuilder.neq("id", excludeId);
       }
 
-      const { data } = await query;
+      const { data } = await queryBuilder;
 
       if (!data || data.length === 0) {
         // URL name is unique
@@ -1010,6 +1079,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
         discount_percentage: minDiscountPercentage,
         currency: activities.length > 0 ? activities[0].currency : "INR",
         location: formData.location,
+        location2: formData.location2,
         start_point: formData.start_point,
         end_point: formData.end_point,
         days_open: formData.days_open,
@@ -1017,10 +1087,18 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
         url_name: uniqueUrlName, // Add url_name field
       };
 
-      // Update experience
+      // Upload logo if selected
+      const logoUrl = await uploadLogo(initialData.id);
+
+      // Update experience (include logo if uploaded)
+      const updateData: any = { ...experienceData };
+      if (logoUrl) {
+        updateData.logo_url = logoUrl;
+      }
+
       const { error: experienceError } = await supabase
         .from("experiences")
-        .update(experienceData)
+        .update(updateData)
         .eq("id", initialData.id);
 
       if (experienceError) throw experienceError;
@@ -1299,6 +1377,21 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
             />
           </div>
 
+          {/* Location 2 */}
+          <div className="space-y-2 text-start">
+            <Label htmlFor="location2">Google Maps Link 2 (Optional)</Label>
+            <Input
+              id="location2"
+              value={formData.location2}
+              onChange={(e) => handleInputChange("location2", e.target.value)}
+              placeholder="Paste second Google Maps link (e.g., end point/drop-off location)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional: Add a second location (e.g., end point or drop-off
+              location)
+            </p>
+          </div>
+
           {/* Destination */}
           <div className="text-start">
             <DestinationDropdown
@@ -1505,6 +1598,30 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
                         {activity.discounted_price.toFixed(2)}
                       </span>
                     </div>
+                  </div>
+
+                  <div className="space-y-2 text-start">
+                    <Label htmlFor={`activity-b2b-price-${activity.id}`}>
+                      B2B Price (Optional)
+                    </Label>
+                    <Input
+                      id={`activity-b2b-price-${activity.id}`}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={activity.b2bPrice || ""}
+                      onChange={(e) =>
+                        updateActivity(
+                          activity.id,
+                          "b2bPrice",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      placeholder="0.00"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      B2B price for agent bookings (optional)
+                    </p>
                   </div>
                 </div>
 
@@ -1800,6 +1917,50 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Logo Upload Section */}
+          <div className="space-y-3 text-start">
+            <Label>Logo (Optional)</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoSelect}
+                className="hidden"
+                id="logo-upload"
+              />
+              <label
+                htmlFor="logo-upload"
+                className="flex flex-col items-center cursor-pointer"
+              >
+                <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                <span className="text-sm text-gray-600">
+                  Click to upload logo
+                </span>
+              </label>
+            </div>
+
+            {/* Logo Preview */}
+            {logoPreviewUrl && (
+              <div className="mt-4">
+                <Label className="text-sm mb-2">Logo Preview</Label>
+                <div className="relative inline-block">
+                  <img
+                    src={logoPreviewUrl}
+                    alt="Logo preview"
+                    className="w-32 h-32 object-contain rounded-lg border border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeLogo}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Image Management */}

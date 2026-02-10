@@ -449,6 +449,7 @@ export type Database = {
           latitude: number | null;
           location: string | null;
           location_info: string | null;
+          location2: string | null;
           longitude: number | null;
           operating_hours: string | null;
           original_price: number | null;
@@ -487,6 +488,7 @@ export type Database = {
           latitude?: number | null;
           location?: string | null;
           location_info?: string | null;
+          location2?: string | null;
           longitude?: number | null;
           operating_hours?: string | null;
           original_price?: number | null;
@@ -525,6 +527,7 @@ export type Database = {
           latitude?: number | null;
           location?: string | null;
           location_info?: string | null;
+          location2?: string | null;
           longitude?: number | null;
           operating_hours?: string | null;
           original_price?: number | null;

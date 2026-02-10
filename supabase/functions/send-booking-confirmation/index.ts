@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -14,10 +13,16 @@ interface BookingConfirmationRequest {
   customerEmail: string;
   customerName: string;
   experienceTitle: string;
+  activityName: string;
   bookingDate: string;
+  formattedDateTime: string;
   timeSlot: string;
+  location: string;
+  location2?: string | null;
   totalParticipants: number;
   totalAmount: number;
+  upfrontAmount: number;
+  dueAmount: number;
   currency: string;
   participants: Array<{
     name: string;
@@ -39,26 +44,40 @@ const handler = async (req: Request): Promise<Response> => {
       customerEmail,
       customerName,
       experienceTitle,
+      activityName,
       bookingDate,
+      formattedDateTime,
       timeSlot,
+      location,
+      location2,
       totalParticipants,
       totalAmount,
+      upfrontAmount,
+      dueAmount,
       currency,
       participants,
       bookingId,
-      noteForGuide
+      noteForGuide,
     }: BookingConfirmationRequest = await req.json();
 
-    const formattedDate = new Date(bookingDate).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    // Ensure numeric values are numbers (they might come as strings from JSON)
+    const totalAmountNum =
+      typeof totalAmount === "number"
+        ? totalAmount
+        : parseFloat(totalAmount) || 0;
+    const upfrontAmountNum =
+      typeof upfrontAmount === "number"
+        ? upfrontAmount
+        : parseFloat(upfrontAmount) || 0;
+    const dueAmountNum =
+      typeof dueAmount === "number" ? dueAmount : parseFloat(dueAmount) || 0;
 
-    const participantsList = participants.map((p, index) => 
-      `<li><strong>${p.name}</strong> - ${p.email} - ${p.phone_number}</li>`
-    ).join('');
+    const formattedDate = new Date(bookingDate).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
 
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -82,21 +101,61 @@ const handler = async (req: Request): Promise<Response> => {
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Experience:</td>
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${experienceTitle}</td>
               </tr>
+              ${
+                activityName
+                  ? `
               <tr>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Date:</td>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${formattedDate}</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Activity:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${activityName}</td>
               </tr>
+              `
+                  : ""
+              }
               <tr>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Time:</td>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${timeSlot}</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Date & Time:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${formattedDateTime}</td>
               </tr>
+              ${
+                location
+                  ? `
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Location:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${location}</td>
+              </tr>
+              `
+                  : ""
+              }
+              ${
+                location2
+                  ? `
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Location 2:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${location2}</td>
+              </tr>
+              `
+                  : ""
+              }
               <tr>
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Participants:</td>
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${totalParticipants}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Total Amount:</td>
-                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-weight: bold; font-size: 18px;">${currency === 'USD' ? '$' : currency}${totalAmount}</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-weight: bold; font-size: 18px;">${
+                  currency === "USD" ? "$" : currency
+                }${totalAmountNum.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Upfront Amount:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${
+                  currency === "USD" ? "$" : currency
+                }${upfrontAmountNum.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Due Amount:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${
+                  currency === "USD" ? "$" : currency
+                }${dueAmountNum.toFixed(2)}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; font-weight: bold; color: #374151;">Booking ID:</td>
@@ -106,18 +165,20 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           
           <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-            <h3 style="color: #92400e; margin: 0 0 15px 0; font-size: 16px;">Participant Details</h3>
-            <ul style="margin: 0; padding-left: 20px; color: #92400e;">
-              ${participantsList}
-            </ul>
+            <h3 style="color: #92400e; margin: 0 0 15px 0; font-size: 16px;">Participant Name</h3>
+            <p style="margin: 0; color: #92400e; font-size: 16px;"><strong>${customerName}</strong></p>
           </div>
           
-          ${noteForGuide ? `
+          ${
+            noteForGuide
+              ? `
           <div style="background: #e0f2fe; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
             <h3 style="color: #0369a1; margin: 0 0 15px 0; font-size: 16px;">Special Note for Guide</h3>
             <p style="margin: 0; color: #0369a1;">${noteForGuide}</p>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
           
           <div style="background: #dcfce7; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
             <h3 style="color: #166534; margin: 0 0 15px 0; font-size: 16px;">What's Next?</h3>
@@ -148,11 +209,28 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Experience Booking <onboarding@resend.dev>",
+      from: "bucketlistt <noreply@bucketlistt.com>",
       to: [customerEmail],
       subject: `Booking Confirmed: ${experienceTitle}`,
       html: emailHtml,
     });
+
+    if (emailResponse.error) {
+      console.error("Resend email error:", emailResponse.error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: emailResponse.error.message || "Failed to send email",
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
 
     console.log("Booking confirmation email sent successfully:", emailResponse);
 
@@ -165,13 +243,10 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-booking-confirmation function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 };
 

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserBookings } from "@/components/UserBookings";
 import { VendorAnalytics } from "@/components/VendorAnalytics";
+import { AdminCouponManager } from "@/components/AdminCouponManager";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -22,9 +23,18 @@ import {
   Plus,
   Settings,
   Star,
+  Ticket,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+interface SidebarItem {
+  id: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  badge?: string;
+}
 
 const Profile = () => {
   const { user, loading } = useAuth();
@@ -94,8 +104,8 @@ const Profile = () => {
     return user.email || "User";
   };
 
-  const sidebarItems = [
-    ...(isVendor
+  const sidebarItems: SidebarItem[] = [
+    ...(isVendor || isAdmin
       ? [
           {
             id: "analytics",
@@ -121,6 +131,16 @@ const Profile = () => {
           //   title: "Create Experience",
           //   description: "Add new experiences",
           // },
+        ]
+      : []),
+    ...(isAdmin
+      ? [
+          {
+            id: "create-coupon",
+            icon: Ticket,
+            title: "Create Coupon",
+            description: "Create coupons for any experience",
+          },
         ]
       : []),
     {
@@ -208,9 +228,11 @@ const Profile = () => {
   const renderActiveSection = () => {
     switch (activeSection) {
       case "analytics":
-        return isVendor ? <VendorAnalytics /> : null;
+        return isVendor || isAdmin ? <VendorAnalytics /> : null;
       case "bookings":
         return <UserBookings />;
+      case "create-coupon":
+        return isAdmin ? <AdminCouponManager /> : null;
       default:
         return null;
     }

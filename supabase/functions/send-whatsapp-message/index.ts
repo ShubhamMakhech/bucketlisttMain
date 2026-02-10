@@ -46,10 +46,24 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("VITE_WHATSAPP_MSG91");
 
     if (!authKey) {
+      console.error("❌ MSG91 auth key not configured");
       throw new Error(
         "WhatsApp MSG91 auth key not configured. Please set WHATSAPP_MSG91_AUTH_KEY environment variable."
       );
     }
+
+    // Log which auth key source is being used (masked for security)
+    const authSource = Deno.env.get("WHATSAPP_MSG91_AUTH_KEY")
+      ? "WHATSAPP_MSG91_AUTH_KEY"
+      : "VITE_WHATSAPP_MSG91";
+    console.log(`🔑 Using auth key from: ${authSource} (${authKey.substring(0, 8)}...)`);
+
+    // Log request details
+    console.log("📤 MSG91 Request:", {
+      template: body.payload?.template?.name,
+      recipients: body.payload?.template?.to_and_components?.map((tc: any) => tc.to),
+      integrated_number: body.integrated_number,
+    });
 
     // Create headers as per MSG91 documentation
     const headers = new Headers();
@@ -67,6 +81,7 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     const result = await response.text();
+    console.log(`📥 MSG91 Response (Status ${response.status}):`, result);
 
     // Try to parse as JSON, fallback to text
     let jsonResult;
@@ -77,10 +92,17 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!response.ok) {
-      console.error("MSG91 API error:", jsonResult);
+      console.error("❌ MSG91 API error:", jsonResult);
       throw new Error(
         `MSG91 API error (${response.status}): ${JSON.stringify(jsonResult)}`
       );
+    }
+
+    // Check for errors in successful responses
+    if (jsonResult.type === 'error' || jsonResult.message?.toLowerCase().includes('error')) {
+      console.error("⚠️ MSG91 returned error in 200 response:", jsonResult);
+    } else {
+      console.log("✅ MSG91 message sent successfully:", jsonResult);
     }
 
     return new Response(JSON.stringify(jsonResult), {
@@ -91,7 +113,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error sending WhatsApp message:", error);
+    console.error("❌ Error sending WhatsApp message:", error);
     return new Response(
       JSON.stringify({
         error: error.message,

@@ -165,7 +165,7 @@ const BlogDetail = () => {
         delay={200}
         duration={700}
       >
-        <div className="container py-6 md:py-8 px-4 md:px-6 max-w-4xl mx-auto">
+        <div className="container BlogPageContainer">
           {/* Excerpt */}
           {blog.excerpt && (
             <motion.p
@@ -184,7 +184,7 @@ const BlogDetail = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="prose prose-sm md:prose-base lg:prose-lg max-w-none dark:prose-invert"
+              className="prose prose-sm md:prose-base lg:prose-lg max-w-none dark:prose-invert BlogMainContainer"
               dangerouslySetInnerHTML={{ __html: blog.content }}
               style={{
                 wordWrap: "break-word",

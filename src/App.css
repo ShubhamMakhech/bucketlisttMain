@@ -1502,7 +1502,16 @@ h6 {
 
 .DescriptionEditContainer p {
   text-align: start;
-  /* margin-bottom: 10px; */
+  margin-bottom: 10px;
+}
+
+.DescriptionEditContainer p br {
+  display: none;
+}
+
+.DescriptionEditContainer p strong {
+  color: black !important;
+  font-weight: 500;
 }
 
 .DescriptionEditContainer li {
@@ -1555,6 +1564,17 @@ h6 {
     display: none !important;
   }
   
+/* .ContainerBorderSet{
+  border: 1px solid rgba(0, 0, 0, 0.128);
+  padding: 10px;
+  border-radius: 10px;
+} */
+
+.ViewBookingButton {
+  background-color: var(--brand-color) !important;
+  color: white !important;
+}
+
   .FlexAdjustContainer {
     display: flex !important;
     flex-direction: row;
@@ -1636,9 +1656,9 @@ h6 {
     padding: 0px;
   }
 
-  .ExperienceDetailRightContainer .PcOnlyButtonContainer {
+  /* .ExperienceDetailRightContainer .PcOnlyButtonContainer {
     display: none;
-  }
+  } */
 }
 
 /* Booking Modal Styles */
@@ -1654,12 +1674,13 @@ h6 {
 /* Activity Swiper Styles */
 .activity-swiper-container {
   width: 100%;
-  padding: 0 20px;
+  /* padding: 0 20px; */
 }
 
 .activity-swiper {
   width: 100%;
   padding: 10px 0;
+  overflow: visible !important;
 }
 
 .activity-slide {
@@ -1670,7 +1691,7 @@ h6 {
 .activity-card {
   border-radius: 12px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: rgba(0, 0, 0, 0.04) 0px 3px 5px;
 }
 
 .activity-card:hover {
@@ -1693,6 +1714,14 @@ h6 {
   width: 40px;
   height: 40px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.activity-swiper .swiper-button-prev {
+  margin-left: -30px;
+}
+
+.activity-swiper .swiper-button-next {
+  margin-right: -30px;
 }
 
 .activity-swiper .swiper-button-next:after,
@@ -1971,6 +2000,7 @@ h6 {
   }
 
   @media (min-width: 768px) {
+
     #primary-contact-details-card input,
     #primary-contact-details-card textarea {
       font-size: 14px !important;
@@ -2014,7 +2044,8 @@ h6 {
   #note-for-guide-textarea textarea::placeholder {
     font-size: 14px;
   }
-  #terms-and-conditions-label{
+
+  #terms-and-conditions-label {
     margin-left: 20px;
   }
 }
@@ -2022,6 +2053,11 @@ h6 {
 
 
 @media (max-width: 480px) {
+  .CalenderBtn {
+    padding: 4px 10px !important;
+    height: 100% !important;
+  }
+
   .features-badges-container {
     margin: 10px 0;
   }
@@ -3196,11 +3232,12 @@ video::-webkit-media-controls {
   #ParticipantCountCard {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: start;
+    gap: 10px;
   }
 }
 
-.BackgroundImageSet::before {
+/* .BackgroundImageSet::before {
   content: "";
   position: absolute;
   top: 0;
@@ -3214,8 +3251,8 @@ video::-webkit-media-controls {
       rgba(0, 0, 0, 0.15) 100%);
   z-index: 1;
   pointer-events: none;
-}
-
+} */
+/* 
 .BackgroundImageSet::after {
   content: "";
   position: absolute;
@@ -3230,11 +3267,23 @@ video::-webkit-media-controls {
       transparent 100%);
   z-index: 2;
   pointer-events: none;
+} */
+
+.GridSetNow {
+  display: grid !important;
+  grid-template-columns: 1.5fr 2fr !important;
+  gap: 20px;
 }
 
 @media (max-width: 767px) {
   .BackgroundImageSet::after {
     height: 150px;
+  }
+
+  .GridSetNow {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px;
   }
 }
 
@@ -3275,15 +3324,19 @@ video::-webkit-media-controls {
     padding: 4px 20px !important;
   }
 
-   #pay-10-now-card{
+  #pay-10-now-card {
     margin-top: 5px !important;
-   }
-  #pay-10-now-card>div{
+  }
+
+  #pay-10-now-card>div {
     margin-left: 15px;
     /* margin-top: 10px ; */
   }
 
   .MobileHide {
+    display: none !important;
+  }
+  .MobileHide{
     display: none !important;
   }
 }
@@ -3298,28 +3351,36 @@ video::-webkit-media-controls {
 
 /* UserBookings Table Font Sizes */
 #UserBookingsDesktopLayout table {
-  font-size: 0.75rem !important; /* text-xs equivalent */
+  font-size: 0.75rem !important;
+  /* text-xs equivalent */
 }
 
 #UserBookingsDesktopLayout table th {
-  font-size: 0.75rem !important; /* text-xs */
-  padding: 0.125rem 0.25rem !important; /* compact: 2px vertical, 4px horizontal */
-  font-weight: 500 !important; /* font-medium */
+  font-size: 0.75rem !important;
+  /* text-xs */
+  padding: 0.125rem 0.25rem !important;
+  /* compact: 2px vertical, 4px horizontal */
+  font-weight: 500 !important;
+  /* font-medium */
   text-align: left !important;
 }
 
 #UserBookingsDesktopLayout table td {
-  font-size: 0.75rem !important; /* text-xs */
-  padding: 0.125rem 0.25rem !important; /* compact: 2px vertical, 4px horizontal */
+  font-size: 0.75rem !important;
+  /* text-xs */
+  padding: 0.125rem 0.25rem !important;
+  /* compact: 2px vertical, 4px horizontal */
   text-align: left !important;
 }
 
 #UserBookingsDesktopLayout table a {
-  font-size: 0.75rem !important; /* text-xs */
+  font-size: 0.75rem !important;
+  /* text-xs */
 }
 
 #UserBookingsDesktopLayout table span {
-  font-size: 0.75rem !important; /* text-xs */
+  font-size: 0.75rem !important;
+  /* text-xs */
 }
 
 /* Filter Dropdown Styling - Fix hover and transparency */
@@ -3340,12 +3401,12 @@ video::-webkit-media-controls {
   backdrop-filter: none !important;
 }
 
-#UserBookingsDesktopLayout [style*="position: fixed"][style*="z-index: 9999"] > div:first-child {
+#UserBookingsDesktopLayout [style*="position: fixed"][style*="z-index: 9999"]>div:first-child {
   background-color: #f9fafb !important;
   opacity: 1 !important;
 }
 
-#UserBookingsDesktopLayout [style*="position: fixed"][style*="z-index: 9999"] > div:last-child {
+#UserBookingsDesktopLayout [style*="position: fixed"][style*="z-index: 9999"]>div:last-child {
   background-color: #ffffff !important;
   opacity: 1 !important;
 }
@@ -3390,4 +3451,20 @@ video::-webkit-media-controls {
     width: 160px;
     margin-left: -13px;
   }
+}
+
+.BlogMainContainer p {
+  text-align: start;
+  line-height: 1.40 !important;
+  margin-bottom: 20px !important;
+}
+
+.BlogMainContainer li {
+  text-align: start;
+  list-style: disc;
+  margin: 0px !important;
+}
+
+.BlogPageContainer {
+  padding-top: 5rem !important;
 }

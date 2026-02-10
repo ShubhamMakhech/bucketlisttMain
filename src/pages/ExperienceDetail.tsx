@@ -212,8 +212,8 @@ const ExperienceDetail = () => {
   // Merge vendor_id if we fetched it separately
   const experienceWithVendorId =
     experience &&
-    (experience.vendor_id === undefined || experience.vendor_id === null) &&
-    vendorIdData
+      (experience.vendor_id === undefined || experience.vendor_id === null) &&
+      vendorIdData
       ? { ...experience, vendor_id: vendorIdData }
       : experience;
 
@@ -408,7 +408,7 @@ const ExperienceDetail = () => {
     images && images.length > 0
       ? images
       : experience?.image_url
-      ? [
+        ? [
           {
             id: "main",
             image_url: experience.image_url,
@@ -417,7 +417,7 @@ const ExperienceDetail = () => {
             is_primary: true,
           },
         ]
-      : [];
+        : [];
 
   // Bulk Booking CSV Download
   const handleDownloadBulkBookingCSV = () => {
@@ -486,8 +486,7 @@ const ExperienceDetail = () => {
 
         if (!bookingDate || !participantName || !participantEmail) {
           errors.push(
-            `Row ${
-              i + 2
+            `Row ${i + 2
             }: Missing required fields (booking_date, participant_name, participant_email)`
           );
           continue;
@@ -523,8 +522,7 @@ const ExperienceDetail = () => {
 
         if (bookingsError) {
           errors.push(
-            `Row ${i + 2}: Error checking existing bookings - ${
-              bookingsError.message
+            `Row ${i + 2}: Error checking existing bookings - ${bookingsError.message
             }`
           );
           continue;
@@ -551,8 +549,7 @@ const ExperienceDetail = () => {
 
         if (!availableSlot) {
           errors.push(
-            `Row ${
-              i + 2
+            `Row ${i + 2
             }: No available time slots for ${participantName} on ${bookingDate}`
           );
           continue;
@@ -1278,6 +1275,9 @@ const ExperienceDetail = () => {
                           )} */}
                       </div>
                     )}
+                          )} */}
+                        </div>
+                      )}
 
                     <Button
                       size="lg"

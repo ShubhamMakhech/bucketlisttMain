@@ -549,4 +549,454 @@
         position: relative;
         /* border-radius: 10px; */
     }
+}#HeroHomeContainer {
+    margin-top: -4rem !important;
+}
+
+.HeroHomeContentContainer {
+    min-height: 750px;
+    position: relative;
+    height: 750px;
+    overflow: hidden;
+}
+
+/* Background Image Slider */
+.HeroBackgroundSliderItem {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+/* Active slide */
+.HeroBackgroundSliderItem.active {
+    opacity: 1;
+    visibility: visible;
+    z-index: 1;
+}
+
+.HeroBackgroundSliderItem.active .HeroBackgroundImageWrapper {
+    animation: heroSlideInLayer 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Exiting slide */
+.HeroBackgroundSliderItem.exiting {
+    opacity: 1;
+    visibility: visible;
+    z-index: 0;
+}
+
+.HeroBackgroundSliderItem.exiting .HeroBackgroundImageWrapper {
+    animation: heroSlideOutLayer 1.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+}
+
+/* Image Layer Wrapper */
+.HeroBackgroundImageWrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    transform: translateX(100%);
+}
+
+/* Cinematic Overlay - Only on background images */
+.HeroBackgroundImageWrapper::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.7) 100%),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.1) 30%, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.2) 100%),
+        linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.2) 40%, rgba(0, 0, 0, 0) 80%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Background Image */
+.HeroBackgroundImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    position: relative;
+}
+
+/* Counter transform for the image to keep it stationary with zoom effect */
+.HeroBackgroundSliderItem.active .HeroBackgroundImage {
+    animation: heroCounterSlideInZoom 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.HeroBackgroundSliderItem.exiting .HeroBackgroundImage {
+    animation: heroCounterSlideOut 1.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+}
+
+/* Slide In Animation - Right to Left (wrapper) */
+@keyframes heroSlideInLayer {
+    0% {
+        transform: translateX(100%);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+}
+
+/* Slide Out Animation - Left side exit (wrapper) */
+@keyframes heroSlideOutLayer {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* Counter animation to keep image stationary during slide in with zoom out effect */
+@keyframes heroCounterSlideInZoom {
+    0% {
+        transform: translateX(-100%) scale(1.15);
+    }
+
+    100% {
+        transform: translateX(0) scale(1);
+    }
+}
+
+/* Counter animation to keep image stationary during slide out */
+@keyframes heroCounterSlideOut {
+    0% {
+        transform: translateX(0) scale(1);
+    }
+
+    100% {
+        transform: translateX(100%) scale(1.05);
+    }
+}
+
+/* Removed container overlay - overlay only on background images */
+
+.HeroHomeContentGridContainer {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: end;
+    padding-bottom: 80px;
+    position: relative;
+    z-index: 10;
+}
+
+.HeroHomeContentGridContainer>div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 0 auto;
+    z-index: 2;
+    position: relative;
+}
+
+.VideoContainer {
+    display: flex;
+    justify-content: end;
+    align-items: end;
+}
+
+.VideoContainer>div {
+    width: 300px;
+    height: 100%;
+    display: flex;
+    align-items: end;
+    position: relative;
+    z-index: 10;
+    /* height: 400px; */
+}
+
+/* .VideoContainer>div video::after {
+    content: "";
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    width: 100px;
+    height: 100px;
+    display: inline-block;
+    background-color: red;
+    z-index: 1;
+} */
+
+.VideoContainer>div video {
+    border-radius: 50px;
+    position: relative;
+    z-index: 0;
+}
+
+.HeroSearchBarWrapper {
+    margin-top: 24px;
+    max-width: 400px;
+    width: 100%;
+}
+
+/* AntD input with prefix uses this wrapper */
+.HeroSearchInput.ant-input-affix-wrapper {
+    width: 100%;
+    border-radius: 999px;
+    padding: 12px 25px;
+    background-color: #ffffff;
+    border: none;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+}
+
+/* Remove default hover/focus border colors */
+.HeroSearchInput.ant-input-affix-wrapper-focused,
+.HeroSearchInput.ant-input-affix-wrapper:hover {
+    border: none;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+}
+
+/* Icon styling */
+.HeroSearchInput .anticon {
+    font-size: 20px;
+    margin-right: 10px;
+    color: #777777;
+}
+
+/* Text input inside */
+.HeroSearchInput .ant-input {
+    font-size: 18px;
+    border: none;
+    box-shadow: none !important;
+    background: transparent;
+    color: #333333;
+    padding: 0;
+}
+
+/* Placeholder style */
+.HeroSearchInput .ant-input::placeholder {
+    color: #777777;
+    font-size: 14px;
+}
+
+/* Remove outline on focus */
+.HeroSearchInput .ant-input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Search Dropdown Styles */
+.HeroSearchDropdown {
+    position: fixed;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(148, 15, 219, 0.12);
+    border: 1px solid #f3e8ff;
+    overflow: hidden;
+    z-index: 99999;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.HeroSearchDropdownLoading {
+    padding: 20px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.HeroSearchDropdownLoadingText {
+    font-size: 13px;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.HeroSearchDropdownContent {
+    padding: 4px 0;
+}
+
+.HeroSearchDropdownSectionTitle {
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #940fdb;
+    background-color: #faf5ff;
+    border-bottom: 1px solid #f3e8ff;
+}
+
+.HeroSearchDropdownSectionTitleInfo {
+    color: #940fdb;
+    background-color: #faf5ff;
+    border-bottom-color: #f3e8ff;
+}
+
+.HeroSearchDropdownItem {
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.15s ease;
+}
+
+.HeroSearchDropdownItem:hover {
+    background-color: #faf5ff;
+    padding-left: 18px;
+}
+
+.HeroSearchDropdownItem:last-child {
+    border-bottom: none;
+}
+
+.HeroSearchDropdownItemContent {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.HeroSearchDropdownIcon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    stroke-width: 2;
+}
+
+.HeroSearchDropdownIconPrimary {
+    color: #940fdb;
+}
+
+.HeroSearchDropdownIconInfo {
+    color: #940fdb;
+}
+
+.HeroSearchDropdownItemTitle {
+    font-weight: 600;
+    color: #111827;
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 2px;
+}
+
+.HeroSearchDropdownItemSubtitle {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.3;
+    margin-top: 1px;
+}
+
+.HeroSearchDropdownNoResults {
+    padding: 28px 20px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.HeroSearchDropdownNoResultsImage {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 12px;
+    object-fit: contain;
+    opacity: 0.8;
+}
+
+.HeroSearchDropdownNoResultsText {
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.HeroSearchDropdownNoResultsSubtext {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+/* Scrollbar styling for dropdown */
+.HeroSearchDropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.HeroSearchDropdown::-webkit-scrollbar-track {
+    background: #f5f3f7;
+    border-radius: 10px;
+}
+
+.HeroSearchDropdown::-webkit-scrollbar-thumb {
+    background: #e9d5ff;
+    border-radius: 10px;
+}
+
+.HeroSearchDropdown::-webkit-scrollbar-thumb:hover {
+    background: #d8b4fe;
+}
+
+@media (max-width: 768px) {
+    .VideoContainer {
+        display: none;
+    }
+
+    .HeroHomeContentGridContainer>div {
+        grid-template-columns: 1fr;
+    }
+    .HeroHomeContentGridContainer{
+        padding-bottom: 30px !important;
+    }
+}
+
+.RairBigHeading {
+    font-size: 3rem !important;
+    font-size: 400 !important;
+    line-height: 1.2 !important;
+}
+
+.textAlignStart {
+    text-align: start;
+}
+
+.MaxWidthContainer {
+    max-width: 1350px;
+    margin: 0 auto;
+}
+
+.ColorWhite {
+    color: white !important;
+}
+
+@media (max-width: 768px) {
+    .RairBigHeading {
+        font-size: 2rem !important;
+        font-size: 400 !important;
+        line-height: 1.2 !important;
+    }
+
+    .MaxWidthContainer {
+        max-width: 100% !important;
+        margin: 0 auto;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+    .HeroHomeContentContainer {
+    min-height: 450px;
+    position: relative;
+    height: 450px;
+    overflow: hidden;
+}
+
+
 }
