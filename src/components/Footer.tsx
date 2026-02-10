@@ -15,7 +15,7 @@ export function Footer() {
         <div className="FooterTopSection">
           <div className="FooterTopLeft">
             <img
-              src="https://prepseed.s3.ap-south-1.amazonaws.com/Bucketlistt.png"
+              src="/Images/NewLogo.png"
               alt="bucketlistt Logo"
               className="FooterLogo"
             />

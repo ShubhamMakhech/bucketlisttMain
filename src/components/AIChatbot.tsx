@@ -474,8 +474,9 @@ export function AIChatbot() {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 z-50 rounded-full h-14 w-14 bg-[#940fdb] hover:bg-[#7a0bb8] shadow-lg"
+        className="fixed bottom-4 right-4 z-50 rounded-full h-14 w-14 hover:bg-[#7a0bb8] shadow-lg"
         size="icon"
+        style={{backgroundColor: "var(--brand-color)"}}
       >
         <MessageCircle className="h-6 w-6 text-white" />
       </Button>

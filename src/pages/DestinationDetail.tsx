@@ -460,13 +460,12 @@ const DestinationDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-
       <br />
       <div className="MaxWidthContainer">
         <Breadcrumb
           items={[
             { label: "Destinations", href: "/destinations" },
-            { label: destination.title, current: true }
+            { label: destination.title, current: true },
           ]}
           className="hero-breadcrumb"
         />
@@ -476,15 +475,6 @@ const DestinationDetail = () => {
         <div className=" MaxWidthContainer">
           <div className="destination-hero-split">
             {/* Left Side: Minimal Text Content */}
-            <div className="hero-text-side">
-
-              <h1 className="hero-main-title">
-                Discover the best things to do in {destination.title}
-              </h1>
-              <p className="hero-subtitle">
-                Discover must-see sights, savour authentic cuisine, and experience the essence of local culture.
-              </p>
-            </div>
 
             {/* Right Side: Media Content */}
             <div className="hero-media-side">
@@ -506,7 +496,9 @@ const DestinationDetail = () => {
                     loop={getDestinationMedia().length > 1}
                     className="h-full w-full"
                     onSwiper={(swiper) => playActiveSlideVideo(swiper)}
-                    onSlideChangeTransitionEnd={(swiper) => playActiveSlideVideo(swiper)}
+                    onSlideChangeTransitionEnd={(swiper) =>
+                      playActiveSlideVideo(swiper)
+                    }
                   >
                     {getDestinationMedia().map((media, index) => (
                       <SwiperSlide key={`${media.type}-${index}`}>
@@ -522,9 +514,14 @@ const DestinationDetail = () => {
                               disablePictureInPicture
                               loop={getDestinationMedia().length === 1}
                               onEnded={(e) => {
-                                const swiperEl = e.currentTarget.closest(".swiper") as any;
+                                const swiperEl = e.currentTarget.closest(
+                                  ".swiper",
+                                ) as any;
                                 const swiper = swiperEl?.swiper;
-                                if (swiper && getDestinationMedia().length > 1) {
+                                if (
+                                  swiper &&
+                                  getDestinationMedia().length > 1
+                                ) {
                                   swiper.slideNext();
                                 }
                               }}
@@ -547,6 +544,15 @@ const DestinationDetail = () => {
                   </div>
                 )}
               </div>
+            </div>
+            <div className="hero-text-side">
+              <h1 className="hero-main-title">
+                Discover the best things to do in {destination.title}
+              </h1>
+              <p className="hero-subtitle">
+                Discover must-see sights, savour authentic cuisine, and
+                experience the essence of local culture.
+              </p>
             </div>
           </div>
         </div>
@@ -708,34 +714,32 @@ const DestinationDetail = () => {
                       title={experience.title}
                       categories={
                         experience.experience_categories?.map(
-                          (ec) => ec.categories
+                          (ec) => ec.categories,
                         ) || []
                       }
                       rating={Number(experience.rating)}
-                      reviews={
-                        experience.reviews_count?.toString() || "0"
-                      }
-                      price={`${experience.currency === "USD"
-                        ? "₹"
-                        : experience.currency == "INR"
+                      reviews={experience.reviews_count?.toString() || "0"}
+                      price={`${
+                        experience.currency === "USD"
                           ? "₹"
-                          : experience.currency
-                        } ${experience.price}`}
+                          : experience.currency == "INR"
+                            ? "₹"
+                            : experience.currency
+                      } ${experience.price}`}
                       originalPrice={
                         experience.original_price
-                          ? `${experience.currency === "USD"
-                            ? "₹"
-                            : experience.currency == "INR"
-                              ? "₹"
-                              : experience.currency
-                          } ${experience.original_price}`
+                          ? `${
+                              experience.currency === "USD"
+                                ? "₹"
+                                : experience.currency == "INR"
+                                  ? "₹"
+                                  : experience.currency
+                            } ${experience.original_price}`
                           : undefined
                       }
                       duration={experience.duration || undefined}
                       groupSize={experience.group_size || undefined}
-                      isSpecialOffer={
-                        experience.is_special_offer || false
-                      }
+                      isSpecialOffer={experience.is_special_offer || false}
                       index={index}
                       urlName={experience.url_name}
                     />

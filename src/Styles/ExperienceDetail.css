@@ -247,7 +247,7 @@
 .experience-detail-activity-card-price {
     font-size: 17px;
     font-weight: 700;
-    color: #940fdb;
+    color: var(--brand-color);
 }
 
 .experience-detail-activity-card-book-btn {
@@ -256,7 +256,7 @@
     font-size: 12px;
     font-weight: 600;
     color: #fff;
-    background: #940fdb;
+    background: var(--brand-color);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -264,7 +264,7 @@
 }
 
 .experience-detail-activity-card-book-btn:hover {
-    background: #7a0bb8;
+    background: var(--brand-color);
 }
 
 .experience-detail-activity-card-book-btn:active {
@@ -292,9 +292,9 @@
     padding: 8px 16px;
     font-size: 13px;
     font-weight: 600;
-    color: #940fdb;
+    color: var(--brand-color);
     background: transparent;
-    border: 1px solid #940fdb;
+    border: 1px solid var(--brand-color);
     border-radius: 6px;
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
@@ -302,7 +302,7 @@
 
 .experience-detail-activity-show-more-btn:hover {
     background: #f3e8ff;
-    color: #7a0bb8;
+    color: var(--brand-color);
 }
 
 @media (max-width: 640px) {
@@ -583,7 +583,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #940fdb;
+    color: var(--brand-color);
     /* Brand color */
 }
 

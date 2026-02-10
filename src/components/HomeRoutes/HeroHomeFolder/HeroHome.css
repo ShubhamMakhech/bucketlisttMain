@@ -1,7 +1,7 @@
 .HeroHomeContentContainer {
-  min-height: 750px;
+  min-height: 700px;
   position: relative;
-  height: 750px;
+  height: 700px;
   overflow: hidden;
 }
 
@@ -174,7 +174,7 @@
 .HeroSearchInput.ant-input-affix-wrapper {
   width: 100%;
   border-radius: 999px;
-  padding: 12px 25px;
+  padding: 8px 25px;
   background-color: #ffffff;
   border: none;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
