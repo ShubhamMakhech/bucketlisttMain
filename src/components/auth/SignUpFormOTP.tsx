@@ -298,7 +298,7 @@ export function SignUpFormOTP({
 
           <Button
             type="button"
-            className="w-full bg-brand-primary hover:bg-brand-primary-dark text-white"
+            className="w-full  hover:bg-brand-primary-dark text-white"
             onClick={handleSendOTP}
             disabled={sendingOTP || !identifier.trim()}
           >

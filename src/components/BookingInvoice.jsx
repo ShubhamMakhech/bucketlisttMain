@@ -90,7 +90,7 @@ const PaymentLayout = ({
                       width: "26px",
                       height: "26px",
                       borderRadius: "8px",
-                      background: "#940fdb",
+                      background: "var(--brand-color)",
                       fontSize: "16px",
                       color: "#fff",
                       display: "flex",
@@ -230,7 +230,7 @@ const PaymentLayout = ({
                       href={pickUpLocation}
                       target="_blank"
                       rel="noreferrer"
-                      style={{ color: "#940fdb", textDecoration: "none" }}
+                      style={{ color: "var(--brand-color)", textDecoration: "none" }}
                     >
                       Open in Maps
                     </a>
@@ -248,7 +248,7 @@ const PaymentLayout = ({
                     href={spotLocationUrl || spotLocation}
                     target="_blank"
                     rel="noreferrer"
-                    style={{ color: "#940fdb", textDecoration: "none" }}
+                    style={{ color: "var(--brand-color)", textDecoration: "none" }}
                   >
                     Open in Maps
                   </a>
@@ -291,7 +291,7 @@ const PaymentLayout = ({
                     width: "6px",
                     height: "6px",
                     borderRadius: "999px",
-                    background: "#940fdb",
+                    background: "var(--brand-color)",
                     flexShrink: 0,
                   }}
                 />

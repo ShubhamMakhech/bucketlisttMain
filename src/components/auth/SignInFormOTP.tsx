@@ -429,14 +429,14 @@ export function SignInFormOTP({
 
               <Button
                 type="button"
-                className="w-full bg-brand-primary hover:bg-brand-primary-dark text-white"
+                className="w-full text-white" style={{color:"white",background:"var(--brand-color)"}}
                 onClick={handleSendOTP}
                 disabled={sendingOTP || !otpIdentifier.trim()}
               >
                 {sendingOTP && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Send OTP
+                Send OTPfas
               </Button>
             </div>
           ) : (
@@ -572,7 +572,8 @@ export function SignInFormOTP({
                   <Button
                     type="button"
                     variant="link"
-                    className="p-0 h-auto font-normal text-sm text-brand-primary hover:text-brand-primary-dark"
+                    className="p-0 h-auto font-normal text-sm "
+                    style={{color:"var(--brand-color)"}}
                     onClick={() => onForgotPassword?.()}
                   >
                     Forgot password?
@@ -606,7 +607,8 @@ export function SignInFormOTP({
             <CardFooter className="flex flex-col space-y-2">
               <Button
                 type="submit"
-                className="w-full bg-brand-primary hover:bg-brand-primary-dark text-white"
+                className="w-full text-white"
+                style={{color:"white",backgroundColor:"var(--brand-color)"}}
                 disabled={passwordLoading}
               >
                 {passwordLoading && (
@@ -627,7 +629,7 @@ export function SignInFormOTP({
           <Button
             type="button"
             variant="link"
-            className="p-0 h-auto font-normal text-brand-primary hover:text-brand-primary-dark"
+            className="p-0 h-auto font-normal" style={{color:"var(--brand-color)"}}
             onClick={onToggleMode}
           >
             Sign up here

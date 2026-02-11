@@ -707,7 +707,7 @@ const Index = () => {
               })}
             </div>
 
-            <div className="ContainerDesinsPurposeOnly MaxWidth800">
+            {/* <div className="ContainerDesinsPurposeOnly MaxWidth800">
               <div>
                 <BidirectionalAnimatedSection
                   animation="fade-up"
@@ -779,7 +779,7 @@ const Index = () => {
                   </BidirectionalAnimatedSection>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </section>
       </BidirectionalAnimatedSection>

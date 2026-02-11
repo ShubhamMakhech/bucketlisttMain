@@ -383,7 +383,7 @@ export function TestimonialCarousel() {
           {/* Title */}
           <div>
             <h2 className="text-white CommonH2 leading-tight">
-              Hear what our customers are saying&nbsp;💜
+              Hear what our customers are saying&nbsp;❤️
             </h2>
           </div>
 

@@ -325,8 +325,8 @@
 }
 
 .SectionPaddingTop {
-  /* padding-top: 25px !important; */
-  padding-bottom: 0px !important;
+  padding-top: 25px !important;
+  /* padding-bottom: 0px !important; */
 }
 
 .PaddingTopSet {

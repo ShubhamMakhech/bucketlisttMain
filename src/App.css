@@ -931,19 +931,19 @@ h6 {
 }
 
 .itinerary-card-1day:hover {
-  border-color: #940fdb;
+  border-color: var(--brand-color);
 }
 
 .itinerary-card-1day .itinerary-card-overlay {
-  background: linear-gradient(135deg, #940fdb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--brand-color) 0%, var(--brand-color) 100%);
 }
 
 .itinerary-card-1day .itinerary-card-title {
-  color: #6b21a8;
+  color: var(--brand-color);
 }
 
 .itinerary-card-1day .price-amount {
-  color: #940fdb;
+  color: var(--brand-color);
 }
 
 /* 2 Days Card - Blue Theme */
@@ -994,19 +994,19 @@ h6 {
 }
 
 .itinerary-card-10day:hover {
-  border-color: #9333ea;
+  border-color: var(--brand-color);
 }
 
 .itinerary-card-10day .itinerary-card-overlay {
-  background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--brand-color) 0%, var(--brand-color) 100%);
 }
 
 .itinerary-card-10day .itinerary-card-title {
-  color: #6b21a8;
+  color: var(--brand-color);
 }
 
 .itinerary-card-10day .price-amount {
-  color: #9333ea;
+  color:var(--brand-color);
 }
 
 /* Responsive Design */
@@ -1911,7 +1911,7 @@ h6 {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  color: #940fdb;
+  color: var(--brand-color);
   cursor: help;
   transition:
     color 0.2s,
@@ -2833,7 +2833,7 @@ video::-webkit-media-controls {
 }
 
 .BookingButtonContainer button {
-  background-color: #940fdbf5;
+  background-color: var(--brand-color);
   height: 40px;
   width: 40px;
   border-radius: 50%;
@@ -2897,7 +2897,7 @@ video::-webkit-media-controls {
 }
 
 .testimonial-reel-card.testimonial-reel-active {
-  box-shadow: 0 0 0 3px rgba(148, 15, 219, 0.6);
+  box-shadow: 0 0 0 3px var(--brand-color);
 }
 
 .testimonial-reel-video {
@@ -3041,7 +3041,7 @@ video::-webkit-media-controls {
   gap: 4px;
   font-size: 13px;
   font-weight: 600;
-  color: #940fdb;
+  color: var(--brand-color);
   flex-shrink: 0;
   text-align: right;
 }
@@ -3049,8 +3049,8 @@ video::-webkit-media-controls {
 .experience-card-minimal-star {
   width: 14px;
   height: 14px;
-  fill: #940fdb;
-  color: #940fdb;
+  fill:  var(--brand-color);
+  color: var(--brand-color);
   flex-shrink: 0;
 }
 

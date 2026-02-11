@@ -15,7 +15,7 @@
 }
 
 .experience-detail-breadcrumbs a:hover {
-    color: #940fdb;
+    color: var(--brand-color);
     text-decoration: underline;
 }
 
@@ -69,7 +69,7 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    background: #940fdb;
+    background: var(--brand-color);
     color: #ffffff;
     font-weight: 600;
     font-size: 13px;
@@ -191,13 +191,13 @@
 }
 
 .experience-detail-activity-card:hover {
-    border-color: #940fdb;
+    border-color: var(--brand-color);
     background: #faf5ff;
     box-shadow: 0 2px 8px rgba(148, 15, 219, 0.08);
 }
 
 .experience-detail-activity-card.selected {
-    border-color: #940fdb;
+    border-color: var(--brand-color);
     background: #f3e8ff;
     box-shadow: 0 0 0 2px rgba(148, 15, 219, 0.15);
 }
@@ -508,11 +508,11 @@
 }
 
 .sticky-nav-item:hover {
-    color: #940fdb;
+    color: var(--brand-color);
 }
 
 .sticky-nav-item.active {
-    color: #940fdb;
+    color: var(--brand-color);
     font-weight: 600;
 }
 
@@ -523,7 +523,7 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: #940fdb;
+    background: var(--brand-color);
     border-radius: 3px 3px 0 0;
 }
 
@@ -685,7 +685,7 @@
 }
 
 .minimal-date-card.selected {
-    border-color: #940fdb;
+    border-color: var(--brand-color);
     background: #fdf6ff;
     box-shadow: 0 4px 12px rgba(148, 15, 219, 0.1);
 }
@@ -707,7 +707,7 @@
 }
 
 .minimal-date-card.selected .minimal-date-day {
-    color: #940fdb;
+    color: var(--brand-color);
 }
 
 .minimal-date-number {
@@ -748,8 +748,8 @@
 }
 
 .minimal-slot-pill.selected {
-    background: #940fdb;
-    border-color: #940fdb;
+    background: var(--brand-color);
+    border-color: var(--brand-color);
     box-shadow: 0 4px 12px rgba(148, 15, 219, 0.2);
 }
 
