@@ -371,7 +371,6 @@ export function Header() {
       <div className="sticky top-0 left-0 right-0 z-[8] w-full">
         <header
           className={`left-0 right-0 w-full transition-all duration-300 ${getHeaderStyles()}`}
-          style={{background:"white"}}
         >
           <div className="flex items-center justify-between gap-2 mx-auto relative navigationheight MaxWidthContainer">
             {/* Logo - Left */}
@@ -813,7 +812,7 @@ export function Header() {
                           alt={user.email || ""}
                         />
                         <AvatarFallback
-                          style={{ background: "white" }}
+                          style={{ background: "var(--brand-color)" }}
                           className="text-white font-semibold"
                         >
                           {getInitials(user.email || "")}
@@ -905,7 +904,7 @@ export function Header() {
                             >
                               <Heart
                                 className="h-3.5 w-3.5"
-                              // style={{ color: "white" }}
+                                style={{ color: "white" }}
                               />
                             </div>
                             <span className="text-sm">Wishlists</span>
@@ -1140,7 +1139,7 @@ export function Header() {
               <button
                 key={label}
                 type="button"
-                onClick={() => navigate(`/search?q=${encodeURIComponent(q)}`)}
+                // onClick={() => navigate(`/search?q=${encodeURIComponent(q)}`)}
                 className="header-category-item flex flex-col items-center  text-gray-700 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-400 transition-colors min-w-[4rem]"
               >
                 <Icon
