@@ -580,7 +580,7 @@
 }
 
 .HeroBackgroundSliderItem.active .HeroBackgroundImageWrapper {
-  animation: heroSlideInLayer 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  transform: translateX(0);
 }
 
 /* Exiting slide */
@@ -601,7 +601,7 @@
   height: 100%;
   position: relative;
   overflow: hidden;
-  transform: translateX(100%);
+  transform: translateX(0);
 }
 
 /* Cinematic Overlay - Only on background images */
@@ -648,8 +648,7 @@
 
 /* Counter transform for the image to keep it stationary with zoom effect */
 .HeroBackgroundSliderItem.active .HeroBackgroundImage {
-  animation: heroCounterSlideInZoom 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)
-    forwards;
+  transform: scale(1);
 }
 
 .HeroBackgroundSliderItem.exiting .HeroBackgroundImage {
@@ -1007,9 +1006,9 @@
     padding-right: 10px !important;
   }
   .HeroHomeContentContainer {
-    min-height: 450px;
+    min-height: 250px;
     position: relative;
-    height: 450px;
+    height: 250px;
     overflow: hidden;
   }
 }

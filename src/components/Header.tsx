@@ -5,6 +5,8 @@
 import {
   Heart,
   LogOut,
+  X,
+  ArrowLeft,
   MessageSquare,
   Calendar,
   Gift,
@@ -83,6 +85,8 @@ export function Header() {
   const [searchFocused, setSearchFocused] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement | null>(null);
   const searchDropdownRef = useRef<HTMLDivElement | null>(null);
+  const mobileSearchInputRef = useRef<any>(null);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   // Check if we're on the landing page
   const isLandingPage = location.pathname === "/";
@@ -114,6 +118,15 @@ export function Header() {
     const id = setInterval(tick, typewriterIsDeleting ? 40 : 80);
     return () => clearInterval(id);
   }, [typewriterPhraseIndex, typewriterVisibleLength, typewriterIsDeleting, searchFocused, searchQuery]);
+
+  // Handle focus for mobile search input
+  useEffect(() => {
+    if (isMobileSearchOpen && mobileSearchInputRef.current) {
+      setTimeout(() => {
+        mobileSearchInputRef.current.focus();
+      }, 300);
+    }
+  }, [isMobileSearchOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -269,6 +282,7 @@ export function Header() {
     if (value && value.trim()) {
       navigate(`/search?q=${encodeURIComponent(value.trim())}`);
       setShowSearchDropdown(false);
+      setIsMobileSearchOpen(false);
     }
   };
 
@@ -290,6 +304,7 @@ export function Header() {
   const handleSearchSuggestionClick = (suggestion: string) => {
     setSearchQuery(suggestion);
     setShowSearchDropdown(false);
+    setIsMobileSearchOpen(false);
     navigate(`/search?q=${encodeURIComponent(suggestion)}`);
   };
 
@@ -331,7 +346,10 @@ export function Header() {
   };
 
   const getButtonStyles = () => {
-    if (!isScrolled) return "text-white hover:bg-white/20";
+    if (!isScrolled) {
+      if (theme === "dark") return "text-white hover:bg-white/20";
+      return "text-gray-900 hover:bg-gray-100/80";
+    }
 
     if (theme === "light") {
       return "text-gray-900 hover:bg-gray-100/80";
@@ -353,6 +371,7 @@ export function Header() {
       <div className="sticky top-0 left-0 right-0 z-[8] w-full">
         <header
           className={`left-0 right-0 w-full transition-all duration-300 ${getHeaderStyles()}`}
+          style={{background:"white"}}
         >
           <div className="flex items-center justify-between gap-2 mx-auto relative navigationheight MaxWidthContainer">
             {/* Logo - Left */}
@@ -367,16 +386,14 @@ export function Header() {
               <img
                 src="/Images/NewLogo.png"
                 alt="bucketlistt Logo"
-                className={`transition-opacity duration-300 ${
-                  isScrolled ? "opacity-0 absolute" : "opacity-100"
-                }`}
+                className={`transition-opacity duration-300 ${isScrolled ? "opacity-0 absolute" : "opacity-100"
+                  }`}
               />
               <img
                 src="/Images/NewLogo.png"
                 alt="bucketlistt Logo"
-                className={`transition-opacity duration-300 ${
-                  isScrolled ? "opacity-100" : "opacity-0 absolute"
-                }`}
+                className={`transition-opacity duration-300 ${isScrolled ? "opacity-100" : "opacity-0 absolute"
+                  }`}
               />
             </Link>
 
@@ -389,9 +406,9 @@ export function Header() {
                     searchFocused || searchQuery
                       ? "Search for experiences and cities..."
                       : TYPEWRITER_PHRASES[typewriterPhraseIndex].slice(
-                          0,
-                          typewriterVisibleLength,
-                        )
+                        0,
+                        typewriterVisibleLength,
+                      )
                   }
                   prefix={<SearchOutlined />}
                   className="HeroSearchInput"
@@ -706,7 +723,14 @@ export function Header() {
                 </DropdownMenu>
               ) : (
                 <Button
-                  style={{ background: "var(--brand-color)" }}
+                  style={{
+                    background: "var(--brand-color)",
+                    color: "white",
+                    padding: "0px 20px",
+                    height: "36px",
+                    fontWeight: "600",
+                    borderRadius: "8px"
+                  }}
                   onClick={() => setIsAuthModalOpen(true)}
                 >
                   Sign in
@@ -746,6 +770,16 @@ export function Header() {
                     {favoritesCount > 9 ? "9+" : favoritesCount}
                   </span>
                 )}
+              </Button>
+
+              {/* Search Toggle - Mobile */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-10 w-10 ${getButtonStyles()} transition-colors flex md:hidden`}
+                onClick={() => setIsMobileSearchOpen(true)}
+              >
+                <SearchOutlined className="text-[20px]" />
               </Button>
 
               {/* User Profile or Sign In - Mobile */}
@@ -871,7 +905,7 @@ export function Header() {
                             >
                               <Heart
                                 className="h-3.5 w-3.5"
-                                style={{ color: "white" }}
+                              // style={{ color: "white" }}
                               />
                             </div>
                             <span className="text-sm">Wishlists</span>
@@ -966,13 +1000,15 @@ export function Header() {
                 </DropdownMenu>
               ) : (
                 <>
-                  {/* Existing Sign In Button - unchanged */}
                   <Button
                     style={{
-                      background: isScrolled ? "white" : "white",
-                      color: isScrolled ? "white" : "black",
-                      padding: "0px 10px",
-                      height: "30px",
+                      background: "var(--brand-color)",
+                      color: "white",
+                      padding: "0px 15px",
+                      height: "32px",
+                      fontWeight: "600",
+                      fontSize: "13px",
+                      borderRadius: "6px"
                     }}
                     onClick={() => setIsAuthModalOpen(true)}
                   >
@@ -1099,20 +1135,20 @@ export function Header() {
           className="header-categories-bar border-t border-orange-100 bg-[#fef3e8] dark:bg-[#2d1f14]"
           aria-label="Activity categories"
         >
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 mx-auto py-3 px-4 MaxWidthContainer">
+          <div className="flex  items-center justify-center gap-6 sm:gap-8 mx-auto py-3 px-4 MaxWidthContainer MobileLaayout">
             {headerCategories.map(({ label, q, Icon }) => (
               <button
                 key={label}
                 type="button"
                 onClick={() => navigate(`/search?q=${encodeURIComponent(q)}`)}
-                className="header-category-item flex flex-col items-center gap-1 text-gray-700 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-400 transition-colors min-w-[4rem]"
+                className="header-category-item flex flex-col items-center  text-gray-700 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-400 transition-colors min-w-[4rem]"
               >
                 <Icon
                   className="h-6 w-6 text-orange-500 dark:text-orange-400"
                   strokeWidth={2}
                   aria-hidden
                 />
-                <span className="text-xs font-semibold uppercase tracking-wide">
+                <span className="text-xs font-semibold uppercase tracking-widea">
                   {label}
                 </span>
               </button>
@@ -1120,6 +1156,169 @@ export function Header() {
           </div>
         </nav>
       </div>
+
+      {/* Mobile Search Overlay */}
+      {isMobileSearchOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[1000] bg-white dark:bg-[#1a1a1a] animate-in fade-in slide-in-from-bottom duration-300">
+            <div className="flex flex-col h-full">
+              {/* Header inside overlay */}
+              <div className="flex items-center gap-3 p-4 border-b border-gray-100 dark:border-gray-800">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 text-gray-500"
+                  onClick={() => setIsMobileSearchOpen(false)}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div className="flex-1">
+                  <Input
+                    ref={mobileSearchInputRef}
+                    size="large"
+                    placeholder="Search adventures..."
+                    prefix={<SearchOutlined style={{ color: "var(--brand-color)" }} />}
+                    className="MobileSearchInputOverlay"
+                    value={searchQuery}
+                    onChange={handleSearchInputChange}
+                    onPressEnter={() => handleSearch(searchQuery)}
+                    suffix={
+                      searchQuery && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 hover:bg-transparent"
+                          onClick={() => setSearchQuery("")}
+                        >
+                          <X className="h-4 w-4 text-gray-400" />
+                        </Button>
+                      )
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Suggestions inside overlay */}
+              <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-black/20">
+                {searchSuggestionsLoading ? (
+                  <div className="p-8 text-center text-gray-500 animate-pulse">
+                    Searching adventures...
+                  </div>
+                ) : hasSearchResults ? (
+                  <div className="p-2 space-y-4">
+                    {searchSuggestions?.destinations &&
+                      searchSuggestions.destinations.length > 0 && (
+                        <div className="space-y-1">
+                          <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-[#940fdb]">
+                            Destinations
+                          </div>
+                          {searchSuggestions.destinations.map(
+                            (destination: any) => (
+                              <div
+                                key={`m-dest-${destination.id}`}
+                                onClick={() =>
+                                  handleSearchSuggestionClick(destination.title)
+                                }
+                                className="flex items-center gap-4 p-4 active:bg-gray-100 dark:active:bg-gray-800 rounded-xl transition-colors"
+                              >
+                                <div className="h-10 w-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                                  <MapPin className="h-5 w-5 text-blue-500" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-gray-900 dark:text-white truncate">
+                                    {destination.title}
+                                  </div>
+                                  {destination.subtitle && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                      {destination.subtitle}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      )}
+                    {searchSuggestions?.experiences &&
+                      searchSuggestions.experiences.length > 0 && (
+                        <div className="space-y-1 pb-8">
+                          <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-[#940fdb]">
+                            Activities
+                          </div>
+                          {searchSuggestions.experiences.map(
+                            (experience: any) => (
+                              <div
+                                key={`m-exp-${experience.id}`}
+                                onClick={() =>
+                                  handleSearchSuggestionClick(experience.title)
+                                }
+                                className="flex items-center gap-4 p-4 active:bg-gray-100 dark:active:bg-gray-800 rounded-xl transition-colors"
+                              >
+                                <div className="h-10 w-10 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                                  <Compass className="h-5 w-5 text-orange-500" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-gray-900 dark:text-white truncate">
+                                    {experience.title}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {experience.category}
+                                    {experience.location &&
+                                      ` • ${experience.location}`}
+                                  </div>
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      )}
+                  </div>
+                ) : searchQuery.length >= 2 ? (
+                  <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
+                    <img
+                      src="/Images/NewIcons/NoDataFoundIcon.png"
+                      alt="No results"
+                      className="h-32 w-32 opacity-40"
+                    />
+                    <div>
+                      <div className="font-semibold text-gray-900 dark:text-white">
+                        No adventures found
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Try different keywords or browse categories
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-8">
+                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-6 px-2">
+                      Popular Categories
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {headerCategories.map(({ label, q, Icon }) => (
+                        <button
+                          key={`overlay-${label}`}
+                          onClick={() => {
+                            navigate(`/search?q=${encodeURIComponent(q)}`);
+                            setIsMobileSearchOpen(false);
+                          }}
+                          className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 shadow-sm active:scale-95 transition-all"
+                        >
+                          <Icon className="h-6 w-6 text-orange-500" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-center dark:text-gray-200">
+                            {label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {/* Auth Modal */}
       <AuthModal

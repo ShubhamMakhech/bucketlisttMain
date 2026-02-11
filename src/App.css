@@ -235,7 +235,7 @@ h6 {
   gap: 20px;
 }
 
-#ReviewFlexAjustContainer > div:first-child {
+#ReviewFlexAjustContainer>div:first-child {
   min-width: 500px;
 }
 
@@ -291,9 +291,9 @@ h6 {
     gap: 10px;
   }
 
-  #WhyChooseUsGrid > div {
+  #WhyChooseUsGrid>div {
     width: 48% !important;
-    padding: 10px 0px;
+    padding: 0px 0px;
   }
 }
 
@@ -445,12 +445,10 @@ h6 {
   left: 0px;
   width: 100%;
   height: 200px;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.8) 0%,
-    rgba(0, 0, 0, 0.4) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(to top,
+      rgba(0, 0, 0, 0.8) 0%,
+      rgba(0, 0, 0, 0.4) 50%,
+      transparent 100%);
   z-index: 1001;
   pointer-events: none;
   opacity: 0.5;
@@ -718,7 +716,7 @@ h6 {
     overflow: hidden !important;
   }
 
-  .ExperienceCardMobileImage > div {
+  .ExperienceCardMobileImage>div {
     height: 100%;
     width: 100%;
   }
@@ -755,9 +753,7 @@ h6 {
     color: #666 !important;
   }
 
-  .ExperienceCardMobileContent
-    #PriceContainerOfferHomePageCards
-    span[style*="color: var(--brand-color)"] {
+  .ExperienceCardMobileContent #PriceContainerOfferHomePageCards span[style*="color: var(--brand-color)"] {
     font-size: 16px !important;
     font-weight: 700 !important;
   }
@@ -774,24 +770,16 @@ h6 {
     gap: 4px !important;
   }
 
-  .ExperienceCardMobileContent
-    .flex.items-center.gap-2
-    .flex.items-center.gap-1 {
+  .ExperienceCardMobileContent .flex.items-center.gap-2 .flex.items-center.gap-1 {
     gap: 2px !important;
   }
 
-  .ExperienceCardMobileContent
-    .flex.items-center.gap-2
-    .flex.items-center.gap-1
-    svg {
+  .ExperienceCardMobileContent .flex.items-center.gap-2 .flex.items-center.gap-1 svg {
     width: 10px !important;
     height: 10px !important;
   }
 
-  .ExperienceCardMobileContent
-    .flex.items-center.gap-2
-    .flex.items-center.gap-1
-    span {
+  .ExperienceCardMobileContent .flex.items-center.gap-2 .flex.items-center.gap-1 span {
     font-size: 10px !important;
   }
 
@@ -1006,7 +994,7 @@ h6 {
 }
 
 .itinerary-card-10day .price-amount {
-  color:var(--brand-color);
+  color: var(--brand-color);
 }
 
 /* Responsive Design */
@@ -1108,11 +1096,9 @@ h6 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.1) 0%,
-    rgba(0, 0, 0, 0.3) 100%
-  );
+  background: linear-gradient(45deg,
+      rgba(0, 0, 0, 0.1) 0%,
+      rgba(0, 0, 0, 0.3) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -1184,11 +1170,9 @@ h6 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    45deg,
-    rgba(0, 0, 0, 0.1) 0%,
-    rgba(0, 0, 0, 0.3) 100%
-  );
+  background: linear-gradient(45deg,
+      rgba(0, 0, 0, 0.1) 0%,
+      rgba(0, 0, 0, 0.3) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -1371,8 +1355,7 @@ h6 {
   border-radius: 3px;
 }
 
-.CalenderLayoutContainer
-  .overflowAdjustContainer::-webkit-scrollbar-thumb:hover {
+.CalenderLayoutContainer .overflowAdjustContainer::-webkit-scrollbar-thumb:hover {
   background: var(--brand-color);
 }
 
@@ -1382,7 +1365,7 @@ h6 {
 }
 
 @media (max-width: 480px) {
-  .DateSelectorContainer > div:first-child {
+  .DateSelectorContainer>div:first-child {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1407,7 +1390,7 @@ h6 {
     align-items: start;
   }
 
-  .DateSelectorContainer > div:first-child {
+  .DateSelectorContainer>div:first-child {
     min-width: 60px;
   }
 
@@ -1428,7 +1411,7 @@ h6 {
       font-size: 14px;
     }
 
-    .DateSelectorContainer > div:first-child {
+    .DateSelectorContainer>div:first-child {
       min-width: 50px;
       padding: 8px 4px;
     }
@@ -1444,7 +1427,7 @@ h6 {
       gap: 16px;
     }
 
-    .DateSelectorContainer > div:first-child {
+    .DateSelectorContainer>div:first-child {
       min-width: 70px;
     }
   }
@@ -1617,12 +1600,10 @@ h6 {
     left: 0;
     width: 100%;
     height: 200px;
-    background: linear-gradient(
-      to top,
-      rgba(255, 255, 255, 1) 0%,
-      rgba(255, 255, 255, 0.8) 50%,
-      transparent 100%
-    );
+    background: linear-gradient(to top,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(255, 255, 255, 0.8) 50%,
+        transparent 100%);
     z-index: -1;
     pointer-events: none;
   }
@@ -1633,12 +1614,12 @@ h6 {
     align-items: start;
 
   } */
-  .MobileOnlyButtonContainer > div {
+  .MobileOnlyButtonContainer>div {
     display: flex;
     justify-content: end !important;
   }
 
-  .MobileOnlyButtonContainer > div button {
+  .MobileOnlyButtonContainer>div button {
     padding: 25px 0px;
     font-size: 14px;
     box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
@@ -1646,16 +1627,16 @@ h6 {
     max-width: 80%;
   }
 
-  .MobileOnlyButtonContainer > div div span:first-child {
+  .MobileOnlyButtonContainer>div div span:first-child {
     font-size: 0.875rem !important;
   }
 
-  .MobileOnlyButtonContainer > div div span:last-child {
+  .MobileOnlyButtonContainer>div div span:last-child {
     font-size: 1rem !important;
     /* margin-top: -8px; */
   }
 
-  .MobileOnlyButtonContainer > div:last-child {
+  .MobileOnlyButtonContainer>div:last-child {
     width: 60%;
   }
 
@@ -1816,22 +1797,18 @@ h6 {
   justify-content: center;
   width: 30px;
   height: 30px;
-  background: linear-gradient(
-    135deg,
-    rgba(148, 15, 219, 0.061) 0%,
-    rgba(148, 15, 219, 0.05) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(148, 15, 219, 0.061) 0%,
+      rgba(148, 15, 219, 0.05) 100%);
   border-radius: 5px;
   flex-shrink: 0;
   transition: all 0.3s ease;
 }
 
 .feature-badge:hover .feature-badge-icon {
-  background: linear-gradient(
-    135deg,
-    rgba(148, 15, 219, 0.15) 0%,
-    rgba(148, 15, 219, 0.08) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(148, 15, 219, 0.15) 0%,
+      rgba(148, 15, 219, 0.08) 100%);
   transform: scale(1.05);
 }
 
@@ -2023,6 +2000,7 @@ h6 {
   }
 
   @media (min-width: 768px) {
+
     #primary-contact-details-card input,
     #primary-contact-details-card textarea {
       font-size: 14px !important;
@@ -2163,11 +2141,9 @@ h6 {
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 107, 53, 0.1) 0%,
-    rgba(247, 147, 30, 0.05) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 107, 53, 0.1) 0%,
+      rgba(247, 147, 30, 0.05) 100%);
   border-radius: 12px;
   flex-shrink: 0;
   transition: all 0.3s ease;
@@ -2175,11 +2151,9 @@ h6 {
 }
 
 .destination-info-card:hover .destination-info-icon {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 107, 53, 0.15) 0%,
-    rgba(247, 147, 30, 0.08) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 107, 53, 0.15) 0%,
+      rgba(247, 147, 30, 0.08) 100%);
   transform: scale(1.05);
 }
 
@@ -2381,11 +2355,9 @@ h6 {
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 107, 53, 0.1) 0%,
-    rgba(247, 147, 30, 0.05) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 107, 53, 0.1) 0%,
+      rgba(247, 147, 30, 0.05) 100%);
   border-radius: 12px;
   flex-shrink: 0;
   transition: all 0.3s ease;
@@ -2393,11 +2365,9 @@ h6 {
 }
 
 .experience-feature-card:hover .experience-feature-icon {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 107, 53, 0.15) 0%,
-    rgba(247, 147, 30, 0.08) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 107, 53, 0.15) 0%,
+      rgba(247, 147, 30, 0.08) 100%);
   transform: scale(1.05);
 }
 
@@ -2572,22 +2542,18 @@ h6 {
   justify-content: center;
   width: 80px;
   height: 80px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 107, 53, 0.1) 0%,
-    rgba(247, 147, 30, 0.05) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 107, 53, 0.1) 0%,
+      rgba(247, 147, 30, 0.05) 100%);
   border-radius: 20px;
   margin-bottom: 24px;
   transition: all 0.3s ease;
 }
 
 .coming-soon-panel:hover .coming-soon-icon {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 107, 53, 0.15) 0%,
-    rgba(247, 147, 30, 0.08) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 107, 53, 0.15) 0%,
+      rgba(247, 147, 30, 0.08) 100%);
   transform: scale(1.05);
 }
 
@@ -2784,13 +2750,11 @@ video::-webkit-media-controls {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(
-    circle at center,
-    transparent 0%,
-    rgba(0, 0, 0, 0.1) 40%,
-    rgba(0, 0, 0, 0.3) 70%,
-    rgba(0, 0, 0, 0.5) 100%
-  );
+  background: radial-gradient(circle at center,
+      transparent 0%,
+      rgba(0, 0, 0, 0.1) 40%,
+      rgba(0, 0, 0, 0.3) 70%,
+      rgba(0, 0, 0, 0.5) 100%);
   z-index: 1;
   pointer-events: none;
 }
@@ -2863,18 +2827,16 @@ video::-webkit-media-controls {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to top,
-    transparent 0%,
-    rgba(0, 0, 0, 0.3) 35%,
-    rgba(0, 0, 0, 0.75) 65%,
-    rgb(0, 0, 0) 100%
-  );
+  background: linear-gradient(to top,
+      transparent 0%,
+      rgba(0, 0, 0, 0.3) 35%,
+      rgba(0, 0, 0, 0.75) 65%,
+      rgb(0, 0, 0) 100%);
   pointer-events: none;
   z-index: 0;
 }
 
-#testimonials-section > * {
+#testimonials-section>* {
   position: relative;
   z-index: 1;
 }
@@ -2910,11 +2872,9 @@ video::-webkit-media-controls {
 .testimonial-reel-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0) 60%,
-    rgba(0, 0, 0, 0.5) 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(0, 0, 0, 0.5) 100%);
   pointer-events: none;
 }
 
@@ -2981,7 +2941,7 @@ video::-webkit-media-controls {
   flex-shrink: 0;
 }
 
-.experience-card-minimal-image > div {
+.experience-card-minimal-image>div {
   display: block;
 }
 
@@ -3049,7 +3009,7 @@ video::-webkit-media-controls {
 .experience-card-minimal-star {
   width: 14px;
   height: 14px;
-  fill:  var(--brand-color);
+  fill: var(--brand-color);
   color: var(--brand-color);
   flex-shrink: 0;
 }
@@ -3373,7 +3333,7 @@ video::-webkit-media-controls {
     margin-top: 5px !important;
   }
 
-  #pay-10-now-card > div {
+  #pay-10-now-card>div {
     margin-left: 15px;
     /* margin-top: 10px ; */
   }
@@ -3381,6 +3341,7 @@ video::-webkit-media-controls {
   .MobileHide {
     display: none !important;
   }
+
   .MobileHide {
     display: none !important;
   }
@@ -3446,47 +3407,35 @@ video::-webkit-media-controls {
   backdrop-filter: none !important;
 }
 
-#UserBookingsDesktopLayout
-  [style*="position: fixed"][style*="z-index: 9999"]
-  > div:first-child {
+#UserBookingsDesktopLayout [style*="position: fixed"][style*="z-index: 9999"]>div:first-child {
   background-color: #f9fafb !important;
   opacity: 1 !important;
 }
 
-#UserBookingsDesktopLayout
-  [style*="position: fixed"][style*="z-index: 9999"]
-  > div:last-child {
+#UserBookingsDesktopLayout [style*="position: fixed"][style*="z-index: 9999"]>div:last-child {
   background-color: #ffffff !important;
   opacity: 1 !important;
 }
 
 /* Filter Dropdown Items - Fix hover states */
-#UserBookingsDesktopLayout
-  [style*="position: fixed"][style*="z-index: 9999"]
-  label {
+#UserBookingsDesktopLayout [style*="position: fixed"][style*="z-index: 9999"] label {
   transition: background-color 0.15s ease-in-out !important;
   background-color: transparent !important;
   opacity: 1 !important;
 }
 
-#UserBookingsDesktopLayout
-  [style*="position: fixed"][style*="z-index: 9999"]
-  label:hover {
+#UserBookingsDesktopLayout [style*="position: fixed"][style*="z-index: 9999"] label:hover {
   background-color: #eff6ff !important;
   opacity: 1 !important;
 }
 
-#UserBookingsDesktopLayout
-  [style*="position: fixed"][style*="z-index: 9999"]
-  label:active {
+#UserBookingsDesktopLayout [style*="position: fixed"][style*="z-index: 9999"] label:active {
   background-color: #dbeafe !important;
   opacity: 1 !important;
 }
 
 /* Ensure text is visible */
-#UserBookingsDesktopLayout
-  [style*="position: fixed"][style*="z-index: 9999"]
-  span {
+#UserBookingsDesktopLayout [style*="position: fixed"][style*="z-index: 9999"] span {
   color: #111827 !important;
   opacity: 1 !important;
 }
@@ -3527,6 +3476,21 @@ video::-webkit-media-controls {
 }
 
 
-.MaxWidth500px{
+.MaxWidth500px {
   max-width: 500px;
+}
+
+@media (max-width:780px) {
+  .MobileLaayout {
+    flex-wrap: nowrap !important;
+    background-color: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 5px 0px !important;
+    gap: 10px !important;
+  }
+
+  .header-categories-bar .tracking-widea {
+    font-size: 8px;
+  }
 }

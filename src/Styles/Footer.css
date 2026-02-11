@@ -229,23 +229,26 @@
 }
 
 @media (max-width: 768px) {
-    .FooterColumnHeader{
+    .FooterColumnHeader {
         margin-bottom: 10px;
     }
-    .FooterWrapper{
+
+    .FooterWrapper {
         display: flex;
         flex-direction: column;
         gap: 30px;
     }
-    .FooterPaymentMethods{
+
+    .FooterPaymentMethods {
         gap: 4px;
     }
-.FooterLinksList{
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0px 10px;
-}
+
+    .FooterLinksList {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0px 10px;
+    }
 
     .FooterTopSection {
         grid-template-columns: 1fr;
@@ -293,12 +296,13 @@
     }
 
     .FooterLogo {
-        width: 130px;
+        width: 200px;
+        margin-left: -25px;
     }
 }
 
 @media (max-width: 640px) {
-   
+
 
     .FooterBottomLeft {
         /* flex-direction: column; */
@@ -306,10 +310,11 @@
         gap: 8px;
     }
 
-    .FooterBottomLink{
+    .FooterBottomLink {
         padding: 0px !important;
     }
-    .FooterInstagramButton{
+
+    .FooterInstagramButton {
         padding: 0px !important;
     }
 }
