@@ -181,7 +181,7 @@
     flex-direction: column;
     align-items: stretch;
     text-align: left;
-    padding: 14px 16px;
+    padding: 12px 12px;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
     background: #fff;
@@ -324,6 +324,9 @@
 }
 
 @media (max-width: 640px) {
+    .experience-detail-description-card .ant-card-body {
+    padding: 20px 12px;
+}
     .experience-detail-breadcrumbs {
         font-size: 12px;
     }

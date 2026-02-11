@@ -35,6 +35,8 @@ import {
   Headset,
   Wallet,
   Zap,
+  CreditCard,
+  Smartphone,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 // import { saveAs } from "file-saver"
@@ -164,9 +166,9 @@ const ExperienceDetail = () => {
       ? Math.max(0, Math.floor(rawCount))
       : typeof rawCount === "string"
         ? Math.max(
-            0,
-            Math.floor(parseInt(String(rawCount).replace(/,/g, ""), 10) || 0),
-          )
+          0,
+          Math.floor(parseInt(String(rawCount).replace(/,/g, ""), 10) || 0),
+        )
         : 0;
 
   const { data: bookingsCount = 0 } = useQuery({
@@ -213,8 +215,8 @@ const ExperienceDetail = () => {
   // Merge vendor_id if we fetched it separately
   const experienceWithVendorId =
     experience &&
-    (experience.vendor_id === undefined || experience.vendor_id === null) &&
-    vendorIdData
+      (experience.vendor_id === undefined || experience.vendor_id === null) &&
+      vendorIdData
       ? { ...experience, vendor_id: vendorIdData }
       : experience;
 
@@ -410,14 +412,14 @@ const ExperienceDetail = () => {
       ? images
       : experience?.image_url
         ? [
-            {
-              id: "main",
-              image_url: experience.image_url,
-              alt_text: experience.title,
-              display_order: 0,
-              is_primary: true,
-            },
-          ]
+          {
+            id: "main",
+            image_url: experience.image_url,
+            alt_text: experience.title,
+            display_order: 0,
+            is_primary: true,
+          },
+        ]
         : [];
 
   // Bulk Booking CSV Download
@@ -490,8 +492,7 @@ const ExperienceDetail = () => {
 
         if (!bookingDate || !participantName || !participantEmail) {
           errors.push(
-            `Row ${
-              i + 2
+            `Row ${i + 2
             }: Missing required fields (booking_date, participant_name, participant_email)`,
           );
           continue;
@@ -527,8 +528,7 @@ const ExperienceDetail = () => {
 
         if (bookingsError) {
           errors.push(
-            `Row ${i + 2}: Error checking existing bookings - ${
-              bookingsError.message
+            `Row ${i + 2}: Error checking existing bookings - ${bookingsError.message
             }`,
           );
           continue;
@@ -555,8 +555,7 @@ const ExperienceDetail = () => {
 
         if (!availableSlot) {
           errors.push(
-            `Row ${
-              i + 2
+            `Row ${i + 2
             }: No available time slots for ${participantName} on ${bookingDate}`,
           );
           continue;
@@ -653,17 +652,15 @@ const ExperienceDetail = () => {
     <div className="min-h-screen bg-background MaxWidthContainer">
       {/* Sticky Sub-navigation */}
       <div
-        className={`experience-detail-sticky-nav ${
-          showStickyNav ? "visible" : ""
-        }`}
+        className={`experience-detail-sticky-nav ${showStickyNav ? "visible" : ""
+          }`}
       >
         <div className="sticky-nav-content">
           {navItems.map((item) => (
             <button
               key={item.id}
-              className={`sticky-nav-item ${
-                activeSection === item.id ? "active" : ""
-              }`}
+              className={`sticky-nav-item ${activeSection === item.id ? "active" : ""
+                }`}
               onClick={() => scrollToSection(item.id)}
             >
               {item.label}
@@ -765,27 +762,10 @@ const ExperienceDetail = () => {
                 <div className="features-badges-grid">
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
-                      {/* <img
-                        src="/Images/BookPayLater.svg"
-                        alt="Book Now Pay Later"
-                      /> */}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        className="size-6"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z"
-                        />
-                      </svg>
+                      <CreditCard className="w-5 h-5" />
                     </div>
                     <div className="feature-badge-content">
-                      <p>Pay Just 10% the book</p>
+                      <p>Pay 10% to book</p>
                     </div>
                     <div className="feature-badge-info-wrap">
                       <span
@@ -803,23 +783,10 @@ const ExperienceDetail = () => {
 
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        className="size-6"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
-                        />
-                      </svg>
+                      <Smartphone className="w-5 h-5" />
                     </div>
                     <div className="feature-badge-content">
-                      <p>Tickets to your mobile</p>
+                      <p>Mobile Tickets</p>
                     </div>
                     <div className="feature-badge-info-wrap">
                       <span
@@ -835,23 +802,10 @@ const ExperienceDetail = () => {
                   </div>
                   <div className="feature-badge">
                     <div className="feature-badge-icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        className="size-6"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
-                        />
-                      </svg>
+                      <ShieldCheck className="w-5 h-5" />
                     </div>
                     <div className="feature-badge-content">
-                      <p>Free Cancellation </p>
+                      <p>Free Cancellation</p>
                     </div>
                     <div className="feature-badge-info-wrap">
                       <span
@@ -893,9 +847,8 @@ const ExperienceDetail = () => {
                 {/* Select Activity - grid of minimal cards above description */}
                 {activities && activities.length > 0 && (
                   <Card
-                    className={`experience-detail-activity-select-card ${
-                      isHighlighted ? "highlight-booking-section" : ""
-                    }`}
+                    className={`experience-detail-activity-select-card ${isHighlighted ? "highlight-booking-section" : ""
+                      }`}
                     size="small"
                   >
                     <div className="experience-detail-activity-select-header">
@@ -917,7 +870,7 @@ const ExperienceDetail = () => {
                           : activity.price;
                         const currencySym =
                           activity.currency === "INR" ||
-                          activity.currency === "USD"
+                            activity.currency === "USD"
                             ? "₹"
                             : activity.currency;
                         const description =
@@ -934,9 +887,8 @@ const ExperienceDetail = () => {
                         return (
                           <div
                             key={activity.id}
-                            className={`experience-detail-activity-card ${
-                              isSelected ? "selected" : ""
-                            }`}
+                            className={`experience-detail-activity-card ${isSelected ? "selected" : ""
+                              }`}
                             onClick={() => setSelectedActivityId(activity.id)}
                             role="button"
                             tabIndex={0}
@@ -1163,7 +1115,7 @@ const ExperienceDetail = () => {
                       bookingButtonText={bookingButtonText}
                       onBookingClick={() => setIsBookingDialogOpen(true)}
                     /> */}
-                 
+
 
                   <Button
                     size="lg"
@@ -1399,13 +1351,13 @@ const ExperienceDetail = () => {
         appliedCoupon={
           appliedCoupon?.coupon && appliedCoupon?.discount_calculation
             ? {
-                coupon: {
-                  coupon_code: appliedCoupon.coupon.coupon_code,
-                  type: appliedCoupon.coupon.type,
-                  discount_value: appliedCoupon.coupon.discount_value,
-                },
-                discount_calculation: appliedCoupon.discount_calculation,
-              }
+              coupon: {
+                coupon_code: appliedCoupon.coupon.coupon_code,
+                type: appliedCoupon.coupon.type,
+                discount_value: appliedCoupon.coupon.discount_value,
+              },
+              discount_calculation: appliedCoupon.discount_calculation,
+            }
             : undefined
         }
         onBookingSuccess={handleBookingSuccess}

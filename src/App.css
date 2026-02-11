@@ -1958,7 +1958,7 @@ h6 {
   .features-badges-grid {
     grid-template-columns: 1fr 1fr;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 3px;
   }
 
   .feature-badge {
@@ -2057,11 +2057,11 @@ h6 {
   }
 
   .features-badges-container {
-    margin: 10px 0;
+    margin: 0px 0;
   }
 
   .feature-badge {
-    padding: 5px 5px;
+    padding: 0px 0px;
     gap: 10px;
     align-items: center;
     /* flex-direction: column; */
