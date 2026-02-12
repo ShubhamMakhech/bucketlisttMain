@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Star } from "lucide-react";
+import { Star, ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,7 @@ interface ExperienceCardProps {
   index?: number; // New prop for index number
   description?: string; // New prop for description
   urlName?: string; // New prop for URL-friendly name
+  variant?: "vertical" | "horizontal"; // New prop for layout variant
 }
 
 export function ExperienceCard({
@@ -56,6 +57,7 @@ export function ExperienceCard({
   index,
   description,
   urlName,
+  variant = "vertical",
 }: ExperienceCardProps) {
   const navigate = useNavigate();
   const [isClicked, setIsClicked] = useState(false);
@@ -242,64 +244,171 @@ export function ExperienceCard({
     return finalText + "...";
   };
 
-  const truncatedTitle = truncateTitle(title);
+  const truncatedTitle = variant === "horizontal" ? title : truncateTitle(title);
   const categoryLabel = displayCategories.length > 0 ? displayCategories[0].name : category || "";
 
   return (
     <Card
       id="ExperienceCardStylesCard"
-      className="experience-card-minimal group cursor-pointer overflow-hidden border-0 transition-all duration-300 ExperienceCardMobileLayout"
+      className={`experience-card-minimal group cursor-pointer overflow-hidden border-0 transition-all duration-300 ExperienceCardMobileLayout ${variant === "horizontal" ? "destination-horizontal-card" : ""}`}
       onClick={handleClick}
       style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.08)", borderRadius: "12px" }}
     >
       <CardContent className="p-0">
-        {/* Image */}
-        <div className="experience-card-minimal-image">
-          {isSpecialOffer && (
-            <span className="experience-card-minimal-badge">Free cancellation</span>
-          )}
-          <div className="experience-card-minimal-favorite">
-            <FavoriteButton
-              experienceId={id}
-              className="HeaderFavoriteButton"
-            />
-          </div>
-          <LazyImage
-            src={displayImage}
-            alt={title}
-            className="group-hover:scale-[1.02] transition-transform duration-300"
-            aspectRatio="aspect-[4/3]"
-          />
-        </div>
-
-        {/* Content: category + rating | title | price */}
-        <div className="experience-card-minimal-content">
-          <div className="experience-card-minimal-meta">
-            {categoryLabel ? (
-              <span className="experience-card-minimal-category">{categoryLabel}</span>
-            ) : null}
-            <span className="experience-card-minimal-rating">
-              <Star className="experience-card-minimal-star" />
-              {rating}
-              <span className="experience-card-minimal-reviews">({reviews})</span>
-            </span>
-          </div>
-          <h3 className="experience-card-minimal-title">{truncatedTitle}</h3>
-          <div className="experience-card-minimal-price">
-            <div className="experience-card-minimal-from-line">from</div>
-            {isDiscounted && displayOriginalPrice && (
-              <div className="experience-card-minimal-original-line">
-                <span className="experience-card-minimal-original">{displayOriginalPrice}</span>
+        {variant === "horizontal" ? (
+          <>
+            {/* Horizontal Layout (Visible ONLY on Mobile) */}
+            <div className="experience-card-horizontal-wrapper mobile-only-layout">
+              <div className="experience-card-horizontal-image">
+                {isSpecialOffer && (
+                  <span className="experience-card-minimal-badge">Free cancellation</span>
+                )}
+                <div className="experience-card-minimal-favorite">
+                  <FavoriteButton
+                    experienceId={id}
+                    className="HeaderFavoriteButton"
+                  />
+                </div>
+                <LazyImage
+                  src={displayImage}
+                  alt={title}
+                  className="group-hover:scale-[1.02] transition-transform duration-300 h-full w-full object-cover"
+                />
               </div>
-            )}
-            <div className="experience-card-minimal-value-line">
-              <span className="experience-card-minimal-value">{displayPrice}</span>
-              {discountPercent != null && discountPercent > 0 && (
-                <span className="experience-card-minimal-discount-badge">{discountPercent}% off</span>
-              )}
+
+              <div className="experience-card-horizontal-content">
+                <div className="experience-card-horizontal-meta">
+                  <span className="experience-card-horizontal-rating">
+                    <Star className="experience-card-horizontal-star" />
+                    {rating}
+                    <span className="experience-card-horizontal-reviews">({reviews})</span>
+                  </span>
+                </div>
+                <h3 className="experience-card-horizontal-title">{truncatedTitle}</h3>
+                <p className="experience-card-horizontal-description">
+                  {truncateHTMLDescription(description || "", 30)}
+                </p>
+
+                <div className="experience-card-horizontal-separator" />
+
+                <div className="experience-card-horizontal-footer">
+                  <div className="experience-card-horizontal-price">
+                    <div className="experience-card-horizontal-label">from</div>
+                    <div className="experience-card-horizontal-prices-row">
+                      {isDiscounted && displayOriginalPrice && (
+                        <span className="experience-card-horizontal-original">{displayOriginalPrice}</span>
+                      )}
+                      <span className="experience-card-horizontal-value">{displayPrice}</span>
+                    </div>
+                  </div>
+                  <div className="experience-card-horizontal-action">
+                    <div className="experience-card-horizontal-arrow">
+                      <ArrowUpRight className="h-4 w-4 text-white" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+
+            {/* Vertical Layout (Visible ONLY on Desktop) */}
+            <div className="desktop-only-layout">
+              <div className="experience-card-minimal-image">
+                {isSpecialOffer && (
+                  <span className="experience-card-minimal-badge">Free cancellation</span>
+                )}
+                <div className="experience-card-minimal-favorite">
+                  <FavoriteButton
+                    experienceId={id}
+                    className="HeaderFavoriteButton"
+                  />
+                </div>
+                <LazyImage
+                  src={displayImage}
+                  alt={title}
+                  className="group-hover:scale-[1.02] transition-transform duration-300"
+                  aspectRatio="aspect-[4/3]"
+                />
+              </div>
+
+              <div className="experience-card-minimal-content">
+                <div className="experience-card-minimal-meta">
+                  {categoryLabel ? (
+                    <span className="experience-card-minimal-category">{categoryLabel}</span>
+                  ) : null}
+                  <span className="experience-card-minimal-rating">
+                    <Star className="experience-card-minimal-star" />
+                    {rating}
+                    <span className="experience-card-minimal-reviews">({reviews})</span>
+                  </span>
+                </div>
+                <h3 className="experience-card-minimal-title">{truncatedTitle}</h3>
+                <div className="experience-card-minimal-price">
+                  <div className="experience-card-minimal-from-line">from</div>
+                  {isDiscounted && displayOriginalPrice && (
+                    <div className="experience-card-minimal-original-line">
+                      <span className="experience-card-minimal-original">{displayOriginalPrice}</span>
+                    </div>
+                  )}
+                  <div className="experience-card-minimal-value-line">
+                    <span className="experience-card-minimal-value">{displayPrice}</span>
+                    {discountPercent != null && discountPercent > 0 && (
+                      <span className="experience-card-minimal-discount-badge">{discountPercent}% off</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Standard Vertical Layout */}
+            <div className="experience-card-minimal-image">
+              {isSpecialOffer && (
+                <span className="experience-card-minimal-badge">Free cancellation</span>
+              )}
+              <div className="experience-card-minimal-favorite">
+                <FavoriteButton
+                  experienceId={id}
+                  className="HeaderFavoriteButton"
+                />
+              </div>
+              <LazyImage
+                src={displayImage}
+                alt={title}
+                className="group-hover:scale-[1.02] transition-transform duration-300"
+                aspectRatio="aspect-[4/3]"
+              />
+            </div>
+
+            <div className="experience-card-minimal-content">
+              <div className="experience-card-minimal-meta">
+                {categoryLabel ? (
+                  <span className="experience-card-minimal-category">{categoryLabel}</span>
+                ) : null}
+                <span className="experience-card-minimal-rating">
+                  <Star className="experience-card-minimal-star" />
+                  {rating}
+                  <span className="experience-card-minimal-reviews">({reviews})</span>
+                </span>
+              </div>
+              <h3 className="experience-card-minimal-title">{truncatedTitle}</h3>
+              <div className="experience-card-minimal-price">
+                <div className="experience-card-minimal-from-line">from</div>
+                {isDiscounted && displayOriginalPrice && (
+                  <div className="experience-card-minimal-original-line">
+                    <span className="experience-card-minimal-original">{displayOriginalPrice}</span>
+                  </div>
+                )}
+                <div className="experience-card-minimal-value-line">
+                  <span className="experience-card-minimal-value">{displayPrice}</span>
+                  {discountPercent != null && discountPercent > 0 && (
+                    <span className="experience-card-minimal-discount-badge">{discountPercent}% off</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

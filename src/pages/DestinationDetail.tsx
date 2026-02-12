@@ -9,6 +9,7 @@ import { LazyImage } from "@/components/LazyImage";
 import { DetailedItinerary } from "@/components/DetailedItinerary";
 import { IoLocation } from "react-icons/io5";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import "@/styles/DestinationExperienceCard.css";
 
 // Helper function to detect media type from URL
 const getMediaType = (url: string): "video" | "image" => {
@@ -719,22 +720,20 @@ const DestinationDetail = () => {
                       }
                       rating={Number(experience.rating)}
                       reviews={experience.reviews_count?.toString() || "0"}
-                      price={`${
-                        experience.currency === "USD"
+                      price={`${experience.currency === "USD"
+                        ? "₹"
+                        : experience.currency == "INR"
                           ? "₹"
-                          : experience.currency == "INR"
-                            ? "₹"
-                            : experience.currency
-                      } ${experience.price}`}
+                          : experience.currency
+                        } ${experience.price}`}
                       originalPrice={
                         experience.original_price
-                          ? `${
-                              experience.currency === "USD"
-                                ? "₹"
-                                : experience.currency == "INR"
-                                  ? "₹"
-                                  : experience.currency
-                            } ${experience.original_price}`
+                          ? `${experience.currency === "USD"
+                            ? "₹"
+                            : experience.currency == "INR"
+                              ? "₹"
+                              : experience.currency
+                          } ${experience.original_price}`
                           : undefined
                       }
                       duration={experience.duration || undefined}
@@ -742,6 +741,8 @@ const DestinationDetail = () => {
                       isSpecialOffer={experience.is_special_offer || false}
                       index={index}
                       urlName={experience.url_name}
+                      description={experience.description}
+                      variant="horizontal"
                     />
                   </div>
                 ))}

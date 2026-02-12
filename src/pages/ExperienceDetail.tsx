@@ -1382,8 +1382,29 @@ const ExperienceDetail = () => {
         }}
         bookingsData={bulkBookingsData}
         participantsData={bulkParticipantsData}
-        onPaymentSuccess={handleBulkPaymentSuccess}
+         onPaymentSuccess={handleBulkPaymentSuccess}
       />
+      {/* Mobile Sticky Booking Button */}
+      <div className="MobileOnlyButtonContainer">
+        <div>
+          <Button
+            size="lg"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+            onClick={() => {
+              const section = document.getElementById("booking-section");
+              if (section) {
+                const yOffset = -200;
+                const y = section.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({ top: y, behavior: "smooth" });
+                setIsHighlighted(true);
+                setTimeout(() => setIsHighlighted(false), 2000);
+              }
+            }}
+          >
+            Select Activity to Book
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

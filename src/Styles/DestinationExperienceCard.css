@@ -1,0 +1,201 @@
+/* Responsive Experience Card Styles for Destination Detail */
+
+/* 
+  DESKTOP VIEW (Screens > 900px) 
+  We ensure the original vertical layout looks exactly as it did before.
+*/
+.mobile-only-layout {
+    display: none !important;
+}
+
+.desktop-only-layout {
+    display: block !important;
+    /* Standard block behavior like the original */
+    width: 100% !important;
+}
+
+/* 
+  MOBILE VIEW (Screens < 900px) 
+  We introduce the horizontal layout and hide the vertical one.
+*/
+@media (max-width: 900px) {
+    .mobile-only-layout {
+        display: flex !important;
+    }
+
+    .desktop-only-layout {
+        display: none !important;
+    }
+
+    /* Override Card properties ONLY on Mobile for this specific variant */
+    .destination-horizontal-card {
+        background: #ffffff !important;
+        border-radius: 16px !important;
+        margin-bottom: 12px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+        border: 1px solid #f0f0f0 !important;
+        overflow: hidden !important;
+    }
+
+    .experience-card-horizontal-wrapper {
+        display: flex !important;
+        flex-direction: row !important;
+        min-height: 155px !important;
+        /* Allow growth, start at 155px */
+        width: 100% !important;
+        align-items: stretch !important;
+        /* Ensure children maximize height */
+    }
+
+    .experience-card-horizontal-image {
+        width: 35% !important;
+        position: relative !important;
+        /* Context for absolute image */
+        overflow: hidden !important;
+        border-radius: 16px 0 0 16px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .experience-card-horizontal-image img {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        height: 100% !important;
+        width: 100% !important;
+        object-fit: cover !important;
+        display: block !important;
+    }
+
+    .experience-card-horizontal-content {
+        width: 65% !important;
+        padding: 12px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        text-align: left !important;
+        overflow: hidden !important;
+    }
+
+    .experience-card-horizontal-meta {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .experience-card-horizontal-rating {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #333 !important;
+    }
+
+    .experience-card-horizontal-star {
+        width: 14px !important;
+        height: 14px !important;
+        fill: #FFB800 !important;
+        color: #FFB800 !important;
+    }
+
+    .experience-card-horizontal-reviews {
+        color: #666 !important;
+        font-weight: 400 !important;
+        font-size: 12px !important;
+    }
+
+    .experience-card-horizontal-title {
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        color: #1a1a1a !important;
+        margin: 2px 0 6px 0 !important;
+        line-height: 1.4 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 4 !important;
+        /* Virtually clear limit */
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        max-height: none !important;
+    }
+
+    .experience-card-horizontal-description {
+        font-size: 12px !important;
+        color: #777 !important;
+        line-height: 1.5 !important;
+        margin-bottom: 4px !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        text-align: left !important;
+        max-height: 3em !important;
+    }
+
+    .experience-card-horizontal-separator {
+        height: 1px !important;
+        background: #f0f0f0 !important;
+        margin: 6px 0 !important;
+        width: 100% !important;
+        flex-shrink: 0 !important;
+    }
+
+    .experience-card-horizontal-footer {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: flex-end !important;
+        margin-top: auto !important;
+        padding-top: 4px !important;
+    }
+
+    .experience-card-horizontal-price {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+        text-align: left !important;
+    }
+
+    .experience-card-horizontal-label {
+        font-size: 11px !important;
+        color: #888 !important;
+        text-transform: lowercase !important;
+        line-height: 1 !important;
+    }
+
+    .experience-card-horizontal-prices-row {
+        display: flex !important;
+        align-items: baseline !important;
+        gap: 8px !important;
+    }
+
+    .experience-card-horizontal-original {
+        text-decoration: line-through !important;
+        color: #bbb !important;
+        font-size: 12px !important;
+    }
+
+    .experience-card-horizontal-value {
+        font-size: 20px !important;
+        font-weight: 800 !important;
+        color: #940fdb !important;
+        /* Brand Primary Color (Purple) */
+    }
+
+    .experience-card-horizontal-action {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .experience-card-horizontal-arrow {
+        width: 36px !important;
+        height: 36px !important;
+        background: #940fdb !important;
+        /* Brand Primary Color (Purple) */
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 12px rgba(148, 15, 219, 0.4) !important;
+    }
+}
