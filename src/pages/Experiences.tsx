@@ -22,7 +22,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Search, SlidersHorizontal } from "lucide-react"
-import "@/styles/Experiences.css"
+import "@/Styles/Experiences.css"
 
 interface FilterState {
   priceRange: [number, number]

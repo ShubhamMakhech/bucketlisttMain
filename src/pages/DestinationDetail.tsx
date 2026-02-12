@@ -9,7 +9,7 @@ import { LazyImage } from "@/components/LazyImage";
 import { DetailedItinerary } from "@/components/DetailedItinerary";
 import { IoLocation } from "react-icons/io5";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import "@/styles/DestinationExperienceCard.css";
+import "@/Styles/DestinationExperienceCard.css";
 
 // Helper function to detect media type from URL
 const getMediaType = (url: string): "video" | "image" => {
