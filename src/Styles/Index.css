@@ -182,9 +182,9 @@
     }
 
     #LogoADjustContainer img {
-        width: 200px !important;
+        width: 140px !important;
         height: 100% !important;
-        margin-left: -25px !important;
+        margin-left: 0px !important;
     }
 
     #DestinationCardStyles {
@@ -426,7 +426,7 @@
 
 @media (max-width: 768px) {
     .destination-hero-container {
-        padding: 40px 0;
+        padding: 10px 0;
     }
 
     .destination-hero-split {
@@ -445,7 +445,8 @@
     }
 
     .hero-main-title {
-        font-size: 32px;
+        font-size: 25px;
+        font-weight: 500;
     }
 }
 

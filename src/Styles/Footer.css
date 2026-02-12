@@ -308,8 +308,8 @@
     }
 
     .FooterLogo {
-        width: 250px;
-        margin-left: -40px;
+        width: 140px;
+        /* margin-left: -40px; */
     }
 
     .FooterLink {

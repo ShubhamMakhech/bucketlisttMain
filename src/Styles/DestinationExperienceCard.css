@@ -21,6 +21,7 @@
 @media (max-width: 900px) {
     .mobile-only-layout {
         display: flex !important;
+        height: 100% !important;
     }
 
     .desktop-only-layout {
@@ -135,7 +136,7 @@
     .experience-card-horizontal-separator {
         height: 1px !important;
         background: #f0f0f0 !important;
-        margin: 6px 0 !important;
+        margin: 2px 0 !important;
         width: 100% !important;
         flex-shrink: 0 !important;
     }
@@ -144,7 +145,7 @@
         display: flex !important;
         justify-content: space-between !important;
         align-items: flex-end !important;
-        margin-top: auto !important;
+        /* margin-top: auto !important; */
         padding-top: 4px !important;
     }
 
@@ -177,7 +178,7 @@
     .experience-card-horizontal-value {
         font-size: 20px !important;
         font-weight: 800 !important;
-        color: #940fdb !important;
+        color: var(--brand-color) !important;
         /* Brand Primary Color (Purple) */
     }
 
@@ -190,12 +191,12 @@
     .experience-card-horizontal-arrow {
         width: 36px !important;
         height: 36px !important;
-        background: #940fdb !important;
+        background: var(--brand-color) !important;
         /* Brand Primary Color (Purple) */
         border-radius: 50% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        box-shadow: 0 4px 12px rgba(148, 15, 219, 0.4) !important;
+        box-shadow: 0 4px 12px var(--brand-color) !important;
     }
 }

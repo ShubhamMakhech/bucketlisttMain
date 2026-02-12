@@ -84,6 +84,7 @@ const ExperienceDetail = () => {
   const [showStickyNav, setShowStickyNav] = useState(false);
   const [activeSection, setActiveSection] = useState("");
   const [isHighlighted, setIsHighlighted] = useState(false);
+  const [showMobilePopup, setShowMobilePopup] = useState(false);
 
   const navItems = [
     { id: "selectActivity", label: "Select Activity" },
@@ -368,6 +369,7 @@ const ExperienceDetail = () => {
         window.scrollY ||
         0;
       setShowStickyNav(scrollPosition > 500);
+      setShowMobilePopup(scrollPosition > 400);
 
       const threshold = 180; // Offset for header + sticky nav + buffer
       let foundActive = "";
@@ -669,7 +671,7 @@ const ExperienceDetail = () => {
         </div>
       </div>
 
-      <div className="py-4 px-2">
+      <div>
         {/* <Button 
           variant="ghost" 
           onClick={() => navigate('/')}
@@ -840,7 +842,7 @@ const ExperienceDetail = () => {
               </div> */}
             </div>
           </div>
-          <br />
+          {/* <br /> */}
           <div id="booking-section" style={{ marginTop: "0px" }}>
             <Row gutter={[30, 30]} id="selectActivity">
               <Col lg={16}>
@@ -1131,9 +1133,7 @@ const ExperienceDetail = () => {
                           section.getBoundingClientRect().top +
                           window.pageYOffset +
                           yOffset;
-
                         window.scrollTo({ top: y, behavior: "smooth" });
-
                         // Trigger highlight
                         setIsHighlighted(true);
                         setTimeout(() => setIsHighlighted(false), 2000);
@@ -1382,10 +1382,10 @@ const ExperienceDetail = () => {
         }}
         bookingsData={bulkBookingsData}
         participantsData={bulkParticipantsData}
-         onPaymentSuccess={handleBulkPaymentSuccess}
+        onPaymentSuccess={handleBulkPaymentSuccess}
       />
       {/* Mobile Sticky Booking Button */}
-      <div className="MobileOnlyButtonContainer">
+      <div className={`MobileOnlyButtonContainer ${showMobilePopup ? "show" : ""}`}>
         <div>
           <Button
             size="lg"

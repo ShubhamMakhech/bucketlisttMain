@@ -700,7 +700,7 @@ const DestinationDetail = () => {
               </div>
             ) : experiences && experiences.length > 0 ? (
               <div
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2"
                 id="ExperienceCardContainerSpecificDestinationDetail"
               >
                 {experiences.map((experience, index) => (

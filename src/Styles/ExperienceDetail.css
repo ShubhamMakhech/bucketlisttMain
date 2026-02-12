@@ -308,6 +308,7 @@
 @media (max-width: 640px) {
     .experience-detail-activity-grid {
         grid-template-columns: 1fr;
+        gap: 7px;
     }
 
     .experience-detail-activity-select-card .ant-card-body {
@@ -332,7 +333,7 @@
     }
 
     .experience-detail-title {
-        font-size: 22px;
+        font-size: 18px;
         font-weight: 700;
     }
 
@@ -811,4 +812,29 @@
         grid-template-columns: repeat(3, 1fr) !important;
         gap: 8px !important;
     }
+    .experience-detail-rating-badge {
+    font-size: 8px;
+    padding: 2px 8px;
+}
+
+#booking-section{
+    margin-top: 10px !important;
+}
+
+.experience-detail-heading-row {
+    margin-bottom: 10px;
+}
+
+.experience-detail-activity-select-header {
+    margin-bottom: 7px;
+    text-align: left;
+}
+
+/* 4th grid cell: Show more button (right of 3rd card) */
+.experience-detail-activity-show-more-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100% !important;
+}
 }

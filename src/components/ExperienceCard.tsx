@@ -254,7 +254,7 @@ export function ExperienceCard({
       onClick={handleClick}
       style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.08)", borderRadius: "12px" }}
     >
-      <CardContent className="p-0">
+      <CardContent className="p-0" style={{height:"100%"}}>
         {variant === "horizontal" ? (
           <>
             {/* Horizontal Layout (Visible ONLY on Mobile) */}
