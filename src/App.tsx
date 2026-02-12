@@ -48,6 +48,7 @@ import "../src/components/GlobalCss/NewGlobalCss.css";
 import VendorCalendarPage from "./pages/VendorCalendarPage";
 import { VendorRouteGuard } from "./components/VendorRouteGuard";
 import { AgentRouteGuard } from "./components/AgentRouteGuard";
+import { MarketingRouteGuard } from "./components/MarketingRouteGuard";
 const queryClient = new QueryClient();
 
 const WhatsappButtonConditional = () => {
@@ -198,6 +199,7 @@ const App: React.FC = () => {
           <BrowserRouter>
             <VendorRouteGuard>
               <AgentRouteGuard>
+                <MarketingRouteGuard>
                 <Layout>
                   <Header />
               <PageTransition>
@@ -261,6 +263,7 @@ const App: React.FC = () => {
                 <WhatsappButtonConditional />
                 {/* Mobile Floating Button - Only show on experience detail routes */}
                 <ConditionalMobileButton />
+                </MarketingRouteGuard>
               </AgentRouteGuard>
             </VendorRouteGuard>
           </BrowserRouter>

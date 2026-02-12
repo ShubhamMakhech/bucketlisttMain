@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export function useUserRole() {
   const { user } = useAuth();
   const [role, setRole] = useState<
-    "admin" | "customer" | "vendor" | "agent" | null
+    "admin" | "customer" | "vendor" | "agent" | "marketing" | null
   >(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,6 +47,7 @@ export function useUserRole() {
     isAgent: role == "agent",
     isVendorOrAgent: role == "vendor" || role == "agent",
     isAdmin: role == "admin",
+    isMarketing: role == "marketing",
     isCustomer: role == "customer",
   };
 }

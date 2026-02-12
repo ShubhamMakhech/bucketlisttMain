@@ -76,7 +76,7 @@ interface BookingWithDueAmount {
 export const UserBookings = forwardRef((props, ref) => {
   const { user } = useAuth();
 
-  const { isAgent, isAdmin, isVendor } = useUserRole();
+  const { isAgent, isAdmin, isVendor, isMarketing } = useUserRole();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -207,10 +207,14 @@ export const UserBookings = forwardRef((props, ref) => {
     visibility[20] = true; // Amount to be collected from vendor/ '- to be paid' (shifted by 1)
     visibility[21] = true; // Amount to be collected from vendor/ '- to be paid' (shifted by 1)
 
-    // Admin Note - only visible to admins
+    // Admin Note - visible to admins (editable) and marketing (read-only)
     if (isAdmin) {
       visibility[23] = true; // Admin Note
       visibility[24] = true; // Quick Actions
+    }
+    if (isMarketing) {
+      visibility[23] = true; // Admin Note (read-only)
+      visibility[24] = false; // Quick Actions - marketing cannot edit/cancel
     }
 
     // Ensure agent restrictions are applied
@@ -224,35 +228,36 @@ export const UserBookings = forwardRef((props, ref) => {
       visibility[24] = false; // Quick Actions - not visible to agents
     }
     return visibility;
-  }, [isAgent, isAdmin, columnCount]);
+  }, [isAgent, isAdmin, isMarketing, columnCount]);
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<boolean[]>(initialVisibility);
 
-  // Update column visibility when isAgent or isAdmin changes
+  // Update column visibility when isAgent, isAdmin, or isMarketing changes
   React.useEffect(() => {
     setColumnVisibility((prev) => {
       const newVisibility = [...prev];
-      // Ensure agent restrictions are applied
       if (isAgent) {
-        newVisibility[10] = false; // Booking Type - not visible to agents
-        newVisibility[11] = false; // Official Price/ Original Price (shifted by 1)
-        newVisibility[13] = false; // Commission as per vendor (shifted by 1)
-        newVisibility[14] = false; // Website Price (shifted by 1)
-        newVisibility[15] = false; // Discount Coupon (shifted by 1)
-        newVisibility[23] = false; // Admin Note - not visible to agents
+        newVisibility[10] = false;
+        newVisibility[11] = false;
+        newVisibility[13] = false;
+        newVisibility[14] = false;
+        newVisibility[15] = false;
+        newVisibility[23] = false;
       }
-      // Admin Note - only visible to admins
       if (isAdmin) {
-        newVisibility[23] = true; // Admin Note
-        newVisibility[24] = true; // Quick Actions
-      } else if (!isAdmin) {
-        newVisibility[23] = false; // Hide Admin Note for non-admins
-        newVisibility[24] = false; // Hide Quick Actions for non-admins
+        newVisibility[23] = true;
+        newVisibility[24] = true;
+      } else if (isMarketing) {
+        newVisibility[23] = true;
+        newVisibility[24] = false;
+      } else {
+        newVisibility[23] = false;
+        newVisibility[24] = false;
       }
       return newVisibility;
     });
-  }, [isAgent, isAdmin]);
+  }, [isAgent, isAdmin, isMarketing]);
 
   const [showColumnSelector, setShowColumnSelector] = React.useState(false);
   const columnSelectorRef = React.useRef<HTMLDivElement>(null);
@@ -313,10 +318,9 @@ export const UserBookings = forwardRef((props, ref) => {
     ) {
       return; // Don't allow toggling these columns for agents
     }
-    // Prevent non-admins from showing admin note
-    if ((index === 23 || index === 24) && !isAdmin) {
-      return; // Don't allow toggling admin note for non-admins
-    }
+    // Prevent non-admins from showing Quick Actions; marketing can show Admin Note only
+    if (index === 24 && !isAdmin) return;
+    if (index === 23 && !isAdmin && !isMarketing) return;
     const newVisibility = [...columnVisibility];
     newVisibility[index] = !newVisibility[index];
     setColumnVisibility(newVisibility);
@@ -547,37 +551,37 @@ export const UserBookings = forwardRef((props, ref) => {
         return "N/A";
       },
       () => {
-        // Admin Note column - only visible/editable by admins
-        if (!isAdmin) return "-";
+        // Admin Note column - visible to admins (editable) and marketing (read-only)
+        if (!isAdmin && !isMarketing) return "-";
 
         const adminNote = (booking as any)?.admin_note || "";
-
-        // Debug log to check if admin_note is being accessed
 
         return (
           <div className="flex items-center gap-2">
             <span className="text-xs truncate max-w-[200px]" title={adminNote}>
               {adminNote || "-"}
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
-              onClick={() => {
-                setEditingAdminNote({
-                  bookingId: booking.id,
-                  note: adminNote,
-                });
-                setAdminNoteDialogOpen(true);
-              }}
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => {
+                  setEditingAdminNote({
+                    bookingId: booking.id,
+                    note: adminNote,
+                  });
+                  setAdminNoteDialogOpen(true);
+                }}
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         );
       },
       () => {
-        // Quick Actions Column - Admin only
+        // Quick Actions Column - Admin only (marketing has no actions)
         if (!isAdmin) return "";
 
         const isCanceled = (booking as any)?.type === "canceled";
@@ -891,7 +895,7 @@ export const UserBookings = forwardRef((props, ref) => {
   }, [showColumnSelector]);
 
   const { data: bookings = [], isLoading } = useQuery({
-    queryKey: ["user-bookings", user?.id, isAdmin],
+    queryKey: ["user-bookings", user?.id, isAdmin, isMarketing],
     queryFn: async () => {
       if (!user) return [];
 
@@ -947,12 +951,11 @@ export const UserBookings = forwardRef((props, ref) => {
           )
           .order("created_at", { ascending: false });
 
-        // If admin, fetch all bookings (no filter)
+        // If admin or marketing, fetch all bookings (no filter)
         // If vendor, filter by vendor_id
         // Otherwise, filter by user_id
-        if (isAdmin) {
+        if (isAdmin || isMarketing) {
           // No filter - get all bookings
-          // RLS policy should allow admins to see all bookings
         } else if (user.user_metadata.role === "vendor") {
           query = query.eq("experiences.vendor_id", user.id);
         } else {
@@ -970,14 +973,14 @@ export const UserBookings = forwardRef((props, ref) => {
             details: error.details,
             hint: error.hint,
             code: error.code,
-            isAdmin,
-            userId: user.id,
+          isAdmin,
+          isMarketing,
+          userId: user.id,
           });
           throw error;
         }
 
-        // Debug: Log first booking to check if admin_note is present
-        if (data && data.length > 0 && isAdmin) {
+        if (data && data.length > 0 && (isAdmin || isMarketing)) {
         }
 
         return data || [];
@@ -1206,21 +1209,21 @@ export const UserBookings = forwardRef((props, ref) => {
     }
 
     // Apply experience filter (admin only)
-    if (isAdmin && selectedExperienceId) {
+    if ((isAdmin || isMarketing) && selectedExperienceId) {
       filtered = filtered.filter((booking) => {
         return booking.experiences?.id === selectedExperienceId;
       });
     }
 
     // Apply agent filter (admin only)
-    if (isAdmin && selectedAgentId) {
+    if ((isAdmin || isMarketing) && selectedAgentId) {
       filtered = filtered.filter((booking) => {
         return booking.user_id === selectedAgentId;
       });
     }
 
     // Apply vendor filter (admin only)
-    if (isAdmin && selectedVendorId) {
+    if ((isAdmin || isMarketing) && selectedVendorId) {
       filtered = filtered.filter((booking) => {
         return booking.experiences?.vendor_id === selectedVendorId;
       });
@@ -1862,21 +1865,21 @@ export const UserBookings = forwardRef((props, ref) => {
       }
 
       // Apply experience filter (unless we're calculating experience options)
-      if (isAdmin && selectedExperienceId && excludeFilter !== "experience") {
+      if ((isAdmin || isMarketing) && selectedExperienceId && excludeFilter !== "experience") {
         filtered = filtered.filter((booking) => {
           return booking.experiences?.id === selectedExperienceId;
         });
       }
 
       // Apply agent filter (unless we're calculating agent options)
-      if (isAdmin && selectedAgentId && excludeFilter !== "agent") {
+      if ((isAdmin || isMarketing) && selectedAgentId && excludeFilter !== "agent") {
         filtered = filtered.filter((booking) => {
           return booking.user_id === selectedAgentId;
         });
       }
 
       // Apply vendor filter (unless we're calculating vendor options)
-      if (isAdmin && selectedVendorId && excludeFilter !== "vendor") {
+      if ((isAdmin || isMarketing) && selectedVendorId && excludeFilter !== "vendor") {
         filtered = filtered.filter((booking) => {
           return booking.experiences?.vendor_id === selectedVendorId;
         });
@@ -2084,11 +2087,11 @@ export const UserBookings = forwardRef((props, ref) => {
     return Array.from(experiences.values());
   }, [bookings, getFilteredBookingsForOptions]);
 
-  // Fetch all vendors from user_roles and their profiles (admin only)
+  // Fetch all vendors from user_roles and their profiles (admin and marketing)
   const { data: vendorProfiles = [] } = useQuery({
     queryKey: ["vendor-profiles-all"],
     queryFn: async () => {
-      if (!isAdmin) return [];
+      if (!isAdmin && !isMarketing) return [];
 
       // First get all vendor user IDs from user_roles
       const { data: vendorRoles, error: rolesError } = await supabase
@@ -2119,14 +2122,14 @@ export const UserBookings = forwardRef((props, ref) => {
 
       return profiles || [];
     },
-    enabled: isAdmin,
+    enabled: isAdmin || isMarketing,
   });
 
-  // Fetch all agents from user_roles and their profiles (admin only)
+  // Fetch all agents from user_roles and their profiles (admin and marketing)
   const { data: agentProfiles = [] } = useQuery({
     queryKey: ["agent-profiles-all"],
     queryFn: async () => {
-      if (!isAdmin) return [];
+      if (!isAdmin && !isMarketing) return [];
 
       // First get all agent user IDs from user_roles
       // Note: Using type assertion since 'agent' may not be in TypeScript enum but exists in DB
@@ -2158,12 +2161,12 @@ export const UserBookings = forwardRef((props, ref) => {
 
       return profiles || [];
     },
-    enabled: isAdmin,
+    enabled: isAdmin || isMarketing,
   });
 
-  // Get unique agents from profiles (admin only)
+  // Get unique agents from profiles (admin and marketing)
   const uniqueAgents = React.useMemo(() => {
-    if (!isAdmin) return [];
+    if (!isAdmin && !isMarketing) return [];
     return agentProfiles.map((profile: any) => ({
       id: profile.id,
       name:
@@ -2172,11 +2175,11 @@ export const UserBookings = forwardRef((props, ref) => {
         profile.id,
       email: profile.email || profile.id,
     }));
-  }, [agentProfiles, isAdmin]);
+  }, [agentProfiles, isAdmin, isMarketing]);
 
-  // Get unique vendors from profiles (admin only)
+  // Get unique vendors from profiles (admin and marketing)
   const uniqueVendors = React.useMemo(() => {
-    if (!isAdmin) return [];
+    if (!isAdmin && !isMarketing) return [];
     return vendorProfiles.map((profile: any) => ({
       id: profile.id,
       name:
@@ -2185,7 +2188,7 @@ export const UserBookings = forwardRef((props, ref) => {
         profile.id,
       email: profile.email || profile.id,
     }));
-  }, [vendorProfiles, isAdmin]);
+  }, [vendorProfiles, isAdmin, isMarketing]);
 
   // Helper function to get booking type display
   const getBookingTypeDisplay = React.useCallback(
@@ -2738,21 +2741,21 @@ export const UserBookings = forwardRef((props, ref) => {
     }
 
     // Apply experience filter (admin only)
-    if (isAdmin && selectedExperienceId) {
+    if ((isAdmin || isMarketing) && selectedExperienceId) {
       filtered = filtered.filter((booking) => {
         return booking.experiences?.id === selectedExperienceId;
       });
     }
 
     // Apply agent filter (admin only)
-    if (isAdmin && selectedAgentId) {
+    if ((isAdmin || isMarketing) && selectedAgentId) {
       filtered = filtered.filter((booking) => {
         return booking.user_id === selectedAgentId;
       });
     }
 
     // Apply vendor filter (admin only)
-    if (isAdmin && selectedVendorId) {
+    if ((isAdmin || isMarketing) && selectedVendorId) {
       filtered = filtered.filter((booking) => {
         return booking.experiences?.vendor_id === selectedVendorId;
       });
@@ -3136,8 +3139,8 @@ export const UserBookings = forwardRef((props, ref) => {
               {booking.status}
             </Badge> */}
           </div>
-          {/* Copy button - only for admin, vendor, agent - positioned in top right */}
-          {(isAdmin || isVendor || isAgent) && (
+          {/* Copy button - for admin, vendor, agent, marketing */}
+          {(isAdmin || isVendor || isAgent || isMarketing) && (
             <Button
               variant="ghost"
               size="sm"
@@ -3381,27 +3384,29 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
               </div>
             )}
 
-            {/* Admin Note Section - Only visible to admins */}
-            {isAdmin && (
+            {/* Admin Note Section - visible to admins (editable) and marketing (read-only) */}
+            {(isAdmin || isMarketing) && (
               <div className="mobile-notes-section mobile-admin-note-section">
                 <div className="flex items-center justify-between mb-1">
                   <span className="mobile-notes-label mobile-admin-note-label">
                     Admin Note
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 hover:bg-purple-100"
-                    onClick={() => {
-                      setEditingAdminNote({
-                        bookingId: booking.id,
-                        note: (booking as any)?.admin_note || "",
-                      });
-                      setAdminNoteDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-3 w-3 text-purple-600" />
-                  </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 hover:bg-purple-100"
+                      onClick={() => {
+                        setEditingAdminNote({
+                          bookingId: booking.id,
+                          note: (booking as any)?.admin_note || "",
+                        });
+                        setAdminNoteDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-3 w-3 text-purple-600" />
+                    </Button>
+                  )}
                 </div>
                 <p className="mobile-notes-content">
                   {(booking as any)?.admin_note || (
@@ -3550,8 +3555,8 @@ Discount and Advance Amount: ${formatCurrency(currency, discountAndAdvance)}`;
           </div>
         )}
 
-        {/* Filter Buttons Row - Shows on both mobile and desktop - HIDDEN for Vendors/Users */}
-        {(isAdmin || isAgent || isVendor) && (
+        {/* Filter Buttons Row - Shows for admin, agent, vendor, marketing */}
+        {(isAdmin || isAgent || isVendor || isMarketing) && (
           <div
             className="relative flex flex-wrap gap-2"
             id="UserBookingsSortButtonStyles"

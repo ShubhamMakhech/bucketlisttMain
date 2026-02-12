@@ -18,7 +18,7 @@ const Bookings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { isVendor, isAgent, isAdmin } = useUserRole();
+  const { isVendor, isAgent, isAdmin, isMarketing } = useUserRole();
   const queryClient = useQueryClient();
   const [isExporting, setIsExporting] = useState(false);
   const [isOfflineBookingDialogOpen, setIsOfflineBookingDialogOpen] =
@@ -84,15 +84,14 @@ const Bookings = () => {
 
       // For vendors: filter by vendor_id in experiences
       // For agents: filter by bookings they created (booked_by or user_id)
-      // For admins: no filter - export all bookings
+      // For admins and marketing: no filter - export all bookings
       if (isVendor) {
         query = query.eq("experiences.vendor_id", user.id);
       } else if (isAgent) {
         // Agents can see bookings they created (offline bookings)
-        // Filter by user_id (which will be agent's ID for offline bookings they create)
         query = query.eq("user_id", user.id);
       }
-      // For admins, no filter - they can export all bookings
+      // For admins and marketing, no filter - they can export all bookings
 
       const { data: bookings, error } = await query.order("created_at", {
         ascending: false,
@@ -218,10 +217,13 @@ const Bookings = () => {
         visibility[20] = true; // Amount to be collected from vendor
         visibility[21] = true; // Advance + discount
 
-        // Admin-only columns
+        // Admin-only columns; marketing sees Admin Note but not Actions
         if (isAdmin) {
           visibility[23] = true; // Admin Note
           visibility[24] = true; // Actions (won't be exported)
+        }
+        if (isMarketing) {
+          visibility[23] = true; // Admin Note (read-only for marketing)
         }
 
         // Agent restrictions
@@ -331,13 +333,14 @@ const Bookings = () => {
                 second: "2-digit",
               })
             : "N/A"; // Booking Created At
-          allColumnData[23] = isAdmin ? booking.admin_note || "-" : null; // Admin Note
+          allColumnData[23] = (isAdmin || isMarketing) ? booking.admin_note || "-" : null; // Admin Note
           allColumnData[24] = null; // Actions (not exported)
 
           // Add role-based financial columns (exclude for agents viewing agent bookings)
           const isAgentBooking = booking.isAgentBooking;
           const shouldShowFinancialColumns =
             isAdmin ||
+            isMarketing ||
             (isVendor && (!isOffline || isAdmin)) ||
             (isAgent && !isOffline && !isAgentBooking);
 
@@ -557,7 +560,7 @@ const Bookings = () => {
               <Calendar className="w-6 text-brand-primary" />
               <div className="SectionHeading">My Bookings</div>
             </div>
-            {user?.user_metadata?.role === "vendor" && (
+            {(isVendor || isAdmin || isMarketing) && (
               <Button
                 onClick={exportToExcel}
                 disabled={isExporting}
@@ -567,8 +570,11 @@ const Bookings = () => {
                 <Download className="h-4 w-4 mr-2" />
                 {isExporting ? "Exporting..." : "Export to Excel"}
               </Button>
+              
             )}
+            
           </div>
+
         </div>
 
         <UserBookings ref={userBookingsRef} />
