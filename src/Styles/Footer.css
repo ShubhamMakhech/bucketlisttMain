@@ -229,6 +229,9 @@
 }
 
 @media (max-width: 768px) {
+    .FooterLinksList li button{
+        font-size: 12px;
+    }
     .FooterColumnHeader {
         margin-bottom: 8px;
         font-size: 11px;
@@ -237,18 +240,18 @@
     .FooterWrapper {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 2px;
         padding: 20px 0;
     }
 
     .FooterPaymentMethods {
-        gap: 8px;
+        gap: 0px;
     }
 
     .FooterLinksList {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
     }
 
     .FooterTopSection {
@@ -277,7 +280,7 @@
 
     .FooterLinksSection {
         grid-template-columns: repeat(2, 1fr);
-        gap: 20px 10px;
+        gap: 7px 5px;
     }
 
     .FooterImageSection {
@@ -298,9 +301,10 @@
     }
 
     .FooterBottomLeft {
-        flex-direction: column;
+        /* flex-direction: column; */
+        flex-wrap: wrap;
         align-items: flex-start;
-        gap: 4px;
+        gap: 0px 10px;
     }
 
     .FooterBottomRight {
@@ -320,17 +324,31 @@
 @media (max-width: 640px) {
     .FooterBottomLeft {
         align-items: flex-start;
-        gap: 6px;
+        /* gap: 0px; */
+        text-align: start !important;
     }
 
     .FooterBottomLink {
         padding: 0px !important;
         font-size: 13px;
-    }
 
-    .FooterInstagramButton {
-        padding: 0px !important;
-        margin-left: -4px;
+    }
+.FooterInstagramButton{
+     padding: 0px 10px !important;
+             background-color: var(--brand-color);
+             color: white !important;
+             margin: 10px 0px;
+}
+.FooterInstagramButton:hover{
+     padding: 0px 10px !important;
+             background-color: var(--brand-color) !important;
+             color: white !important;
+             margin: 10px 0px;
+}
+    .FooterInstagramButton span {
+             color: white !important;
+        margin-left: 0px;
+        font-size: 12px !important;
     }
 
     .FooterCopyright {

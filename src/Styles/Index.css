@@ -182,7 +182,7 @@
     }
 
     #LogoADjustContainer img {
-        width: 140px !important;
+        width: 110px !important;
         height: 100% !important;
         margin-left: 0px !important;
     }
@@ -283,10 +283,7 @@
         padding: 1rem;
     }
 
-    .text_Adjust_For_Mobile {
-        font-size: 1rem;
-        font-weight: 600;
-    }
+
 
     .ContainerDesinsPurposeOnly {
         max-width: 800px;

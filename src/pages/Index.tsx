@@ -630,7 +630,7 @@ const Index = () => {
         duration={700}
       >
         <section className="section-wrapper section-bg-primary PaddingSectionTop WhyChooseUsSection">
-          <div className="container">
+          <div className="MaxWidthContainer">
             <BidirectionalAnimatedSection
               animation="fade-up"
               delay={100}

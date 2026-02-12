@@ -179,7 +179,7 @@ h6 {
   }
 
   .CommonH2 {
-    font-size: 24px !important;
+    font-size: 20px !important;
     line-height: 23px !important;
     /* line-height: 25px !important; */
     /* letter-spacing: 0.822222px; */
@@ -274,7 +274,7 @@ h6 {
 
 @media (max-width: 900px) {
   .text_Adjust_For_Mobile {
-    font-size: 16px !important;
+    font-size: 13px !important;
     line-height: 23px !important;
   }
 
@@ -3061,6 +3061,12 @@ video::-webkit-media-controls {
 
 /* Mobile: 1 column scrollable */
 @media (max-width: 640px) {
+  .WhyChooseUsSection p{
+    font-size: 11px  !important;
+  }
+  .experience-card-minimal-value {
+  font-size: 15px;
+}
   .testimonial-reels-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
@@ -3211,6 +3217,9 @@ video::-webkit-media-controls {
     justify-content: start;
     gap: 10px;
   }
+  .experience-card-minimal-title {
+  font-size: 12px;
+}
 }
 
 /* .BackgroundImageSet::before {
@@ -3427,7 +3436,7 @@ video::-webkit-media-controls {
   }
 
   #LogoADjustContainer img {
-    width: 200px;
+    width: 120px;
     margin-left: -13px;
   }
 }

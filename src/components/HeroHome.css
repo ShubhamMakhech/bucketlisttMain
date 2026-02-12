@@ -993,11 +993,7 @@
 }
 
 @media (max-width: 768px) {
-  .RairBigHeading {
-    font-size: 2rem !important;
-    font-size: 400 !important;
-    line-height: 1.2 !important;
-  }
+
 
   .MaxWidthContainer {
     max-width: 100% !important;

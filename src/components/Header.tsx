@@ -1143,7 +1143,7 @@ export function Header() {
                 className="header-category-item flex flex-col items-center  text-gray-700 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-400 transition-colors min-w-[4rem]"
               >
                 <Icon
-                  className="h-6 w-6 text-orange-500 dark:text-orange-400"
+                  className="h-4 w-4 text-orange-500 dark:text-orange-400"
                   strokeWidth={2}
                   aria-hidden
                 />
