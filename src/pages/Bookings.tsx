@@ -12,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQueryClient } from "@tanstack/react-query";
 
-
 const Bookings = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -79,7 +78,7 @@ const Bookings = () => {
             email,
             phone_number
           )
-        `
+        `,
       );
 
       // For vendors: filter by vendor_id in experiences
@@ -102,7 +101,7 @@ const Bookings = () => {
       // Fetch profiles and roles for booked_by users (for booking type display)
       const bookedByUserIds = [
         ...new Set(
-          bookings?.map((b: any) => b.booked_by).filter(Boolean) || []
+          bookings?.map((b: any) => b.booked_by).filter(Boolean) || [],
         ),
       ];
 
@@ -115,20 +114,26 @@ const Bookings = () => {
           .from("profiles")
           .select("*")
           .in("id", bookedByUserIds);
-        bookedByProfilesMap = (profiles || []).reduce((acc, profile) => {
-          acc[profile.id] = profile;
-          return acc;
-        }, {} as Record<string, any>);
+        bookedByProfilesMap = (profiles || []).reduce(
+          (acc, profile) => {
+            acc[profile.id] = profile;
+            return acc;
+          },
+          {} as Record<string, any>,
+        );
 
         // Fetch roles
         const { data: roles } = await supabase
           .from("user_roles")
           .select("user_id, role")
           .in("user_id", bookedByUserIds);
-        bookedByRolesMap = (roles || []).reduce((acc, role) => {
-          acc[role.user_id] = role.role;
-          return acc;
-        }, {} as Record<string, string>);
+        bookedByRolesMap = (roles || []).reduce(
+          (acc, role) => {
+            acc[role.user_id] = role.role;
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
       }
 
       // Helper function to format time
@@ -244,8 +249,10 @@ const Bookings = () => {
       const defaultColumnOrder = Array.from({ length: 25 }, (_, i) => i);
 
       // Get column visibility and order from UserBookings component
-      const columnVisibility = userBookingsRef.current?.getColumnVisibility() || getColumnVisibility();
-      const columnOrder = userBookingsRef.current?.getColumnOrder() || defaultColumnOrder;
+      const columnVisibility =
+        userBookingsRef.current?.getColumnVisibility() || getColumnVisibility();
+      const columnOrder =
+        userBookingsRef.current?.getColumnOrder() || defaultColumnOrder;
 
       // Prepare data for Excel
       const excelDataRaw =
@@ -299,15 +306,15 @@ const Bookings = () => {
           allColumnData[6] = isCanceled
             ? "Canceled"
             : timeslot?.start_time && timeslot?.end_time
-            ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
-                timeslot.end_time
-              )}`
-            : isOffline
-            ? "Offline"
-            : "N/A"; // Timeslot
+              ? `${formatTime12Hour(timeslot.start_time)} - ${formatTime12Hour(
+                  timeslot.end_time,
+                )}`
+              : isOffline
+                ? "Offline"
+                : "N/A"; // Timeslot
           allColumnData[7] = new Date(booking.booking_date).toLocaleDateString(
             "en-GB",
-            { day: "2-digit", month: "short", year: "numeric" }
+            { day: "2-digit", month: "short", year: "numeric" },
           ); // Activity Date
           allColumnData[8] = booking.total_participants || 0; // No. Of Participants
           allColumnData[9] = booking.note_for_guide || "-"; // Notes for guides
@@ -333,7 +340,8 @@ const Bookings = () => {
                 second: "2-digit",
               })
             : "N/A"; // Booking Created At
-          allColumnData[23] = (isAdmin || isMarketing) ? booking.admin_note || "-" : null; // Admin Note
+          allColumnData[23] =
+            isAdmin || isMarketing ? booking.admin_note || "-" : null; // Admin Note
           allColumnData[24] = null; // Actions (not exported)
 
           // Add role-based financial columns (exclude for agents viewing agent bookings)
@@ -366,7 +374,7 @@ const Bookings = () => {
 
       // Filter and reorder columns based on visibility and order
       let visibleColumnIndices = columnOrder.filter(
-        (index) => columnVisibility[index] && index !== 24 // Exclude Actions column
+        (index) => columnVisibility[index] && index !== 24, // Exclude Actions column
       );
 
       // Always include Booking Created At (index 22) as compulsory
@@ -543,7 +551,6 @@ const Bookings = () => {
 
   return (
     <div className="BookingDetailSection">
-
       <div className="MaxWidthContainer SectionPaddingTop">
         <div className="mb-0">
           {/* <Button
@@ -570,11 +577,18 @@ const Bookings = () => {
                 <Download className="h-4 w-4 mr-2" />
                 {isExporting ? "Exporting..." : "Export to Excel"}
               </Button>
-              
             )}
-            
+            {(isAdmin || isVendor || isAgent) && (
+              <Button
+                onClick={() => setIsOfflineBookingDialogOpen(true)}
+                className="bg-brand-primary hover:bg-brand-primary/90 text-white EditButtonStyle"
+                size="default"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Offline Booking
+              </Button>
+            )}
           </div>
-
         </div>
 
         <UserBookings ref={userBookingsRef} />
