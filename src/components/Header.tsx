@@ -713,7 +713,7 @@ export function Header() {
                             style={{ color: "white" }}
                           />
                         </div>
-                        <span className="text-sm" style={{ color: "white" }}>
+                        <span className="text-sm" style={{ color: "black" }}>
                           Log out
                         </span>
                       </div>
@@ -990,7 +990,7 @@ export function Header() {
                             style={{ color: "white" }}
                           />
                         </div>
-                        <span className="text-sm" style={{ color: "white" }}>
+                        <span className="text-sm" style={{ color: "black" }}>
                           Log out
                         </span>
                       </div>
