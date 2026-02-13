@@ -378,7 +378,7 @@ const Index = () => {
               // duration={600}
             > */}
           <div className="HeadingHeaderCommonUsed">
-            <h2 className="CommonH2">Explore India's top cities</h2>
+            <h2 className="CommonH2">Top cities</h2>
           </div>
           {/* </BidirectionalAnimatedSection> */}
 
