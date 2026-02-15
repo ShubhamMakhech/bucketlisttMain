@@ -806,7 +806,9 @@
 .BookingDialogModal .ant-modal-body {
     padding: 0px !important;
 }
-
+#booking-section{
+    margin-bottom: 20px;
+}
 @media (max-width: 768px) {
     .minimal-date-grid {
         grid-template-columns: repeat(3, 1fr) !important;
