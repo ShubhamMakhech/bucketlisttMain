@@ -46,8 +46,17 @@
     object-fit: cover;
 }
 
+#DestinationsSwiperCardStyles {
+    height: 100% !important;
+}
+
 #DestinationsSwiperCardStyles>div {
     border-radius: 30px;
+    height: 100% !important;
+}
+
+#DestinationsSwiperCardStyles #DestinationCardStyles {
+    height: 100% !important;
 }
 
 #DestinationCardContentStyles {
