@@ -326,8 +326,9 @@
 
 @media (max-width: 640px) {
     .experience-detail-description-card .ant-card-body {
-    padding: 20px 12px;
-}
+        padding: 20px 12px;
+    }
+
     .experience-detail-breadcrumbs {
         font-size: 12px;
     }
@@ -357,6 +358,111 @@
     object-fit: contain !important;
 }
 
+/* Gallery section – proper cards with images adjusted to card */
+.GridImageGalleryContainer {
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+/* Mobile: show only slider, hide card grid */
+@media (max-width: 767px) {
+    .GridImageGalleryContainer .image-gallery-grid {
+        display: none !important;
+    }
+    .GridImageGalleryContainer .image-gallery-mobile {
+        display: block !important;
+    }
+}
+
+/* Desktop (768px+): card grid only */
+@media (min-width: 768px) {
+    .GridImageGalleryContainer .image-gallery-mobile {
+        display: none !important;
+    }
+    .GridImageGalleryContainer .image-gallery-grid {
+        display: grid !important;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 12px;
+        height: 480px;
+        min-height: 400px;
+    }
+
+    .GridImageGalleryContainer .image-gallery-main {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #e2e8f0;
+        cursor: pointer;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .GridImageGalleryContainer .image-gallery-main .image-gallery-card-media {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .GridImageGalleryContainer .image-gallery-main .image-gallery-card-media img,
+    .GridImageGalleryContainer .image-gallery-main .image-gallery-card-media video,
+    .GridImageGalleryContainer .image-gallery-main > img,
+    .GridImageGalleryContainer .image-gallery-main > video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .GridImageGalleryContainer .image-gallery-side {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .GridImageGalleryContainer .image-gallery-side-item {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #e2e8f0;
+        cursor: pointer;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        min-height: 0;
+    }
+
+    .GridImageGalleryContainer .image-gallery-side-item .image-gallery-card-media {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .GridImageGalleryContainer .image-gallery-side-item .image-gallery-card-media img,
+    .GridImageGalleryContainer .image-gallery-side-item .image-gallery-card-media video,
+    .GridImageGalleryContainer .image-gallery-side-item > img,
+    .GridImageGalleryContainer .image-gallery-side-item > video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .GridImageGalleryContainer .image-gallery-gallery-btn {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 2;
+        transition: background 0.2s ease;
+        border-radius: 12px;
+    }
+}
+
 /* Mobile Image Gallery Styles */
 .image-gallery-mobile {
     width: 100%;
@@ -383,7 +489,7 @@
     object-fit: cover;
 }
 
-/* Mobile Full Carousel Navigation */
+/* Mobile Full Carousel Navigation – centered in container regardless of image ratio */
 .mobile-full-carousel .swiper-button-next,
 .mobile-full-carousel .swiper-button-prev {
     color: black;
@@ -392,6 +498,9 @@
     height: 30px;
     border-radius: 50%;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    top: 50%;
+    margin-top: 0;
+    transform: translateY(-50%);
 }
 
 .mobile-full-carousel .swiper-button-next:after,
@@ -442,6 +551,8 @@
     .mobile-full-carousel .swiper-button-prev {
         width: 35px;
         height: 35px;
+        top: 50%;
+        transform: translateY(-50%);
     }
 
     .mobile-full-carousel .swiper-button-next:after,
@@ -806,37 +917,40 @@
 .BookingDialogModal .ant-modal-body {
     padding: 0px !important;
 }
-#booking-section{
+
+#booking-section {
     margin-bottom: 20px;
 }
+
 @media (max-width: 768px) {
     .minimal-date-grid {
         grid-template-columns: repeat(3, 1fr) !important;
         gap: 8px !important;
     }
+
     .experience-detail-rating-badge {
-    font-size: 8px;
-    padding: 2px 8px;
-}
+        font-size: 8px;
+        padding: 2px 8px;
+    }
 
-#booking-section{
-    margin-top: 10px !important;
-}
+    #booking-section {
+        margin-top: 10px !important;
+    }
 
-.experience-detail-heading-row {
-    margin-bottom: 10px;
-}
+    .experience-detail-heading-row {
+        margin-bottom: 10px;
+    }
 
-.experience-detail-activity-select-header {
-    margin-bottom: 7px;
-    text-align: left;
-}
+    .experience-detail-activity-select-header {
+        margin-bottom: 7px;
+        text-align: left;
+    }
 
-/* 4th grid cell: Show more button (right of 3rd card) */
-.experience-detail-activity-show-more-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100% !important;
-}
+    /* 4th grid cell: Show more button (right of 3rd card) */
+    .experience-detail-activity-show-more-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100% !important;
+    }
 }

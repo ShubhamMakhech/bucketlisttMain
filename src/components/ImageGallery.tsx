@@ -119,20 +119,19 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
           onKeyDown={(e) => e.key === 'Enter' && openModal(0)}
           aria-label="Open gallery"
         >
-          {isVideo(mainImage) ? (
-            <video
-              src={mainImage.video_url || mainImage.image_url}
-              poster={mainImage.image_url}
-              className="w-full object-cover h-100"
-            />
-          ) : (
-            <img
-              src={mainImage.image_url}
-              alt={mainImage.alt_text || `${experienceTitle} main image`}
-              className="w-full object-cover h-100"
-              style={{ display: 'block' }}
-            />
-          )}
+          <div className="image-gallery-card-media">
+            {isVideo(mainImage) ? (
+              <video
+                src={mainImage.video_url || mainImage.image_url}
+                poster={mainImage.image_url}
+              />
+            ) : (
+              <img
+                src={mainImage.image_url}
+                alt={mainImage.alt_text || `${experienceTitle} main image`}
+              />
+            )}
+          </div>
           <div className="image-gallery-main-overlay"></div>
           {/* Show play button only for videos */}
           {isVideo(mainImage) && (
@@ -159,19 +158,19 @@ export function ImageGallery({ images, experienceTitle }: ImageGalleryProps) {
               >
                 {image ? (
                   <>
-                    {isVideo(image) ? (
-                      <video
-                        src={image.video_url || image.image_url}
-                        poster={image.image_url}
-                        className="w-full h-full object-cover h-100"
-                      />
-                    ) : (
-                      <img
-                      className='h-100'
-                        src={image.image_url}
-                        alt={image.alt_text || `${experienceTitle} ${imageIndex + 1}`}
-                      />
-                    )}
+                    <div className="image-gallery-card-media">
+                      {isVideo(image) ? (
+                        <video
+                          src={image.video_url || image.image_url}
+                          poster={image.image_url}
+                        />
+                      ) : (
+                        <img
+                          src={image.image_url}
+                          alt={image.alt_text || `${experienceTitle} ${imageIndex + 1}`}
+                        />
+                      )}
+                    </div>
                     <div className="image-gallery-side-overlay"></div>
                     {/* Show play button only for videos */}
                     {isVideo(image) && (
