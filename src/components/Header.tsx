@@ -359,11 +359,11 @@ export function Header() {
   };
 
   const headerCategories = [
-    { label: "BUNGEE", q: "bungee", Icon: Activity },
-    { label: "RAFTING", q: "rafting", Icon: Waves },
-    { label: "PARAGLIDING", q: "paragliding", Icon: Wind },
-    { label: "HOT AIR BALLON", q: "hot air balloon", Icon: CircleDot },
-    { label: "ZIP LINING", q: "zip lining", Icon: Zap },
+    { label: "BUNGEE", q: "bungee", Icon: Activity, iconSrc: "/Images/NavigationBarIcons/BungeeJumping.svg" },
+    { label: "RAFTING", q: "rafting", Icon: Waves, iconSrc: "/Images/NavigationBarIcons/RiverRaftingIcon.svg" },
+    { label: "PARAGLIDING", q: "paragliding", Icon: Wind, iconSrc: "/Images/NavigationBarIcons/paraglidingIcon.svg" },
+    { label: "HOT AIR BALLON", q: "hot air balloon", Icon: CircleDot, iconSrc: "/Images/NavigationBarIcons/HotAirBallon copy.svg" },
+    { label: "ZIP LINING", q: "zip lining", Icon: CircleDot, iconSrc: "/Images/NavigationBarIcons/ZipLineIcon.png" },
   ];
 
   return (
@@ -1135,18 +1135,22 @@ export function Header() {
           aria-label="Activity categories"
         >
           <div className="flex  items-center justify-center gap-6 sm:gap-8 mx-auto py-3 px-4 MaxWidthContainer MobileLaayout">
-            {headerCategories.map(({ label, q, Icon }) => (
+            {headerCategories.map(({ label, q, Icon, iconSrc }) => (
               <button
                 key={label}
                 type="button"
                 // onClick={() => navigate(`/search?q=${encodeURIComponent(q)}`)}
                 className="header-category-item flex flex-col items-center  text-gray-700 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-400 transition-colors min-w-[4rem]"
               >
-                <Icon
-                  className="h-4 w-4 text-orange-500 dark:text-orange-400"
-                  strokeWidth={2}
-                  aria-hidden
-                />
+                {iconSrc ? (
+                  <img src={iconSrc} alt="" className="IconsizeSet text-orange-500 dark:text-orange-400" aria-hidden />
+                ) : (
+                  <Icon
+                    className="h-4 w-4 text-orange-500 dark:text-orange-400"
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                )}
                 <span className="text-xs font-semibold uppercase tracking-widea">
                   {label}
                 </span>

@@ -153,6 +153,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     toolbar: [
       [{ header: [1, 2, 3, false] }],
       ["bold", "italic", "underline", "strike"],
+      [{ align: [] }],
       [{ list: "ordered" }, { list: "bullet" }],
       ["link"],
       ["clean"],
@@ -165,6 +166,7 @@ export function EditExperienceForm({ initialData }: EditExperienceFormProps) {
     "italic",
     "underline",
     "strike",
+    "align",
     "list",
     "bullet",
     "link",

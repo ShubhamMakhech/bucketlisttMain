@@ -1597,6 +1597,7 @@ h6 {
 
   .MobileOnlyButtonContainer>div {
     padding: 8px !important;
+    width: 100% !important;
   }
 
   .MobileOnlyButtonContainer>div button {
@@ -1606,6 +1607,8 @@ h6 {
     font-weight: 600 !important;
     border-radius: 10px !important;
     white-space: nowrap !important;
+    display: flex;
+    gap: 20px;
   }
 
   .ExperienceDetailContainer {
@@ -3061,12 +3064,14 @@ video::-webkit-media-controls {
 
 /* Mobile: 1 column scrollable */
 @media (max-width: 640px) {
-  .WhyChooseUsSection p{
-    font-size: 11px  !important;
+  .WhyChooseUsSection p {
+    font-size: 11px !important;
   }
+
   .experience-card-minimal-value {
-  font-size: 15px;
-}
+    font-size: 15px;
+  }
+
   .testimonial-reels-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
@@ -3103,6 +3108,20 @@ video::-webkit-media-controls {
     width: 12px;
     height: 12px;
   }
+
+  .ArrowBtnIconSet {
+    rotate: 0deg;
+  }
+
+  .IconsizeSet {
+    height: 20px;
+    width: 20px;
+  }
+}
+
+.IconsizeSet {
+  height: 30px;
+  width: 30px;
 }
 
 #WhyChooseUsCard {
@@ -3217,9 +3236,10 @@ video::-webkit-media-controls {
     justify-content: start;
     gap: 10px;
   }
+
   .experience-card-minimal-title {
-  font-size: 12px;
-}
+    font-size: 12px;
+  }
 }
 
 /* .BackgroundImageSet::before {
@@ -3423,7 +3443,7 @@ video::-webkit-media-controls {
 }
 
 #LogoADjustContainer img {
-  width: 200px;
+  width: 180px;
   margin-left: 0px;
 }
 
@@ -3462,6 +3482,10 @@ video::-webkit-media-controls {
   max-width: 500px;
 }
 
+#DestinationCardEditDusra #DestinationCardStyles {
+  height: 250px;
+}
+
 @media (max-width:780px) {
   .MobileLaayout {
     flex-wrap: nowrap !important;
@@ -3471,6 +3495,7 @@ video::-webkit-media-controls {
     padding: 5px 0px !important;
     gap: 3px !important;
   }
+
 
   .header-categories-bar .tracking-widea {
     font-size: 8px;

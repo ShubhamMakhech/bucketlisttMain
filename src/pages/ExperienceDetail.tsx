@@ -17,6 +17,7 @@ import { CouponInput } from "@/components/CouponInput";
 import { CouponManager } from "@/components/CouponManager";
 import { useAuth } from "@/contexts/AuthContext";
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
+import { IoIosArrowDropup } from "react-icons/io";
 
 import {
   ArrowLeft,
@@ -1401,7 +1402,7 @@ const ExperienceDetail = () => {
               }
             }}
           >
-            Select Activity to Book
+          <IoIosArrowDropup className="ArrowBtnIconSet"/>  Select Activity to Book
           </Button>
         </div>
       </div>

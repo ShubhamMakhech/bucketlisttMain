@@ -207,12 +207,16 @@
   border: none;
   display: flex;
   align-items: center;
+  border: 0.3px solid #eb493a5f !important;
+  box-shadow: 0 0 0 1px #eb493a5f;
 }
 
-/* Remove default hover/focus border colors */
+/* Focus: red border */
 .HeroSearchInput.ant-input-affix-wrapper-focused,
-.HeroSearchInput.ant-input-affix-wrapper:hover {
-  border: none;
+.HeroSearchInput.ant-input-affix-wrapper-focused:focus,
+.HeroSearchInput.ant-input-affix-wrapper:focus-within {
+  border: 0.3px solid #eb493a5f !important;
+  box-shadow: 0 0 0 1px #eb493a5f;
 }
 
 /* Icon styling */
