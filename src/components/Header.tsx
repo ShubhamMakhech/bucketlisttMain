@@ -362,7 +362,7 @@ export function Header() {
     { label: "BUNGEE", q: "bungee", Icon: Activity, iconSrc: "/Images/NavigationBarIcons/BungeeJumping.svg" },
     { label: "RAFTING", q: "rafting", Icon: Waves, iconSrc: "/Images/NavigationBarIcons/RiverRaftingIcon.svg" },
     { label: "PARAGLIDING", q: "paragliding", Icon: Wind, iconSrc: "/Images/NavigationBarIcons/paraglidingIcon.svg" },
-    { label: "HOT AIR BALLON", q: "hot air balloon", Icon: CircleDot, iconSrc: "/Images/NavigationBarIcons/HotAirBallon copy.svg" },
+    { label: "HOT AIR BALLOoN", q: "hot air balloon", Icon: CircleDot, iconSrc: "/Images/NavigationBarIcons/HotAirBallon copy.svg" },
     { label: "ZIP LINING", q: "zip lining", Icon: CircleDot, iconSrc: "/Images/NavigationBarIcons/ZipLineIcon.png" },
   ];
 
@@ -464,6 +464,7 @@ export function Header() {
                 onClick={() => navigate("/favorites")}
               >
                 <Heart className="h-5 w-5" />
+                {/* <img src="/Images/NavigationBarIcons/BucketlisttIcon.svg" alt="Favorites" className="h-5 w-5" /> */}
                 {user && favoritesCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {favoritesCount > 9 ? "9+" : favoritesCount}

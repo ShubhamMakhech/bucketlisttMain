@@ -55,7 +55,7 @@ const Favorites = () => {
       <div className=" MaxWidthContainer SectionPaddingTop">
         <div className="flex items-center gap-3 mb-8">
           <Heart className="h-6 w-6 text-red-500 fill-red-500" />
-          <h1 className="text-3xl font-bold">Whish List</h1>
+          <h1 className="text-3xl font-bold">Your Bucketlist</h1>
           <span className="text-muted-foreground">({favorites.length})</span>
         </div>
 

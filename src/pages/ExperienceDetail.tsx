@@ -768,7 +768,7 @@ const ExperienceDetail = () => {
                       <CreditCard className="w-5 h-5" />
                     </div>
                     <div className="feature-badge-content">
-                      <p>Pay 10% to book</p>
+                      <p>Pay just 10% to book</p>
                     </div>
                     <div className="feature-badge-info-wrap">
                       <span
@@ -1402,7 +1402,7 @@ const ExperienceDetail = () => {
               }
             }}
           >
-          <IoIosArrowDropup className="ArrowBtnIconSet"/>  Select Activity to Book
+            <IoIosArrowDropup className="ArrowBtnIconSet" />  Select Activity to Book
           </Button>
         </div>
       </div>

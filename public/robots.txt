@@ -23,6 +23,13 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /my-account/
+Disallow: /search/
 Crawl-delay: 2
 
 # Disallow admin and private areas

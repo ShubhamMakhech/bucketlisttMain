@@ -155,8 +155,21 @@ const staticDestinationImages: Record<string, MediaItem[]> = {
     {
       src: "https://prepseed.s3.ap-south-1.amazonaws.com/ujjain(3).jpg",
       type: "image"
-    }
-  ]
+    },
+    
+  ],
+  Manali: [
+    {
+      src: "https://images.unsplash.com/photo-1647014070673-43bad4171631?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image"
+    },
+  ],
+  Jimcorbett: [
+    {
+      src: "https://images.unsplash.com/photo-1765375906788-3526ea224645?q=80&w=3132&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      type: "image"
+    },
+  ],
 };
 import {
   ArrowLeft,

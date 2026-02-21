@@ -1458,7 +1458,7 @@ h6 {
   }
 
   .BookingDialogModal .ant-modal-content {
-    padding: 10px !important;
+    padding: 40px 20px !important;
   }
 
   .textSmall {
@@ -1882,7 +1882,7 @@ h6 {
   right: 0;
   transform: translateY(-6px);
   width: max-content;
-  max-width: 260px;
+  max-width: min(170px, calc(100vw - 24px));
   padding: 8px 10px;
   font-size: 12px;
   font-weight: 400;
@@ -1899,6 +1899,42 @@ h6 {
   pointer-events: none;
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* width: 100% !important; */
+}
+
+/* Keep tooltip in viewport: first badge opens right, last opens left, middle centered */
+.features-badges-grid .feature-badge:first-child .feature-badge-info-tooltip {
+  left: 0;
+  right: auto;
+  transform: translateY(-6px);
+}
+
+.features-badges-grid .feature-badge:first-child .feature-badge-info-tooltip::after {
+  left: 12px;
+  right: auto;
+  margin-left: 0;
+}
+
+.features-badges-grid .feature-badge:last-child .feature-badge-info-tooltip {
+  right: 0;
+  left: auto;
+}
+
+.features-badges-grid .feature-badge:last-child .feature-badge-info-tooltip::after {
+  right: 12px;
+  left: auto;
+}
+
+.features-badges-grid .feature-badge:nth-child(2) .feature-badge-info-tooltip {
+  left: 50%;
+  right: auto;
+  transform: translate(-50%, -6px);
+}
+
+.features-badges-grid .feature-badge:nth-child(2) .feature-badge-info-tooltip::after {
+  left: 50%;
+  right: auto;
+  margin-left: -4px;
 }
 
 .feature-badge-info-tooltip::after {
@@ -2055,7 +2091,7 @@ h6 {
   }
 
   .feature-badge-content p {
-    font-size: 10px !important;
+    font-size: 14px !important;
   }
 }
 
