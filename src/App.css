@@ -3479,8 +3479,9 @@ video::-webkit-media-controls {
 }
 
 #LogoADjustContainer img {
-  width: 180px;
+  width: 150px;
   margin-left: 0px;
+  margin-top: -7px;
 }
 
 @media (min-width: 1025px) and (max-width: 1440px) {
