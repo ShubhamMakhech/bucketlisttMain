@@ -383,13 +383,13 @@ export function Header() {
               id="LogoADjustContainer"
             >
               <img
-                src="/Images/NewLogo.png"
+                src="/Images/bucketlistt_orange_Logo.png"
                 alt="bucketlistt Logo"
                 className={`transition-opacity duration-300 ${isScrolled ? "opacity-0 absolute" : "opacity-100"
                   }`}
               />
               <img
-                src="/Images/NewLogo.png"
+                src="/Images/bucketlistt_orange_Logo.png"
                 alt="bucketlistt Logo"
                 className={`transition-opacity duration-300 ${isScrolled ? "opacity-100" : "opacity-0 absolute"
                   }`}

@@ -15,11 +15,12 @@ export function Footer() {
         <div className="FooterTopSection">
           <div className="FooterTopLeft">
             <img
-              src="/Images/NewLogo.png"
+              src="/Images/bucketlistt_orange_Logo.png"
               alt="bucketlistt Logo"
               className="FooterLogo"
             />
           </div>
+          <br /><br />
           <div className="FooterTopRight">
             <Button
               variant="ghost"
