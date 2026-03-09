@@ -31,6 +31,7 @@ import EditExperience from "./pages/EditExperience";
 import ContactUs from "./pages/ContactUs";
 import OurStory from "./pages/OurStory";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import ComingSoon from "./pages/ComingSoon";
 import Partner from "./pages/Partner";
@@ -200,69 +201,70 @@ const App: React.FC = () => {
             <VendorRouteGuard>
               <AgentRouteGuard>
                 <MarketingRouteGuard>
-                <Layout>
-                  <Header />
-              <PageTransition>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/blogs" element={<Blogs />} />
-                      <Route path="/blogs/:slug" element={<BlogDetail />} />
-                      <Route path="/admin/blogs" element={<AdminBlogPage />} />
-                      <Route path="/qrcode" element={<QRCodeRedirect />} />
-                      <Route
-                        path="/email-confirmation"
-                        element={<EmailConfirmation />}
-                      />
-                      {/* <Route path="/experiences" element={<Experiences />} /> */}
-                      <Route path="/destinations" element={<Destinations />} />
-                      <Route path="/favorites" element={<Favorites />} />
-                      <Route path="/profile" element={<Profile />} />
-                      <Route
-                        path="/profile/calendar"
-                        element={<VendorCalendarPage />}
-                      />
-                      <Route path="/bookings" element={<Bookings />} />
-                      <Route
-                        path="/confirm-booking"
-                        element={<ConfirmBooking />}
-                      />
-                      <Route
-                        path="/create-experience"
-                        element={<CreateExperience />}
-                      />
-                      <Route
-                        path="/edit-experience/:id"
-                        element={<EditExperience />}
-                      />
-                      <Route path="/contact" element={<ContactUs />} />
-                      <Route path="/our-story" element={<OurStory />} />
-                      <Route path="/terms" element={<TermsAndConditions />} />
-                      <Route path="/search" element={<SearchResults />} />
-                      <Route path="/coming-soon" element={<ComingSoon />} />
-                      <Route path="/users" element={<Users />} />
-                      <Route path="/partner" element={<Partner />} />
-                      <Route
-                        path="/vendor/experiences"
-                        element={<VendorExperiences />}
-                      />
-                      <Route
-                        path="/experience/:name"
-                        element={<ExperienceDetail />}
-                      />
-                      <Route
-                        path="/destination/:name"
-                        element={<DestinationDetail />}
-                      />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </PageTransition>
-                </Layout>
+                  <Layout>
+                    <Header />
+                    <PageTransition>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route path="/blogs" element={<Blogs />} />
+                        <Route path="/blogs/:slug" element={<BlogDetail />} />
+                        <Route path="/admin/blogs" element={<AdminBlogPage />} />
+                        <Route path="/qrcode" element={<QRCodeRedirect />} />
+                        <Route
+                          path="/email-confirmation"
+                          element={<EmailConfirmation />}
+                        />
+                        {/* <Route path="/experiences" element={<Experiences />} /> */}
+                        <Route path="/destinations" element={<Destinations />} />
+                        <Route path="/favorites" element={<Favorites />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route
+                          path="/profile/calendar"
+                          element={<VendorCalendarPage />}
+                        />
+                        <Route path="/bookings" element={<Bookings />} />
+                        <Route
+                          path="/confirm-booking"
+                          element={<ConfirmBooking />}
+                        />
+                        <Route
+                          path="/create-experience"
+                          element={<CreateExperience />}
+                        />
+                        <Route
+                          path="/edit-experience/:id"
+                          element={<EditExperience />}
+                        />
+                        <Route path="/contact" element={<ContactUs />} />
+                        <Route path="/our-story" element={<OurStory />} />
+                        <Route path="/terms" element={<TermsAndConditions />} />
+                        <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/search" element={<SearchResults />} />
+                        <Route path="/coming-soon" element={<ComingSoon />} />
+                        <Route path="/users" element={<Users />} />
+                        <Route path="/partner" element={<Partner />} />
+                        <Route
+                          path="/vendor/experiences"
+                          element={<VendorExperiences />}
+                        />
+                        <Route
+                          path="/experience/:name"
+                          element={<ExperienceDetail />}
+                        />
+                        <Route
+                          path="/destination/:name"
+                          element={<DestinationDetail />}
+                        />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </PageTransition>
+                  </Layout>
 
-                {/* AI Chatbot - Only show on homepage */}
-                <WhatsappButtonConditional />
-                {/* Mobile Floating Button - Only show on experience detail routes */}
-                <ConditionalMobileButton />
+                  {/* AI Chatbot - Only show on homepage */}
+                  <WhatsappButtonConditional />
+                  {/* Mobile Floating Button - Only show on experience detail routes */}
+                  <ConditionalMobileButton />
                 </MarketingRouteGuard>
               </AgentRouteGuard>
             </VendorRouteGuard>

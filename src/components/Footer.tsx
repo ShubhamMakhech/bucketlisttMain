@@ -199,13 +199,13 @@ export function Footer() {
             <div className="FooterLinksColumn">
               <h3 className="FooterColumnHeader">Contact</h3>
               <ul className="FooterLinksList">
-              <li>
+                <li>
                   <Button
                     variant="link"
                     className="FooterLink"
                     onClick={() => window.open("https://wa.me/918511838237", "_blank")}
                   >
-                  Live Support
+                    Live Support
                   </Button>
                 </li>
                 <li>
@@ -226,8 +226,8 @@ export function Footer() {
                     +91 85118 38237
                   </Button>
                 </li>
-                
-                
+
+
               </ul>
             </div>
           </div>
@@ -257,7 +257,11 @@ export function Footer() {
             >
               Terms of usage
             </Button>
-            <Button variant="link" className="FooterBottomLink">
+            <Button
+              variant="link"
+              className="FooterBottomLink"
+              onClick={() => navigate("/privacy")}
+            >
               Privacy policy
             </Button>
             {/* <Button
